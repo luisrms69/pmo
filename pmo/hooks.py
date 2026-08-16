@@ -48,6 +48,11 @@ required_apps = ["erpnext"]
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
+# PMO — Task > Gantt ordenado por lft (nested set) en lugar de por fechas.
+# El archivo se carga después del task_calendar.js de ERPNext y extiende
+# frappe.views.calendar["Task"].gantt.order_by = "lft" (ASC nativo en GanttView).
+doctype_calendar_js = {"Task": "public/js/task_calendar_pmo.js"}
+
 # Svg Icons
 # ------------------
 # include app icons in desk
@@ -255,4 +260,3 @@ required_apps = ["erpnext"]
 # ------------
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
-
