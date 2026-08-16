@@ -198,7 +198,7 @@ def _validate(csv_content):
 
 
 @frappe.whitelist()
-def tag_import_dry_run(csv_content):
+def tag_import_dry_run(csv_content: str):
 	"""Valida el CSV y reporta el resumen SIN realizar ninguna escritura."""
 	result, _to_apply = _validate(csv_content)
 	result["mode"] = "dry_run"
@@ -206,7 +206,7 @@ def tag_import_dry_run(csv_content):
 
 
 @frappe.whitelist()
-def tag_import_apply(csv_content):
+def tag_import_apply(csv_content: str):
 	"""Aplica los Tags. Valida TODO el CSV antes de la primera escritura.
 
 	Si la validación global falla, no escribe nada (all-or-nothing) y devuelve
