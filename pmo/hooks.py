@@ -260,4 +260,3 @@ doctype_calendar_js = {"Task": "public/js/task_calendar_pmo.js"}
 # ------------
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
-
