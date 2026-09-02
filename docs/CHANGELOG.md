@@ -1,5 +1,12 @@
 # Changelog — pmo
 
+## [0.1.1] — 2026-09-02
+
+### Added
+- ADR-0002 (Project/Task Privacy y Security Boundary) y ADR-0003 (Resource Capacity and Planned
+  Allocation) como decisiones arquitectónicas base (estado Propuesto). Solo documentación; sin cambios
+  de código ni de esquema.
+
 ## [0.1.0] — 2026-08-16
 
 ### Added
