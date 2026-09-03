@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-02
 **Rama activa:** `docs/adr-0002-project-task-privacy` (base `version-16`) — es la rama del bloque **P0 privacidad** (el nombre se ajusta al abrir el PR).
-**Tarea actual:** Implementación incremental de ADR-0002 (privacidad Project/Task). Incrementos 1 (READ) y 2 (WRITE) cerrados. Sigue 3 (SHARE).
+**Tarea actual:** Implementación incremental de ADR-0002 (privacidad Project/Task). Incrementos 1 (READ), 2 (WRITE) y 3 (SHARE) cerrados. Sigue 4 (auditoría de vectores).
 
 ---
 
@@ -37,7 +37,11 @@ ADR-0002 D7: el hook **puede** restringir `share` (False para no-ejecutivos) y c
 rol tiene `share` → **sin fallback Custom DocPerm**. Actualizar ADR-0002 D7 al cerrar SHARE.
 
 ### En progreso / pendiente
-1. **Incremento 3 — SHARE/Assignment**: `has_permission(ptype="share")` restringe a `PMO Executive Access`/`Administrator`; validar Executive con capacidad nativa `share`; confirmar `assign_to` sin auto-share; sin Custom DocPerm completo si la prueba confirma lo observado. Al cerrar → actualizar ADR-0002 D7.
+1. **Incremento 4 — auditoría de vectores** que se saltan `pqc`: query reports (SQL propio), whitelisted con `get_all`/`ignore_permissions` (ej. `create_duplicate_project`, `project.py:610`), Global Search, attachments/timeline. Decidir mitigación (override_whitelisted_methods / restricción por rol) o aceptar documentado.
+2. **Cierre P0**: documentación técnica consolidada (`docs/tecnico/arquitectura.md`) + **`docs/usuario/`** (privacidad, membresía, asignación, acceso ejecutivo, Share) + **bump 0.2.0** antes del PR.
+
+### Cerrado en SHARE (Incremento 3)
+- `has_permission(ptype="share")` restringe a no-ejecutivos; Executive comparte por capacidad nativa; `assign_to` sin auto-share. **ADR-0002 D7 RESUELTO** (hook nativo suficiente, sin Custom DocPerm).
 3. **Incremento 4 — auditoría de vectores** (query reports, `create_duplicate_project`, Global Search, attachments).
 4. **Antes del PR final de P0 — gate documental ampliado:** además de `docs/tecnico/arquitectura.md`, incluir **`docs/usuario/`** (comportamiento visible): Project/Task privados por defecto; diferencia miembro de Project vs asignado a una Task; qué ve cada caso; acceso ejecutivo; restricciones de Share.
 5. **Bump de versión** del bloque privacidad → **0.2.0** (MINOR) antes del PR (recalcular contra upstream 0.1.0).

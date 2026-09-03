@@ -123,6 +123,8 @@ def has_permission_project(doc, ptype=None, user=None):
 	is_exec = _is_executive(user)
 	if not (is_owner or is_member or is_exec):
 		return False  # fail-closed (todos los ptypes)
+	if ptype == "share":
+		return is_exec  # SHARE manual: solo Executive (Administrator ya devolvió True arriba)
 	if ptype in _WRITE_PTYPES:
 		return bool(is_owner)  # solo owner escribe el Project; member/executive → no
 	return True  # read + otros ptypes → no restringir (el rol nativo sigue aplicando)
@@ -143,6 +145,8 @@ def has_permission_task(doc, ptype=None, user=None):
 	is_exec = _is_executive(user)
 	if not (is_owner or is_member or is_assignee or is_exec):
 		return False  # fail-closed
+	if ptype == "share":
+		return is_exec  # SHARE manual: solo Executive (Administrator ya devolvió True arriba)
 	if ptype in _WRITE_PTYPES:
 		return bool(is_owner or is_member or is_assignee)  # executive → solo lectura
 	return True  # read + otros ptypes → no restringir

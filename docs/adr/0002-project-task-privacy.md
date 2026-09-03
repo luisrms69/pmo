@@ -86,11 +86,18 @@ Capacidad (rol nativo) × alcance (hooks):
   *conceder* share: Custom DocPerm **completo** por **fixture** + **re-sync documentado** en cada
   upgrade de ERPNext, preservando read/write/create nativos y cambiando solo `share`.
 
-> **Pendiente P0 (bloqueante de esta decisión):** validar si `has_permission(ptype="share")` puede
-> **conceder** la capacidad `share` a `PMO Executive Access` cuando su rol base no la trae (semántica
-> *grant vs restrict* del controlador en Frappe v16). Si **puede conceder** → solución final = solo
-> hook. Si **no puede** → se usa el **fallback documentado** (Custom DocPerm completo por fixture +
-> procedimiento de re-sync en upgrades).
+> **RESUELTO (verificado en v16, P0 Incremento 3):** la semántica real del controlador
+> `has_permission` es **solo restringir**: `True` concede **dentro** de la capacidad de rol (AND con el
+> DocPerm), `False` deniega, y `None` también deniega. Consecuencias comprobadas con tests:
+> - `has_permission(ptype="share")` devolviendo `False` **restringe** el share a los no-ejecutivos
+>   (aunque su rol tenga `share=1`) → share manual bloqueado con `PermissionError`.
+> - `PMO Executive Access` **comparte** porque el hook devuelve `True` **y** su rol aporta la capacidad
+>   nativa `share` (p. ej. `Projects User` con `share=1`).
+> - `assign_to` sigue funcionando **sin auto-share**: el asignado ya está permitido por el **ToDo**
+>   (nuestro `has_permission`), por lo que `assign_to` omite `share.add`.
+>
+> **Decisión final:** el hook nativo `has_permission(ptype="share")` es **suficiente**. **No** se usa el
+> fallback de Custom DocPerm completo. (El ejecutivo debe tener un rol con capacidad `share`.)
 
 ### D8 — Política de `DocShare` (se conserva el mecanismo nativo)
 
