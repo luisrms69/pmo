@@ -139,15 +139,18 @@ doctype_calendar_js = {"Task": "public/js/task_calendar_pmo.js"}
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",
 # }
 
-# P0 — Aislamiento READ de Project/Task (ADR-0002). Ver pmo/permissions.py.
+# P0 — Aislamiento READ de Project/Task (ADR-0002). PMO Resource Allocation hereda el boundary de
+# Project (ADR-0003 D5). Ver pmo/permissions.py. El child PMO Allocation Day hereda del padre (sin hooks).
 permission_query_conditions = {
 	"Project": "pmo.permissions.get_permission_query_conditions_project",
 	"Task": "pmo.permissions.get_permission_query_conditions_task",
+	"PMO Resource Allocation": "pmo.permissions.get_permission_query_conditions_resource_allocation",
 }
 
 has_permission = {
 	"Project": "pmo.permissions.has_permission_project",
 	"Task": "pmo.permissions.has_permission_task",
+	"PMO Resource Allocation": "pmo.permissions.has_permission_resource_allocation",
 }
 
 # Fixtures: Custom Field pmo_members en Project + roles PMO + Custom Role de reports (P0 Inc. 4).

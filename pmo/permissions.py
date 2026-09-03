@@ -150,3 +150,38 @@ def has_permission_task(doc, ptype=None, user=None):
 	if ptype in _WRITE_PTYPES:
 		return bool(is_owner or is_member or is_assignee)  # executive → solo lectura
 	return True  # read + otros ptypes → no restringir
+
+
+# --- PMO Resource Allocation (ADR-0003 D5, hereda boundary de Project vía ADR-0002) --------------
+#
+# El plan de asignación referencia Project (req) → entra al boundary de privacidad: se ve/edita según
+# la visibilidad del Project (owner/member/executive). El child `PMO Allocation Day` NO lleva hooks
+# propios: hereda del padre. Report-level P4 (enmascarado agregado, "lo suyo") se hará con los reportes.
+
+
+def get_permission_query_conditions_resource_allocation(user=None):
+	user = user or frappe.session.user
+	if _is_global_reader(user):
+		return ""
+	return f"`tabPMO Resource Allocation`.project in ({_member_projects_subquery(user)})"
+
+
+def has_permission_resource_allocation(doc, ptype=None, user=None):
+	"""READ: Project(allocation) visible o executive. WRITE/SUBMIT/CANCEL/AMEND: owner/member del
+	Project; executive es solo lectura. Siempre True/False (semántica solo-restringe, ver Project)."""
+	user = user or frappe.session.user
+	if user == "Administrator":
+		return True
+	project = doc.get("project")
+	if not project:
+		return False  # project es requerido; sin project no hay boundary → fail-closed
+	is_owner = frappe.db.get_value("Project", project, "owner") == user
+	is_member = _is_project_member(project, user)
+	is_exec = _is_executive(user)
+	if not (is_owner or is_member or is_exec):
+		return False  # fail-closed
+	if ptype == "share":
+		return is_exec
+	if ptype in _WRITE_PTYPES:
+		return bool(is_owner or is_member)  # executive → solo lectura
+	return True  # read + otros ptypes → no restringir
