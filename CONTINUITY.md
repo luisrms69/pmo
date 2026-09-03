@@ -1,61 +1,63 @@
 # CONTINUITY.md — pmo
 
 **Fecha:** 2026-09-02
-**Rama activa:** `docs/adr-0002-project-task-privacy` (base `version-16`)
-**Tarea actual:** Versionar ADR-0002 y ADR-0003 (decisiones arquitectónicas base). Luego iniciar P0 (privacidad).
+**Rama activa:** `docs/adr-0002-project-task-privacy` (base `version-16`) — es la rama del bloque **P0 privacidad** (el nombre se ajusta al abrir el PR).
+**Tarea actual:** Implementación incremental de ADR-0002 (privacidad Project/Task). Incremento 1 (READ) cerrado.
 
 ---
 
 ## Recuperación rápida
 
 Estoy trabajando en:
-Commit de **ADR-0002** (Project/Task Privacy) y **ADR-0003** (Resource Capacity), estado *Propuesto*,
-en `docs/adr-0002-project-task-privacy`. Bump 0.1.1 (docs).
+P0 privacidad por incrementos en una sola rama; **un solo PR** al cerrar el bloque completo.
+Incremento 1 (READ) commiteado como checkpoint local. Sigue Incremento 2 (WRITE).
 
 Plan que estoy siguiendo:
-Diseño cerrado en `docs/adr/0002-project-task-privacy.md` y `docs/adr/0003-resource-capacity.md`.
+`docs/adr/0002-project-task-privacy.md` (+ `0003` para capacity, diferido).
 
 Objetivo inmediato:
-Tras el commit: `/ship push` → `/ship pr` (base `version-16`). Después **iniciar P0 — privacidad**.
+Incremento 2 — WRITE (owner escribe Project; member escribe Tasks no Project; assignee solo su Task; executive read-only), refinando `has_permission` para no diferir write.
 
 Criterio de avance:
-Cada paso git con autorización separada; los ADR son base, no inmutables (cambios materiales vuelven al ADR).
+READ y WRITE en commits **separados** (capas de seguridad distintas, revertibles por separado). Sin push ni PR hasta cerrar el bloque.
 
 ---
 
 ## Estado actual
 
 ### Ya cerrado
-- ADR-0002 y ADR-0003 consolidados como candidatos *Propuesto* (READ/WRITE/SHARE, P4, capacity mínimo).
-- pmo 0.1.0 en producción (Gantt por lft + importador de Tags); CI con required_status_checks.
+- ADRs 0002/0003 (commit `ff9d2a2`, checkpoint local).
+- **Incremento 1 — READ:** `PMO Project Member`, roles PMO, `pqc`+`has_permission` READ (Project/Task), fixtures. Tests 5; suite **24/24 OK**. Verificado en `test-pmo.localhost` (migrado).
+  - Confirmado: `assign_to` NO crea auto-share (visibilidad por ToDo activo) → D8/ADR-0002.
 
-### En progreso
-- Commit/push/PR de los dos ADR.
-
-### Pendiente inmediato
-1. `/ship push` + `/ship pr` a `version-16` (con autorización).
-2. **P0 — privacidad Project/Task** (desde ADR-0002), en incrementos: READ mínimo → WRITE → SHARE/Assignment → auditoría de vectores.
-3. Verificación P0 bloqueante: `has_permission(ptype="share")` grant vs restrict (ADR-0002 D7); si no concede → fallback Custom DocPerm completo.
+### En progreso / pendiente
+1. **Incremento 2 — WRITE.**
+2. **Incremento 3 — SHARE/Assignment** (incl. verificación P0 `has_permission(ptype="share")` grant-vs-restrict; si no concede → fallback Custom DocPerm completo).
+3. **Incremento 4 — auditoría de vectores** (query reports, `create_duplicate_project`, Global Search, attachments).
+4. **Antes del PR final de P0 — gate documental ampliado:** además de `docs/tecnico/arquitectura.md`, incluir **`docs/usuario/`** (comportamiento visible): Project/Task privados por defecto; diferencia miembro de Project vs asignado a una Task; qué ve cada caso; acceso ejecutivo; restricciones de Share.
+5. **Bump de versión** del bloque privacidad → **0.2.0** (MINOR) antes del PR (recalcular contra upstream 0.1.0).
 
 ### No repetir / cuidados
-- No implementar Capacity (ADR-0003) hasta cerrar P0.
-- No resolver toda la seguridad en un solo cambio; incrementos comprobables.
+- Fixtures del app en `apps/pmo/pmo/fixtures/` (nivel paquete), no en el módulo.
+- Warning `limit_page_length` en tests es **interno de Frappe** (no accionable).
 - Rutas Desk v16 = `/desk/...`. Git solo vía `/ship`. No trabajar en `version-16`.
+- No agrupar READ+WRITE en un commit.
+- No empezar Capacity (ADR-0003) hasta cerrar P0.
 
 ---
 
 ## Decisiones vigentes
-- **ADR-0002:** aislamiento fail-closed (owner/PMO Project Member/Task assignee vía ToDo/Executive/Share); enforcement `pqc`+`has_permission` sin tocar DocPerms de read/write; SHARE manual solo `PMO Executive Access`/`Administrator` (vía hook `ptype=share`, con fallback DocPerm); membresía `PMO Project Member` simple (sin `pmo_role`).
-- **ADR-0003:** `PMO Capacity` (efectivo-datado, global+override), `PMO Resource Allocation` (Project req/Task opc, sin conceder acceso) + `PMO Allocation Day` (child, días materializados en Confirmed); Availability/Actual derivados (no reproducibles retroactivamente); P4 enmascara identidad de proyecto.
+- ADR-0002: aislamiento fail-closed (owner/PMO Project Member/Task assignee-ToDo/Executive/Share); enforcement `pqc`+`has_permission` sin tocar DocPerms de read/write; SHARE manual solo `PMO Executive Access`/`Administrator` (hook `ptype=share`, con fallback DocPerm).
+- Nota config: `PMO Executive Access` da alcance global (pqc vacío) pero necesita además un rol con read (p.ej. `Projects User`).
 
 ---
 
 ## Archivos relevantes ahora
-- `docs/adr/0002-project-task-privacy.md`, `docs/adr/0003-resource-capacity.md` (decisiones base).
-- Para P0: `pmo/hooks.py` (registrar `permission_query_conditions`/`has_permission`), nuevo `PMO Project Member`, roles `PMO Manager`/`PMO Executive Access`.
+- `pmo/permissions.py` (pqc + has_permission), `pmo/hooks.py` (wiring), `pmo/pmo/doctype/pmo_project_member/`, `pmo/fixtures/{custom_field,role}.json`, `pmo/pmo/tests/test_privacy_read.py`.
+- Para WRITE: refinar `has_permission_project`/`has_permission_task` (write) en `pmo/permissions.py` + tests nuevos.
 
 ---
 
 ## Riesgos / cuidados
-- `pqc` no cubre query reports ni `get_all`/whitelisted (ej. `create_duplicate_project`) → auditar en P0.
-- P0 requiere site con Company/Stock para pruebas funcionales completas (no `test-pmo.localhost` mínimo).
+- `pqc` no cubre query reports ni `get_all`/whitelisted (`create_duplicate_project`) → Incremento 4.
+- Pruebas funcionales completas con Company/Stock requieren otro site (test-pmo mínimo → se usa `ignore_mandatory`).

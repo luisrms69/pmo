@@ -139,6 +139,23 @@ doctype_calendar_js = {"Task": "public/js/task_calendar_pmo.js"}
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",
 # }
 
+# P0 — Aislamiento READ de Project/Task (ADR-0002). Ver pmo/permissions.py.
+permission_query_conditions = {
+	"Project": "pmo.permissions.get_permission_query_conditions_project",
+	"Task": "pmo.permissions.get_permission_query_conditions_task",
+}
+
+has_permission = {
+	"Project": "pmo.permissions.has_permission_project",
+	"Task": "pmo.permissions.has_permission_task",
+}
+
+# Fixtures: Custom Field pmo_members en Project + roles PMO (importados en migrate).
+fixtures = [
+	{"dt": "Custom Field", "filters": [["name", "in", ["Project-pmo_members"]]]},
+	{"dt": "Role", "filters": [["name", "in", ["PMO Manager", "PMO Executive Access"]]]},
+]
+
 # Document Events
 # ---------------
 # Hook on document methods and events
