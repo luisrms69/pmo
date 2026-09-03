@@ -1,14 +1,17 @@
 # Copyright (c) 2026, Consultoria en Negocios y Aplicaciones and contributors
 # For license information, please see license.txt
 
-"""Materialización diaria de planes de asignación (ADR-0003 D3, Incremento 2).
+"""Distribución diaria uniforme de horas sobre días laborables (ADR-0003).
 
-`build_allocation_days` reparte `planned_hours` de forma uniforme (Even) sobre los **días laborables**
-del rango, donde "laborable" = día que **no** es Holiday en la Holiday List indicada (la lista nativa de
-ERPNext ya codifica fines de semana + festivos). No asume Lun-Vie a ciegas ni ignora festivos.
+Lógica **pura y reutilizable**: `build_allocation_days` reparte un total de horas de forma uniforme
+(Even) sobre los **días laborables** de un rango, donde "laborable" = día que **no** es Holiday en la
+Holiday List indicada (la lista nativa de ERPNext ya codifica fines de semana + festivos). No asume
+Lun-Vie a ciegas ni ignora festivos.
 
-La resolución de la Holiday List del Employee se hace con los helpers nativos de ERPNext
-(`get_holiday_list_for_employee`), en el controller; aquí solo se consume la lista ya resuelta.
+Se reutiliza para distribuir el esfuerzo de una Task (`expected_time` por asignado) sobre sus fechas
+(`exp_start_date..exp_end_date`). NO depende de ningún DocType de asignación: el plan de Capacity
+Planning se **deriva** de Task + Assignment (ver ADR-0003). La Holiday List del Employee se resuelve
+con el helper nativo de ERPNext (`get_holiday_list_for_employee`); aquí solo se consume ya resuelta.
 """
 
 from datetime import timedelta
