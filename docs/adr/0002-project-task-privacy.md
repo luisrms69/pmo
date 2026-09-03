@@ -123,6 +123,30 @@ El boundary de privacidad **se extiende** a los DocTypes de `pmo` que referencia
 reportes enmascaran la identidad de proyectos fuera del boundary del observador. Ver **ADR-0003** (P4:
 agregación server-side, bucket "Comprometido (confidencial)", enmascarado también en Actual/Timesheet).
 
+### D11 — Cierre de vectores que ignoran `pqc` (P0 Incremento 4)
+
+`pqc`/`has_permission` cubren `get_list`/documento único, pero **no** los caminos que fuerzan
+`ignore_permissions` (`get_all`, `db.sql`). Auditados y mitigados **sin tocar core** ni DocPerms:
+
+- **`create_duplicate_project`** (whitelisted; `get_all("Task", project=prev_doc.name)`): permitía a
+  quien **conociera el nombre** de un Project confidencial exfiltrar sus Tasks a un proyecto propio.
+  → **Override** vía `override_whitelisted_methods` (`pmo.overrides.create_duplicate_project`) que exige
+  `has_permission("Project", "read", throw=True)` sobre el origen antes de delegar en el nativo.
+- **Reports que ignoran `pqc`** (`Project Summary`, `Delayed Tasks Summary`,
+  `Project wise Stock Tracking`): como todo interno lleva `Projects User`, cualquiera podía verlos todos.
+  → **`Custom Role`** (uno por report, fixture) que **override** los roles estándar del report y lo
+  restringe a `PMO Executive Access` (`Administrator` pasa por tener todos los roles). Mecanismo nativo
+  (`Report.is_permitted()` consulta `Custom Role` primero), en **doctype aparte** que el sync del Report
+  **no pisa**, y el fixture lo **re-aplica en cada `migrate`** (self-heal).
+- **Global Search**: verificado que aplica `has_permission` → ya cubierto por el hook, sin cambios.
+
+**Riesgo de drift (documentado):** tras un `bench migrate`/upgrade de ERPNext hay que **verificar**:
+(a) que los reports siguen llamándose igual y con el mismo `ref_doctype` (si ERPNext los renombra, el
+`Custom Role` queda huérfano y el report vuelve a ser accesible por su rol estándar); (b) que el
+`Custom Role` sigue presente (el fixture lo re-crea, pero si ERPNext introduce nuevos reports que
+exponen Project/Task hay que añadirlos). El fixture cubre el borrado accidental, **no** los renombres
+de upstream. **Aún no** se construyen reports sustitutos de `pmo` (diferido).
+
 ## Matriz de permisos (alcance del ACL de pmo, sobre la capacidad de rol nativa)
 
 | Actor | Read Project | Write Project | Read Task | Write Task | Manual Share |
@@ -145,13 +169,17 @@ agregación server-side, bucket "Comprometido (confidencial)", enmascarado tambi
 
 - List/Report Builder/Tree/Gantt/Calendar/link/API-list → `pqc` ✅.
 - Documento único/URL → `has_permission` ✅.
-- **Query reports (SQL propio)** ⚠️ no reciben `pqc` (revisar/restringir en P0).
-- **Whitelisted + `get_all`/`ignore_permissions`** (ej. `create_duplicate_project`, `project.py:610`)
-  ⚠️ auditar (`override_whitelisted_methods` o aceptar documentado).
-- Global Search ⚠️ verificar en P0. Attachments/timeline/comments ⚠️ evaluar en P0.
+- **Global Search** → aplica `doc.has_permission()` (`global_search.py`) → **cubierto** ✅ (verificado P0).
+- **Reports que ignoran `pqc`** (`get_all`/`db.sql`): `Project Summary`, `Delayed Tasks Summary`,
+  `Project wise Stock Tracking` → **mitigado P0** vía `Custom Role` (D11) restringidos a
+  `PMO Executive Access`/`Administrator` ✅.
+- **Whitelisted + `get_all`** `create_duplicate_project` (`project.py`) → **mitigado P0** vía
+  `override_whitelisted_methods` con check de READ del Project origen (D11) ✅.
 - DocShare = acceso aditivo intencional (D8). Administrator/SQL/jobs = documentado (D9).
 - Documentos con **autorización independiente** (Timesheet, Expense Claim, Sales Invoice) **no** se
-  ocultan por tener Project relacionado.
+  ocultan por tener Project relacionado. Los reports de Timesheet (`Daily Timesheet Summary`,
+  `Timesheet Billing Summary`) exponen la columna `project` pero se rigen por la autorización propia
+  de Timesheet → fuera del boundary de este ADR.
 
 ## Impacto en nativo / nuevos objetos
 
