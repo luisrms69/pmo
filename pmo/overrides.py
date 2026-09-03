@@ -19,8 +19,11 @@ import frappe
 
 
 @frappe.whitelist()
-def create_duplicate_project(prev_doc, project_name):
-	"""Override P0: valida READ sobre el Project origen y delega en el método nativo de ERPNext."""
+def create_duplicate_project(prev_doc: str, project_name: str):
+	"""Override P0: valida READ sobre el Project origen y delega en el método nativo de ERPNext.
+
+	`prev_doc` llega como str (JSON) desde el cliente; se acepta dict por robustez.
+	"""
 	data = json.loads(prev_doc) if isinstance(prev_doc, str) else prev_doc
 	source = (data or {}).get("name")
 	if source and frappe.db.exists("Project", source):
