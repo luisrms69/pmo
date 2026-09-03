@@ -1,83 +1,85 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-09-02
-**Rama activa:** `docs/adr-0002-project-task-privacy` (base `version-16`) — es la rama del bloque **P0 privacidad** (el nombre se ajusta al abrir el PR).
-**Tarea actual:** Implementación incremental de ADR-0002 (privacidad Project/Task). Incrementos 1 (READ), 2 (WRITE), 3 (SHARE) y 4 (auditoría/cierre de vectores) cerrados. Sigue el **cierre de P0**: documentación técnica + de usuario, bump 0.2.0 y PR único a `version-16`.
+**Fecha:** 2026-09-03
+**Rama activa:** `feat/capacity-planning` (base `version-16`) — bloque **Capacity Planning (ADR-0003)**.
+**Tarea actual:** Implementación incremental de ADR-0003. Incrementos 1 (PMO Capacity), 2 (PMO Resource
+Allocation), 3 (Availability) cerrados como checkpoints locales. Sigue el siguiente incremento (Actual).
 
 ---
 
 ## Recuperación rápida
 
 Estoy trabajando en:
-P0 privacidad por incrementos en una sola rama; **un solo PR** al cerrar el bloque completo.
-Incremento 1 (READ) commiteado como checkpoint local. Sigue Incremento 2 (WRITE).
+Capacity Planning por incrementos en una sola rama; **un solo PR** al cerrar el bloque completo (como P0).
+Sin push ni PR hasta el cierre. Cada incremento = checkpoint local `/ship commit` sin push.
 
 Plan que estoy siguiendo:
-`docs/adr/0002-project-task-privacy.md` (+ `0003` para capacity, diferido).
+`docs/adr/0003-resource-capacity.md`. Los 4 conceptos separados: Capacity (persistido) · Availability
+(derivado) · Allocation (persistido/día) · Actual (derivado de Timesheet).
 
 Objetivo inmediato:
-Incremento 2 — WRITE (owner escribe Project; member escribe Tasks no Project; assignee solo su Task; executive read-only), refinando `has_permission` para no diferir write.
-
-Criterio de avance:
-READ y WRITE en commits **separados** (capas de seguridad distintas, revertibles por separado). Sin push ni PR hasta cerrar el bloque.
-
----
-
-## Estado actual
-
-### Ya cerrado
-- ADRs 0002/0003 (commit `ff9d2a2`, checkpoint local).
-- **Incremento 1 — READ:** `PMO Project Member`, roles PMO, `pqc`+`has_permission` READ (Project/Task), fixtures. Tests 5; suite **24/24 OK**. Verificado en `test-pmo.localhost` (migrado).
-  - Confirmado: `assign_to` NO crea auto-share (visibilidad por ToDo activo) → D8/ADR-0002.
-
-### Hallazgo verificado (semántica has_permission v16)
-El controlador `has_permission` **solo restringe**: `True` concede dentro de la capacidad de rol (AND),
-`False` deniega, **`None` también deniega**. → devolvemos siempre True/False. Resuelve la incógnita del
-ADR-0002 D7: el hook **puede** restringir `share` (False para no-ejecutivos) y conceder a Executive si su
-rol tiene `share` → **sin fallback Custom DocPerm**. Actualizar ADR-0002 D7 al cerrar SHARE.
-
-### Cerrado en SHARE (Incremento 3)
-- `has_permission(ptype="share")` restringe a no-ejecutivos; Executive comparte por capacidad nativa; `assign_to` sin auto-share. **ADR-0002 D7 RESUELTO** (hook nativo suficiente, sin Custom DocPerm).
-
-### Cerrado en Incremento 4 — auditoría/cierre de vectores (ADR-0002 D11)
-- **Global Search**: verificado que aplica `has_permission` → ya cubierto.
-- **`create_duplicate_project`**: override (`pmo/overrides.py`) con check READ del Project origen (`override_whitelisted_methods`).
-- **3 reports que ignoran `pqc`** (`Project Summary`, `Delayed Tasks Summary`, `Project wise Stock Tracking`): restringidos a `PMO Executive Access` vía `Custom Role` (fixture `pmo/fixtures/custom_role.json`). Self-heal en migrate; **drift documentado** (verificar tras upgrade de ERPNext: renombres de report dejan huérfano el Custom Role).
-- Tests: `test_privacy_reports.py` (4). Suite **34/34 OK**. Migrado `test-pmo.localhost` (importa Custom Role). **Pendiente:** migrar `pmo-v16.dev` antes del cierre de P0.
-
-### Cierre documental P0 (hecho, sin commitear)
-- `docs/tecnico/arquitectura.md` (sección Privacidad P0), `docs/usuario/privacidad-proyectos.md`.
-- `docs/CHANGELOG.md` [0.2.0], `pmo/__init__.py` → 0.2.0.
-
-### En progreso / pendiente
-1. **Commit del cierre documental** (docs + CHANGELOG + bump 0.2.0) — requiere autorización.
-2. **Migrar `pmo-v16.dev`** (importar Custom Field/roles/Custom Role + verificar) — escritura de BD, requiere autorización.
-3. **PR único** de P0 a `version-16` — requiere autorización (push + PR).
-3. **Incremento 4 — auditoría de vectores** (query reports, `create_duplicate_project`, Global Search, attachments).
-4. **Antes del PR final de P0 — gate documental ampliado:** además de `docs/tecnico/arquitectura.md`, incluir **`docs/usuario/`** (comportamiento visible): Project/Task privados por defecto; diferencia miembro de Project vs asignado a una Task; qué ve cada caso; acceso ejecutivo; restricciones de Share.
-5. **Bump de versión** del bloque privacidad → **0.2.0** (MINOR) antes del PR (recalcular contra upstream 0.1.0).
-
-### No repetir / cuidados
-- Fixtures del app en `apps/pmo/pmo/fixtures/` (nivel paquete), no en el módulo.
-- Warning `limit_page_length` en tests es **interno de Frappe** (no accionable).
-- Rutas Desk v16 = `/desk/...`. Git solo vía `/ship`. No trabajar en `version-16`.
-- No agrupar READ+WRITE en un commit.
-- No empezar Capacity (ADR-0003) hasta cerrar P0.
+Siguiente incremento — **Actual** (tiempo real desde Timesheet). **Regla fijada:** Actual debe coincidir
+con los reportes oficiales de Timesheet de ERPNext (identificar campos/filtros/estados exactos y reutilizar
+esa fuente/semántica; justificar cualquier diferencia antes de implementar). Después: reportes/KPIs (P4).
 
 ---
 
-## Decisiones vigentes
-- ADR-0002: aislamiento fail-closed (owner/PMO Project Member/Task assignee-ToDo/Executive/Share); enforcement `pqc`+`has_permission` sin tocar DocPerms de read/write; SHARE manual solo `PMO Executive Access`/`Administrator` (hook `ptype=share`, con fallback DocPerm).
-- Nota config: `PMO Executive Access` da alcance global (pqc vacío) pero necesita además un rol con read (p.ej. `Projects User`).
+## Estado actual (bloque Capacity)
+
+### P0 privacidad — CERRADO y liberado
+- PR #2 mergeado a `version-16`; **release v0.2.0** (tag + GitHub Release alineados). Ver ADR-0002.
+
+### Incrementos ADR-0003 cerrados (checkpoints locales, sin push)
+- **Inc. 1 — `PMO Capacity`** (`168fee9`): DocType efectivo-datado (employee opcional = global/override,
+  from_date, capacity_hours_per_day). `get_capacity(employee, date, throw=False)` única función de
+  resolución (override → global → None, sin 8h). Validación valor>0 y unicidad scope+from_date con
+  GLOBAL único. Tests 10.
+- **Inc. 2 — `PMO Resource Allocation`** (`ba16605`): cabecera **submittable** (Draft editable/materializable,
+  Submit congela, Amend replanifica) + child `PMO Allocation Day`. Materialización Even sobre días
+  laborables reales (Holiday List nativa: `get_holiday_list_for_employee` + `is_holiday`). Privacidad P4 a
+  nivel documento (`pqc`+`has_permission` ligados a visibilidad del Project; executive read-only). No
+  concede acceso al Project ni crea ToDo. Tests 12 + 4 privacidad.
+- **Inc. 3 — Availability** (pendiente de commit en este turno): `pmo/availability.py`
+  `get_availability(employee, date)` + `get_availability_range(...)`. **Derivado, NO persistido.**
+  Capacity − festivos (Holiday List) − Leave aprobada (**HRMS opcional**, query directa mínima sobre
+  `Leave Application` porque `get_leaves_for_period` no aplica). `cap None → None` (no 0). Medio día →
+  cap/2. Tests 10. **Suite 70/70 OK.**
+
+### Pendiente
+1. **Commit Inc. 3 — Availability** (este turno, sin push).
+2. **Siguiente incremento — Actual** (Timesheet; regla: == reportes oficiales de Timesheet).
+3. **Reportes/KPIs de utilización con enmascarado P4** (bucket "Comprometido (confidencial)", agregación
+   server-side). Reportes siguen fuera hasta su incremento.
+4. **Cierre del bloque:** actualizar **ADR-0003 D3** (Draft/Confirmed → `docstatus` submittable, decisión
+   tomada en Inc. 2), documentación técnica + usuario de Capacity, bump **0.3.0** (MINOR), migrar
+   `pmo-v16.dev`, PR único a `version-16`.
+
+---
+
+## Decisiones vigentes (no todas en código aún)
+- **Actual == Timesheet oficial:** no crear cálculos paralelos; reutilizar fuente/semántica de los reportes
+  oficiales de Timesheet. Justificar cualquier diferencia antes de implementar.
+- **Submittable en vez de status custom** (Inc. 2): `docstatus` cubre confirmar/congelar/replanificar.
+  Falta reflejarlo en ADR-0003 D3 al cierre.
+- **Availability derivada, no persistida**; HRMS opcional; la integración real con `Leave Application`
+  queda **pendiente de validar en un site con HRMS** (la lógica half/full está cubierta unitariamente).
+- Privacidad de `PMO Resource Allocation` hereda el boundary de Project (ADR-0002/D5); child hereda del padre.
+
+---
+
+## No repetir / cuidados
+- **Aislamiento de tests:** `IntegrationTestCase` no revierte entre tests aquí → limpiar en `setUp`
+  (`frappe.db.delete(...)`) y usar helpers idempotentes (Project por `project_name` único, Employee, HL).
+- **Employee en tests:** crear con `ignore_mandatory=True` (sin Company) y **sin** `gender` (Gender "Other"
+  no existe en test-pmo); poner `holiday_list` directo para que `get_holiday_list_for_employee` resuelva.
+- `set_value(owner)` **después** del último `save()` del doc (evita `TimestampMismatchError`).
+- Availability no tiene DocType → **no requiere migrate**.
+- Git solo vía `/ship`. No trabajar en `version-16`. Rutas Desk v16 = `/desk/...`.
 
 ---
 
 ## Archivos relevantes ahora
-- `pmo/permissions.py` (pqc + has_permission), `pmo/hooks.py` (wiring), `pmo/pmo/doctype/pmo_project_member/`, `pmo/fixtures/{custom_field,role}.json`, `pmo/pmo/tests/test_privacy_read.py`.
-- Para WRITE: refinar `has_permission_project`/`has_permission_task` (write) en `pmo/permissions.py` + tests nuevos.
-
----
-
-## Riesgos / cuidados
-- `pqc` no cubre query reports ni `get_all`/whitelisted (`create_duplicate_project`) → Incremento 4.
-- Pruebas funcionales completas con Company/Stock requieren otro site (test-pmo mínimo → se usa `ignore_mandatory`).
+- `pmo/capacity.py`, `pmo/allocation.py`, `pmo/availability.py`.
+- `pmo/pmo/doctype/{pmo_capacity,pmo_resource_allocation,pmo_allocation_day}/`.
+- `pmo/permissions.py` (+ allocation pqc/has_permission), `pmo/hooks.py` (wiring).
+- Tests: `pmo/pmo/tests/test_{capacity,allocation,allocation_privacy,availability}.py`.
