@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-02
 **Rama activa:** `docs/adr-0002-project-task-privacy` (base `version-16`) — es la rama del bloque **P0 privacidad** (el nombre se ajusta al abrir el PR).
-**Tarea actual:** Implementación incremental de ADR-0002 (privacidad Project/Task). Incremento 1 (READ) cerrado.
+**Tarea actual:** Implementación incremental de ADR-0002 (privacidad Project/Task). Incrementos 1 (READ) y 2 (WRITE) cerrados. Sigue 3 (SHARE).
 
 ---
 
@@ -30,9 +30,14 @@ READ y WRITE en commits **separados** (capas de seguridad distintas, revertibles
 - **Incremento 1 — READ:** `PMO Project Member`, roles PMO, `pqc`+`has_permission` READ (Project/Task), fixtures. Tests 5; suite **24/24 OK**. Verificado en `test-pmo.localhost` (migrado).
   - Confirmado: `assign_to` NO crea auto-share (visibilidad por ToDo activo) → D8/ADR-0002.
 
+### Hallazgo verificado (semántica has_permission v16)
+El controlador `has_permission` **solo restringe**: `True` concede dentro de la capacidad de rol (AND),
+`False` deniega, **`None` también deniega**. → devolvemos siempre True/False. Resuelve la incógnita del
+ADR-0002 D7: el hook **puede** restringir `share` (False para no-ejecutivos) y conceder a Executive si su
+rol tiene `share` → **sin fallback Custom DocPerm**. Actualizar ADR-0002 D7 al cerrar SHARE.
+
 ### En progreso / pendiente
-1. **Incremento 2 — WRITE.**
-2. **Incremento 3 — SHARE/Assignment** (incl. verificación P0 `has_permission(ptype="share")` grant-vs-restrict; si no concede → fallback Custom DocPerm completo).
+1. **Incremento 3 — SHARE/Assignment**: `has_permission(ptype="share")` restringe a `PMO Executive Access`/`Administrator`; validar Executive con capacidad nativa `share`; confirmar `assign_to` sin auto-share; sin Custom DocPerm completo si la prueba confirma lo observado. Al cerrar → actualizar ADR-0002 D7.
 3. **Incremento 4 — auditoría de vectores** (query reports, `create_duplicate_project`, Global Search, attachments).
 4. **Antes del PR final de P0 — gate documental ampliado:** además de `docs/tecnico/arquitectura.md`, incluir **`docs/usuario/`** (comportamiento visible): Project/Task privados por defecto; diferencia miembro de Project vs asignado a una Task; qué ve cada caso; acceso ejecutivo; restricciones de Share.
 5. **Bump de versión** del bloque privacidad → **0.2.0** (MINOR) antes del PR (recalcular contra upstream 0.1.0).
