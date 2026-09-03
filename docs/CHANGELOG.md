@@ -1,5 +1,27 @@
 # Changelog — pmo
 
+## [0.2.0] — 2026-09-02
+
+### Added
+- **Privacidad de Project/Task (P0)** — aislamiento fail-closed: Project y Task privados por defecto.
+  - Visibilidad por **owner / `PMO Project Member` / `PMO Executive Access` / DocShare**; una Task
+    hereda la frontera de su Project, y la asignación directa (ToDo) da acceso **solo a esa Task**.
+  - Enforcement por hooks nativos **sin tocar DocPerms**: `permission_query_conditions` (listados,
+    Gantt, calendario, búsquedas, API) + `has_permission` (documento único/URL). SHARE manual
+    restringido a `PMO Executive Access`/`Administrator` por el mismo hook (`ptype="share"`), sin
+    Custom DocPerm; `assign_to` sin auto-share.
+  - Política de WRITE: owner (Project + Tasks), member (Tasks del Project), assignee (su Task);
+    `PMO Executive Access` solo lectura; `PMO Manager` sin acceso por el rol.
+  - **Cierre de vectores que ignoran `pqc`**: override de `create_duplicate_project` (check READ del
+    origen) y `Custom Role` que restringe los reports `Project Summary`, `Delayed Tasks Summary` y
+    `Project wise Stock Tracking` a `PMO Executive Access`/`Administrator`. Global Search verificado.
+  - Nuevos objetos: child DocType `PMO Project Member` (+ Custom Field `Project-pmo_members`), roles
+    `PMO Manager` y `PMO Executive Access`, fixtures (`custom_field`, `role`, `custom_role`).
+  - Tests: `test_privacy_{read,write,share,reports}.py`. Decisiones en ADR-0002 (D1–D11).
+
+### Docs
+- `docs/tecnico/arquitectura.md` (sección Privacidad P0) y `docs/usuario/privacidad-proyectos.md`.
+
 ## [0.1.1] — 2026-09-02
 
 ### Added

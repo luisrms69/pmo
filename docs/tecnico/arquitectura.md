@@ -33,5 +33,71 @@ Métodos whitelisted (consumidos por la Page `tag_import`):
 - **Page:** `pmo/pmo/page/tag_import/` (rol System Manager). Sube CSV → Dry Run → Aplicar; muestra
   conteos, aviso de todo-o-nada ante errores y tabla de detalle por documento.
 
+## Privacidad de Project/Task (P0)
+
+Aislamiento **fail-closed**: `Project` y `Task` son privados por defecto. Decisiones en
+`docs/adr/0002-project-task-privacy.md`; comportamiento visible en `docs/usuario/privacidad-proyectos.md`.
+
+### Modelo de acceso (quién ve qué)
+
+```
+Project visible si:  owner  OR  PMO Project Member  OR  PMO Executive Access  OR  DocShare
+Task visible si:     project vacío (reglas estándar ERPNext)
+                     OR Project(Task) visible          (Task hereda la frontera del Project)
+                     OR ToDo activo (asignación directa: SOLO esa Task)
+                     OR PMO Executive Access  OR  DocShare
+```
+
+- **Asignar una Task ≠ ser miembro del Project**: no concede el Project ni otras Tasks.
+- **WRITE** — owner: Project + todas sus Tasks · member: Tasks del Project (no el Project) · assignee:
+  solo su Task · `PMO Executive Access`: solo lectura · `PMO Manager`: nada por el rol.
+
+### Capa de enforcement (dos mecanismos nativos, sin tocar DocPerms de read/write)
+
+- **Rol nativo = capacidad** (`read`/`write`/…). No se modifican los DocPerm de Project/Task.
+- **`permission_query_conditions` (pqc) = alcance en listados**: List / Report Builder / Tree / Gantt /
+  Calendar / link / API-list. Funciones `get_permission_query_conditions_project|task` en
+  `pmo/permissions.py`.
+- **`has_permission` = alcance en documento único / URL / `get_doc`**. Funciones
+  `has_permission_project|task`. Semántica v16 verificada: el controlador **solo restringe** — `True`
+  concede dentro de la capacidad de rol (AND con el DocPerm), `False`/`None` deniegan → devolvemos
+  siempre `True`/`False`.
+- **SHARE manual** (`ptype == "share"`): el mismo `has_permission` lo restringe a `PMO Executive Access`
+  (+ `Administrator`). No se usa Custom DocPerm (ver ADR-0002 D7). `assign_to` **no** crea auto-share:
+  el asignado ya está permitido por el ToDo, así que `assign_to` omite `share.add`.
+
+### Cierre de vectores que ignoran `pqc` (ADR-0002 D11)
+
+`get_all`/`db.sql` fuerzan `ignore_permissions=True` → no reciben `pqc`. Auditados y mitigados:
+
+| Vector | Mecanismo |
+|---|---|
+| `create_duplicate_project` (whitelisted; `get_all(Task, project=…)`) | Override en `pmo/overrides.py` (`override_whitelisted_methods`) que exige `has_permission("Project","read", throw=True)` sobre el origen |
+| Reports `Project Summary`, `Delayed Tasks Summary`, `Project wise Stock Tracking` | `Custom Role` (fixture) que override los roles del report → solo `PMO Executive Access`/`Administrator` |
+| Global Search | Ya aplica `has_permission` (nativo) → cubierto |
+
+**Drift a vigilar:** tras `migrate`/upgrade de ERPNext, verificar que los 3 reports mantienen nombre y
+`ref_doctype` (un renombre deja huérfano el `Custom Role`) y que los `Custom Role` siguen presentes (el
+fixture los re-crea). Reports sustitutos de `pmo` que respeten el boundary: diferidos.
+
+### Objetos nuevos (pmo) y wiring
+
+- **`PMO Project Member`** — child DocType (`istable`), campo `member: Link User`. Custom Field
+  `Project-pmo_members` (Table) lo añade a `Project`.
+- **Roles** — `PMO Manager` (funcional, sin acceso por el rol), `PMO Executive Access` (read global +
+  share; necesita además un rol con capacidad read, p. ej. `Projects User`).
+- **`hooks.py`** — `permission_query_conditions`, `has_permission`, `override_whitelisted_methods`.
+- **Fixtures** (`pmo/fixtures/`) — `custom_field.json` (`Project-pmo_members`), `role.json`
+  (roles PMO), `custom_role.json` (restricción de los 3 reports).
+- **Tests** — `pmo/pmo/tests/test_privacy_{read,write,share,reports}.py`.
+
+### Comportamiento de superusuarios / no protegible (documentado)
+
+`Administrator`, `ignore_permissions`, `get_all` y jobs hacen bypass nativo (no protegible).
+`System Manager` **sí** está sujeto a `pqc` → sin visibilidad global automática. DocShare es acceso
+aditivo intencional (no se bloquea). Timesheet/Expense Claim/Sales Invoice tienen autorización propia y
+no se ocultan por tener Project relacionado.
+
 ## Fuera de alcance
-Sin DocTypes, Custom Fields, fixtures ni patches. No se toca core ERPNext.
+Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext
+ni de DocPerm de read/write; solo hooks, un child DocType propio, roles y `Custom Role` por fixture.

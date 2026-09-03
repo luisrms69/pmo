@@ -45,9 +45,14 @@ rol tiene `share` → **sin fallback Custom DocPerm**. Actualizar ADR-0002 D7 al
 - **3 reports que ignoran `pqc`** (`Project Summary`, `Delayed Tasks Summary`, `Project wise Stock Tracking`): restringidos a `PMO Executive Access` vía `Custom Role` (fixture `pmo/fixtures/custom_role.json`). Self-heal en migrate; **drift documentado** (verificar tras upgrade de ERPNext: renombres de report dejan huérfano el Custom Role).
 - Tests: `test_privacy_reports.py` (4). Suite **34/34 OK**. Migrado `test-pmo.localhost` (importa Custom Role). **Pendiente:** migrar `pmo-v16.dev` antes del cierre de P0.
 
-### En progreso / pendiente (cierre P0)
-1. **Documentación técnica consolidada** (`docs/tecnico/arquitectura.md`) + **`docs/usuario/`** (privacidad, membresía, asignación, acceso ejecutivo, Share) + **bump 0.2.0** antes del PR.
-2. **Migrar `pmo-v16.dev`** (importar Custom Role + verificar) — requiere autorización de BD.
+### Cierre documental P0 (hecho, sin commitear)
+- `docs/tecnico/arquitectura.md` (sección Privacidad P0), `docs/usuario/privacidad-proyectos.md`.
+- `docs/CHANGELOG.md` [0.2.0], `pmo/__init__.py` → 0.2.0.
+
+### En progreso / pendiente
+1. **Commit del cierre documental** (docs + CHANGELOG + bump 0.2.0) — requiere autorización.
+2. **Migrar `pmo-v16.dev`** (importar Custom Field/roles/Custom Role + verificar) — escritura de BD, requiere autorización.
+3. **PR único** de P0 a `version-16` — requiere autorización (push + PR).
 3. **Incremento 4 — auditoría de vectores** (query reports, `create_duplicate_project`, Global Search, attachments).
 4. **Antes del PR final de P0 — gate documental ampliado:** además de `docs/tecnico/arquitectura.md`, incluir **`docs/usuario/`** (comportamiento visible): Project/Task privados por defecto; diferencia miembro de Project vs asignado a una Task; qué ve cada caso; acceso ejecutivo; restricciones de Share.
 5. **Bump de versión** del bloque privacidad → **0.2.0** (MINOR) antes del PR (recalcular contra upstream 0.1.0).
