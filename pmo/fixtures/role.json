@@ -1,0 +1,14 @@
+[
+ {
+  "doctype": "Role",
+  "name": "PMO Manager",
+  "role_name": "PMO Manager",
+  "desk_access": 1
+ },
+ {
+  "doctype": "Role",
+  "name": "PMO Executive Access",
+  "role_name": "PMO Executive Access",
+  "desk_access": 1
+ }
+]

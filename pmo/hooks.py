@@ -139,6 +139,36 @@ doctype_calendar_js = {"Task": "public/js/task_calendar_pmo.js"}
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",
 # }
 
+# P0 — Aislamiento READ de Project/Task (ADR-0002). Ver pmo/permissions.py.
+permission_query_conditions = {
+	"Project": "pmo.permissions.get_permission_query_conditions_project",
+	"Task": "pmo.permissions.get_permission_query_conditions_task",
+}
+
+has_permission = {
+	"Project": "pmo.permissions.has_permission_project",
+	"Task": "pmo.permissions.has_permission_task",
+}
+
+# Fixtures: Custom Field pmo_members en Project + roles PMO + Custom Role de reports (P0 Inc. 4).
+# Los Custom Role restringen 3 Script Reports de ERPNext (que ignoran pqc vía get_all/db.sql) a
+# `PMO Executive Access`/`Administrator`. Viven en doctype aparte (el sync del Report no los pisa) y el
+# fixture los re-aplica en cada migrate → self-heal del drift. Ver pmo/overrides.py y ADR-0002.
+fixtures = [
+	{"dt": "Custom Field", "filters": [["name", "in", ["Project-pmo_members"]]]},
+	{"dt": "Role", "filters": [["name", "in", ["PMO Manager", "PMO Executive Access"]]]},
+	{
+		"dt": "Custom Role",
+		"filters": [
+			[
+				"report",
+				"in",
+				["Project Summary", "Delayed Tasks Summary", "Project wise Stock Tracking"],
+			]
+		],
+	},
+]
+
 # Document Events
 # ---------------
 # Hook on document methods and events
@@ -187,6 +217,12 @@ doctype_calendar_js = {"Task": "public/js/task_calendar_pmo.js"}
 
 # Overriding Methods
 # ------------------------------
+#
+# P0 Inc. 4 (ADR-0002): create_duplicate_project nativo hace get_all("Task", project=...) ignorando
+# pqc → exfiltración de Tasks conociendo el nombre del Project. El override valida READ del origen.
+override_whitelisted_methods = {
+	"erpnext.projects.doctype.project.project.create_duplicate_project": "pmo.overrides.create_duplicate_project"
+}
 #
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "pmo.event.get_events"

@@ -1,0 +1,41 @@
+[
+ {
+  "doctype": "Custom Role",
+  "name": "pmo-report-project-summary",
+  "report": "Project Summary",
+  "ref_doctype": "Project",
+  "roles": [
+   {
+    "role": "PMO Executive Access",
+    "parentfield": "roles",
+    "parenttype": "Custom Role"
+   }
+  ]
+ },
+ {
+  "doctype": "Custom Role",
+  "name": "pmo-report-delayed-tasks-summary",
+  "report": "Delayed Tasks Summary",
+  "ref_doctype": "Task",
+  "roles": [
+   {
+    "role": "PMO Executive Access",
+    "parentfield": "roles",
+    "parenttype": "Custom Role"
+   }
+  ]
+ },
+ {
+  "doctype": "Custom Role",
+  "name": "pmo-report-project-wise-stock-tracking",
+  "report": "Project wise Stock Tracking",
+  "ref_doctype": "Project",
+  "roles": [
+   {
+    "role": "PMO Executive Access",
+    "parentfield": "roles",
+    "parenttype": "Custom Role"
+   }
+  ]
+ }
+]
