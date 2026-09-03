@@ -2,84 +2,58 @@
 
 **Fecha:** 2026-09-03
 **Rama activa:** `feat/capacity-planning` (base `version-16`) — bloque **Capacity Planning (ADR-0003)**.
-**Tarea actual:** Implementación incremental de ADR-0003. Incrementos 1 (PMO Capacity), 2 (PMO Resource
-Allocation), 3 (Availability) cerrados como checkpoints locales. Sigue el siguiente incremento (Actual).
+**Tarea actual:** **Cierre del bloque** Capacity Planning: documentación hecha, bump 0.3.0; pendiente
+migrar `pmo-v16.dev`, correr suite y abrir el **único PR** del bloque.
 
 ---
 
 ## Recuperación rápida
 
-Estoy trabajando en:
-Capacity Planning por incrementos en una sola rama; **un solo PR** al cerrar el bloque completo (como P0).
-Sin push ni PR hasta el cierre. Cada incremento = checkpoint local `/ship commit` sin push.
-
-Plan que estoy siguiendo:
-`docs/adr/0003-resource-capacity.md`. Los 4 conceptos separados: Capacity (persistido) · Availability
-(derivado) · Allocation (persistido/día) · Actual (derivado de Timesheet).
-
-Objetivo inmediato:
-Siguiente incremento — **Actual** (tiempo real desde Timesheet). **Regla fijada:** Actual debe coincidir
-con los reportes oficiales de Timesheet de ERPNext (identificar campos/filtros/estados exactos y reutilizar
-esa fuente/semántica; justificar cualquier diferencia antes de implementar). Después: reportes/KPIs (P4).
+Capacity Planning por incrementos en una sola rama; **un solo PR** al cerrar el bloque (como P0).
+El bloque quedó **rediseñado**: derivado de Task + Assignment, sin DocType de asignación paralelo.
 
 ---
 
-## Estado actual (bloque Capacity)
+## Estado del bloque (commits locales, sin push)
 
-### P0 privacidad — CERRADO y liberado
-- PR #2 mergeado a `version-16`; **release v0.2.0** (tag + GitHub Release alineados). Ver ADR-0002.
+- `168fee9` **PMO Capacity** (persistido, efectivo-datado).
+- `ba16605` PMO Resource Allocation — **eliminado** en `342aacb` (era captura duplicada de Task+Assignment).
+- `f9388a2` **Availability** (derivada).
+- `342aacb` **refactor**: elimina el DocType paralelo; Capacity Planning = derivación de Task + Assignment.
+- `55b95cd` **Actual** (Timesheet oficial).
+- `e2b8900` **Planned Load** (Task + Assignment; `ToDo.pmo_planned_hours`; retornos estructurados).
+- `54e2254` **Reporte PMO Capacity Planning** (P4 server-side + KPIs).
+- *(pendiente de commit)* **Cierre documental**: `docs/tecnico/arquitectura.md`, `docs/usuario/capacity-planning.md`,
+  ADR-0003 (impacto/acceso), `docs/CHANGELOG.md` [0.3.0], `pmo/__init__.py` → **0.3.0**, este CONTINUITY.
 
-### Incrementos ADR-0003 cerrados (checkpoints locales, sin push)
-- **Inc. 1 — `PMO Capacity`** (`168fee9`): DocType efectivo-datado (employee opcional = global/override,
-  from_date, capacity_hours_per_day). `get_capacity(employee, date, throw=False)` única función de
-  resolución (override → global → None, sin 8h). Validación valor>0 y unicidad scope+from_date con
-  GLOBAL único. Tests 10.
-- **Inc. 2 — `PMO Resource Allocation`** (`ba16605`): cabecera **submittable** (Draft editable/materializable,
-  Submit congela, Amend replanifica) + child `PMO Allocation Day`. Materialización Even sobre días
-  laborables reales (Holiday List nativa: `get_holiday_list_for_employee` + `is_holiday`). Privacidad P4 a
-  nivel documento (`pqc`+`has_permission` ligados a visibilidad del Project; executive read-only). No
-  concede acceso al Project ni crea ToDo. Tests 12 + 4 privacidad.
-- **Inc. 3 — Availability** (pendiente de commit en este turno): `pmo/availability.py`
-  `get_availability(employee, date)` + `get_availability_range(...)`. **Derivado, NO persistido.**
-  Capacity − festivos (Holiday List) − Leave aprobada (**HRMS opcional**, query directa mínima sobre
-  `Leave Application` porque `get_leaves_for_period` no aplica). `cap None → None` (no 0). Medio día →
-  cap/2. Tests 10. **Suite 70/70 OK.**
+**Suite:** 88/88 OK en `test-pmo.localhost`.
 
-### Pendiente
-1. **Commit Inc. 3 — Availability** (este turno, sin push).
-2. **Siguiente incremento — Actual** (Timesheet; regla: == reportes oficiales de Timesheet).
-3. **Reportes/KPIs de utilización con enmascarado P4** (bucket "Comprometido (confidencial)", agregación
-   server-side). Reportes siguen fuera hasta su incremento.
-4. **Cierre del bloque:** actualizar **ADR-0003 D3** (Draft/Confirmed → `docstatus` submittable, decisión
-   tomada en Inc. 2), documentación técnica + usuario de Capacity, bump **0.3.0** (MINOR), migrar
-   `pmo-v16.dev`, PR único a `version-16`.
+## Arquitectura vigente
+- **Capacity** (`pmo/capacity.py`) · **Availability** (`pmo/availability.py`) · **Actual** (`pmo/actual.py`) ·
+  **Planned Load** (`pmo/planned_load.py`) · **lógica pura** `build_allocation_days` (`pmo/allocation.py`).
+- **Reporte** `pmo/pmo/report/pmo_capacity_planning/` (Script Report, P4 en `execute()`).
+- Objetos: DocType `PMO Capacity`; Custom Field `ToDo-pmo_planned_hours` (fixture); DocPerm `report` en
+  PMO Capacity para Employee/Executive. Todo lo demás derivado; sin captura paralela.
 
----
+## Pendiente para cerrar el bloque
+1. **Commit del cierre documental + bump 0.3.0** (requiere autorización).
+2. **Migrar `pmo-v16.dev`** (importa PMO Capacity, Custom Field ToDo, Report, permisos) — escritura de BD,
+   requiere autorización. Objetos nuevos en dev: `tabPMO Capacity`, CF `ToDo-pmo_planned_hours`, Report
+   `PMO Capacity Planning`, DocPerm de PMO Capacity.
+3. **Suite completa** + **PR único** a `version-16` (push + PR, autorizaciones separadas).
 
-## Decisiones vigentes (no todas en código aún)
-- **Actual == Timesheet oficial:** no crear cálculos paralelos; reutilizar fuente/semántica de los reportes
-  oficiales de Timesheet. Justificar cualquier diferencia antes de implementar.
-- **Submittable en vez de status custom** (Inc. 2): `docstatus` cubre confirmar/congelar/replanificar.
-  Falta reflejarlo en ADR-0003 D3 al cierre.
-- **Availability derivada, no persistida**; HRMS opcional; la integración real con `Leave Application`
-  queda **pendiente de validar en un site con HRMS** (la lógica half/full está cubierta unitariamente).
-- Privacidad de `PMO Resource Allocation` hereda el boundary de Project (ADR-0002/D5); child hereda del padre.
-
----
+## Decisiones vigentes
+- **Actual == Timesheet oficial** (`daily_timesheet_summary`): no cálculos paralelos.
+- Planned Load derivado de Task + Assignment; `ToDo.pmo_planned_hours` solo override; bridge
+  `Employee.user_id` fail-closed (ambiguo → excluido).
+- Reporte P4: `Comprometido (confidencial) = total − Σ visibles`; identidades confidenciales nunca al cliente.
+- Acceso al reporte: `Report.roles` + `report` sobre `PMO Capacity` (Employee solo `report`); row-level en `execute()`.
+- Plan vigente (sin snapshots) en el MVP.
 
 ## No repetir / cuidados
-- **Aislamiento de tests:** `IntegrationTestCase` no revierte entre tests aquí → limpiar en `setUp`
-  (`frappe.db.delete(...)`) y usar helpers idempotentes (Project por `project_name` único, Employee, HL).
-- **Employee en tests:** crear con `ignore_mandatory=True` (sin Company) y **sin** `gender` (Gender "Other"
-  no existe en test-pmo); poner `holiday_list` directo para que `get_holiday_list_for_employee` resuelva.
-- `set_value(owner)` **después** del último `save()` del doc (evita `TimestampMismatchError`).
-- Availability no tiene DocType → **no requiere migrate**.
+- Tests: `IntegrationTestCase` no revierte entre tests → limpiar en `setUp` (`frappe.db.delete`); helpers idempotentes.
+- Employee de test: sin `gender`, `user_id` por `db.set_value` (evita validación que toca Company), `holiday_list` directo.
+- Timesheet de test: `docstatus=1` por `db.set_value` (el `on_submit` guarda el Project → requiere Company/stock).
+- Project.name = naming series (`PROJ-####`), no `project_name`.
+- Ambiguous chars en docstrings/comentarios → usar ASCII (ruff RUF001/002).
 - Git solo vía `/ship`. No trabajar en `version-16`. Rutas Desk v16 = `/desk/...`.
-
----
-
-## Archivos relevantes ahora
-- `pmo/capacity.py`, `pmo/allocation.py`, `pmo/availability.py`.
-- `pmo/pmo/doctype/{pmo_capacity,pmo_resource_allocation,pmo_allocation_day}/`.
-- `pmo/permissions.py` (+ allocation pqc/has_permission), `pmo/hooks.py` (wiring).
-- Tests: `pmo/pmo/tests/test_{capacity,allocation,allocation_privacy,availability}.py`.

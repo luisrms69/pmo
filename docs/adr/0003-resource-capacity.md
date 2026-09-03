@@ -139,9 +139,13 @@ permitidos. `PMO Capacity` no referencia Project → permisos estándar (config 
 
 - **Nativo:** sin cambios de core; se **lee** Task, ToDo, Employee, Holiday List, Timesheet (y Leave si HRMS);
   se **añade** un Custom Field a `ToDo` (fixture).
-- **Nuevos (pmo):** `PMO Capacity`; funciones derivadas server-side (Availability, Actual, PlannedLoad) y el
-  reporte de capacidad con enmascarado P4. Sin `pqc`/`has_permission` propios de un DocType de asignación
-  (ya no existe).
+- **Nuevos (pmo):** `PMO Capacity`; funciones derivadas server-side (Availability, Actual, PlannedLoad,
+  y las variantes por-Project para el split P4); **Script Report `PMO Capacity Planning`** con enmascarado
+  P4 en `execute()`. Sin `pqc`/`has_permission` propios de un DocType de asignación (ya no existe).
+- **Acceso al reporte:** `Report.roles` (`Employee`, `PMO Manager`, `PMO Executive Access`, `System
+  Manager`) + permiso `report` sobre `ref_doctype = PMO Capacity` (a `Employee` **solo `report`, sin
+  `read`**). El row-level real (Executive/Manager/normal) lo impone `execute()`, no el rol; **no** se usa
+  `pqc`/`has_permission` sobre `PMO Capacity` para habilitar el reporte.
 
 ## Estrategia de pruebas (datos ficticios)
 
