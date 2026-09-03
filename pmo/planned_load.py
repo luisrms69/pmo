@@ -101,7 +101,8 @@ def _compute(employee: str, from_date, to_date) -> dict:
 	if end < start:
 		frappe.throw(frappe._("To Date no puede ser anterior a From Date."))
 
-	out = {"days": {}, "issues": [], "unscheduled": [], "unmapped": []}
+	# days_by_project: {project|None: {date: hours}}; days (total) se deriva sumando proyectos.
+	out = {"days": {}, "days_by_project": {}, "issues": [], "unscheduled": [], "unmapped": []}
 
 	user = frappe.db.get_value("Employee", employee, "user_id")
 	if not user:
@@ -124,37 +125,39 @@ def _compute(employee: str, from_date, to_date) -> dict:
 	tasks = frappe.get_all(
 		"Task",
 		filters={"name": ("in", task_names), "status": ("in", list(TASK_STATUSES_IN))},
-		fields=["name", "exp_start_date", "exp_end_date"],
+		fields=["name", "project", "exp_start_date", "exp_end_date"],
 	)
 	holiday_list = get_holiday_list_for_employee(employee, raise_exception=False)
 
 	for task in tasks:
 		res = get_planned_hours_per_assignee(task.name)
 		if not res["consistent"]:
-			out["issues"].append({"task": task.name, "reasons": res["issues"]})
+			out["issues"].append({"task": task.name, "project": task.project, "reasons": res["issues"]})
 			continue
 		hours = res["per_assignee"].get(user)
 		if not hours:
 			continue  # el user no es asignado efectivo o le tocan 0 horas
 
 		if not (task.exp_start_date and task.exp_end_date):
-			out["unscheduled"].append({"task": task.name, "hours": flt(hours, 2)})
+			out["unscheduled"].append({"task": task.name, "project": task.project, "hours": flt(hours, 2)})
 			continue
 		s, e = getdate(task.exp_start_date), getdate(task.exp_end_date)
 		if e < s:
-			out["issues"].append({"task": task.name, "reasons": ["invalid_dates"]})
+			out["issues"].append({"task": task.name, "project": task.project, "reasons": ["invalid_dates"]})
 			continue
 		if not holiday_list:
-			out["issues"].append({"task": task.name, "reasons": ["no_holiday_list"]})
+			out["issues"].append({"task": task.name, "project": task.project, "reasons": ["no_holiday_list"]})
 			continue
 		try:
 			rows = build_allocation_days(s, e, hours, holiday_list)
 		except frappe.ValidationError:
-			out["issues"].append({"task": task.name, "reasons": ["no_working_days"]})
+			out["issues"].append({"task": task.name, "project": task.project, "reasons": ["no_working_days"]})
 			continue
+		per_project = out["days_by_project"].setdefault(task.project, {})
 		for row in rows:
 			if start <= row["date"] <= end:
 				out["days"][row["date"]] = flt(out["days"].get(row["date"], 0) + row["hours"], 2)
+				per_project[row["date"]] = flt(per_project.get(row["date"], 0) + row["hours"], 2)
 
 	return out
 
@@ -176,6 +179,22 @@ def get_planned_load_range(employee: str, from_date, to_date) -> dict:
 	computed = _compute(employee, from_date, to_date)
 	return {
 		"days": computed["days"],
+		"issues": computed["issues"],
+		"unscheduled": computed["unscheduled"],
+		"unmapped": computed["unmapped"],
+	}
+
+
+def get_planned_load_by_project(employee: str, from_date, to_date) -> dict:
+	"""Carga planificada desglosada por Project (infraestructura para el split P4 del reporte).
+
+	{days_by_project: {project|None: {date: hours}}, issues, unscheduled, unmapped}. Interna, no
+	whitelisted. El reporte clasifica cada Project en visible/confidencial según el observador y calcula
+	el bucket confidencial como total − Σ(visibles), sin enumerar proyectos confidenciales.
+	"""
+	computed = _compute(employee, from_date, to_date)
+	return {
+		"days_by_project": computed["days_by_project"],
 		"issues": computed["issues"],
 		"unscheduled": computed["unscheduled"],
 		"unmapped": computed["unmapped"],

@@ -51,6 +51,37 @@ def get_actual_range(employee: str, from_date, to_date) -> dict:
 	return result
 
 
+def get_actual_by_project(employee: str, from_date, to_date) -> dict:
+	"""Horas trabajadas por Project y día (infraestructura para el split P4 del reporte). Interna.
+
+	{project|None: {date: hours}}. Mantiene la semántica oficial: docstatus=1, `hours`, y cada línea
+	cuenta en su día solo si from_time/to_time caen en el mismo día (equivalente a los bornes de
+	daily_timesheet_summary; las líneas que cruzan medianoche quedan fuera, igual que get_actual).
+	"""
+	start, end = getdate(from_date), getdate(to_date)
+	if end < start:
+		frappe.throw(_("To Date no puede ser anterior a From Date."))
+
+	rows = frappe.db.sql(
+		"""select td.project, date(td.from_time) as d, sum(td.hours) as hours
+			from `tabTimesheet Detail` td
+			inner join `tabTimesheet` ts on td.parent = ts.name
+			where ts.docstatus = 1
+				and ts.employee = %(employee)s
+				and date(td.from_time) = date(td.to_time)
+				and td.from_time >= timestamp(%(from_date)s, '00:00:00')
+				and td.to_time <= timestamp(%(to_date)s, '24:00:00')
+			group by td.project, date(td.from_time)""",
+		{"employee": employee, "from_date": start, "to_date": end},
+		as_dict=True,
+	)
+
+	result = {}
+	for row in rows:
+		result.setdefault(row.project, {})[getdate(row.d)] = flt(row.hours, 2)
+	return result
+
+
 def _sum_hours(employee: str, from_date, to_date, project: str | None) -> float:
 	"""Σ Timesheet Detail.hours con la semántica oficial de daily_timesheet_summary (docstatus=1)."""
 	conditions = [
