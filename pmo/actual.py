@@ -83,23 +83,34 @@ def get_actual_by_project(employee: str, from_date, to_date) -> dict:
 
 
 def _sum_hours(employee: str, from_date, to_date, project: str | None) -> float:
-	"""Σ Timesheet Detail.hours con la semántica oficial de daily_timesheet_summary (docstatus=1)."""
-	conditions = [
-		"ts.docstatus = 1",
-		"ts.employee = %(employee)s",
-		"td.from_time >= timestamp(%(from_date)s, '00:00:00')",
-		"td.to_time <= timestamp(%(to_date)s, '24:00:00')",
-	]
+	"""Σ Timesheet Detail.hours con la semántica oficial de daily_timesheet_summary (docstatus=1).
+
+	SQL estática y parametrizada (sin f-string ni concatenación) por seguridad (semgrep frappe-sql-
+	format-injection); dos variantes según se filtre o no por Project.
+	"""
 	params = {"employee": employee, "from_date": from_date, "to_date": to_date}
 	if project:
-		conditions.append("td.project = %(project)s")
 		params["project"] = project
-
-	rows = frappe.db.sql(
-		f"""select coalesce(sum(td.hours), 0)
-			from `tabTimesheet Detail` td
-			inner join `tabTimesheet` ts on td.parent = ts.name
-			where {" and ".join(conditions)}""",
-		params,
-	)
+		rows = frappe.db.sql(
+			"""select coalesce(sum(td.hours), 0)
+				from `tabTimesheet Detail` td
+				inner join `tabTimesheet` ts on td.parent = ts.name
+				where ts.docstatus = 1
+					and ts.employee = %(employee)s
+					and td.from_time >= timestamp(%(from_date)s, '00:00:00')
+					and td.to_time <= timestamp(%(to_date)s, '24:00:00')
+					and td.project = %(project)s""",
+			params,
+		)
+	else:
+		rows = frappe.db.sql(
+			"""select coalesce(sum(td.hours), 0)
+				from `tabTimesheet Detail` td
+				inner join `tabTimesheet` ts on td.parent = ts.name
+				where ts.docstatus = 1
+					and ts.employee = %(employee)s
+					and td.from_time >= timestamp(%(from_date)s, '00:00:00')
+					and td.to_time <= timestamp(%(to_date)s, '24:00:00')""",
+			params,
+		)
 	return flt(rows[0][0], 2)
