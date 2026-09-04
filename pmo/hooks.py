@@ -155,7 +155,10 @@ has_permission = {
 # `PMO Executive Access`/`Administrator`. Viven en doctype aparte (el sync del Report no los pisa) y el
 # fixture los re-aplica en cada migrate → self-heal del drift. Ver pmo/overrides.py y ADR-0002.
 fixtures = [
-	{"dt": "Custom Field", "filters": [["name", "in", ["Project-pmo_members"]]]},
+	{
+		"dt": "Custom Field",
+		"filters": [["name", "in", ["Project-pmo_members", "ToDo-pmo_planned_hours"]]],
+	},
 	{"dt": "Role", "filters": [["name", "in", ["PMO Manager", "PMO Executive Access"]]]},
 	{
 		"dt": "Custom Role",

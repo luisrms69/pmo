@@ -1,5 +1,29 @@
 # Changelog — pmo
 
+## [0.3.0] — 2026-09-03
+
+### Added
+- **Capacity Planning (ADR-0003)** — planificación de capacidad **derivada** de Task + Assignment, sin
+  sistema paralelo de asignaciones.
+  - **`PMO Capacity`** — capacidad horas/día efectivo-datada (global + override por Employee), resolución
+    única `get_capacity` (sin 8h implícitas), validación valor>0 y unicidad scope+`from_date`.
+  - **Availability** (derivada) — Capacity − festivos (Holiday List) − Leave aprobada (**HRMS opcional**).
+  - **Planned Load** (derivada) — reparte `Task.expected_time` entre asignados activos (`ToDo` Open);
+    horas por asignado con override opcional **`ToDo.pmo_planned_hours`** (1/N/overrides + remanente;
+    inconsistencias reportadas, sin pérdida silenciosa); distribución diaria respetando Holiday List;
+    bridge `Employee.user_id` fail-closed. Retornos estructurados (`issues`/`unscheduled`/`unmapped`).
+  - **Actual** (derivada) — horas de Timesheet con la semántica oficial de `daily_timesheet_summary`
+    (docstatus=1, `hours`, bornes `from_time`/`to_time`). Planned y Actual nunca se suman.
+  - **Reporte `PMO Capacity Planning`** (Script Report) — fila `Employee × periodo` con Capacity,
+    Availability, Planned/Actual (visible + `Comprometido (confidencial)` agregado), Libre,
+    Sobreasignación y utilizaciones; granularidad Day/Week/Month. **Enmascarado P4 server-side**: los
+    proyectos fuera del boundary del observador nunca se enumeran ni se envían al cliente.
+  - Se descartó el enfoque inicial (DocTypes `PMO Resource Allocation` + `PMO Allocation Day`) por
+    duplicar Task + Assignment (ver ADR-0003, revisión 2026-09-03).
+
+### Docs
+- `docs/tecnico/arquitectura.md` (sección Capacity Planning) y `docs/usuario/capacity-planning.md`.
+
 ## [0.2.0] — 2026-09-02
 
 ### Added

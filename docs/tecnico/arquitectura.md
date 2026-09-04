@@ -98,6 +98,52 @@ fixture los re-crea). Reports sustitutos de `pmo` que respeten el boundary: dife
 aditivo intencional (no se bloquea). Timesheet/Expense Claim/Sales Invoice tienen autorización propia y
 no se ocultan por tener Project relacionado.
 
+## Capacity Planning (ADR-0003)
+
+Planificación de capacidad **derivada** de la fuente nativa (`Task` + Assignment), sin sistema paralelo
+de asignaciones. Decisiones en `docs/adr/0003-resource-capacity.md`; uso en `docs/usuario/capacity-planning.md`.
+
+### Cuatro conceptos (3 derivados, 1 persistido)
+- **Capacity** (persistido) — `PMO Capacity`: capacidad horas/día efectivo-datada. `employee` vacío =
+  baseline global; con valor = override. Resolución única `pmo.capacity.get_capacity(employee, date)`
+  (override → global → `None`; **sin 8h implícitas**). Validación valor>0 y unicidad scope+`from_date`
+  (vacío/NULL = scope GLOBAL único).
+- **Availability** (derivado) — `pmo.availability.get_availability(employee, date)`: Capacity − festivos
+  (Holiday List nativa) − Leave aprobada (**HRMS opcional**, `Leave Application` en runtime; medio día →
+  Capacity/2). `Capacity None → None`.
+- **PlannedLoad** (derivado) — `pmo.planned_load`: carga de `Task.expected_time` sobre asignados activos
+  (`ToDo status="Open"`). Horas por asignado (`get_planned_hours_per_assignee`): 1→E, N→E/N, overrides
+  parciales→remanente uniforme, `Σ>E` o todos-override `Σ≠E`→inconsistente. Override opcional
+  `ToDo.pmo_planned_hours`. Distribución diaria con `allocation.build_allocation_days` sobre
+  `exp_start_date..exp_end_date`. Estados de Task incluidos: Open/Working/Pending Review/Overdue
+  (Completed/Cancelled/Template fuera). Bridge `Employee.user_id` fail-closed (ambiguo→excluido).
+- **Actual** (derivado) — `pmo.actual`: horas de `Timesheet Detail` (docstatus=1, `hours`, bornes
+  `from_time`/`to_time`) **con la semántica oficial de `daily_timesheet_summary`**. No se suma con Planned.
+
+**Retornos estructurados** (integridad, sin pérdida silenciosa): las funciones de PlannedLoad devuelven
+`issues` (Tasks inconsistentes), `unscheduled` (horas sin fechas) y `unmapped` (mapeo Employee↔User).
+
+### Reporte `PMO Capacity Planning` (Script Report, P4)
+- Fila `Employee × periodo`: Capacity, Availability, Planned visible/confidencial/total, Actual
+  visible/confidencial/total, Libre, Sobreasignación, Utilización planificada y real, Estado.
+- **Enmascarado P4 server-side** (`ADR-0002`): `Comprometido (confidencial) = total − Σ(visibles)`; los
+  Projects/Tasks fuera del boundary del observador **nunca** se enumeran ni se envían al cliente.
+  Observador: Executive → todos + desglose; PMO Manager → todos cuantitativos + P4; normal → solo su
+  propio Employee + P4. `Estado` solo muestra flags de integridad (sin identidad).
+- **Acceso:** `Report.roles` = `Employee`, `PMO Manager`, `PMO Executive Access`, `System Manager`, +
+  permiso `report` sobre `ref_doctype = PMO Capacity` (a `Employee` **solo `report`, sin `read`** → no
+  expone registros). El row-level real lo impone `execute()`, no el rol.
+- Infra interna (no whitelisted): `get_planned_load_by_project`, `get_actual_by_project`,
+  `permissions.is_project_visible`.
+
+### Objetos nuevos / wiring
+- **DocType** `PMO Capacity`. **Custom Field** `ToDo-pmo_planned_hours` (Float, opcional; fixture).
+- **Report** `PMO Capacity Planning`. **DocPerm** `report` en PMO Capacity para Employee/Executive.
+- Sin cambios de core; se **lee** Task/ToDo/Employee/Holiday List/Timesheet (y Leave si HRMS).
+- **Tests** — `test_{capacity,availability,actual,allocation,planned_load,capacity_report}.py`.
+
 ## Fuera de alcance
 Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext
 ni de DocPerm de read/write; solo hooks, un child DocType propio, roles y `Custom Role` por fixture.
+Capacity Planning: derivado de Task+Assignment (sin captura paralela); snapshots/baselines, captura de
+horas en el diálogo Assign To y KPIs adicionales quedan fuera del MVP.

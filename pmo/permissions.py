@@ -85,6 +85,21 @@ def _is_executive(user):
 	return EXECUTIVE_ROLE in frappe.get_roles(user)
 
 
+def is_project_visible(project, user):
+	"""True si `user` puede ver `project` según el boundary de P0 (owner/member/executive/Administrator).
+
+	Reutilizado por el reporte de Capacity Planning para el split P4 (visible vs confidencial). NO
+	concede acceso: solo evalúa la misma regla que `has_permission_project` para lectura.
+	"""
+	if not project:
+		return True  # carga sin proyecto → no confidencial
+	if user == "Administrator" or _is_global_reader(user):
+		return True
+	if frappe.db.get_value("Project", project, "owner") == user:
+		return True
+	return _is_project_member(project, user)
+
+
 def _is_project_member(project, user):
 	return bool(
 		frappe.db.exists(
