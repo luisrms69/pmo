@@ -151,12 +151,16 @@ class TestCapacityReport(IntegrationTestCase):
 		frappe.db.delete("Timesheet")
 
 	def _run(self, observer, **filters):
+		return self._run_full(observer, **filters)[0]
+
+	def _run_full(self, observer, **filters):
+		"""Devuelve (data, chart, report_summary) con la sesión del observador."""
 		frappe.set_user(observer)
 		try:
-			_cols, data = execute(filters)
+			res = execute(filters)
 		finally:
 			frappe.set_user("Administrator")
-		return data
+		return res[1], res[3], res[4]
 
 	def _p4_scenario(self):
 		subj = _user("cr-subj@example.com")
@@ -257,3 +261,47 @@ class TestCapacityReport(IntegrationTestCase):
 		)
 		row = self._row(data, emp)
 		self.assertEqual(row["planned_total"], 10.0)
+
+	# --- Incremento 1: Total / designation-department / chart / report_summary ----
+
+	def test_total_granularity_one_row_per_employee(self):
+		_subj, emp, _po, _pc = self._p4_scenario()
+		data = self._run(
+			self.exec_user, from_date="2026-01-05", to_date="2026-01-09", employee=emp, granularity="Total"
+		)
+		row = self._row(data, emp)  # exactamente una fila
+		self.assertEqual(row["period"], "Total")
+		self.assertEqual(row["planned_total"], 8.0)  # agregado del rango
+
+	def test_designation_department_columns_present(self):
+		_subj, emp, _po, _pc = self._p4_scenario()
+		row = self._row(
+			self._run(self.exec_user, from_date="2026-01-05", to_date="2026-01-05", employee=emp), emp
+		)
+		self.assertIn("designation", row)  # presentes aunque el Employee no las tenga
+		self.assertIn("department", row)
+
+	def test_total_includes_confidential_in_kpis(self):
+		# Observador normal (subj): ve 4h visibles + 4h confidenciales; el KPI NO debe subestimar.
+		subj, emp, _po, _pc = self._p4_scenario()
+		data, _chart, summary = self._run_full(
+			subj, from_date="2026-01-05", to_date="2026-01-05", granularity="Total"
+		)
+		row = self._row(data, emp)
+		self.assertEqual(row["planned_total"], 8.0)  # Total = visible(4) + confidencial(4)
+		self.assertEqual(row["confidential"], 4.0)  # el confidencial NO se elimina
+		util = next(s for s in summary if s["datatype"] == "Percent")
+		self.assertEqual(util["value"], 100.0)  # 8/8 → utilización sobre Total, no 4/8=50
+
+	def test_report_summary_and_chart_no_identity_leak(self):
+		_subj, _emp, _po, p_conf = self._p4_scenario()
+		_data, chart, summary = self._run_full(self.mgr_user, from_date="2026-01-05", to_date="2026-01-05")
+		self.assertNotIn(p_conf, frappe.as_json(summary))  # KPIs sin identidad confidencial
+		self.assertNotIn(p_conf, frappe.as_json(chart))  # labels/datasets sin identidad de proyecto
+
+	def test_chart_aggregates_by_employee_without_filter(self):
+		# Sin filtro employee → una barra por Employee (labels = employees), no por periodo repetido.
+		subj, emp, _po, _pc = self._p4_scenario()
+		_data, chart, _summary = self._run_full(subj, from_date="2026-01-05", to_date="2026-01-06")
+		self.assertIn(emp, chart["data"]["labels"])
+		self.assertEqual(len(chart["data"]["datasets"]), 2)  # Availability vs Planned total

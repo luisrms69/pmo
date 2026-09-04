@@ -27,8 +27,28 @@ frappe.query_reports["PMO Capacity Planning"] = {
 			fieldname: "granularity",
 			label: __("Granularity"),
 			fieldtype: "Select",
-			options: ["Day", "Week", "Month"],
+			options: ["Day", "Week", "Month", "Total"],
 			default: "Day",
 		},
 	],
+
+	// Solo presentación: colorea sobreasignación/uso alto. No altera datos (P4 intacto).
+	formatter: function (value, row, column, data, default_formatter) {
+		value = default_formatter(value, row, column, data);
+		const f = column.fieldname;
+		if ((f === "util_planned" || f === "util_actual") && data[f] != null) {
+			if (data[f] > 100) {
+				value = `<span style="color:red">${value}</span>`;
+			} else if (data[f] >= 80) {
+				value = `<span style="color:orange">${value}</span>`;
+			}
+		}
+		if (f === "overallocation" && data[f] > 0) {
+			value = `<span style="color:red">${value}</span>`;
+		}
+		if (f === "free" && data[f] < 0) {
+			value = `<span style="color:red">${value}</span>`;
+		}
+		return value;
+	},
 };
