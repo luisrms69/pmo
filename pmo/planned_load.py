@@ -101,8 +101,16 @@ def _compute(employee: str, from_date, to_date) -> dict:
 	if end < start:
 		frappe.throw(frappe._("To Date no puede ser anterior a From Date."))
 
-	# days_by_project: {project|None: {date: hours}}; days (total) se deriva sumando proyectos.
-	out = {"days": {}, "days_by_project": {}, "issues": [], "unscheduled": [], "unmapped": []}
+	# days_by_project: {project|None: {date: hours}}; days_by_task: {task: {date: hours}}; days (total)
+	# se deriva sumando. Todos restringidos al rango [from_date, to_date].
+	out = {
+		"days": {},
+		"days_by_project": {},
+		"days_by_task": {},
+		"issues": [],
+		"unscheduled": [],
+		"unmapped": [],
+	}
 
 	user = frappe.db.get_value("Employee", employee, "user_id")
 	if not user:
@@ -154,10 +162,12 @@ def _compute(employee: str, from_date, to_date) -> dict:
 			out["issues"].append({"task": task.name, "project": task.project, "reasons": ["no_working_days"]})
 			continue
 		per_project = out["days_by_project"].setdefault(task.project, {})
+		per_task = out["days_by_task"].setdefault(task.name, {})
 		for row in rows:
 			if start <= row["date"] <= end:
 				out["days"][row["date"]] = flt(out["days"].get(row["date"], 0) + row["hours"], 2)
 				per_project[row["date"]] = flt(per_project.get(row["date"], 0) + row["hours"], 2)
+				per_task[row["date"]] = flt(per_task.get(row["date"], 0) + row["hours"], 2)
 
 	return out
 
@@ -197,5 +207,22 @@ def get_planned_load_by_project(employee: str, from_date, to_date) -> dict:
 		"days_by_project": computed["days_by_project"],
 		"issues": computed["issues"],
 		"unscheduled": computed["unscheduled"],
+		"unmapped": computed["unmapped"],
+	}
+
+
+def get_planned_load_by_task(employee: str, from_date, to_date) -> dict:
+	"""Horas planificadas del `employee` por Task, restringidas al rango (misma distribución diaria).
+
+	{hours_by_task: {task: horas_en_rango}, unscheduled: [{task, project, hours}], issues, unmapped}.
+	`hours_by_task` solo incluye Tasks con fechas (repartidas por día dentro del rango); las Tasks sin
+	fechas van en `unscheduled` con su total (no ubicables temporalmente). Interna, no whitelisted.
+	"""
+	computed = _compute(employee, from_date, to_date)
+	hours_by_task = {task: flt(sum(days.values()), 2) for task, days in computed["days_by_task"].items()}
+	return {
+		"hours_by_task": hours_by_task,
+		"unscheduled": computed["unscheduled"],
+		"issues": computed["issues"],
 		"unmapped": computed["unmapped"],
 	}

@@ -100,6 +100,18 @@ def is_project_visible(project, user):
 	return _is_project_member(project, user)
 
 
+def is_task_visible(task, user=None):
+	"""True si `user` puede LEER la Task según ADR-0002/P0, de forma CANÓNICA (sin política nueva).
+
+	Delega en `frappe.has_permission("Task","read")`, que combina toda la cadena legítima: capacidad de
+	rol + nuestro `has_permission_task` (owner/member/assignee-ToDo/executive) + DocShare
+	(`false_if_not_shared`) + Administrator. System Manager NO obtiene visibilidad automática (el
+	controlador lo restringe). Se usa para el split P4 del reporte Work by Resource; NO concede acceso.
+	"""
+	user = user or frappe.session.user
+	return bool(frappe.has_permission("Task", ptype="read", doc=task, user=user))
+
+
 def _is_project_member(project, user):
 	return bool(
 		frappe.db.exists(
