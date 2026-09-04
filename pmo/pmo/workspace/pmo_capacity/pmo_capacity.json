@@ -1,0 +1,54 @@
+{
+ "charts": [],
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>PMO Capacity</b></span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Centro de recursos / Capacity Planning\",\"col\":4}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Uso de recursos por proyecto\",\"col\":4}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Trabajo por recurso\",\"col\":4}}]",
+ "creation": "2026-09-04 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "project",
+ "idx": 0,
+ "label": "PMO Capacity",
+ "links": [],
+ "modified": "2026-09-04 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "PMO",
+ "name": "PMO Capacity",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {"role": "Employee"},
+  {"role": "PMO Manager"},
+  {"role": "PMO Executive Access"},
+  {"role": "System Manager"}
+ ],
+ "sequence_id": 20.0,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Centro de recursos / Capacity Planning",
+   "link_to": "PMO Capacity Planning",
+   "type": "Report"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Uso de recursos por proyecto",
+   "link_to": "PMO Resource Usage by Project",
+   "type": "Report"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Trabajo por recurso",
+   "link_to": "PMO Work by Resource",
+   "type": "Report"
+  }
+ ],
+ "title": "PMO Capacity"
+}
