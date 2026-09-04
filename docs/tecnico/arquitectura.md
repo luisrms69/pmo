@@ -136,11 +136,33 @@ de asignaciones. Decisiones en `docs/adr/0003-resource-capacity.md`; uso en `doc
 - Infra interna (no whitelisted): `get_planned_load_by_project`, `get_actual_by_project`,
   `permissions.is_project_visible`.
 
+### Vistas (reportes + Workspace) — estilo MS Project
+Todo sobre el motor derivado (no recalcula); enmascarado P4 dentro de `execute()`:
+- **`PMO Capacity Planning`** (extendido): `Day/Week/Month/Total` (Total = Centro de recursos),
+  `designation`/`department`, `chart` (Availability vs Planned total; sin filtro → agregado por
+  Employee), `report_summary` (Recursos/Sobreasignados/Utilización), `formatter` de sobreasignación
+  (util <80 normal / 80–100 ámbar / >100 rojo; overallocation>0 y free<0 en rojo).
+- **`PMO Resource Usage by Project`**: árbol Employee→Project (`indent`); columna `project` = Data,
+  `project_id` auxiliar **solo en visibles** (link vía `get_form_link`); buckets `Sin proyecto` y
+  `Comprometido (confidencial)` (una fila, sin id). `get_planned_load_by_project`/`get_actual_by_project`.
+- **`PMO Work by Resource`**: tareas por recurso; **doble boundary Task≠Project** (`is_task_visible`
+  canónico vía `frappe.has_permission("Task","read")`, incluye DocShare); `planned_hours` en el rango
+  (`get_planned_load_by_task`); Task no visible → agregado confidencial; **sin Actual por Task**.
+- **Workspace `PMO Capacity`**: solo navegación (3 shortcuts a los reports). **Sin `charts`/`number_cards`**.
+
+**Regla P4 de presentación:** los KPIs/gráficas viven **dentro** del Script Report (per-usuario, sin
+caché). **Prohibido** Dashboard Chart / Number Card (`type=Report`) sobre estos reports: `@cache_source`
+(clave `chart-data:{name}`, sin usuario) filtraría datos enmascarados entre usuarios. `public=1` del
+Workspace = **compartido**, restringido por `roles`; **no** es acceso universal.
+
 ### Objetos nuevos / wiring
 - **DocType** `PMO Capacity`. **Custom Field** `ToDo-pmo_planned_hours` (Float, opcional; fixture).
-- **Report** `PMO Capacity Planning`. **DocPerm** `report` en PMO Capacity para Employee/Executive.
+- **Reports** `PMO Capacity Planning`, `PMO Resource Usage by Project`, `PMO Work by Resource`;
+  **Workspace** `PMO Capacity`. **DocPerm** `report` en PMO Capacity para Employee/Executive.
+- Helpers internos: `get_planned_load_by_project|task`, `get_actual_by_project`,
+  `permissions.is_project_visible`, `permissions.is_task_visible`.
 - Sin cambios de core; se **lee** Task/ToDo/Employee/Holiday List/Timesheet (y Leave si HRMS).
-- **Tests** — `test_{capacity,availability,actual,allocation,planned_load,capacity_report}.py`.
+- **Tests** — `test_{capacity,availability,actual,allocation,planned_load,capacity_report,resource_usage,work_by_resource,capacity_workspace}.py`.
 
 ## Fuera de alcance
 Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext

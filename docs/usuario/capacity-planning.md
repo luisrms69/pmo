@@ -58,6 +58,23 @@ El reporte respeta la privacidad de proyectos (ver *Privacidad de proyectos y ta
 - **Usuario normal** → **solo su propia fila**. Ver su carga total no le da acceso a los proyectos: las
   horas de proyectos que no puede consultar siguen apareciendo como **Comprometido (confidencial)**.
 
+## Vistas disponibles (Workspace **PMO Capacity**)
+
+Desde el Desk, en el workspace **PMO Capacity**, tienes tres vistas (se abren con un clic):
+
+1. **Centro de recursos / Capacity Planning** — por persona: capacidad, disponibilidad, planificado,
+   real, libre, sobreasignación y utilización. Con el filtro **Granularity** eliges **Day / Week /
+   Month / Total** (usa **Total** para el resumen general, o Day/Week/Month para la línea de tiempo).
+   Trae una **gráfica** (Disponibilidad vs Planificado) y **tarjetas** (Recursos, Sobreasignados,
+   Utilización). Las celdas de utilización/sobreasignación se colorean (ámbar 80–100 %, rojo >100 %).
+2. **Uso de recursos por proyecto** — árbol **Persona → Proyecto** con las horas por proyecto.
+3. **Trabajo por recurso** — las **Tareas** de cada persona: proyecto, fechas, esfuerzo, horas
+   planificadas del periodo y estado.
+
+Todas respetan la privacidad (ver arriba): lo que no puedes ver aparece como **Comprometido
+(confidencial)** o **Confidencial**, nunca con su nombre real. El workspace **PMO Capacity** solo es
+visible para los roles autorizados (no es visible para todo el mundo pese a ser un workspace de app).
+
 ## Notas
 
 - Solo cuentan como carga las Tasks **en curso** (Open, Working, Pending Review, Overdue). Las

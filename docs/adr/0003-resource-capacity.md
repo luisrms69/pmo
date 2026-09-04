@@ -147,6 +147,36 @@ permitidos. `PMO Capacity` no referencia Project → permisos estándar (config 
   `read`**). El row-level real (Executive/Manager/normal) lo impone `execute()`, no el rol; **no** se usa
   `pqc`/`has_permission` sobre `PMO Capacity` para habilitar el reporte.
 
+## Vistas de Capacity Planning (presentación) — D7
+
+Vistas estilo MS Project (Resource Center / Uso de recursos / Trabajo por recurso) construidas **sobre
+el motor derivado**, sin recalcular. Todas son **Script Reports** cuyo `execute()` aplica el
+enmascarado P4 por observador:
+
+- **`PMO Capacity Planning`** (extendido): granularidad `Day/Week/Month/Total`, `designation`/
+  `department`, `chart` (barras Availability vs Planned total; sin filtro → agregado por Employee) y
+  `report_summary` (Recursos, Sobreasignados, Utilización). Con `Total` = **Centro de recursos**.
+- **`PMO Resource Usage by Project`**: árbol Employee→Project (`indent`); visibles identificados,
+  no-visibles en una fila `Comprometido (confidencial)`, bucket `Sin proyecto`.
+- **`PMO Work by Resource`**: tareas por recurso con **doble boundary Task≠Project** (Task visible con
+  Project oculto → Project `Confidencial`; Task no visible → agregado confidencial). `planned_hours` =
+  parte del asignado **dentro del rango**.
+- **Workspace `PMO Capacity`**: solo **navegación** (shortcuts a los 3 reports).
+
+**Regla P4 de presentación (permanente):**
+- Los KPIs y gráficas se materializan **dentro del Script Report** (`report_summary`/`chart`),
+  calculados **frescos por usuario** en cada apertura.
+- **Prohibido** usar Dashboard Chart / Number Card (`type=Report`) sobre estos reports enmascarados:
+  `@cache_source` usa la clave `chart-data:{name}` **sin usuario** → serviría los datos enmascarados de
+  un observador a otro (fuga P4). El Workspace **no** contiene `charts`/`number_cards`.
+- Componentes nativos de **`Document Type`** (agregación directa sobre Project/Task) quedan **prohibidos**:
+  bypassean `execute()` y el enmascarado.
+- Visibilidad del Workspace: `public=1` (workspace **compartido** de app, no personal) **restringido por
+  `roles`** (Employee/PMO Manager/PMO Executive Access/System Manager). `public` **no** implica acceso
+  universal.
+- Nuevo helper canónico `is_task_visible` = `frappe.has_permission("Task","read")` (capacidad +
+  `has_permission_task` + **DocShare** + Administrator; System Manager sin alcance por rol).
+
 ## Estrategia de pruebas (datos ficticios)
 
 - Capacidad: override 8h→4h a mitad de año → periodos previos conservan 8h; global aplica a quien no tiene override.
