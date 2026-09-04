@@ -190,7 +190,7 @@ def get_planned_load_by_project(employee: str, from_date, to_date) -> dict:
 
 	{days_by_project: {project|None: {date: hours}}, issues, unscheduled, unmapped}. Interna, no
 	whitelisted. El reporte clasifica cada Project en visible/confidencial según el observador y calcula
-	el bucket confidencial como total − Σ(visibles), sin enumerar proyectos confidenciales.
+	el bucket confidencial como total - Sigma(visibles), sin enumerar proyectos confidenciales.
 	"""
 	computed = _compute(employee, from_date, to_date)
 	return {
