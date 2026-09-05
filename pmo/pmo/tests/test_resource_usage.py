@@ -11,8 +11,13 @@ Total Employee = Σ visibles + Sin proyecto + Comprometido (confidencial) para P
 
 import frappe
 from frappe.tests import IntegrationTestCase
+from frappe.utils import flt
 
-from pmo.pmo.report.pmo_resource_usage_by_project.pmo_resource_usage_by_project import execute
+from pmo.pmo.report.pmo_resource_usage_by_project.pmo_resource_usage_by_project import (
+	CONFIDENTIAL_LABEL,
+	NO_PROJECT_LABEL,
+	execute,
+)
 
 HL = "PMO-HL-TEST"
 
@@ -243,3 +248,114 @@ class TestResourceUsage(IntegrationTestCase):
 		parents = [r["employee"] for r in data if r.get("employee")]
 		self.assertIn(emp, parents)
 		self.assertNotIn(other_emp, parents)
+
+
+class TestResourceUsageTemporal(IntegrationTestCase):
+	"""ADR-0003 vistas / ADR-0002 P4 -- Desglose TEMPORAL (Proyecto x periodo, solo Planned) del reporte
+	PMO Resource Usage by Project. Verifica Day/Week/Month, buckets P4 (visible con project_id,
+	Sin proyecto, Comprometido (confidencial) consolidado sin identidad), Total = suma de periodos, y
+	total del empleado consistente con el Planned del rango.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		_hl()
+		_capacity_global(8.0)
+		cls.mgr_user = _user("rut-mgr@example.com", ["PMO Manager"])
+		cls.subj = _user("rut-subj@example.com")
+		cls.emp = _employee("RUT Subject", cls.subj)
+		cls.p_open = _project("RUT-P-OPEN", owner=cls.subj)  # visible (owner)
+		cls.p_conf = _project("RUT-P-CONF", owner="Administrator")  # confidencial
+		# rango Jan 12-15 2026 (lun-jue, sin festivo en la HL) -> 4 dias habiles
+		_assign(_task("RUT-T-OPEN", cls.p_open, 16, "2026-01-12", "2026-01-15"), cls.subj)
+		_assign(_task("RUT-T-CONF", cls.p_conf, 8, "2026-01-12", "2026-01-15"), cls.subj)
+		_assign(_task("RUT-T-NOPROJ", None, 4, "2026-01-12", "2026-01-15"), cls.subj)
+
+	def _run(self, observer, **filters):
+		frappe.set_user(observer)
+		try:
+			return execute(filters)
+		finally:
+			frappe.set_user("Administrator")
+
+	def _periods(self, cols):
+		return [c["fieldname"] for c in cols if c["fieldname"].startswith("period_")]
+
+	def _child(self, data, label):
+		rows = [r for r in data if r.get("indent") == 1 and r.get("project") == label]
+		return rows[0] if rows else None
+
+	def _parent(self, data):
+		return next(r for r in data if r.get("indent") == 0)
+
+	# --- Day -----------------------------------------------------------------
+
+	def test_day_visible_project_has_id_and_daily_split(self):
+		cols, data = self._run(self.subj, from_date="2026-01-12", to_date="2026-01-15", granularity="Day")
+		pf = self._periods(cols)
+		self.assertEqual(len(pf), 4)
+		row = self._child(data, "RUT-P-OPEN")
+		self.assertIsNotNone(row)
+		self.assertEqual(row["project_id"], self.p_open)  # visible -> id para el link
+		self.assertEqual(row["total"], 16.0)
+		self.assertEqual({row[f] for f in pf}, {4.0})  # 16h / 4 dias habiles
+
+	def test_day_no_project_bucket(self):
+		_cols, data = self._run(self.subj, from_date="2026-01-12", to_date="2026-01-15", granularity="Day")
+		row = self._child(data, NO_PROJECT_LABEL)
+		self.assertIsNotNone(row)
+		self.assertIsNone(row.get("project_id"))
+		self.assertEqual(row["total"], 4.0)
+
+	def test_day_confidential_consolidated_without_identity(self):
+		_cols, data = self._run(self.subj, from_date="2026-01-12", to_date="2026-01-15", granularity="Day")
+		row = self._child(data, CONFIDENTIAL_LABEL)
+		self.assertIsNotNone(row)
+		self.assertIsNone(row.get("project_id"))
+		self.assertEqual(row["total"], 8.0)
+		blob = frappe.as_json(data)
+		self.assertNotIn(self.p_conf, blob)  # id oculto nunca viaja
+		self.assertNotIn("RUT-T-CONF", blob)  # tarea oculta nunca viaja
+
+	def test_row_total_equals_sum_of_periods(self):
+		cols, data = self._run(self.subj, from_date="2026-01-12", to_date="2026-01-15", granularity="Day")
+		pf = self._periods(cols)
+		for r in data:
+			self.assertEqual(r["total"], flt(sum(r[f] for f in pf), 2), f"total != suma periodos en {r}")
+
+	def test_employee_total_consistent_with_planned_range(self):
+		_cols, data = self._run(self.subj, from_date="2026-01-12", to_date="2026-01-15", granularity="Day")
+		parent = self._parent(data)
+		# 16 (visible) + 8 (confidencial) + 4 (sin proyecto) = 28, contado sin importar visibilidad
+		self.assertEqual(parent["total"], 28.0)
+		children_total = flt(sum(r["total"] for r in data if r.get("indent") == 1), 2)
+		self.assertEqual(parent["total"], children_total)
+
+	# --- Week / Month --------------------------------------------------------
+
+	def test_week_single_bucket(self):
+		cols, data = self._run(self.subj, from_date="2026-01-12", to_date="2026-01-15", granularity="Week")
+		self.assertEqual(len(self._periods(cols)), 1)  # lun-jue caen en una sola semana
+		self.assertEqual(self._child(data, "RUT-P-OPEN")["total"], 16.0)
+		self.assertEqual(self._parent(data)["total"], 28.0)
+
+	def test_month_single_bucket(self):
+		cols, data = self._run(self.subj, from_date="2026-01-12", to_date="2026-01-15", granularity="Month")
+		self.assertEqual(len(self._periods(cols)), 1)  # todo enero
+		self.assertEqual(self._parent(data)["total"], 28.0)
+
+	# --- P4 por observador ---------------------------------------------------
+
+	def test_manager_temporal_no_identity_leak(self):
+		_cols, data = self._run(
+			self.mgr_user, from_date="2026-01-12", to_date="2026-01-15", granularity="Day"
+		)
+		blob = frappe.as_json(data)
+		self.assertNotIn(self.p_open, blob)  # manager no es owner/member -> nada identificado
+		self.assertNotIn(self.p_conf, blob)
+		self.assertNotIn("RUT-T-OPEN", blob)
+		conf = self._child(data, CONFIDENTIAL_LABEL)
+		self.assertIsNotNone(conf)
+		self.assertEqual(conf["total"], 24.0)  # 16 + 8 consolidado
+		self.assertEqual(self._parent(data)["total"], 28.0)  # cuantitativo intacto

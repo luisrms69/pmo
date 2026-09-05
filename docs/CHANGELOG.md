@@ -1,5 +1,36 @@
 # Changelog — pmo
 
+## [0.5.0] — 2026-09-05
+
+### Added
+- **PMO Capacity Page** (`capacity_planning`, arquitectura D) — pantalla Desk dedicada, UX principal de
+  Capacity Planning (estilo MS Project). Consume los Script Reports P4-safe vía
+  `frappe.desk.query_report.run` (P4 per-usuario) + endpoint `pmo.capacity_page.get_resources`; el cliente
+  no recalcula ni reconstruye P4. Gráficas con `frappe.Chart` (sin infraestructura frontend nueva).
+  - **Selector de Empleados** (buscador, multiselección, Todos/Limpiar, selección persistente entre vistas).
+  - Controles **Desde/Hasta** + escala **Día/Semana/Mes** (unidad fija Horas), visibles en el contenido.
+  - **Cinco vistas:** **Mapa de calor de capacidad** (util. planificada por empleado×periodo),
+    **Uso de recursos** (detalle Capacity/Availability/Planned/Free/Utilización), **Uso de recursos por
+    proyecto** (un empleado; matriz Proyecto×periodo), **Disponibilidad restante** (Free; Availability=0 →
+    estado propio), **Trabajo por recurso** (un empleado; jerarquía Proyecto→Tarea con fechas/estado).
+- **`PMO Resource Usage by Project` — ampliación temporal P4-safe**: con `granularity = Day/Week/Month`,
+  `execute()` expone Planned por proyecto y periodo (matriz Proyecto×periodo, solo Planned) manteniendo el
+  mismo enmascarado P4 server-side; la ruta previa **sin `granularity` permanece compatible** (totales).
+- Tests: `test_capacity_page.py` (incluye el **camino real** de la Page `query_report.run` como Employee
+  normal) y `TestResourceUsageTemporal` (Day/Week/Month, P4, totales) en `test_resource_usage.py`.
+
+### Changed
+- **ADR-0003 aceptado** (`Propuesto` → `Aceptado`): D6 (matiz `Actual`), D7 (modo temporal del report),
+  **D8** (arquitectura de presentación Page + Script Reports; spike de Insights descartado para datos P4
+  por-observador: caché de query no aislada por observador y sin embedding inline con sesión Desk) y
+  **D9** (`Actual` y vista futura).
+
+### Reservado (pendiente futuro, NO implementado)
+- Las cinco vistas actuales **no muestran `Actual`** (el backend lo sigue derivando y enmascarando con P4).
+  La comparación **Planned vs Actual** se reserva a una futura vista separada **`Planificado vs Real`**
+  (*Cumplimiento de planificación*); su fórmula de cumplimiento se definirá al implementarla. No
+  modificará motor/Planned/Actual/P4 ni las vistas actuales.
+
 ## [0.4.0] — 2026-09-04
 
 ### Added
