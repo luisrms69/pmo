@@ -205,6 +205,26 @@ Decisión de diseño tomada en el cierre de esta etapa (2026-09-05), **no implem
 - Sin cambios de core; se **lee** Task/ToDo/Employee/Holiday List/Timesheet (y Leave si HRMS).
 - **Tests** — `test_{capacity,availability,actual,allocation,planned_load,capacity_report,resource_usage,work_by_resource,capacity_workspace,capacity_page}.py` (incluye el camino real de la Page `query_report.run` como Employee normal y el modo temporal de `resource_usage`). **Suite: 131/131.**
 
+## Schedule Governance — intervención sobre Task (ADR-0004 D3)
+
+Mixin `pmo.overrides.PMOTaskScheduleMixin` registrado por `extend_doctype_class = {"Task": ...}` en
+`hooks.py`. Redefine **solo** dos validaciones de fecha nativas, dejando `validate_dates()` y el resto
+del controlador `Task` intactos (se compone por MRO; `validate_dates()` invoca los submétodos vía
+`self.<m>()`, por lo que hereda cualquier validación nueva de upstream):
+
+- `validate_parent_expected_end_date` → **no bloquea**: las fechas de un summary/`is_group` son un
+  envelope **no vinculante**; una hija puede extenderse más allá del padre (ADR-0004 D1).
+- `validate_parent_project_dates` → **no bloquea**: `Project.expected_*` es **forecast**, no límite duro;
+  en particular el **Actual** (`act_start_date`/`act_end_date` desde Timesheet) **nunca** se bloquea por el
+  fin planificado del Project (ADR-0004 D2/D3). Esto desbloquea el flujo real de Timesheet
+  (`timesheet.py:182` → `Task.save()`), que hoy lanzaría `InvalidDates`.
+
+**Upgrade-safe:** no se copia el cuerpo nativo (que difiere entre 16.32.1 y upstream `7b0df4b`); se
+sustituye por la semántica PMO → independiente de versión. **Guard de drift** en
+`test_schedule_governance` (falla si `Task` deja de definir esos métodos). La validación nativa hace
+`return if frappe.in_test`, por lo que los tests fuerzan `frappe.in_test = False` (context manager con
+restauración) para ejercer la ruta de producción. No se toca Capacity/Planned Load.
+
 ## Fuera de alcance
 Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext
 ni de DocPerm de read/write; solo hooks, un child DocType propio, roles y `Custom Role` por fixture.

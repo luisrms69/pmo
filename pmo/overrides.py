@@ -35,3 +35,33 @@ def create_duplicate_project(prev_doc: str, project_name: str):
 	)
 
 	return _native(prev_doc, project_name)
+
+
+class PMOTaskScheduleMixin:
+	"""ADR-0004 (D1/D2/D3) — Schedule Governance sobre `Task` via `extend_doctype_class`.
+
+	Redefine EXCLUSIVAMENTE las dos validaciones de fecha cuya semantica cambiamos y deja `validate_dates()`
+	y todo lo demas nativo. Se compone por MRO (el mixin precede a `Task`), y como `Task.validate_dates()`
+	invoca estos metodos via `self.<m>()` (task.py:98-99), nuestras versiones ganan sin tocar
+	`validate_dates()` (que sigue heredando cualquier validacion nueva de upstream).
+
+	Semantica PMO:
+	- `validate_parent_expected_end_date`: las fechas de un summary/parent (`is_group`) son un envelope NO
+	  vinculante; una hija PUEDE extenderse mas alla del padre. No se bloquea.
+	- `validate_parent_project_dates`: `Project.expected_*` es forecast, no limite duro; en particular el
+	  Actual (`act_start_date`/`act_end_date`, derivados de Timesheet) NUNCA se bloquea por el fin
+	  planificado del Project.
+
+	No copiamos el cuerpo nativo (que ademas difiere entre 16.32.1 y upstream `7b0df4b`): lo sustituimos por
+	nuestra semantica -> independiente de version. La coherencia inicio<=fin (`validate_from_to_dates`) y el
+	resto de validaciones nativas permanecen intactas. Un guard de drift en `test_schedule_governance`
+	falla si `Task` deja de definir estos metodos (habria que re-evaluar).
+	"""
+
+	def validate_parent_expected_end_date(self):
+		# PMO: summary/parent = envelope no vinculante (ADR-0004 D1). No bloquear.
+		return
+
+	def validate_parent_project_dates(self):
+		# PMO: Project.expected_* = forecast; el Actual nunca se bloquea (ADR-0004 D2/D3). No bloquear.
+		return

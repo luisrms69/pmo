@@ -213,10 +213,13 @@ fixtures = [
 # Extend DocType Class
 # ------------------------------
 #
-# Specify custom mixins to extend the standard doctype controller.
-# extend_doctype_class = {
-# 	"Task": "pmo.custom.task.CustomTaskMixin"
-# }
+# ADR-0004 (D3): Schedule Governance sobre Task. Mixin que redefine SOLO las dos validaciones de fecha
+# cuya semantica cambiamos (summary/parent = envelope no vinculante; Project.expected_* = forecast; el
+# Actual nunca se bloquea), dejando `validate_dates()` y el resto nativo. Upgrade-safe (no copia el cuerpo
+# upstream; guard de drift en test_schedule_governance).
+extend_doctype_class = {
+	"Task": "pmo.overrides.PMOTaskScheduleMixin",
+}
 
 # Overriding Methods
 # ------------------------------

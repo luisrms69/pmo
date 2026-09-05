@@ -2,8 +2,9 @@
 
 **Fecha:** 2026-09-05
 **Rama activa:** `feat/schedule-baselines` (base `version-16` @ v0.4.0).
-**Tarea actual:** **v0.5.0 — Schedule Governance & Baselines.** Bloque 0 (ADR-0004) en curso; luego
-Bloque 1 (mixin Task) y Bloque 2 (DocType Baseline). Un solo PR a `version-16` al cerrar el bloque.
+**Tarea actual:** **v0.5.0 — Schedule Governance & Baselines.** Bloque 0 (ADR-0004) ✅ y Bloque 1 (mixin
+Task) ✅ commiteados; **siguiente Bloque 2** (DocType `PMO Project Baseline`). Un solo PR a `version-16`
+al cerrar la rama. Sin push todavía.
 
 ---
 
@@ -17,10 +18,12 @@ ERPNext nativo, sin fork. Referencia viva: `docs/adr/0004-schedule-governance-an
 ## Plan por bloques (un PR único a `version-16`)
 
 - **Bloque 0 — ADR-0004 (docs).** Escribir e incorporar ADR-0004 (Proposed). *(commit en curso)*
-- **Bloque 1 — Intervención Task (D1/D2/D3).** Mixin `PMOTaskScheduleMixin` vía `extend_doctype_class`
-  que redefine **solo** `validate_parent_expected_end_date` y `validate_parent_project_dates` (no bloquear;
-  `Project.expected_*`/`parent.exp_end_date` = forecast/envelope; Actual nunca se bloquea). `hooks.py` +
-  tests (semántica, flujo Timesheet forzando `frappe.flags.in_test=False`, **guard de drift**).
+- **Bloque 1 — Intervención Task (D1/D2/D3) ✅ HECHO.** Mixin **`pmo.overrides.PMOTaskScheduleMixin`**
+  (nota: se usó el módulo `pmo/overrides.py` existente, no `pmo.overrides.task` — `overrides` es módulo, no
+  paquete; sin cambio de decisión) vía `extend_doctype_class` en `hooks.py`; redefine **solo**
+  `validate_parent_expected_end_date` y `validate_parent_project_dates` (no bloquear). Tests
+  `test_schedule_governance.py` (6): guard de drift, ruta nativa vs mixin forzando `frappe.in_test=False`
+  (atributo de módulo, no `flags`), y path `task.save()` que usa Timesheet. **Suite 137/137.**
 - **Bloque 2 — `PMO Project Baseline` (D4–D7).** DocType submittable; lineage/invariantes; `has_permission`
   que reúsa `is_project_visible` (P4); snapshot canónico determinista en `before_submit`; preflight
   ligero; tests. Docs usuario/técnico.
