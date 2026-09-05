@@ -43,9 +43,11 @@ selección persistente). Gráficas con `frappe.Chart`.
   con un Employee vinculado (conceder DESPUÉS de vincular).
 
 ## Pendiente
-1. **PR único** `feat/capacity-views` → `version-16` (base protegida). Versión objetivo **0.4.0**
-   (MINOR desde `v0.3.0`; `0.4.0` es el primer y único release de este bloque — no hubo `v0.4.0` previo).
-2. Tras merge: `/ship release` (tag + GitHub Release `v0.4.0`).
+1. **PR #4** `feat/capacity-views` → `version-16` **ya abierto** (https://github.com/luisrms69/pmo/pull/4),
+   objetivo **0.4.0**. Server y Vulnerable Dependency Check en verde; **Frappe Linter** falló por
+   semgrep (type hints faltantes en `get_resources`) → corregido en la rama; esperar CI verde para merge.
+2. Merge (Squash) lo hace el usuario en GitHub cuando el CI quede verde.
+3. Tras merge: `/ship release` (tag + GitHub Release `v0.4.0`).
 
 **Nota de versionado (gate estricto):** la rama había hecho doble bump (0.3.0→0.4.0→0.5.0) sin mergear;
 como todo entra en **un** PR de alcance MINOR desde `v0.3.0`, el release correcto es **0.4.0** (se

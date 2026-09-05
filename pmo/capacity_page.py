@@ -16,7 +16,7 @@ from pmo.pmo.report.pmo_capacity_planning.pmo_capacity_planning import _scope_em
 
 
 @frappe.whitelist()
-def get_resources(from_date, to_date):
+def get_resources(from_date: str, to_date: str) -> list[dict]:
 	"""Resource Center: Employees en el alcance del observador (mismo scope que los reportes).
 
 	Devuelve solo identidad organizacional del recurso (nombre, email, departamento, cargo, sucursal).
