@@ -1,6 +1,6 @@
 # Changelog — pmo
 
-## [0.5.0] — 2026-09-05
+## [0.4.0] — 2026-09-05
 
 ### Added
 - **PMO Capacity Page** (`capacity_planning`, arquitectura D) — pantalla Desk dedicada, UX principal de
@@ -13,11 +13,27 @@
     **Uso de recursos** (detalle Capacity/Availability/Planned/Free/Utilización), **Uso de recursos por
     proyecto** (un empleado; matriz Proyecto×periodo), **Disponibilidad restante** (Free; Availability=0 →
     estado propio), **Trabajo por recurso** (un empleado; jerarquía Proyecto→Tarea con fechas/estado).
-- **`PMO Resource Usage by Project` — ampliación temporal P4-safe**: con `granularity = Day/Week/Month`,
-  `execute()` expone Planned por proyecto y periodo (matriz Proyecto×periodo, solo Planned) manteniendo el
-  mismo enmascarado P4 server-side; la ruta previa **sin `granularity` permanece compatible** (totales).
+- **Vistas de Capacity Planning — Script Reports** (base P4 que consume la Page) sobre el motor v0.3.0,
+  sin recalcular; enmascarado P4 dentro de cada `execute()`:
+  - **`PMO Capacity Planning`** (extendido): granularidad **Total** (Centro de recursos), columnas
+    `designation`/`department`, **gráfica** (Availability vs Planned total; agregada por Employee sin
+    filtro), **`report_summary`** (Recursos, Sobreasignados, Utilización) y **formatter** de
+    sobreasignación (util <80 normal / 80–100 ámbar / >100 rojo; overallocation>0 y free<0 en rojo).
+  - **`PMO Resource Usage by Project`**: árbol Employee→Project; visibles identificados, no-visibles en
+    una fila `Comprometido (confidencial)`, bucket `Sin proyecto`; `Total = visibles + Sin proyecto +
+    confidencial`. **Ampliación temporal P4-safe:** con `granularity = Day/Week/Month`, `execute()`
+    expone Planned por proyecto y periodo (matriz Proyecto×periodo, solo Planned); la ruta previa **sin
+    `granularity` permanece compatible** (totales).
+  - **`PMO Work by Resource`**: tareas por recurso con **doble boundary Task≠Project**
+    (`is_task_visible` canónico, incluye DocShare); `planned_hours` del periodo; Task no visible →
+    agregado confidencial; sin Actual por Task.
+  - **Workspace `PMO Capacity`** (navegación shortcuts-only): 3 shortcuts a los reports; sin
+    `charts`/`number_cards`.
+  - Helpers internos `get_planned_load_by_task`, `get_actual_by_project`, `permissions.is_task_visible`,
+    `pmo.capacity_page.get_resources`.
 - Tests: `test_capacity_page.py` (incluye el **camino real** de la Page `query_report.run` como Employee
   normal) y `TestResourceUsageTemporal` (Day/Week/Month, P4, totales) en `test_resource_usage.py`.
+  Suite **131/131 OK**.
 
 ### Changed
 - **ADR-0003 aceptado** (`Propuesto` → `Aceptado`): D6 (matiz `Actual`), D7 (modo temporal del report),
@@ -25,39 +41,21 @@
   por-observador: caché de query no aislada por observador y sin embedding inline con sesión Desk) y
   **D9** (`Actual` y vista futura).
 
+### Security
+- **Regla P4 de presentación:** los KPIs/gráficas se materializan **dentro** del Script Report o
+  per-usuario en la Page (sin caché compartida). Prohibido Dashboard Chart / Number Card `type=Report`
+  sobre reports enmascarados (`@cache_source` con clave `chart-data:{name}` sin usuario → fuga entre
+  usuarios); **Insights** tampoco (su caché de query es observer-agnóstica). Workspace `public=1` =
+  **compartido**, restringido por `roles` (no acceso universal).
+
 ### Reservado (pendiente futuro, NO implementado)
 - Las cinco vistas actuales **no muestran `Actual`** (el backend lo sigue derivando y enmascarando con P4).
   La comparación **Planned vs Actual** se reserva a una futura vista separada **`Planificado vs Real`**
   (*Cumplimiento de planificación*); su fórmula de cumplimiento se definirá al implementarla. No
   modificará motor/Planned/Actual/P4 ni las vistas actuales.
 
-## [0.4.0] — 2026-09-04
-
-### Added
-- **Vistas de Capacity Planning (estilo MS Project)** sobre el motor v0.3.0, sin recalcular; enmascarado
-  P4 dentro de cada Script Report.
-  - **`PMO Capacity Planning`** (extendido): granularidad **Total** (Centro de recursos), columnas
-    `designation`/`department`, **gráfica** (Availability vs Planned total; agregada por Employee sin
-    filtro), **`report_summary`** (Recursos, Sobreasignados, Utilización) y **formatter** de
-    sobreasignación (util <80 normal / 80–100 ámbar / >100 rojo; overallocation>0 y free<0 en rojo).
-  - **`PMO Resource Usage by Project`**: árbol Employee→Project; visibles identificados, no-visibles en
-    una fila `Comprometido (confidencial)`, bucket `Sin proyecto`; `Total = visibles + Sin proyecto +
-    confidencial`.
-  - **`PMO Work by Resource`**: tareas por recurso con **doble boundary Task≠Project**
-    (`is_task_visible` canónico, incluye DocShare); `planned_hours` del periodo; Task no visible →
-    agregado confidencial; sin Actual por Task.
-  - **Workspace `PMO Capacity`** (navegación shortcuts-only): 3 shortcuts a los reports; sin
-    `charts`/`number_cards`.
-  - Helpers internos `get_planned_load_by_task`, `get_actual_by_project`, `permissions.is_task_visible`.
-
-### Security
-- **Regla P4 de presentación:** los KPIs/gráficas se materializan **dentro** del Script Report
-  (per-usuario, sin caché). Prohibido Dashboard Chart / Number Card `type=Report` sobre reports
-  enmascarados (`@cache_source` con clave `chart-data:{name}` sin usuario → fuga entre usuarios).
-  Workspace `public=1` = **compartido**, restringido por `roles` (no acceso universal).
-
 ### Docs
-- ADR-0003 (sección Vistas + reglas P4 de presentación), `docs/tecnico/arquitectura.md`,
+- ADR-0003 (Vistas + reglas P4 de presentación + D8/D9), `docs/tecnico/arquitectura.md`,
   `docs/usuario/capacity-planning.md`.
 
 ## [0.3.0] — 2026-09-03

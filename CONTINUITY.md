@@ -2,8 +2,9 @@
 
 **Fecha:** 2026-09-05
 **Rama activa:** `feat/capacity-views` (base `version-16`).
-**Tarea actual:** **Cierre técnico de `0.5.0`** — `PMO Capacity Page` (arquitectura D) + 5 vistas.
-Commit de cierre creado (`/ship commit`); **pendiente `/ship push` + PR único** a `version-16`.
+**Tarea actual:** **Cierre de `0.4.0`** — `PMO Capacity Page` (arquitectura D) + 5 vistas. Bloque
+completo (vistas + Page) en **un único PR** hacia `version-16`. Commit de cierre + commit correctivo de
+versión (0.5.0 → **0.4.0**, gate estricto: base `version-16=0.3.0` + un MINOR); **pendiente PR único**.
 
 ---
 
@@ -16,7 +17,7 @@ consume los Script Reports P4-safe vía `frappe.desk.query_report.run` (P4 en `e
 
 ---
 
-## Estado de la etapa (0.5.0)
+## Estado de la etapa (0.4.0)
 
 Cinco vistas **funcionales y probadas** en la Page:
 1. **Mapa de calor de capacidad** — Empleado×periodo, `util_planned`, sticky, tooltip.
@@ -42,9 +43,13 @@ selección persistente). Gráficas con `frappe.Chart`.
   con un Employee vinculado (conceder DESPUÉS de vincular).
 
 ## Pendiente
-1. **`/ship push`** de `feat/capacity-views` (autorización separada).
-2. **PR único** a `version-16` (base protegida). Versión objetivo **0.5.0** (MINOR) ya en la rama.
-3. Tras merge: `/ship release` (tag + GitHub Release `v0.5.0`).
+1. **PR único** `feat/capacity-views` → `version-16` (base protegida). Versión objetivo **0.4.0**
+   (MINOR desde `v0.3.0`; `0.4.0` es el primer y único release de este bloque — no hubo `v0.4.0` previo).
+2. Tras merge: `/ship release` (tag + GitHub Release `v0.4.0`).
+
+**Nota de versionado (gate estricto):** la rama había hecho doble bump (0.3.0→0.4.0→0.5.0) sin mergear;
+como todo entra en **un** PR de alcance MINOR desde `v0.3.0`, el release correcto es **0.4.0** (se
+normalizó; `0.5.0` era artificial). `v0.4.0` nunca existió como tag/release previo.
 
 ## Decisiones vigentes
 - **`Actual` fuera de las 5 vistas** (backend lo sigue derivando y enmascarando con P4). Reservado a futura
