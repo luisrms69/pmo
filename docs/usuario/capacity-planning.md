@@ -58,7 +58,48 @@ El reporte respeta la privacidad de proyectos (ver *Privacidad de proyectos y ta
 - **Usuario normal** → **solo su propia fila**. Ver su carga total no le da acceso a los proyectos: las
   horas de proyectos que no puede consultar siguen apareciendo como **Comprometido (confidencial)**.
 
+## Vistas disponibles (Workspace **PMO Capacity**)
+
+Desde el Desk, en el workspace **PMO Capacity**, tienes tres vistas (se abren con un clic):
+
+1. **Centro de recursos / Capacity Planning** — por persona: capacidad, disponibilidad, planificado,
+   real, libre, sobreasignación y utilización. Con el filtro **Granularity** eliges **Day / Week /
+   Month / Total** (usa **Total** para el resumen general, o Day/Week/Month para la línea de tiempo).
+   Trae una **gráfica** (Disponibilidad vs Planificado) y **tarjetas** (Recursos, Sobreasignados,
+   Utilización). Las celdas de utilización/sobreasignación se colorean (ámbar 80–100 %, rojo >100 %).
+2. **Uso de recursos por proyecto** — árbol **Persona → Proyecto** con las horas por proyecto.
+3. **Trabajo por recurso** — las **Tareas** de cada persona: proyecto, fechas, esfuerzo, horas
+   planificadas del periodo y estado.
+
+Todas respetan la privacidad (ver arriba): lo que no puedes ver aparece como **Comprometido
+(confidencial)** o **Confidencial**, nunca con su nombre real. El workspace **PMO Capacity** solo es
+visible para los roles autorizados (no es visible para todo el mundo pese a ser un workspace de app).
+
+## Página Capacity Planning (pantalla dedicada)
+
+Además de los reportes del workspace, hay una **página** dedicada (Desk → `capacity_planning`) con una
+experiencia tipo MS Project. Arriba eliges **Desde / Hasta** y la escala **Día / Semana / Mes** (la
+unidad siempre es **Horas**); a la izquierda, el panel **Empleados** (buscador, selección múltiple,
+Todos/Limpiar) mantiene tu selección al cambiar de vista. Cinco vistas:
+
+1. **Mapa de calor de capacidad** — colores por % de utilización planificada (verde <80, ámbar 80–100,
+   rojo >100); pasa el cursor por una celda para ver Capacity/Availability/Planned/Free/Utilización.
+2. **Uso de recursos** — el detalle por empleado y periodo (Capacity, Availability, Planned, Free,
+   Utilización planificada).
+3. **Uso de recursos por proyecto** — para **un empleado**: en qué proyectos tiene horas planificadas en
+   cada periodo (los proyectos que puedes abrir son enlaces).
+4. **Disponibilidad restante** — horas **libres** por empleado y periodo. `—` significa **sin
+   disponibilidad** (festivo/ausencia): no es lo mismo que 0 horas libres.
+5. **Trabajo por recurso** — para **un empleado**: sus tareas agrupadas por proyecto, con fechas (o
+   *Sin fechas*), horas planificadas y estado.
+
+Toda la privacidad se mantiene igual que en los reportes: nunca verás el nombre de un proyecto o tarea
+que no te corresponde. Estas vistas muestran **solo lo planificado** (no el tiempo real).
+
 ## Notas
+
+- **`Actual` (tiempo real) no se muestra en estas vistas.** Se reserva para una vista futura de análisis
+  histórico (*Planificado vs Real* / *Cumplimiento de planificación*), aún no disponible.
 
 - Solo cuentan como carga las Tasks **en curso** (Open, Working, Pending Review, Overdue). Las
   **Completadas** ya no son plan pendiente (su tiempo real se ve en *Actual*).

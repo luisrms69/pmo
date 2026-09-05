@@ -1,59 +1,71 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-09-03
-**Rama activa:** `feat/capacity-planning` (base `version-16`) — bloque **Capacity Planning (ADR-0003)**.
-**Tarea actual:** **Cierre del bloque** Capacity Planning: documentación hecha, bump 0.3.0; pendiente
-migrar `pmo-v16.dev`, correr suite y abrir el **único PR** del bloque.
+**Fecha:** 2026-09-05
+**Rama activa:** `feat/capacity-views` (base `version-16`).
+**Tarea actual:** **Cierre de `0.4.0`** — `PMO Capacity Page` (arquitectura D) + 5 vistas. Bloque
+completo (vistas + Page) en **un único PR** hacia `version-16`. Commit de cierre + commit correctivo de
+versión (0.5.0 → **0.4.0**, gate estricto: base `version-16=0.3.0` + un MINOR); **pendiente PR único**.
 
 ---
 
 ## Recuperación rápida
 
-Capacity Planning por incrementos en una sola rama; **un solo PR** al cerrar el bloque (como P0).
-El bloque quedó **rediseñado**: derivado de Task + Assignment, sin DocType de asignación paralelo.
+Capacity Planning se presenta con una **Frappe Page propia** (`capacity_planning`, arquitectura D) que
+consume los Script Reports P4-safe vía `frappe.desk.query_report.run` (P4 en `execute()`, per-usuario) +
+`pmo.capacity_page.get_resources`. El cliente **no** recalcula ni reconstruye P4. **Insights descartado**
+(caché de query no aislada por observador → fuga P4; sin embedding inline en v3.13.1).
 
 ---
 
-## Estado del bloque (commits locales, sin push)
+## Estado de la etapa (0.4.0)
 
-- `168fee9` **PMO Capacity** (persistido, efectivo-datado).
-- `ba16605` PMO Resource Allocation — **eliminado** en `342aacb` (era captura duplicada de Task+Assignment).
-- `f9388a2` **Availability** (derivada).
-- `342aacb` **refactor**: elimina el DocType paralelo; Capacity Planning = derivación de Task + Assignment.
-- `55b95cd` **Actual** (Timesheet oficial).
-- `e2b8900` **Planned Load** (Task + Assignment; `ToDo.pmo_planned_hours`; retornos estructurados).
-- `54e2254` **Reporte PMO Capacity Planning** (P4 server-side + KPIs).
-- *(pendiente de commit)* **Cierre documental**: `docs/tecnico/arquitectura.md`, `docs/usuario/capacity-planning.md`,
-  ADR-0003 (impacto/acceso), `docs/CHANGELOG.md` [0.3.0], `pmo/__init__.py` → **0.3.0**, este CONTINUITY.
+Cinco vistas **funcionales y probadas** en la Page:
+1. **Mapa de calor de capacidad** — Empleado×periodo, `util_planned`, sticky, tooltip.
+2. **Uso de recursos** — detalle Capacity/Availability/Planned/Free/Utilización.
+3. **Uso de recursos por proyecto** — un empleado; matriz Proyecto×periodo (modo temporal del report).
+4. **Disponibilidad restante** — `Free`; Availability=0 → `—` (estado propio).
+5. **Trabajo por recurso** — un empleado; jerarquía Proyecto→Tarea; consolidado confidencial solo horas.
 
-**Suite:** 88/88 OK en `test-pmo.localhost`.
+Controles: Desde/Hasta + Día/Semana/Mes (unidad Horas); panel **Empleados** (buscador, multiselección,
+selección persistente). Gráficas con `frappe.Chart`.
 
-## Arquitectura vigente
-- **Capacity** (`pmo/capacity.py`) · **Availability** (`pmo/availability.py`) · **Actual** (`pmo/actual.py`) ·
-  **Planned Load** (`pmo/planned_load.py`) · **lógica pura** `build_allocation_days` (`pmo/allocation.py`).
-- **Reporte** `pmo/pmo/report/pmo_capacity_planning/` (Script Report, P4 en `execute()`).
-- Objetos: DocType `PMO Capacity`; Custom Field `ToDo-pmo_planned_hours` (fixture); DocPerm `report` en
-  PMO Capacity para Employee/Executive. Todo lo demás derivado; sin captura paralela.
+**Backend:** `PMO Resource Usage by Project` ampliado con **modo temporal** (`granularity` Day/Week/Month
+→ matriz Proyecto×periodo, solo Planned, mismo P4); ruta sin `granularity` compatible. Motor/P4 intactos.
 
-## Pendiente para cerrar el bloque
-1. **Commit del cierre documental + bump 0.3.0** (requiere autorización).
-2. **Migrar `pmo-v16.dev`** (importa PMO Capacity, Custom Field ToDo, Report, permisos) — escritura de BD,
-   requiere autorización. Objetos nuevos en dev: `tabPMO Capacity`, CF `ToDo-pmo_planned_hours`, Report
-   `PMO Capacity Planning`, DocPerm de PMO Capacity.
-3. **Suite completa** + **PR único** a `version-16` (push + PR, autorizaciones separadas).
+**Suite:** 131/131 OK en `test-pmo.localhost`. ruff + prettier limpios. `pmo-v16.dev` migrado+build hechos.
+
+## Regla de seguridad fijada (P4 presentación)
+- KPIs/gráficas **dentro** del Script Report o materializadas per-usuario en la Page (sin caché compartida).
+- **Prohibido** Dashboard Chart / Number Card `type=Report` sobre reports enmascarados (`@cache_source`
+  clave `chart-data:{name}`, sin usuario → fuga). **Insights** tampoco: su caché de query es observer-agnóstica.
+- El gate de permiso del Report solo se cruza vía `query_report.run` (la Page); cubierto por
+  `test_capacity_page.py::TestCapacityPageReportPath`. El rol `Employee` lo gestiona ERPNext: solo persiste
+  con un Employee vinculado (conceder DESPUÉS de vincular).
+
+## Pendiente
+1. **PR #4** `feat/capacity-views` → `version-16` **ya abierto** (https://github.com/luisrms69/pmo/pull/4),
+   objetivo **0.4.0**. Server y Vulnerable Dependency Check en verde; **Frappe Linter** falló por
+   semgrep (type hints faltantes en `get_resources`) → corregido en la rama; esperar CI verde para merge.
+2. Merge (Squash) lo hace el usuario en GitHub cuando el CI quede verde.
+3. Tras merge: `/ship release` (tag + GitHub Release `v0.4.0`).
+
+**Nota de versionado (gate estricto):** la rama había hecho doble bump (0.3.0→0.4.0→0.5.0) sin mergear;
+como todo entra en **un** PR de alcance MINOR desde `v0.3.0`, el release correcto es **0.4.0** (se
+normalizó; `0.5.0` era artificial). `v0.4.0` nunca existió como tag/release previo.
 
 ## Decisiones vigentes
-- **Actual == Timesheet oficial** (`daily_timesheet_summary`): no cálculos paralelos.
-- Planned Load derivado de Task + Assignment; `ToDo.pmo_planned_hours` solo override; bridge
-  `Employee.user_id` fail-closed (ambiguo → excluido).
-- Reporte P4: `Comprometido (confidencial) = total − Σ visibles`; identidades confidenciales nunca al cliente.
-- Acceso al reporte: `Report.roles` + `report` sobre `PMO Capacity` (Employee solo `report`); row-level en `execute()`.
-- Plan vigente (sin snapshots) en el MVP.
+- **`Actual` fuera de las 5 vistas** (backend lo sigue derivando y enmascarando con P4). Reservado a futura
+  vista separada **`Planificado vs Real`** / **Cumplimiento de planificación** (variación + % de
+  cumplimiento; fórmula a definir al implementar; no tocará motor/P4/vistas). Ver ADR-0003 D9.
+- **ADR-0003 = Aceptado** (D6 matiz Actual, D7 modo temporal, D8 Page+Insights, D9 Actual/vista futura).
+- Confidencialidad ≠ exclusión: Total = Visible + Confidencial en todos los reportes/KPIs.
+- `is_task_visible` canónico; `planned_hours` por Task = parte del asignado dentro del rango.
 
 ## No repetir / cuidados
-- Tests: `IntegrationTestCase` no revierte entre tests → limpiar en `setUp` (`frappe.db.delete`); helpers idempotentes.
-- Employee de test: sin `gender`, `user_id` por `db.set_value` (evita validación que toca Company), `holiday_list` directo.
-- Timesheet de test: `docstatus=1` por `db.set_value` (el `on_submit` guarda el Project → requiere Company/stock).
-- Project.name = naming series (`PROJ-####`), no `project_name`.
-- Ambiguous chars en docstrings/comentarios → usar ASCII (ruff RUF001/002).
-- Git solo vía `/ship`. No trabajar en `version-16`. Rutas Desk v16 = `/desk/...`.
+- Tests: aislamiento en `setUp`, helpers idempotentes; Employee necesita `holiday_list` para que Planned
+  se distribuya (si falta → `issues: no_holiday_list`, Planned 0). `_employee` concede rol `Employee`
+  tras vincular `user_id`.
+- Consola (`bench console`) rompe multilínea/`def`; usar one-off **plano** con `exec(open(...).read())`.
+  `execute()` de Capacity Planning devuelve 5 valores; `json.dumps` no serializa datetime → `frappe.as_json`.
+- Ambiguous chars en docstrings → ASCII (ruff RUF001/002). `frappe.db.sql` sin f-string (semgrep).
+- one_offs/ ignorado (DEMO + validate_*). Git solo vía `/ship`. No trabajar en `version-16`. Desk v16 = `/desk/...`.

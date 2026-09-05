@@ -136,11 +136,74 @@ de asignaciones. Decisiones en `docs/adr/0003-resource-capacity.md`; uso en `doc
 - Infra interna (no whitelisted): `get_planned_load_by_project`, `get_actual_by_project`,
   `permissions.is_project_visible`.
 
+### Vistas (reportes + Workspace) — estilo MS Project
+Todo sobre el motor derivado (no recalcula); enmascarado P4 dentro de `execute()`:
+- **`PMO Capacity Planning`** (extendido): `Day/Week/Month/Total` (Total = Centro de recursos),
+  `designation`/`department`, `chart` (Availability vs Planned total; sin filtro → agregado por
+  Employee), `report_summary` (Recursos/Sobreasignados/Utilización), `formatter` de sobreasignación
+  (util <80 normal / 80–100 ámbar / >100 rojo; overallocation>0 y free<0 en rojo).
+- **`PMO Resource Usage by Project`**: árbol Employee→Project (`indent`); columna `project` = Data,
+  `project_id` auxiliar **solo en visibles** (link vía `get_form_link`); buckets `Sin proyecto` y
+  `Comprometido (confidencial)` (una fila, sin id). `get_planned_load_by_project`/`get_actual_by_project`.
+  **Modo temporal** (para la Page): si llega `granularity` = `Day/Week/Month`, `execute()` devuelve una
+  matriz Proyecto×periodo (columnas dinámicas `period_i` + `Total`), **solo Planned**, con el mismo
+  bucketing/labels que `PMO Capacity Planning` y el **mismo P4** (`is_project_visible`); consolidado
+  confidencial por periodo, sin id/nombre/conteo. La ruta por defecto (sin `granularity`) queda igual.
+- **`PMO Work by Resource`**: tareas por recurso; **doble boundary Task≠Project** (`is_task_visible`
+  canónico vía `frappe.has_permission("Task","read")`, incluye DocShare); `planned_hours` en el rango
+  (`get_planned_load_by_task`); Task no visible → agregado confidencial; **sin Actual por Task**.
+- **Workspace `PMO Capacity`**: solo navegación (3 shortcuts a los reports). **Sin `charts`/`number_cards`**.
+
+**Regla P4 de presentación:** los KPIs/gráficas viven **dentro** del Script Report (per-usuario, sin
+caché). **Prohibido** Dashboard Chart / Number Card (`type=Report`) sobre estos reports: `@cache_source`
+(clave `chart-data:{name}`, sin usuario) filtraría datos enmascarados entre usuarios. `public=1` del
+Workspace = **compartido**, restringido por `roles`; **no** es acceso universal.
+
+### Page `capacity_planning` (arquitectura D) — UX definitiva
+Frappe Page propia (Desk) que consume **exclusivamente** los Script Reports vía
+`frappe.desk.query_report.run` (P4 en `execute()`, per-usuario, sin caché compartida) + el endpoint
+`pmo.capacity_page.get_resources` (metadata segura de Employee, mismo alcance que los reportes; sin
+Project/Task). El cliente **no** recalcula nada ni reconstruye P4/buckets. Se descartó Frappe Insights
+(su caché de resultados es observer-agnóstica → fuga P4; sin embedding inline en v3.13.1).
+- **Controles** (visibles en el contenido): `Desde`/`Hasta`, escala `Día/Semana/Mes`, unidad fija
+  `Horas`. **Panel de Empleados** (buscador, multiselección, Todos/Limpiar; selección persistente).
+- **Cinco vistas** (paridad MS Project):
+  1. **Mapa de calor de capacidad** — matriz Empleado×periodo, celda = `util_planned` (<80/80–100/>100),
+     columna Empleado sticky; tooltip Capacity/Availability/Planned/Free/Planned Utilization.
+  2. **Uso de recursos** — detalle Empleado×periodo (Capacity/Availability/Planned/Free/Planned Utilization).
+  3. **Uso de recursos por proyecto** — **un empleado**; matriz Proyecto×periodo (modo temporal del
+     report); links solo con `project_id`.
+  4. **Disponibilidad restante** — matriz Empleado×periodo, métrica `Free` (>0 disponible / 0
+     comprometido / <0 sobreasignado / Availability=0 → `—`, estado distinto).
+  5. **Trabajo por recurso** — **un empleado**; jerarquía Proyecto→Tarea (subject, fechas o `Sin fechas`,
+     `planned_hours`, `expected_time`, status); links Task/Project solo con id; tareas ocultas → grupo
+     único `Comprometido (confidencial)` solo con horas.
+- **Gráficas** con `frappe.Chart` (frappe-charts; sin infraestructura frontend nueva, sin ECharts/CDN).
+- **`Actual` no se muestra en ninguna de las cinco vistas** (decisión de etapa; ver *Pendiente futuro*).
+- Objetos: `pmo/pmo/page/capacity_planning/` (`.json` standard=Yes, roles Employee/PMO Manager/PMO
+  Executive Access/System Manager; `.js`) + `pmo/capacity_page.py` (`get_resources`, whitelisted).
+
+### Pendiente futuro — vista `Planificado vs Real` (a.k.a. `Cumplimiento de planificación`)
+Decisión de diseño tomada en el cierre de esta etapa (2026-09-05), **no implementada**:
+- Las 5 vistas actuales **no muestran `Actual`**, aunque el rango `Desde/Hasta` pueda abarcar pasado y
+  futuro. `Actual` se **reserva** para una vista futura de **análisis histórico**.
+- Esa vista comparará **Planned vs Actual** (Actual desde Timesheet, ya derivado por el motor) y podrá
+  incluir **variación en horas** y **porcentaje de cumplimiento**. La **semántica exacta** de esos
+  indicadores se definirá **al implementarla**.
+- **Restricción dura:** no debe modificar el motor (Capacity/Planned Load/Actual), ni P4, ni las 5 vistas
+  actuales; se construirá igual que las demás (Script Report P4 + Page), sin caché compartida ni Insights.
+- El motor ya expone `Actual` (`get_actual`, `get_actual_by_project`) y el reporte `PMO Capacity Planning`
+  ya calcula `actual_*` server-side con P4 — la base existe; solo falta la vista y sus indicadores.
+
 ### Objetos nuevos / wiring
 - **DocType** `PMO Capacity`. **Custom Field** `ToDo-pmo_planned_hours` (Float, opcional; fixture).
-- **Report** `PMO Capacity Planning`. **DocPerm** `report` en PMO Capacity para Employee/Executive.
+- **Reports** `PMO Capacity Planning`, `PMO Resource Usage by Project`, `PMO Work by Resource`;
+  **Workspace** `PMO Capacity`. **DocPerm** `report` en PMO Capacity para Employee/Executive.
+- Helpers internos: `get_planned_load_by_project|task`, `get_actual_by_project`,
+  `permissions.is_project_visible`, `permissions.is_task_visible`.
+- **Page** `capacity_planning` + endpoint `pmo.capacity_page.get_resources` (ver subsección Page).
 - Sin cambios de core; se **lee** Task/ToDo/Employee/Holiday List/Timesheet (y Leave si HRMS).
-- **Tests** — `test_{capacity,availability,actual,allocation,planned_load,capacity_report}.py`.
+- **Tests** — `test_{capacity,availability,actual,allocation,planned_load,capacity_report,resource_usage,work_by_resource,capacity_workspace,capacity_page}.py` (incluye el camino real de la Page `query_report.run` como Employee normal y el modo temporal de `resource_usage`). **Suite: 131/131.**
 
 ## Fuera de alcance
 Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext

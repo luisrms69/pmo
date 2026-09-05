@@ -1,8 +1,17 @@
 # ADR-0003: Resource Capacity and Planned Load
 
-**Estado:** Propuesto (revisado 2026-09-03 — ver "Revisión")
-**Fecha:** 2026-09-02 · **Revisión:** 2026-09-03
+**Estado:** Aceptado (revisado 2026-09-05 — ver "Revisión")
+**Fecha:** 2026-09-02 · **Revisiones:** 2026-09-03, 2026-09-05
 **App:** pmo · Depende de **ADR-0002** (privacidad Project/Task).
+
+## Revisión (2026-09-05) — presentación implementada
+
+Se implementa la capa de presentación como **`PMO Capacity Page`** (Frappe Page en Desk), que pasa a ser
+la **UX principal** de Capacity Planning. La Page **no recalcula** ni duplica el motor en cliente:
+consume los **Script Reports P4-safe** mediante `frappe.desk.query_report.run` (P4 en `execute()`,
+per-usuario). Los Script Reports siguen siendo la **frontera server-side**, la capa de validación y las
+vistas reutilizables (Desk/API). Detalle en D7–D8. Se marca el ADR como **Aceptado** (motor + vistas
+implementados y en uso en dev).
 
 ## Revisión (2026-09-03)
 
@@ -108,6 +117,12 @@ observador; **bucket único "Comprometido (confidencial)"**; mismo enmascarado e
 reportes PMO; `PMO Executive Access` ve desglose completo; usuario normal ve lo suyo + proyectos
 permitidos. `PMO Capacity` no referencia Project → permisos estándar (config PMO).
 
+**Nota sobre `Actual`:** el backend **sigue calculando `Actual`** desde Timesheet (derivado) y **P4 se
+aplica igual** sobre él. Sin embargo, las **cinco vistas actuales** de Capacity Planning **no muestran
+`Actual`**: son de planificación. La comparación **Planned vs Actual** se reserva a una **futura vista
+separada** (`Planificado vs Real` / `Cumplimiento de planificación`); su fórmula de cumplimiento se
+definirá al implementarla (ver D9).
+
 ## Consecuencias
 
 - Nuevos objetos mínimos en `pmo`: **`PMO Capacity`** (persistido) + **un Custom Field opcional en ToDo**.
@@ -146,6 +161,68 @@ permitidos. `PMO Capacity` no referencia Project → permisos estándar (config 
   Manager`) + permiso `report` sobre `ref_doctype = PMO Capacity` (a `Employee` **solo `report`, sin
   `read`**). El row-level real (Executive/Manager/normal) lo impone `execute()`, no el rol; **no** se usa
   `pqc`/`has_permission` sobre `PMO Capacity` para habilitar el reporte.
+
+## Vistas de Capacity Planning (presentación) — D7
+
+Vistas estilo MS Project (Resource Center / Uso de recursos / Trabajo por recurso) construidas **sobre
+el motor derivado**, sin recalcular. Todas son **Script Reports** cuyo `execute()` aplica el
+enmascarado P4 por observador:
+
+- **`PMO Capacity Planning`** (extendido): granularidad `Day/Week/Month/Total`, `designation`/
+  `department`, `chart` (barras Availability vs Planned total; sin filtro → agregado por Employee) y
+  `report_summary` (Recursos, Sobreasignados, Utilización). Con `Total` = **Centro de recursos**.
+- **`PMO Resource Usage by Project`**: árbol Employee→Project (`indent`); visibles identificados,
+  no-visibles en una fila `Comprometido (confidencial)`, bucket `Sin proyecto`. **Ampliación (modo
+  temporal):** al recibir `granularity = Day/Week/Month`, `execute()` expone **Planned por proyecto y
+  periodo** (matriz Proyecto×periodo, solo Planned) manteniendo el **mismo P4 server-side** (visibles con
+  `project_id`; ocultos consolidados por periodo sin identidad). La ruta anterior **sin `granularity`
+  permanece compatible** (totales Planned + Actual, sin cambios).
+- **`PMO Work by Resource`**: tareas por recurso con **doble boundary Task≠Project** (Task visible con
+  Project oculto → Project `Confidencial`; Task no visible → agregado confidencial). `planned_hours` =
+  parte del asignado **dentro del rango**.
+- **Workspace `PMO Capacity`**: solo **navegación** (shortcuts a los 3 reports).
+
+**Regla P4 de presentación (permanente):**
+- Los KPIs y gráficas se materializan **dentro del Script Report** (`report_summary`/`chart`),
+  calculados **frescos por usuario** en cada apertura.
+- **Prohibido** usar Dashboard Chart / Number Card (`type=Report`) sobre estos reports enmascarados:
+  `@cache_source` usa la clave `chart-data:{name}` **sin usuario** → serviría los datos enmascarados de
+  un observador a otro (fuga P4). El Workspace **no** contiene `charts`/`number_cards`.
+- Componentes nativos de **`Document Type`** (agregación directa sobre Project/Task) quedan **prohibidos**:
+  bypassean `execute()` y el enmascarado.
+- Visibilidad del Workspace: `public=1` (workspace **compartido** de app, no personal) **restringido por
+  `roles`** (Employee/PMO Manager/PMO Executive Access/System Manager). `public` **no** implica acceso
+  universal.
+- Nuevo helper canónico `is_task_visible` = `frappe.has_permission("Task","read")` (capacidad +
+  `has_permission_task` + **DocShare** + Administrator; System Manager sin alcance por rol).
+
+## Arquitectura de presentación — D8
+
+**`PMO Capacity Page`** (Frappe Page en Desk) es la **UX principal** de Capacity Planning. Consume los
+Script Reports P4-safe vía `frappe.desk.query_report.run` (P4 en `execute()`, per-usuario, sin caché
+compartida) + el endpoint `pmo.capacity_page.get_resources` (metadata segura de Employee). El cliente
+**no** duplica el motor ni reconstruye P4/buckets. Los **Script Reports siguen siendo la frontera
+server-side**, la validación y las vistas reutilizables (Desk/API). Cinco vistas: Mapa de calor de
+capacidad, Uso de recursos, Uso de recursos por proyecto, Disponibilidad restante, Trabajo por recurso.
+
+**Spike Frappe Insights (evaluado y descartado para datos P4 por-observador).** Insights se evaluó como
+capa de visualización. **No** se usa entre el motor P4 y la UX de Capacity Planning, por dos motivos en la
+versión evaluada:
+- la **caché de resultados de query no está aislada por observador** (misma clave para distintos usuarios
+  → fuga P4 sobre datos enmascarados);
+- **no hay embedding inline con la sesión Desk** (solo iframe/enlace público como Guest).
+
+Por tanto Insights **no debe interponerse** entre el motor P4 y la presentación; la Page + Script Reports
+es la arquitectura elegida.
+
+## `Actual` y vista futura — D9
+
+`Actual` (Timesheet) **se sigue derivando** y **se enmascara con P4** en el backend, pero **no se muestra**
+en las cinco vistas actuales (son de planificación). La comparación **Planned vs Actual** se reserva a una
+**futura vista separada** `Planificado vs Real` / `Cumplimiento de planificación` (podrá incluir variación
+en horas y % de cumplimiento). **La fórmula definitiva de cumplimiento no se define aún**; se fijará al
+implementarla. Esa vista **no** modificará el motor (Capacity/Planned Load/Actual), ni P4, ni las cinco
+vistas actuales.
 
 ## Estrategia de pruebas (datos ficticios)
 

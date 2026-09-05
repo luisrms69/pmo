@@ -38,7 +38,11 @@ def execute(filters=None):
 	data = []
 	for emp in _scope_employees(observer, filters, from_date, to_date):
 		data.extend(_employee_rows(emp, observer, from_date, to_date, granularity))
-	return _columns(), data
+
+	# chart y report_summary derivan EXCLUSIVAMENTE de `data` ya enmascarado (P4): nunca etiquetan
+	# Project/Task ni exponen conteo de proyectos confidenciales; el Confidencial ya está sumado en
+	# Planned total, así que los KPIs no se subestiman (Total = Visible + Confidencial).
+	return _columns(), data, None, _build_chart(data, filters), _build_summary(data)
 
 
 # --- alcance de filas (por observador) -----------------------------------------
@@ -80,6 +84,8 @@ def _has_activity(emp, from_date, to_date):
 
 
 def _bucket_key(date, granularity):
+	if granularity == "Total":
+		return "Total"  # un único bucket por Employee para todo el rango
 	if granularity == "Week":
 		return add_days(date, -date.weekday())  # lunes de la semana
 	if granularity == "Month":
@@ -88,6 +94,8 @@ def _bucket_key(date, granularity):
 
 
 def _period_label(key, granularity):
+	if granularity == "Total":
+		return frappe._("Total")
 	if granularity == "Week":
 		return frappe._("Semana de {0}").format(formatdate(key))
 	if granularity == "Month":
@@ -134,8 +142,14 @@ def _employee_rows(emp, observer, from_date, to_date, granularity):
 		day = add_days(day, 1)
 
 	status = _status(emp, to_date, planned)
+	# Identidad organizacional del Employee (no es identidad de Project → fuera de P4); el tier de
+	# observador ya limita QUÉ Employees aparecen.
+	designation, department = frappe.db.get_value("Employee", emp, ["designation", "department"]) or (
+		None,
+		None,
+	)
 	rows = []
-	for key in sorted(buckets):
+	for key in sorted(buckets, key=str):
 		b = buckets[key]
 		planned_total = flt(b["pv"] + b["pc"], 2)
 		actual_total = flt(b["av"] + b["ac"], 2)
@@ -143,6 +157,8 @@ def _employee_rows(emp, observer, from_date, to_date, granularity):
 		rows.append(
 			{
 				"employee": emp,
+				"designation": designation,
+				"department": department,
 				"period": _period_label(key, granularity),
 				"capacity": flt(b["cap"], 2),
 				"availability": avail,
@@ -188,6 +204,8 @@ def _columns():
 
 	return [
 		col("employee", "Employee", "Link", 140, "Employee"),
+		col("designation", "Designation", "Link", 130, "Designation"),
+		col("department", "Department", "Link", 130, "Department"),
 		col("period", "Periodo", "Data", 130),
 		col("capacity", "Capacity"),
 		col("availability", "Availability"),
@@ -202,4 +220,68 @@ def _columns():
 		col("util_planned", "Util. planificada %", "Float", 140),
 		col("util_actual", "Util. real %", "Float", 120),
 		col("status", "Estado", "Data", 200),
+	]
+
+
+# --- chart y report_summary (derivados solo de `data` ya enmascarado; P4-safe) --------
+
+
+def _build_chart(data, filters):
+	"""Barras Availability vs Planned total. Con filtro employee → labels por periodo; sin filtro →
+	agregado server-side por Employee (labels = Employees). Nunca etiqueta Project/Task."""
+	if not data:
+		return None
+
+	if filters.get("employee"):
+		labels = [row["period"] for row in data]
+		availability = [row["availability"] for row in data]
+		planned = [row["planned_total"] for row in data]
+	else:
+		# agregar todo el rango por Employee (una barra por persona → vista Centro de recursos)
+		agg, order = {}, []
+		for row in data:
+			emp = row["employee"]
+			if emp not in agg:
+				agg[emp] = [0.0, 0.0]
+				order.append(emp)
+			agg[emp][0] += flt(row["availability"])
+			agg[emp][1] += flt(row["planned_total"])
+		labels = order
+		availability = [flt(agg[emp][0], 2) for emp in order]
+		planned = [flt(agg[emp][1], 2) for emp in order]
+
+	return {
+		"data": {
+			"labels": labels,
+			"datasets": [
+				{"name": frappe._("Availability"), "values": availability},
+				{"name": frappe._("Planned total"), "values": planned},
+			],
+		},
+		"type": "bar",
+		"fieldtype": "Float",
+	}
+
+
+def _build_summary(data):
+	"""KPIs agregados sobre `data` (personas/horas), sin identidad de proyecto ni conteo confidencial.
+	Confidencial ya está sumado en Planned total → utilización no subestimada (Total = Visible + Conf.)."""
+	if not data:
+		return []
+
+	employees = {row["employee"] for row in data}
+	overallocated = {row["employee"] for row in data if flt(row["overallocation"]) > 0}
+	total_availability = sum(flt(row["availability"]) for row in data)
+	total_planned = sum(flt(row["planned_total"]) for row in data)
+	utilization = flt(total_planned / total_availability * 100, 1) if total_availability > 0 else 0.0
+
+	return [
+		{"value": len(employees), "label": frappe._("Recursos"), "datatype": "Int"},
+		{
+			"value": len(overallocated),
+			"label": frappe._("Sobreasignados"),
+			"datatype": "Int",
+			"indicator": "Red" if overallocated else "Green",
+		},
+		{"value": utilization, "label": frappe._("Utilización planificada media"), "datatype": "Percent"},
 	]
