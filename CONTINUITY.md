@@ -3,8 +3,9 @@
 **Fecha:** 2026-09-06
 **Rama activa:** `feat/change-control` (base `version-16` @ v0.5.0).
 **Tarea actual:** **v0.6.0 — Integrated Change Control.** Arquitectura cerrada y **ADR-0005 Accepted**.
-Bloque 1 (docs) en curso: ADR-0005 + entrada CHANGELOG `[0.6.0] En preparación`. Implementación de código
-por bloques 2–6 pendiente (aún NO iniciada). Sin push/PR todavía.
+Bloque 1 (docs) ✅ commit `15fb9dd`. **Bloque 2 (DocType `PMO Change Request` + P4) ✅** (commit en curso):
+DocType submittable + invariantes base + P4 + tests + docs. `test-pmo.localhost` migrado. **Suite 159/159.**
+Bloques 3–6 pendientes. Sin push/PR todavía; sin cambios en `erpnext_proposals`.
 
 > v0.5.0 ya está **mergeado y liberado** (PR #6 → `f4fb3bc`; tag/Release v0.5.0). DEMO en `pmo-v16.dev`
 > se dejó disponible (no limpiar aún).
@@ -22,9 +23,12 @@ ADR-0005 (Accepted) define Change Control integrado. Referencia viva:
 
 ## Plan por bloques (un PR único a `version-16`)
 
-- **Bloque 1 — ADR-0005 (docs) + CHANGELOG `[0.6.0]` en preparación.** *(commit en curso)*
-- **Bloque 2 — DocType `PMO Change Request` + P4** (hooks `permissions.py` + `hooks.py`;
-  `has_permission_change_request`, `get_permission_query_conditions_change_request`; patrón Baseline).
+- **Bloque 1 — ADR-0005 (docs) + CHANGELOG `[0.6.0]` en preparación. ✅** commit `15fb9dd`.
+- **Bloque 2 — DocType `PMO Change Request` + P4. ✅** DocType submittable (`PMO-CR-.#####`), controller
+  con invariantes base (defaults, `impact_summary`, moneda, integridad baselines, `before_submit`,
+  `before_cancel`), P4 (`has_permission_change_request` + `get_permission_query_conditions_change_request`,
+  helper `_is_project_writer`) en `permissions.py`+`hooks.py`, tests `test_change_request.py` (8), docs
+  técnico/usuario. **Suite 159/159.** *(commit en curso)*
 - **Bloque 3 — Workflow nativo** (fixture) + acción "Aplicar Quotation al Project" + semántica
   Aplicado/Implementado + `allow_on_submit` en campos post-aprobación.
 - **Bloque 4 — Comparator** (`pmo/compare.py` engine determinista sobre snapshots v1 + render modesto) + tests.

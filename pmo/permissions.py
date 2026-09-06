@@ -121,6 +121,16 @@ def _is_project_member(project, user):
 	)
 
 
+def _is_project_writer(project, user):
+	"""True si `user` es owner o PMO Project Member del Project (los que pueden escribir en su alcance,
+	ADR-0002/P0). No incluye a executive (read-only) ni a assignee de Task."""
+	if not project:
+		return False
+	if frappe.db.get_value("Project", project, "owner") == user:
+		return True
+	return _is_project_member(project, user)
+
+
 def _has_active_todo(task, user):
 	return bool(
 		frappe.db.exists(
@@ -204,4 +214,43 @@ def has_permission_baseline(doc, ptype=None, user=None):
 		return False
 	if ptype in _WRITE_PTYPES:
 		return frappe.db.get_value("Project", project, "owner") == user
+	return is_project_visible(project, user)  # read y demas ptypes de lectura
+
+
+# --- PMO Change Request (ADR-0005 D13): P4 heredado del Project ------------------
+
+
+def get_permission_query_conditions_change_request(user=None):
+	"""Listados: solo CR cuyo Project es visible (owner/member). Executive/Admin: sin condicion."""
+	user = user or frappe.session.user
+	if _is_global_reader(user):
+		return ""
+	return f"`tabPMO Change Request`.project in ({_member_projects_subquery(user)})"
+
+
+def has_permission_change_request(doc, ptype=None, user=None):
+	"""READ del CR = visibilidad del Project (owner/member/executive/Administrator).
+	CREATE/WRITE = project writer (owner o member); el WRITE de un member solo mientras el CR es editable
+	(`docstatus == 0`) — tras aprobar, solo el owner escribe (campos `allow_on_submit`: aplicar/cerrar).
+	SUBMIT/CANCEL/AMEND = solo el owner del Project (esto sella owner-only para aprobar/rechazar).
+	Executive es read-only; Manager sin acceso por rol; SHARE denegado. Siempre True/False (el controlador
+	`has_permission` de Frappe solo restringe)."""
+	user = user or frappe.session.user
+	if user == "Administrator":
+		return True
+	project = doc.get("project") if hasattr(doc, "get") else getattr(doc, "project", None)
+	if not project:
+		return False  # fail-closed: un CR sin Project no es visible
+	if ptype == "share":
+		return False
+	is_owner = frappe.db.get_value("Project", project, "owner") == user
+	if ptype in ("submit", "cancel", "amend"):
+		return bool(is_owner)  # aprobar/rechazar/aplicar/cerrar: owner-only
+	if ptype in ("write", "create", "delete"):
+		if is_owner:
+			return True
+		# member: solo mientras el CR es editable (Draft/En revision, docstatus 0)
+		if int(getattr(doc, "docstatus", 0) or 0) == 0:
+			return _is_project_writer(project, user)
+		return False
 	return is_project_visible(project, user)  # read y demas ptypes de lectura

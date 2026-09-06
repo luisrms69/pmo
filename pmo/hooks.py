@@ -145,12 +145,15 @@ permission_query_conditions = {
 	"Task": "pmo.permissions.get_permission_query_conditions_task",
 	# ADR-0004 D7: el Baseline hereda la visibilidad del Project.
 	"PMO Project Baseline": "pmo.permissions.get_permission_query_conditions_baseline",
+	# ADR-0005 D13: el Change Request hereda la visibilidad del Project.
+	"PMO Change Request": "pmo.permissions.get_permission_query_conditions_change_request",
 }
 
 has_permission = {
 	"Project": "pmo.permissions.has_permission_project",
 	"Task": "pmo.permissions.has_permission_task",
 	"PMO Project Baseline": "pmo.permissions.has_permission_baseline",
+	"PMO Change Request": "pmo.permissions.has_permission_change_request",
 }
 
 # Fixtures: Custom Field pmo_members en Project + roles PMO + Custom Role de reports (P0 Inc. 4).

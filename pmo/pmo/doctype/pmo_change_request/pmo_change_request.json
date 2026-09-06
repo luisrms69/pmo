@@ -1,0 +1,373 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "PMO-CR-.#####",
+ "creation": "2026-09-06 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "project",
+  "title",
+  "column_break_req",
+  "raised_by",
+  "origin",
+  "request_date",
+  "priority",
+  "section_detail",
+  "reason",
+  "description",
+  "section_impact",
+  "impacts_scope",
+  "impacts_schedule",
+  "impacts_effort",
+  "column_break_impact",
+  "impacts_commercial",
+  "impacts_risk",
+  "impact_summary",
+  "section_impact_qty",
+  "impact_hours",
+  "impact_days",
+  "column_break_impact_qty",
+  "currency",
+  "impact_amount",
+  "section_impact_notes",
+  "impact_notes",
+  "evaluation_notes",
+  "section_proposal",
+  "proposal_group",
+  "applied_quotation",
+  "section_baselines",
+  "baseline_before",
+  "baseline_after",
+  "section_decision",
+  "approved_by",
+  "approved_at",
+  "column_break_decision",
+  "decision_notes",
+  "section_implementation",
+  "applied_to_project",
+  "applied_at",
+  "implementation_notes",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Project",
+   "options": "Project",
+   "reqd": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_req",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Quien solicita/levanta el cambio.",
+   "fieldname": "raised_by",
+   "fieldtype": "Link",
+   "label": "Raised By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "origin",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Origin",
+   "options": "\nCliente\nInterno\nRegulatorio\nOtro"
+  },
+  {
+   "default": "Today",
+   "fieldname": "request_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Request Date",
+   "read_only": 1
+  },
+  {
+   "default": "Media",
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Priority",
+   "options": "Baja\nMedia\nAlta"
+  },
+  {
+   "fieldname": "section_detail",
+   "fieldtype": "Section Break",
+   "label": "Request"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description"
+  },
+  {
+   "fieldname": "section_impact",
+   "fieldtype": "Section Break",
+   "label": "Impact"
+  },
+  {
+   "default": "0",
+   "fieldname": "impacts_scope",
+   "fieldtype": "Check",
+   "label": "Scope"
+  },
+  {
+   "default": "0",
+   "fieldname": "impacts_schedule",
+   "fieldtype": "Check",
+   "label": "Schedule"
+  },
+  {
+   "default": "0",
+   "fieldname": "impacts_effort",
+   "fieldtype": "Check",
+   "label": "Effort / Resources"
+  },
+  {
+   "fieldname": "column_break_impact",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "impacts_commercial",
+   "fieldtype": "Check",
+   "label": "Commercial"
+  },
+  {
+   "default": "0",
+   "fieldname": "impacts_risk",
+   "fieldtype": "Check",
+   "label": "Risk"
+  },
+  {
+   "description": "Resumen de los tipos de impacto marcados (para el Change Register).",
+   "fieldname": "impact_summary",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Impact Summary",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_impact_qty",
+   "fieldtype": "Section Break",
+   "label": "Estimated Deltas (optional)"
+  },
+  {
+   "description": "Estimacion no vinculante. La valuacion autoritativa vive en la Quotation.",
+   "fieldname": "impact_hours",
+   "fieldtype": "Float",
+   "label": "Impact Hours"
+  },
+  {
+   "fieldname": "impact_days",
+   "fieldtype": "Int",
+   "label": "Impact Days"
+  },
+  {
+   "fieldname": "column_break_impact_qty",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency"
+  },
+  {
+   "fieldname": "impact_amount",
+   "fieldtype": "Currency",
+   "label": "Impact Amount",
+   "options": "currency"
+  },
+  {
+   "fieldname": "section_impact_notes",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "impact_notes",
+   "fieldtype": "Small Text",
+   "label": "Impact Notes"
+  },
+  {
+   "description": "Evaluacion tecnica/PM del cambio. La discusion multi-actor usa Comments nativos.",
+   "fieldname": "evaluation_notes",
+   "fieldtype": "Text",
+   "label": "Evaluation Notes"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_proposal",
+   "fieldtype": "Section Break",
+   "label": "Proposal (Quotation)"
+  },
+  {
+   "description": "Hilo logico (Proposal Group) de la Quotation-addendum. Preserva el historial de versiones.",
+   "fieldname": "proposal_group",
+   "fieldtype": "Data",
+   "label": "Proposal Group"
+  },
+  {
+   "description": "Version Ganada efectivamente aplicada al Project. Se fija al aplicar.",
+   "fieldname": "applied_quotation",
+   "fieldtype": "Link",
+   "label": "Applied Quotation",
+   "options": "Quotation",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "section_baselines",
+   "fieldtype": "Section Break",
+   "label": "Baselines"
+  },
+  {
+   "description": "Baseline vigente al formalizar el CR (congelada). Se resuelve en la transicion a 'En revision' (Bloque 3).",
+   "fieldname": "baseline_before",
+   "fieldtype": "Link",
+   "label": "Baseline Before",
+   "options": "PMO Project Baseline",
+   "read_only": 1
+  },
+  {
+   "description": "Nueva baseline que incorpora el cambio. Se liga al cerrar (post-implementacion).",
+   "fieldname": "baseline_after",
+   "fieldtype": "Link",
+   "label": "Baseline After",
+   "options": "PMO Project Baseline",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "section_decision",
+   "fieldtype": "Section Break",
+   "label": "Decision"
+  },
+  {
+   "description": "Fijado automaticamente al aprobar (Submit).",
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "label": "Approved By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_at",
+   "fieldtype": "Datetime",
+   "label": "Approved At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_decision",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "decision_notes",
+   "fieldtype": "Small Text",
+   "label": "Decision Notes"
+  },
+  {
+   "fieldname": "section_implementation",
+   "fieldtype": "Section Break",
+   "label": "Implementation"
+  },
+  {
+   "description": "Los Scope Items de la Quotation quedaron materializados como Tasks. No implica 'Implementado'.",
+   "fieldname": "applied_to_project",
+   "fieldtype": "Check",
+   "label": "Applied to Project",
+   "read_only": 1,
+   "allow_on_submit": 1,
+   "default": "0"
+  },
+  {
+   "fieldname": "applied_at",
+   "fieldtype": "Datetime",
+   "label": "Applied At",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "implementation_notes",
+   "fieldtype": "Small Text",
+   "label": "Implementation Notes",
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PMO Change Request",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "module": "PMO",
+ "name": "PMO Change Request",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PMO Executive Access"
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

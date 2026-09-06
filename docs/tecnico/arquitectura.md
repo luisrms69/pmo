@@ -254,6 +254,40 @@ completa). Engine sin persistencia en `pmo/baseline.py`.
   `effective_date <= as_of`, Submitted/no-Cancelada).
 - **Comparación de snapshots:** diferida (issue #5); el esquema canónico ya la habilita.
 
+## PMO Change Request (ADR-0005)
+
+DocType **submittable** (`is_submittable`, autoname `PMO-CR-.#####`) que **gobierna** un cambio del Project
+(por qué, impacto previsto, decisión, implementación). El **alcance** y su valuación viven en la
+`Quotation`/`erpnext_proposals` (no se recapturan Scope Items); `Project`/`Task` recibe el alcance
+aprobado; `PMO Project Baseline` congela el before/after; `Timesheet` registra el Actual.
+
+> **Estado (v0.6.0 en construcción):** este bloque entrega el **DocType + P4 + invariantes base**. El
+> Workflow, la acción "Aplicar Quotation al Project", la semántica Aplicado/Implementado, el comparator y
+> el Change Register llegan en bloques posteriores del mismo release.
+
+- **Campos:** solicitud (`project`, `title`, `raised_by`, `origin`, `request_date`, `priority`
+  Baja/Media/Alta, `reason`, `description`); impacto mínimo estructurado (5 Checks
+  `impacts_scope|schedule|effort|commercial|risk` → `impact_summary` computado; deltas `impact_hours`/
+  `impact_days`/`impact_amount` con `currency`; `impact_notes`, `evaluation_notes`); proposal
+  (`proposal_group`, `applied_quotation`); baselines (`baseline_before`, `baseline_after`); decisión
+  (`approved_by`, `approved_at`, `decision_notes`); implementación (`applied_to_project`, `applied_at`,
+  `implementation_notes`). **Sin** severidad por dimensión, fechas propias, dimensión de calidad ni
+  business case (viven en Quotation/Tasks/Baseline o son gaps reconocidos).
+- **Persistencia post-submit:** los campos que cambian tras aprobar son **`allow_on_submit`**
+  (`applied_to_project`, `applied_at`, `applied_quotation`, `baseline_after`, `implementation_notes`); el
+  contenido de la solicitud queda **inmutable** por el core (`_validate_update_after_submit`), sin
+  `frappe.db.set_value` de rescate.
+- **Invariantes base (`pmo_change_request.py`):** defaults (`raised_by`, `request_date`, `priority`);
+  `impact_summary` (orden estable de los 5 tipos); `currency` = moneda de la company del Project;
+  integridad de baselines (mismo Project; `baseline_after` ≠ `baseline_before`; `effective_date` de
+  after ≥ before). `before_submit` fija `approved_by`/`approved_at` (aprobar = Submit). `before_cancel`
+  bloquea si `applied_to_project` o `baseline_after` (la realidad/baseline ya cambió → revertir = CR nuevo).
+- **P4 (ADR-0002/0005 D13):** `has_permission_change_request` (read = `is_project_visible`; create/write =
+  project writer owner o member, con write de **member solo en `docstatus 0`**; submit/cancel/amend =
+  **owner** → sella owner-only para aprobar/rechazar; Executive read-only; share denegado) +
+  `get_permission_query_conditions_change_request` (listados solo de projects visibles). **PMO Manager sin
+  acceso** por rol. Helper `_is_project_writer` (owner o member) reutilizado del boundary P0.
+
 ## Fuera de alcance
 Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext
 ni de DocPerm de read/write; solo hooks, un child DocType propio, roles y `Custom Role` por fixture.
