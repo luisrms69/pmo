@@ -1,5 +1,34 @@
 # Changelog — pmo
 
+## [0.5.0] — 2026-09-05
+
+### Added
+- **Schedule Governance sobre Task (ADR-0004 D1/D2/D3)** — mixin `pmo.overrides.PMOTaskScheduleMixin` vía
+  `extend_doctype_class` que redefine **solo** `validate_parent_expected_end_date` y
+  `validate_parent_project_dates`: las fechas de summary/`is_group` y `Project.expected_*` pasan a ser
+  forecast/envelope **no vinculantes** y el **Actual** (Timesheet) **nunca se bloquea**. Upgrade-safe (no
+  copia el cuerpo upstream `7b0df4b`) + guard de drift. `validate_dates()` y el resto de Task quedan nativos.
+- **DocType `PMO Project Baseline` (ADR-0004 D4–D7)** — submittable (autoname `PMO-BL-.#####`) que congela
+  el plan de un Project como referencia aprobada (**Schedule / Operational Planning Baseline**).
+  - **Lineage lineal** (configuration control): `baseline_type` (Original/Approved Change/Replan) +
+    `supersedes_baseline`; una sola Original válida por Project, `revision` única, sustituir la cabeza
+    vigente Submitted/no-Cancelada, sin ciclos/bifurcación; **`effective_date` monótona en la cadena** y
+    **cancelación solo de la cabeza** (no cancelar una baseline con sucesor no-cancelado). Sin `is_current`
+    (derivado) ni `change_request`.
+  - **Aprobación en Submit**: `approved_by`/`approved_at` (fijados en `before_submit`) + `snapshot_at`.
+  - **Snapshot canónico** determinista (`pmo/baseline.py`): WBS por `task_id`+`parent_task`+`wbs_order`
+    (no `lft/rgt`), `description`, fechas/horas/estado, `depends_on`, assignments
+    `{user, employee, override_hours, effective_hours}` (override solo si `pmo_planned_hours>0`);
+    `snapshot_schema_version`=1 + `snapshot_hash` sha256. **Preflight ligero** (warnings; bloquea solo ante
+    reparto de horas inconsistente). `get_effective_baseline(project, as_of)` (Opción B, sin future-effective).
+  - **P4 (ADR-0002/0004 D7)**: read = `is_project_visible`; write/submit/cancel = **owner** del Project;
+    `PMO Executive Access` read-only; `PMO Manager` sin acceso; `permission_query_conditions` en listados.
+- Tests: `test_schedule_governance.py` (6) y `test_project_baseline.py` (12). **Suite 149/149.**
+
+### Changed
+- **ADR-0004 aceptado** (`Proposed` → `Accepted`): la implementación confirma sus decisiones. Comparación de
+  snapshots (Baseline vs Current / Baseline vs Baseline) queda diferida (issue #5).
+
 ## [0.4.0] — 2026-09-05
 
 ### Added

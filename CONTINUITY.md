@@ -1,71 +1,68 @@
 # CONTINUITY.md — pmo
 
 **Fecha:** 2026-09-05
-**Rama activa:** `feat/capacity-views` (base `version-16`).
-**Tarea actual:** **Cierre de `0.4.0`** — `PMO Capacity Page` (arquitectura D) + 5 vistas. Bloque
-completo (vistas + Page) en **un único PR** hacia `version-16`. Commit de cierre + commit correctivo de
-versión (0.5.0 → **0.4.0**, gate estricto: base `version-16=0.3.0` + un MINOR); **pendiente PR único**.
+**Rama activa:** `feat/schedule-baselines` (base `version-16` @ v0.4.0).
+**Tarea actual:** **v0.5.0 — Schedule Governance & Baselines.** Bloques 0–3 ✅. bump `__version__`→0.5.0,
+CHANGELOG `[0.5.0]`, ADR-0004 `Accepted`. `test-pmo.localhost` y `pmo-v16.dev` migrados (DocType nuevo);
+engine validado sobre DEMO en dev. **Pendiente: `/ship push` + `/ship pr` a `version-16`** (autorizados);
+merge y `/ship release v0.5.0` tras revisar el PR.
 
 ---
 
 ## Recuperación rápida
 
-Capacity Planning se presenta con una **Frappe Page propia** (`capacity_planning`, arquitectura D) que
-consume los Script Reports P4-safe vía `frappe.desk.query_report.run` (P4 en `execute()`, per-usuario) +
-`pmo.capacity_page.get_resources`. El cliente **no** recalcula ni reconstruye P4. **Insights descartado**
-(caché de query no aislada por observador → fuga P4; sin embedding inline en v3.13.1).
+ADR-0004 (Proposed) aprobado como arquitectura. Objetivo v0.5.0: gobierno de cronograma + baselines sobre
+ERPNext nativo, sin fork. Referencia viva: `docs/adr/0004-schedule-governance-and-baselines.md`.
 
 ---
 
-## Estado de la etapa (0.4.0)
+## Plan por bloques (un PR único a `version-16`)
 
-Cinco vistas **funcionales y probadas** en la Page:
-1. **Mapa de calor de capacidad** — Empleado×periodo, `util_planned`, sticky, tooltip.
-2. **Uso de recursos** — detalle Capacity/Availability/Planned/Free/Utilización.
-3. **Uso de recursos por proyecto** — un empleado; matriz Proyecto×periodo (modo temporal del report).
-4. **Disponibilidad restante** — `Free`; Availability=0 → `—` (estado propio).
-5. **Trabajo por recurso** — un empleado; jerarquía Proyecto→Tarea; consolidado confidencial solo horas.
+- **Bloque 0 — ADR-0004 (docs).** Escribir e incorporar ADR-0004 (Proposed). *(commit en curso)*
+- **Bloque 1 — Intervención Task (D1/D2/D3) ✅ HECHO.** Mixin **`pmo.overrides.PMOTaskScheduleMixin`**
+  (nota: se usó el módulo `pmo/overrides.py` existente, no `pmo.overrides.task` — `overrides` es módulo, no
+  paquete; sin cambio de decisión) vía `extend_doctype_class` en `hooks.py`; redefine **solo**
+  `validate_parent_expected_end_date` y `validate_parent_project_dates` (no bloquear). Tests
+  `test_schedule_governance.py` (6): guard de drift, ruta nativa vs mixin forzando `frappe.in_test=False`
+  (atributo de módulo, no `flags`), y path `task.save()` que usa Timesheet. **Suite 137/137.**
+- **Bloque 2 — `PMO Project Baseline` (D4–D7) ✅ HECHO.** DocType submittable (autoname `PMO-BL-.#####`);
+  engine `pmo/baseline.py` (snapshot canónico + hash sha256 determinista + preflight + baseline vigente
+  as-of); controller (invariantes de lineage lineal + `before_submit`); P4 en `permissions.py`
+  (`has_permission_baseline` read=`is_project_visible`, write/submit=owner, Executive read-only;
+  `get_permission_query_conditions_baseline`) + hooks. `override_hours` en snapshot solo si
+  `pmo_planned_hours>0` (coherente con el motor). Tests `test_project_baseline.py` (12). **Suite 149/149.**
+  Docs usuario (`baselines.md`) + técnico.
+- **Bloque 3 — Cierre.** Bump `__version__` → 0.5.0 (MINOR desde v0.4.0), CHANGELOG `[0.5.0]`; `/ship push`
+  + `/ship pr`; tras merge `/ship release` `v0.5.0`.
 
-Controles: Desde/Hasta + Día/Semana/Mes (unidad Horas); panel **Empleados** (buscador, multiselección,
-selección persistente). Gráficas con `frappe.Chart`.
+## Decisiones vigentes (ADR-0004, resumen)
+- 4 planos: Baseline / Current(Forecast) / Actual / Constraint(diferido).
+- Task group = summary/WBS con fechas **no vinculantes** (pueden quedar stale; sin rollup dinámico; warning
+  en preflight). `Project.expected_*` = forecast, no límite de la realidad.
+- Intervención: **mixin `extend_doctype_class` sobre Task**, solo los dos submétodos (upgrade-safe; guard
+  de drift; reconcilia drift upstream `7b0df4b` que ya restringe los 4 campos por abajo/arriba).
+- `PMO Project Baseline` submittable: lineage lineal (`baseline_type`, `supersedes_baseline`, sin
+  `is_current`), **Opción B** (sin future-effective; `effective_date <= approved_at`), aprobación fijada en
+  Submit (`approved_by`/`approved_at`), snapshot canónico (`schema_version`+`hash`) con `description` y
+  assignments `{user, employee, override_hours, effective_hours}`.
+- **Autoridad de aprobación = Project Owner** (Executive read-only; Manager sin cambios; separación de
+  funciones/CCB → v0.6.0). Read del Baseline respeta P4 (`is_project_visible`).
+- Capacity Planning **sin cambios**. Change Control/`erpnext_proposals` **fuera** de ADR-0004 (posible
+  ADR-0005 en v0.6.0). Comparador de snapshots = issue #5 (diferido).
 
-**Backend:** `PMO Resource Usage by Project` ampliado con **modo temporal** (`granularity` Day/Week/Month
-→ matriz Proyecto×periodo, solo Planned, mismo P4); ruta sin `granularity` compatible. Motor/P4 intactos.
+## Verificaciones hechas (spike)
+- `task.py:98-99` llama submétodos vía `self.<m>()` → override por MRO válido sin tocar `validate_dates()`.
+- `validate_parent_project_dates` local (16.32.1) solo usa `expected_end_date`; `7b0df4b` no está en el
+  bench; nuestra semántica es independiente del cuerpo upstream.
+- Timesheet `:182` hace `Task.save()` → dispara la validación sobre `act_*` (bug real a desbloquear).
+- `extend_doctype_class` y `override_doctype_class` existen en v16 (`base_document.py`); `erpnext_proposals`
+  usa `extend_doctype_class` para Quotation (precedente).
+- `Task.description` nativo (Text Editor). `get_planned_hours_per_assignee` devuelve horas efectivas.
 
-**Suite:** 131/131 OK en `test-pmo.localhost`. ruff + prettier limpios. `pmo-v16.dev` migrado+build hechos.
-
-## Regla de seguridad fijada (P4 presentación)
-- KPIs/gráficas **dentro** del Script Report o materializadas per-usuario en la Page (sin caché compartida).
-- **Prohibido** Dashboard Chart / Number Card `type=Report` sobre reports enmascarados (`@cache_source`
-  clave `chart-data:{name}`, sin usuario → fuga). **Insights** tampoco: su caché de query es observer-agnóstica.
-- El gate de permiso del Report solo se cruza vía `query_report.run` (la Page); cubierto por
-  `test_capacity_page.py::TestCapacityPageReportPath`. El rol `Employee` lo gestiona ERPNext: solo persiste
-  con un Employee vinculado (conceder DESPUÉS de vincular).
-
-## Pendiente
-1. **PR #4** `feat/capacity-views` → `version-16` **ya abierto** (https://github.com/luisrms69/pmo/pull/4),
-   objetivo **0.4.0**. Server y Vulnerable Dependency Check en verde; **Frappe Linter** falló por
-   semgrep (type hints faltantes en `get_resources`) → corregido en la rama; esperar CI verde para merge.
-2. Merge (Squash) lo hace el usuario en GitHub cuando el CI quede verde.
-3. Tras merge: `/ship release` (tag + GitHub Release `v0.4.0`).
-
-**Nota de versionado (gate estricto):** la rama había hecho doble bump (0.3.0→0.4.0→0.5.0) sin mergear;
-como todo entra en **un** PR de alcance MINOR desde `v0.3.0`, el release correcto es **0.4.0** (se
-normalizó; `0.5.0` era artificial). `v0.4.0` nunca existió como tag/release previo.
-
-## Decisiones vigentes
-- **`Actual` fuera de las 5 vistas** (backend lo sigue derivando y enmascarando con P4). Reservado a futura
-  vista separada **`Planificado vs Real`** / **Cumplimiento de planificación** (variación + % de
-  cumplimiento; fórmula a definir al implementar; no tocará motor/P4/vistas). Ver ADR-0003 D9.
-- **ADR-0003 = Aceptado** (D6 matiz Actual, D7 modo temporal, D8 Page+Insights, D9 Actual/vista futura).
-- Confidencialidad ≠ exclusión: Total = Visible + Confidencial en todos los reportes/KPIs.
-- `is_task_visible` canónico; `planned_hours` por Task = parte del asignado dentro del rango.
-
-## No repetir / cuidados
-- Tests: aislamiento en `setUp`, helpers idempotentes; Employee necesita `holiday_list` para que Planned
-  se distribuya (si falta → `issues: no_holiday_list`, Planned 0). `_employee` concede rol `Employee`
-  tras vincular `user_id`.
-- Consola (`bench console`) rompe multilínea/`def`; usar one-off **plano** con `exec(open(...).read())`.
-  `execute()` de Capacity Planning devuelve 5 valores; `json.dumps` no serializa datetime → `frappe.as_json`.
-- Ambiguous chars en docstrings → ASCII (ruff RUF001/002). `frappe.db.sql` sin f-string (semgrep).
-- one_offs/ ignorado (DEMO + validate_*). Git solo vía `/ship`. No trabajar en `version-16`. Desk v16 = `/desk/...`.
+## Cuidados / no repetir
+- Git solo vía `/ship`. No trabajar en `version-16`. Rutas Desk v16 = `/desk/...`.
+- one_offs/ ignorado. Consola rompe multilínea → one-off plano con `exec(open(...).read())`.
+- Tests: `frappe.in_test` hace early-return en la validación nativa → forzar `frappe.flags.in_test=False`
+  en `try/finally` para ejercer la ruta de producción, o llamar al método directamente.
+- ADR como referencia, no dogma: si aparece limitación real/alternativa más simple, reportar antes de
+  desviarse (sin re-abrir toda la arquitectura).

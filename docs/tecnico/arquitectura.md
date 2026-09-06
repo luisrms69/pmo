@@ -205,6 +205,55 @@ Decisión de diseño tomada en el cierre de esta etapa (2026-09-05), **no implem
 - Sin cambios de core; se **lee** Task/ToDo/Employee/Holiday List/Timesheet (y Leave si HRMS).
 - **Tests** — `test_{capacity,availability,actual,allocation,planned_load,capacity_report,resource_usage,work_by_resource,capacity_workspace,capacity_page}.py` (incluye el camino real de la Page `query_report.run` como Employee normal y el modo temporal de `resource_usage`). **Suite: 131/131.**
 
+## Schedule Governance — intervención sobre Task (ADR-0004 D3)
+
+Mixin `pmo.overrides.PMOTaskScheduleMixin` registrado por `extend_doctype_class = {"Task": ...}` en
+`hooks.py`. Redefine **solo** dos validaciones de fecha nativas, dejando `validate_dates()` y el resto
+del controlador `Task` intactos (se compone por MRO; `validate_dates()` invoca los submétodos vía
+`self.<m>()`, por lo que hereda cualquier validación nueva de upstream):
+
+- `validate_parent_expected_end_date` → **no bloquea**: las fechas de un summary/`is_group` son un
+  envelope **no vinculante**; una hija puede extenderse más allá del padre (ADR-0004 D1).
+- `validate_parent_project_dates` → **no bloquea**: `Project.expected_*` es **forecast**, no límite duro;
+  en particular el **Actual** (`act_start_date`/`act_end_date` desde Timesheet) **nunca** se bloquea por el
+  fin planificado del Project (ADR-0004 D2/D3). Esto desbloquea el flujo real de Timesheet
+  (`timesheet.py:182` → `Task.save()`), que hoy lanzaría `InvalidDates`.
+
+**Upgrade-safe:** no se copia el cuerpo nativo (que difiere entre 16.32.1 y upstream `7b0df4b`); se
+sustituye por la semántica PMO → independiente de versión. **Guard de drift** en
+`test_schedule_governance` (falla si `Task` deja de definir esos métodos). La validación nativa hace
+`return if frappe.in_test`, por lo que los tests fuerzan `frappe.in_test = False` (context manager con
+restauración) para ejercer la ruta de producción. No se toca Capacity/Planned Load.
+
+## PMO Project Baseline (ADR-0004)
+
+DocType **submittable** (`is_submittable`, autoname `PMO-BL-.#####`) que congela el plan de un Project
+como referencia aprobada. **Schedule / Operational Planning Baseline** (no una PMI Scope Baseline
+completa). Engine sin persistencia en `pmo/baseline.py`.
+
+- **Lineage (configuration control lineal):** `baseline_type` (Original/Approved Change/Replan) +
+  `supersedes_baseline`. Invariantes en `validate()`: una sola Original válida (no cancelada) por Project;
+  `revision` única por Project; una baseline no-Original debe sustituir la **cabeza vigente** (Submitted y
+  no Cancelada, del mismo Project); sin self-supersede, sin ciclos, sin bifurcación. `effective_date` no
+  futura (Opción B: sin future-effective). **Sin `is_current`** (se deriva) ni `change_request` (v0.6.0).
+- **Aprobación:** `approved_by`/`approved_at` se fijan **en `before_submit`** (el Submit es el acto formal
+  de aprobación); `snapshot_at` = captura técnica. No hay `submitted_by` (redundante con `approved_by`).
+- **Snapshot canónico (`before_submit`):** `build_snapshot(project)` → Project + Tasks con identidad WBS
+  estable (`name` + `parent_task` + `wbs_order` derivado del orden `lft` al congelar, **no** `lft/rgt`),
+  `description`, fechas/horas/estado, `depends_on`, y `assignments` `{user, employee, override_hours,
+  effective_hours}` (override solo si `pmo_planned_hours>0`, coherente con el motor; `effective_hours` de
+  `get_planned_hours_per_assignee`). Se persiste la forma **canónica** (claves ordenadas) y su
+  `snapshot_hash` sha256 determinista + `snapshot_schema_version`.
+- **Preflight ligero (`run_preflight`):** `warnings` (leaf sin fechas, `is_group` con esfuerzo/asignaciones,
+  summary dates stale vs envelope, assignment sin Employee, issues de Planned Load) y `blocking` (reparto
+  de horas inconsistente → impide `effective_hours`). Se **bloquea** el Submit solo ante `blocking`.
+- **P4 (ADR-0002/0004 D7):** `has_permission_baseline` (read = `is_project_visible`; write/submit/cancel =
+  solo owner del Project; Executive read-only; share denegado) + `get_permission_query_conditions_baseline`
+  (listados solo de projects visibles). **PMO Manager sin acceso** por rol.
+- **Baseline vigente as-of:** `get_effective_baseline(project, as_of)` = cabeza de la cadena (mayor
+  `effective_date <= as_of`, Submitted/no-Cancelada).
+- **Comparación de snapshots:** diferida (issue #5); el esquema canónico ya la habilita.
+
 ## Fuera de alcance
 Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext
 ni de DocPerm de read/write; solo hooks, un child DocType propio, roles y `Custom Role` por fixture.

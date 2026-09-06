@@ -177,3 +177,31 @@ def has_permission_task(doc, ptype=None, user=None):
 	if ptype in _WRITE_PTYPES:
 		return bool(is_owner or is_member or is_assignee)  # executive → solo lectura
 	return True  # read + otros ptypes → no restringir
+
+
+# --- PMO Project Baseline (ADR-0004 D7): P4 heredado del Project -----------------
+
+
+def get_permission_query_conditions_baseline(user=None):
+	"""Listados: solo baselines cuyo Project es visible (owner/member). Executive/Admin: sin condición."""
+	user = user or frappe.session.user
+	if _is_global_reader(user):
+		return ""
+	return f"`tabPMO Project Baseline`.project in ({_member_projects_subquery(user)})"
+
+
+def has_permission_baseline(doc, ptype=None, user=None):
+	"""READ del Baseline = visibilidad del Project (owner/member/executive/Administrator). WRITE/SUBMIT/
+	CANCEL/etc. = solo el owner del Project (Executive es read-only; Manager sin acceso por rol). SHARE
+	denegado. Siempre True/False (el controlador `has_permission` de Frappe solo restringe)."""
+	user = user or frappe.session.user
+	if user == "Administrator":
+		return True
+	project = doc.get("project") if hasattr(doc, "get") else getattr(doc, "project", None)
+	if not project:
+		return False  # fail-closed: una baseline sin Project no es visible
+	if ptype == "share":
+		return False
+	if ptype in _WRITE_PTYPES:
+		return frappe.db.get_value("Project", project, "owner") == user
+	return is_project_visible(project, user)  # read y demas ptypes de lectura
