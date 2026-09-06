@@ -261,9 +261,9 @@ DocType **submittable** (`is_submittable`, autoname `PMO-CR-.#####`) que **gobie
 `Quotation`/`erpnext_proposals` (no se recapturan Scope Items); `Project`/`Task` recibe el alcance
 aprobado; `PMO Project Baseline` congela el before/after; `Timesheet` registra el Actual.
 
-> **Estado (v0.6.0 en construcción):** entregados el DocType + P4 + invariantes base y el **Workflow +
-> acción "Aplicar Quotation al Project" + semántica Aplicado/Implementado**. El comparator y el Change
-> Register llegan en bloques posteriores del mismo release.
+> **Estado (v0.6.0 en construcción):** entregados el DocType + P4 + invariantes base, el **Workflow +
+> acción "Aplicar Quotation al Project" + semántica Aplicado/Implementado** y el **comparator
+> Baseline↔Baseline**. El Change Register llega en un bloque posterior del mismo release.
 
 - **Campos:** solicitud (`project`, `title`, `raised_by`, `origin`, `request_date`, `priority`
   Baja/Media/Alta, `reason`, `description`); impacto mínimo estructurado (5 Checks
@@ -320,6 +320,27 @@ el Workflow: valida (Aprobado, no aplicado), **delega** en `pmo/change_control.p
 helper de `erpnext_proposals`. Si el helper aún no existe en el entorno, la acción se detiene con un
 mensaje claro. **Dependencia de entrega:** la ruta comercial de v0.6 no se considera cerrada hasta que ese
 helper esté liberado y pase la integración end-to-end (ver ADR-0005).
+
+### Comparator Baseline ↔ Baseline (D11)
+
+`pmo/compare.py`: `compare_snapshots(before, after)` es una **función pura** que opera **solo sobre los
+snapshots v1 ya almacenados** (no reconstruye ni lee el Current Plan). Detecta: Tasks añadidas/eliminadas
+(identidad = `name`), y por Task cambios en `exp_start_date`/`exp_end_date`/`expected_time`/`status`/
+`parent_task`/`wbs_order` y en assignments (usuarios añadidos/eliminados, `override_hours`,
+`effective_hours`); más cambios de Project (`expected_start_date`/`expected_end_date`/`status`). Orden
+determinista (todo ordenado por `name`/`user`). Devuelve `project_changes`/`tasks_added`/`tasks_removed`/
+`tasks_changed`/`has_changes`.
+
+`compare_baselines(baseline_before, baseline_after)` (whitelisted): **P4** = `check_permission("read")` sobre
+**ambas** baselines (= `is_project_visible`) + exige **mismo Project** (sin fuga cross-project); carga los
+snapshots persistidos y delega en `compare_snapshots`. El orden de argumentos define la dirección
+(from→to); no reordena. Es una **diferencia entre baselines**, no una atribución por CR (varios CR pueden
+consolidarse en una misma `baseline_after`).
+
+**UI (modesta):** helper global `pmo_show_baseline_diff` (`public/js/baseline_compare.js`, vía
+`app_include_js`) que abre un diálogo con secciones added/removed/changed. Botones: en el Change Request
+*"¿Qué cambió? (baselines)"* (cuando hay `baseline_before` y `baseline_after`) y en el Baseline *"Comparar
+con la anterior"* (cuando tiene `supersedes_baseline`). Sin overlay Gantt, timeline ni edición.
 
 ## Fuera de alcance
 Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext

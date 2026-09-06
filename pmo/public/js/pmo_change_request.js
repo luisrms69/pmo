@@ -7,6 +7,17 @@
 // "Marcar Implementado" cuando el Current Plan esté completo.
 frappe.ui.form.on("PMO Change Request", {
 	refresh(frm) {
+		// ADR-0005 D11: comparar la baseline previa con la resultante (cambios entre baselines).
+		if (frm.doc.baseline_before && frm.doc.baseline_after) {
+			frm.add_custom_button(__("¿Qué cambió? (baselines)"), () => {
+				window.pmo_show_baseline_diff(
+					frm.doc.baseline_before,
+					frm.doc.baseline_after,
+					__("Cambios entre baselines del Change Request")
+				);
+			});
+		}
+
 		if (
 			frm.doc.docstatus === 1 &&
 			frm.doc.workflow_state === "Aprobado" &&

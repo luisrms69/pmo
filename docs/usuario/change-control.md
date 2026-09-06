@@ -56,6 +56,14 @@ El acceso se **hereda del Project** (misma regla de privacidad que el resto de P
 
 Un CR **Rechazado** o **Cerrado** es terminal (no se cancela); un nuevo intento es otro CR.
 
+## ¿Qué cambió entre baselines?
+
+Cuando el CR tiene ligadas la baseline previa (*before*) y la resultante (*after*), el botón **"¿Qué
+cambió? (baselines)"** abre una comparación legible: tareas añadidas/eliminadas y cambios de fechas, horas,
+estructura, estado y asignaciones, más cambios de fechas del Project. Es una **diferencia entre baselines**:
+si varias solicitudes de cambio se consolidaron en la misma baseline resultante, el comparador muestra
+**todo** lo que cambió entre esas dos fotos, no solo lo de un CR concreto.
+
 ## Relación con los demás documentos
 
 | Documento | Rol en el cambio |

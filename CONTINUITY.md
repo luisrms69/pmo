@@ -3,11 +3,11 @@
 **Fecha:** 2026-09-06
 **Rama activa:** `feat/change-control` (base `version-16` @ v0.5.0).
 **Tarea actual:** **v0.6.0 — Integrated Change Control.** Arquitectura cerrada y **ADR-0005 Accepted**.
-Bloque 1 (docs) ✅ `15fb9dd`. Bloque 2 (DocType + P4) ✅ `0974040`. **Bloque 3 (Workflow + acción Aplicar +
-Aplicado/Implementado) ✅** (commit en curso): Workflow fixture + gates + `before_update_after_submit` +
-acción delegada a `erpnext_proposals` (contrato mockeado). `test-pmo.localhost` migrado. **Suite 168/168.**
-Bloques 4–6 (comparator, Change Register, cierre+bump) pendientes. Sin push/PR; sin cambios en
-`erpnext_proposals` (helper `apply_addendum_to_project` = ciclo aparte, dependencia de entrega).
+Bloque 1 (docs) ✅ `15fb9dd`. Bloque 2 (DocType + P4) ✅ `0974040`. Bloque 3 (Workflow + acción Aplicar) ✅
+`6dbe531`. **Bloque 4 (Comparator Baseline↔Baseline) ✅** (commit en curso): `pmo/compare.py`
+(`compare_snapshots` puro + `compare_baselines` whitelisted con P4/mismo-Project) + UI diálogo
+(`baseline_compare.js` global + botones en CR y Baseline). **Suite 179/179.** Bloques 5–6 (Change Register,
+cierre+bump 0.6.0) pendientes. Sin push/PR; sin cambios en `erpnext_proposals` (dependencia de entrega).
 
 > v0.5.0 ya está **mergeado y liberado** (PR #6 → `f4fb3bc`; tag/Release v0.5.0). DEMO en `pmo-v16.dev`
 > se dejó disponible (no limpiar aún).
@@ -39,7 +39,12 @@ ADR-0005 (Accepted) define Change Control integrado. Referencia viva:
   `aplicar_quotation_al_project` delegando en `pmo/change_control.py` → contrato
   `erpnext_proposals.apply_addendum_to_project` (mockeado en tests; sin escribir `proposal_project`).
   JS `pmo_change_request.js`. Tests (17 en `test_change_request.py`). **Suite 168/168.** *(commit en curso)*
-- **Bloque 4 — Comparator** (`pmo/compare.py` engine determinista sobre snapshots v1 + render modesto) + tests.
+- **Bloque 4 — Comparator Baseline↔Baseline. ✅** `pmo/compare.py`: `compare_snapshots` (puro, sobre
+  snapshots v1: added/removed/changed de tasks — fechas/horas/estado/estructura/assignments — + project
+  dates; orden determinista) y `compare_baselines` whitelisted (P4 read en ambas + mismo Project). UI:
+  `public/js/baseline_compare.js` (global, `pmo_show_baseline_diff`) + botón en CR ("¿Qué cambió?
+  (baselines)") y en Baseline ("Comparar con la anterior"). Tests `test_baseline_compare.py` (11).
+  **Suite 179/179.** *(commit en curso)*
 - **Bloque 5 — Report View (Change Register)** P4-safe + docs (`docs/usuario/`, `docs/tecnico/`).
 - **Bloque 6 — bump `__version__`→0.6.0 + `migrate` en `test-pmo.localhost` (con autorización) + validación
   funcional en `pmo-v16.dev`.** Luego `/ship push` + `/ship pr`.

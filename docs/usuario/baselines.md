@@ -56,5 +56,6 @@ La aprobación por autoridades adicionales (Sponsor / comité de cambios) llegar
 
 - Una baseline nueva es un **documento nuevo** (no un "Amend" de la anterior). Cancelar solo sirve para
   anular una baseline creada por error.
-- La **comparación** entre baselines (o baseline vs plan actual) aún no está disponible; el snapshot ya se
-  guarda con el detalle necesario para incorporarla más adelante.
+- **Comparar baselines:** en una baseline con *Supersedes Baseline*, el botón **"Comparar con la
+  anterior"** muestra qué cambió (tareas, fechas, horas, estructura, estado, asignaciones y fechas del
+  Project) respecto a la que sustituye. La comparación **baseline vs plan actual** aún no está disponible.
