@@ -180,6 +180,13 @@ Control se decide y documenta por separado (posible **ADR-0005**). No se impleme
 3. Cadena de supersession **lineal**: una nueva baseline sustituye la **cabeza vigente**.
 4. `supersedes_baseline`: mismo Project, Submitted, no Cancelled, no self, sin ciclos.
 5. `effective_date <= approved_at` (sin future-effective en v0.5.0).
+6. **`effective_date` monotona en la cadena:** una sucesora no puede ser efectiva ANTES que la baseline
+   que sustituye (igual fecha permitida). Asi "cabeza de la cadena" == "mayor `effective_date`" no se
+   contradicen, y `get_effective_baseline` (mayor `effective_date <= as_of`) es consistente con el lineage.
+7. **Cancelacion solo de la cabeza:** no se puede cancelar una baseline con un sucesor no-cancelado
+   (Submitted o Draft). Cancelar la cabeza es valido y revierte la vigencia a la anterior. (Frappe ya
+   bloquea nativamente el caso de sucesor Submitted via back-link check; el guard `before_cancel` lo hace
+   explicito y cubre tambien el sucesor Draft.)
 
 ## Contraste con estandares y gaps deliberados
 

@@ -69,7 +69,7 @@ class PMOProjectBaseline(Document):
 		sup = frappe.db.get_value(
 			"PMO Project Baseline",
 			self.supersedes_baseline,
-			["project", "docstatus"],
+			["project", "docstatus", "effective_date"],
 			as_dict=True,
 		)
 		if not sup:
@@ -78,6 +78,19 @@ class PMOProjectBaseline(Document):
 			frappe.throw(frappe._("Solo se puede sustituir una baseline del mismo Project."))
 		if sup.docstatus != 1:
 			frappe.throw(frappe._("Solo se puede sustituir una baseline Submitted y no Cancelada."))
+
+		# monotonia de vigencia en la cadena: la sucesora no puede ser efectiva ANTES que la sustituida
+		# (igual fecha permitida). Asi "cabeza de la cadena" == "mayor effective_date" no se contradicen.
+		if (
+			self.effective_date
+			and sup.effective_date
+			and getdate(self.effective_date) < getdate(sup.effective_date)
+		):
+			frappe.throw(
+				frappe._(
+					"Effective Date no puede ser anterior a la de la baseline que sustituye ({0})."
+				).format(sup.effective_date)
+			)
 
 		# sin bifurcaciones: la baseline sustituida no puede tener ya otro sucesor no cancelado
 		if frappe.db.exists(
@@ -93,6 +106,25 @@ class PMOProjectBaseline(Document):
 			)
 
 		self._guard_no_cycle()
+
+	# --- cancelacion: solo la cabeza de la cadena (preserva el lineage) -------------
+
+	def before_cancel(self):
+		"""No se puede cancelar una baseline con un sucesor no-cancelado (dejaria la cadena rota o un
+		draft apuntando a una baseline Cancelled). Cancelar la cabeza es valido y revierte la vigencia a la
+		anterior. Nota: Frappe ya bloquea nativamente el caso de sucesor Submitted; esto lo hace explicito y
+		cubre tambien el sucesor Draft.
+		"""
+		successor = frappe.db.exists(
+			"PMO Project Baseline",
+			{"supersedes_baseline": self.name, "docstatus": ["<", 2]},
+		)
+		if successor:
+			frappe.throw(
+				frappe._(
+					"No se puede cancelar esta baseline: tiene un sucesor ({0}). Cancela primero la cabeza de la cadena."
+				).format(successor)
+			)
 
 	def _guard_no_cycle(self):
 		seen, cur, depth = set(), self.supersedes_baseline, 0

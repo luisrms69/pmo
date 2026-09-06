@@ -12,7 +12,9 @@
   el plan de un Project como referencia aprobada (**Schedule / Operational Planning Baseline**).
   - **Lineage lineal** (configuration control): `baseline_type` (Original/Approved Change/Replan) +
     `supersedes_baseline`; una sola Original válida por Project, `revision` única, sustituir la cabeza
-    vigente Submitted/no-Cancelada, sin ciclos/bifurcación. Sin `is_current` (derivado) ni `change_request`.
+    vigente Submitted/no-Cancelada, sin ciclos/bifurcación; **`effective_date` monótona en la cadena** y
+    **cancelación solo de la cabeza** (no cancelar una baseline con sucesor no-cancelado). Sin `is_current`
+    (derivado) ni `change_request`.
   - **Aprobación en Submit**: `approved_by`/`approved_at` (fijados en `before_submit`) + `snapshot_at`.
   - **Snapshot canónico** determinista (`pmo/baseline.py`): WBS por `task_id`+`parent_task`+`wbs_order`
     (no `lft/rgt`), `description`, fechas/horas/estado, `depends_on`, assignments

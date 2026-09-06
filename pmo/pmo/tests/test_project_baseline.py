@@ -256,3 +256,27 @@ class TestProjectBaseline(IntegrationTestCase):
 		self.assertFalse(has_permission_baseline(base, "submit", other))
 		self.assertFalse(has_permission_baseline(base, "submit", execu))  # executive read-only
 		self.assertFalse(has_permission_baseline(base, "share", subj))
+
+	# --- cancelacion / monotonia de vigencia -------------------------------------
+
+	def test_cannot_cancel_intermediate_with_successor(self):
+		p = _project("BL-P13")
+		b1 = _baseline(p, "BL-001", submit=True)
+		b2 = _baseline(p, "BL-002", btype="Approved Change", supersedes=b1.name, submit=True)
+		# cancelar la intermedia (con sucesor no-cancelado) -> bloqueado
+		with self.assertRaises(ValidationError):
+			b1.cancel()
+		# cancelar la cabeza -> permitido; la vigencia vuelve a la anterior
+		b2.reload()
+		b2.cancel()
+		self.assertEqual(get_effective_baseline(p), b1.name)
+
+	def test_effective_date_monotonic_in_chain(self):
+		p = _project("BL-P14")
+		b1 = _baseline(p, "BL-001", effective="2026-02-01", submit=True)
+		# sucesora con effective ANTERIOR -> bloqueado
+		with self.assertRaises(ValidationError):
+			_baseline(p, "BL-002", btype="Replan", supersedes=b1.name, effective="2026-01-01")
+		# igual fecha -> permitido
+		b2 = _baseline(p, "BL-002", btype="Replan", supersedes=b1.name, effective="2026-02-01")
+		self.assertTrue(b2.name)
