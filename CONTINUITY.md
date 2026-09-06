@@ -2,11 +2,10 @@
 
 **Fecha:** 2026-09-05
 **Rama activa:** `feat/schedule-baselines` (base `version-16` @ v0.4.0).
-**Tarea actual:** **v0.5.0 — Schedule Governance & Baselines.** Bloque 0 (ADR-0004) ✅, Bloque 1 (mixin
-Task) ✅ y Bloque 2 (DocType `PMO Project Baseline`) ✅ commiteados; **siguiente Bloque 3 (cierre)**:
-bump `__version__`→0.5.0, CHANGELOG `[0.5.0]`, luego `/ship push` + `/ship pr` a `version-16`. Sin push
-todavía. **Nota:** `test-pmo.localhost` ya migrado con el DocType nuevo; `pmo-v16.dev` **pendiente de
-migrar** (Bloque 3 / validación visual).
+**Tarea actual:** **v0.5.0 — Schedule Governance & Baselines.** Bloques 0–3 ✅. bump `__version__`→0.5.0,
+CHANGELOG `[0.5.0]`, ADR-0004 `Accepted`. `test-pmo.localhost` y `pmo-v16.dev` migrados (DocType nuevo);
+engine validado sobre DEMO en dev. **Pendiente: `/ship push` + `/ship pr` a `version-16`** (autorizados);
+merge y `/ship release v0.5.0` tras revisar el PR.
 
 ---
 

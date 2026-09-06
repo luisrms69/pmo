@@ -1,8 +1,18 @@
 # ADR-0004: Schedule Governance & Baselines
 
-**Estado:** Proposed
+**Estado:** Accepted (implementado en v0.5.0; ver "Aceptación")
 **Fecha:** 2026-09-05 · **App:** `pmo` · **Objetivo de versión:** v0.5.0
 **Depende de:** ADR-0002 (Privacidad Project/Task, P4), ADR-0003 (Resource Capacity). **No reabre** ninguno.
+
+## Aceptación (2026-09-05)
+
+Implementado en v0.5.0 sin desviaciones materiales; la implementación **confirma** las decisiones D1–D9.
+Notas de implementación: (a) el mixin vive en el módulo existente `pmo.overrides.PMOTaskScheduleMixin`
+(no `pmo.overrides.task`, que sería un paquete) — solo ruta, misma decisión; (b) `override_hours` del
+snapshot se registra **solo si `pmo_planned_hours>0`**, coherente con el motor (`<=0`/vacío = sin
+override). Validado con tests (`test_schedule_governance` 6, `test_project_baseline` 12; suite 149/149) y
+con el engine sobre datos reales del DEMO en `pmo-v16.dev`. La **comparación de snapshots** queda diferida
+(issue #5).
 
 ## Contexto
 
