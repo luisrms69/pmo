@@ -2,9 +2,11 @@
 
 **Fecha:** 2026-09-05
 **Rama activa:** `feat/schedule-baselines` (base `version-16` @ v0.4.0).
-**Tarea actual:** **v0.5.0 — Schedule Governance & Baselines.** Bloque 0 (ADR-0004) ✅ y Bloque 1 (mixin
-Task) ✅ commiteados; **siguiente Bloque 2** (DocType `PMO Project Baseline`). Un solo PR a `version-16`
-al cerrar la rama. Sin push todavía.
+**Tarea actual:** **v0.5.0 — Schedule Governance & Baselines.** Bloque 0 (ADR-0004) ✅, Bloque 1 (mixin
+Task) ✅ y Bloque 2 (DocType `PMO Project Baseline`) ✅ commiteados; **siguiente Bloque 3 (cierre)**:
+bump `__version__`→0.5.0, CHANGELOG `[0.5.0]`, luego `/ship push` + `/ship pr` a `version-16`. Sin push
+todavía. **Nota:** `test-pmo.localhost` ya migrado con el DocType nuevo; `pmo-v16.dev` **pendiente de
+migrar** (Bloque 3 / validación visual).
 
 ---
 
@@ -24,9 +26,13 @@ ERPNext nativo, sin fork. Referencia viva: `docs/adr/0004-schedule-governance-an
   `validate_parent_expected_end_date` y `validate_parent_project_dates` (no bloquear). Tests
   `test_schedule_governance.py` (6): guard de drift, ruta nativa vs mixin forzando `frappe.in_test=False`
   (atributo de módulo, no `flags`), y path `task.save()` que usa Timesheet. **Suite 137/137.**
-- **Bloque 2 — `PMO Project Baseline` (D4–D7).** DocType submittable; lineage/invariantes; `has_permission`
-  que reúsa `is_project_visible` (P4); snapshot canónico determinista en `before_submit`; preflight
-  ligero; tests. Docs usuario/técnico.
+- **Bloque 2 — `PMO Project Baseline` (D4–D7) ✅ HECHO.** DocType submittable (autoname `PMO-BL-.#####`);
+  engine `pmo/baseline.py` (snapshot canónico + hash sha256 determinista + preflight + baseline vigente
+  as-of); controller (invariantes de lineage lineal + `before_submit`); P4 en `permissions.py`
+  (`has_permission_baseline` read=`is_project_visible`, write/submit=owner, Executive read-only;
+  `get_permission_query_conditions_baseline`) + hooks. `override_hours` en snapshot solo si
+  `pmo_planned_hours>0` (coherente con el motor). Tests `test_project_baseline.py` (12). **Suite 149/149.**
+  Docs usuario (`baselines.md`) + técnico.
 - **Bloque 3 — Cierre.** Bump `__version__` → 0.5.0 (MINOR desde v0.4.0), CHANGELOG `[0.5.0]`; `/ship push`
   + `/ship pr`; tras merge `/ship release` `v0.5.0`.
 
