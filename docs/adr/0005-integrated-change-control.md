@@ -1,0 +1,260 @@
+# ADR-0005: Integrated Change Control
+
+**Estado:** Accepted (aprobado 2026-09-06; implementación en v0.6.0 — pendiente)
+**Fecha:** 2026-09-06 · **App:** `pmo` · **Objetivo de versión:** v0.6.0
+**Depende de:** ADR-0002 (Privacidad Project/Task, P4), ADR-0004 (Schedule Governance & Baselines). **No reabre** ninguno.
+
+## Contexto
+
+ADR-0004 dejó baselines inmutables (Baseline=congelada / Current Plan=mutable / Actual=realidad) pero
+**no** el mecanismo que gobierna el paso de una baseline a la siguiente. Un cambio de alcance, cronograma,
+recursos o condiciones comerciales debe **registrarse, evaluarse y aprobarse antes** de tocar el Current
+Plan, quedar **auditado** (origen, razón, impacto, decisión, before/after, documento comercial,
+implementación, cierre) y **no duplicar** la captura de alcance que ya vive en `Quotation` /
+`erpnext_proposals`.
+
+Verificado en el bench (Frappe 16.x, ERPNext 16.x): **no existe** un contenedor "Change Request" nativo
+(ni en Projects ni en Selling). Lo demás es reutilizable:
+
+- **Frappe Workflow** → lifecycle + aprobación gated por rol/estado, con `doc_status` por estado.
+- **`allow_on_submit`** (`base_document._validate_update_after_submit`) → edición controlada de campos
+  específicos tras el submit, sin bypass de la inmutabilidad del documento.
+- **ToDo / Assignment Rule** → asignación/enrutamiento.
+- **Comment / Communication / File / Version (track_changes)** → evidencia y discusión.
+- **`Quotation` + `erpnext_proposals`** → alcance (Scope Items), esfuerzo, entregables, valuación,
+  precio/condiciones, **programación** del alcance y **versiones**, con su **propio Workflow** comercial.
+- **`create_project_from_quotation`** (`utils/project.py`) → transforma Scope Items en Tasks; es
+  **idempotente** y **reutiliza** el Project si `Quotation.proposal_project` está seteado (append con
+  dedup por `source_quotation_scope_item`). Confirmado: **`Ganada` no aplica nada por sí sola**; la
+  aplicación solo ocurre al invocar esa función (hoy, botón manual).
+
+El objetivo es conservar lo útil del proceso vigente del cliente, mejorar con bajo costo y **eliminar
+burocracia, no funcionalidad**; sin convertir ERPNext en Primavera.
+
+## Decisiones
+
+### D1 — Único DocType nuevo: `PMO Change Request`
+
+Submittable, autoname `PMO-CR-.#####`, módulo PMO. Contenedor unificador de todo cambio (comercial y no
+comercial). **Impacto estructurado mínimo:** `priority` (Select: Baja/Media/Alta, default Media), 5 Checks
+de tipo de cambio (scope/schedule/effort/commercial/risk), deltas `impact_hours`/`impact_days`/
+`impact_amount` (+ `currency`, default company currency del Project; estimación **no vinculante**),
+`impact_notes` y `evaluation_notes`. **Sin** severidad por dimensión, **sin** fechas (viven en la
+Quotation/Tasks/Baseline), **sin** dimensión de calidad, **sin** ventana/downtime estructurados, **sin**
+campos de business case. La discusión técnica multi-actor usa **Comments nativos**.
+
+**Campos:**
+
+- Solicitud: `project` (Link, reqd), `title` (reqd), `raised_by` (Link User, default sesión, ro),
+  `origin` (Select: Cliente/Interno/Regulatorio/Otro), `request_date` (Date, default hoy, ro),
+  `priority`, `reason` (Small Text, reqd), `description` (Text Editor).
+- Impacto: `impacts_scope|schedule|effort|commercial|risk` (Check), `impact_hours` (Float),
+  `impact_days` (Int), `currency` (Link Currency), `impact_amount` (Currency, options=`currency`),
+  `impact_notes` (Small Text), `evaluation_notes` (Text), `impact_summary` (Data, ro, computado — para el
+  Register).
+- Comercial: `proposal_group` (Data), `applied_quotation` (Link Quotation, ro).
+- Baselines: `baseline_before` (Link PMO Project Baseline, ro, auto), `baseline_after` (Link, ro).
+- Decisión: `approved_by` (Link User, ro), `approved_at` (Datetime, ro), `decision_notes` (Small Text).
+- Implementación: `applied_to_project` (Check, ro), `applied_at` (Datetime, ro),
+  `implementation_notes` (Small Text).
+- Estándar: `workflow_state`, `amended_from`.
+
+### D2 — La Proposal ES una `Quotation`
+
+**No** se crea ningún DocType ni entidad "Proposal" en `erpnext_proposals`. Los **Scope Items de la
+Quotation son la única fuente del alcance**; horas/esfuerzo, entregables, valuación, precio/condiciones,
+**programación** (`planned_start_offset_days` + `planned_duration_days` + `dependency_scope_item_codes` +
+`is_milestone`, ancladas en `transaction_date`) y **versiones** viven en la Quotation. **Nunca** se
+recapturan Tasks equivalentes en el CR.
+
+### D3 — Lifecycle (Workflow nativo)
+
+`Draft → En revisión → Aprobado / Rechazado → Implementado → Cerrado`. **Sin** estado `Aplicado` (se
+representa con los campos `applied_*`, no con un estado).
+
+| Estado       | doc_status                |
+|--------------|---------------------------|
+| Draft        | 0                         |
+| En revisión  | 0                         |
+| Aprobado     | 1 (submit)                |
+| Rechazado    | 1 (submit)                |
+| Implementado | 1 (update-after-submit)   |
+| Cerrado      | 1 (update-after-submit)   |
+
+**Transiciones:**
+
+- `Draft → En revisión`: gate de baseline vigente (D4) + congela `baseline_before`.
+- `En revisión → Aprobado` / `En revisión → Rechazado`: submit (owner, D6/D13).
+- `En revisión → Draft`: devolver.
+- **`Aprobado` — acción "Aplicar Quotation al Project"** (solo cuando hay Quotation): materializa los
+  Scope Items como Tasks y fija `applied_to_project`/`applied_at`/`applied_quotation`. **No cambia el
+  Workflow por sí sola** (permanece en `Aprobado`). Idempotente. Ver D7.
+- **`Aprobado → Implementado` — acción "Marcar implementado"**: la ejecuta el usuario **después** de
+  completar también los ajustes de fechas/asignaciones/Current Plan. Gate: si el CR tiene
+  `proposal_group`, exige `applied_to_project=1`. Para cambios **sin** Quotation, el PM ajusta el Current
+  Plan y luego ejecuta "Marcar implementado" (esas ediciones **son** la implementación).
+- `Implementado → Cerrado`: gate `baseline_after` (D9).
+
+**Flujo resultante:**
+
+- Con Quotation: `Aprobado → [Aplicar Quotation al Project] → ajustar Current Plan → Marcar implementado
+  → Implementado`.
+- Sin Quotation: `Aprobado → ajustar Current Plan → Marcar implementado → Implementado`.
+
+`Rechazado` = `docstatus 1` → **evidencia terminal inmutable**.
+
+### D4 — Gate de baseline vigente
+
+Un CR **no puede formalizarse** (pasar a `En revisión`) si el Project no tiene una **Baseline vigente**
+(`get_effective_baseline`). Antes de esa baseline se está en **planificación**, no en Change Control. Al
+formalizar, `baseline_before` se resuelve y **congela**. Gate **duro**, no warning.
+
+### D5 — Cardinalidad de baselines
+
+`baseline_before` y `baseline_after` viven **en el CR**. **Muchos CR pueden consolidarse en una misma
+`baseline_after`.** **No** se añade un Link singular `change_request` en `PMO Project Baseline` (que
+ADR-0004 dejó fuera): la Baseline muestra sus CR relacionados por **backlink/dashboard**.
+
+### D6 — Autoridad y coordinación de Workflows (Modelo 1)
+
+- **Cambios CON Proposal/Quotation:** la autoridad sobre **solución, condiciones comerciales y aceptación
+  del cliente** vive en el **Workflow de la Quotation** (`Aprobada` = solución interna; `Ganada` =
+  cliente aceptó), con sus roles propios. El CR **no re-aprueba** esos términos ni recrea
+  Sponsor/Comité/Cliente en PMO. El `Aprobado` del CR es la **decisión de gobernanza** = *"autorizo
+  incorporar este cambio a este Project y su baseline"*, y el **gate de "Aplicar" exige que la Quotation
+  esté `Ganada`**.
+- **Cambios SIN Proposal:** autoridad mínima = **Project Owner** (único gate del CR).
+- Se evitan dos sistemas de aprobación paralelos: lo comercial se **apoya** en el Workflow de la Proposal;
+  el CR solo añade la decisión de incorporación.
+
+### D7 — Aprobado ≠ Aplicado ≠ Implementado
+
+- `Ganada` **no** modifica el Project por sí sola (verificado).
+- **"Aplicar Quotation al Project"** (acción whitelisted): valida CR `Aprobado` + Quotation `Ganada`
+  (docstatus 1, no superseded, single-live de su grupo, mismo customer/company); **pre-setea
+  `proposal_project` = Project existente**; invoca `create_project_from_quotation` → **reutiliza** el
+  Project y **anexa** solo los Scope Items nuevos (dedup por `source_quotation_scope_item`). Al completar,
+  fija `applied_to_project`/`applied_at`/`applied_quotation`. **No cambia el Workflow por sí sola.**
+  **Nunca crea otro Project.**
+- **`Implementado`** es una **confirmación explícita posterior** = *el cambio aprobado completo está
+  reflejado en el Current Plan* (Tasks materializadas **y** fechas/asignaciones ajustadas). Gate: si hay
+  `proposal_group`, exige `applied_to_project=1`; en cambios solo-cronograma (sin Proposal), el PM edita
+  el plan a mano y marca `Implementado`.
+
+### D8 — CR ↔ Quotation (cardinalidad / versioning)
+
+El CR guarda `proposal_group` (Data — hilo lógico, historial completo vía versioning por rechazo dentro de
+su grupo) **y** `applied_quotation` (Link, ro — la versión `Ganada` efectivamente aplicada). Se
+**preserva** el modelo de versioning de `erpnext_proposals` (rejection-driven, single-live por grupo). El
+addendum usa un **`proposal_group` distinto** del original (evita el bloqueo de single-live contra la
+propuesta original `Ganada`, que no es estado muerto).
+
+### D9 — Nueva Baseline después de implementar
+
+Tras `Implementado`, el owner crea una nueva `PMO Project Baseline` (Approved Change), se liga
+`baseline_after` (mismo Project, `effective_date ≥ baseline_before`) y se **Cierra** el CR.
+
+### D10 — Persistencia post-submit (nativa, sin bypass)
+
+Los campos que cambian legítimamente tras aprobar son **`allow_on_submit=1`**: `applied_to_project`,
+`applied_at`, `applied_quotation`, `baseline_after`, `implementation_notes` (`workflow_state` lo maneja el
+Workflow). El **contenido de la solicitud** (`project`, `title`, `reason`, `description`, checks, deltas,
+`priority`, `evaluation_notes`, `baseline_before`, `approved_by/at`, `decision_notes`) **no** es
+`allow_on_submit` → queda **inmutable** por el core (`_validate_update_after_submit`). Las transiciones
+submitted→submitted usan `doc.save()` nativo (`apply_workflow`). **No** se usa `frappe.db.set_value` de
+rescate. **Amend no forma parte del lifecycle**: `Rechazado`/`Cerrado` son terminales (`before_cancel`
+bloquea su cancelación → no son amendables); `cancel` queda solo como "retirar" un `Aprobado` **no
+aplicado** (owner), bloqueado si `applied_to_project` o `Cerrado`. Un nuevo intento es **otro CR**.
+
+### D11 — Comparator mínimo Baseline↔Baseline
+
+Módulo determinista sobre snapshots v1 (reutiliza los ya almacenados; no reconstruye, no toca esquema).
+Identifica: Tasks añadidas/eliminadas, cambios de fechas, `expected_time`, estructura/WBS, estado,
+assignments (`override_hours`/`effective_hours`) y fechas de Project. Whitelisted
+`get_baseline_comparison(a, b)` con check `read` sobre **ambas** baselines (= `is_project_visible`) y mismo
+Project → **P4-safe**, sin fuga cross-project. Render **modesto** (diálogo/tabla), rotulado **"cambios
+entre baselines"** — **no** atribución exclusiva por CR (muchos CR → una `baseline_after`). Sin overlay
+Gantt.
+
+### D12 — Change Register (Report View nativo)
+
+`PMO Change Request` es el propio registro. Se entrega un **Report View** nativo (**P4-safe** por
+`permission_query_conditions`, no Query/Script Report) con columnas/filtros: Project, CR, título, estado,
+fecha, `priority`, tipo(s) de impacto (`impact_summary`), horas/días/monto, `proposal_group`/
+`applied_quotation`, `baseline_before`, `baseline_after`.
+
+### D13 — P4 del CR (ADR-0002)
+
+Hooks (sin tocar DocPerms), mismo patrón que `PMO Project Baseline`: `read` = `is_project_visible`;
+`create`/`write` = project writer (owner **o** member; `write` solo en `docstatus 0`);
+`submit`/`cancel`/`amend` = **owner** (esto sella owner-only aprobar/rechazar); `share` = False.
+`permission_query_conditions` por proyectos visibles. `PMO Executive Access` read-only; `PMO Manager` sin
+acceso. Los miembros pueden crear, documentar, evaluar y enviar a revisión, pero **no aprueban por ser
+members**. Coherencia de UI: `condition` en las transiciones de aprobación (además del gate P4), para no
+depender solo de que el submit falle tras pulsar.
+
+## Interacción con `erpnext_proposals` (gap identificado; PR y autorización separados)
+
+**Extensión de comportamiento de `Quotation`**, no un modelo nuevo, **cero DocTypes**: función whitelisted
+`apply_addendum_to_project(quotation, project)` que valida (Ganada, docstatus 1, no superseded,
+single-live de su grupo, mismo customer/company), **pre-setea `proposal_project`** (hoy `read_only`) y
+llama a `create_project_from_quotation`. Cero-cambio **no** es posible (por `proposal_project` read-only +
+rama de creación de Project). No se implementa en el ciclo de `pmo`; es un ciclo aparte en su repo con
+autorización propia.
+
+## Dependencia de entrega — `erpnext_proposals` (v0.6.0)
+
+El helper `apply_addendum_to_project(quotation, project)` vive en `erpnext_proposals`, con rama/PR/release y
+**autorización propia** (dos ciclos Git independientes). No obstante, **la ruta comercial de v0.6 depende
+funcionalmente de él**: sin ese helper, la acción PMO "Aplicar Quotation al Project" no puede cumplir la
+promesa central de **añadir alcance a un Project existente sin crear otro**.
+
+Por tanto, **`pmo v0.6.0` no se considera funcionalmente cerrado/validado** hasta que:
+
+1. la versión compatible de `erpnext_proposals` (con `apply_addendum_to_project`) esté implementada y
+   liberada, y
+2. pase la **integración end-to-end**:
+
+   `CR → Quotation versionada → Ganada → aplicar al Project existente → Scope Items convertidos en Tasks →
+   completar Current Plan → Baseline after → cerrar CR`
+
+   **sin crear un Project nuevo.**
+
+Las rutas **sin Quotation** (cambios de cronograma/asignaciones) no dependen de este helper y pueden
+validarse de forma independiente.
+
+## Consecuencias
+
+Registro de cambios unificado y auditable; se preservan Baseline=congelada / Current=mutable /
+Actual=realidad y "no mutar el Current Plan antes de aprobar"; **una sola fuente del alcance** (Quotation →
+Tasks); autoridad comercial no duplicada (Workflow de la Quotation). Reutiliza lo nativo (Workflow,
+`allow_on_submit`, ToDo/Assignment Rule, Comment/Communication/File/Version) + snapshots v1. Alcance de
+construcción: **un DocType**, **un Workflow**, **un comparator**, hooks P4, un Report View — y, aparte, un
+helper acotado en `erpnext_proposals`.
+
+## Gaps reconocidos (no implementados)
+
+- Ventana de implementación / downtime (dominio ITIL de cambios a producción).
+- Beneficios formales / business case / alineación estratégica estructurada.
+- CCB / Sponsor / aprobador delegado (autoridad más allá del Project Owner).
+- Reapertura de un CR (nuevo intento = nuevo CR).
+
+## Fuera de alcance (v0.6)
+
+CPM/float, what-if/scenarios, resource leveling, EVM/Cost Baseline, Monte Carlo, variation-order
+accounting, constraints avanzados, **Status Date / Planificado vs Real (v0.7)**, UI rico del comparator.
+
+## Alternativas descartadas
+
+- **(B)** Conducir el cambio solo por Quotation-addendum + baselines, sin DocType → no cubre cambios sin
+  impacto comercial ni da registro unificado de gobernanza.
+- **(C)** Módulo Change Management completo (scoring/CCB/variation orders/EVM) → sobreingeniería, contrario
+  al criterio costo/beneficio.
+
+## Relación con ADR previos
+
+- **ADR-0002:** reutiliza el boundary P4 (`is_project_visible`, `PMO Executive Access` read-only,
+  `PMO Manager` sin acceso).
+- **ADR-0004:** consume Baselines inmutables y snapshots v1; **resuelve no añadir** el link
+  `change_request` en Baseline (que ADR-0004 dejó fuera) usando cardinalidad del lado del CR. No modifica
+  invariantes de lineage / effective_date / cancelación.

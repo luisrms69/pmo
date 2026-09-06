@@ -1,68 +1,83 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-09-05
-**Rama activa:** `feat/schedule-baselines` (base `version-16` @ v0.4.0).
-**Tarea actual:** **v0.5.0 — Schedule Governance & Baselines.** Bloques 0–3 ✅. bump `__version__`→0.5.0,
-CHANGELOG `[0.5.0]`, ADR-0004 `Accepted`. `test-pmo.localhost` y `pmo-v16.dev` migrados (DocType nuevo);
-engine validado sobre DEMO en dev. **Pendiente: `/ship push` + `/ship pr` a `version-16`** (autorizados);
-merge y `/ship release v0.5.0` tras revisar el PR.
+**Fecha:** 2026-09-06
+**Rama activa:** `feat/change-control` (base `version-16` @ v0.5.0).
+**Tarea actual:** **v0.6.0 — Integrated Change Control.** Arquitectura cerrada y **ADR-0005 Accepted**.
+Bloque 1 (docs) en curso: ADR-0005 + entrada CHANGELOG `[0.6.0] En preparación`. Implementación de código
+por bloques 2–6 pendiente (aún NO iniciada). Sin push/PR todavía.
+
+> v0.5.0 ya está **mergeado y liberado** (PR #6 → `f4fb3bc`; tag/Release v0.5.0). DEMO en `pmo-v16.dev`
+> se dejó disponible (no limpiar aún).
 
 ---
 
 ## Recuperación rápida
 
-ADR-0004 (Proposed) aprobado como arquitectura. Objetivo v0.5.0: gobierno de cronograma + baselines sobre
-ERPNext nativo, sin fork. Referencia viva: `docs/adr/0004-schedule-governance-and-baselines.md`.
+ADR-0005 (Accepted) define Change Control integrado. Referencia viva:
+`docs/adr/0005-integrated-change-control.md`. Fronteras:
+`CR = gobernanza` · `Quotation/erpnext_proposals = solución/alcance/valuación/aprobación propia` ·
+`Project/Task = Current Plan` · `PMO Project Baseline = referencia before/after` · `Timesheet = Actual`.
 
 ---
 
 ## Plan por bloques (un PR único a `version-16`)
 
-- **Bloque 0 — ADR-0004 (docs).** Escribir e incorporar ADR-0004 (Proposed). *(commit en curso)*
-- **Bloque 1 — Intervención Task (D1/D2/D3) ✅ HECHO.** Mixin **`pmo.overrides.PMOTaskScheduleMixin`**
-  (nota: se usó el módulo `pmo/overrides.py` existente, no `pmo.overrides.task` — `overrides` es módulo, no
-  paquete; sin cambio de decisión) vía `extend_doctype_class` en `hooks.py`; redefine **solo**
-  `validate_parent_expected_end_date` y `validate_parent_project_dates` (no bloquear). Tests
-  `test_schedule_governance.py` (6): guard de drift, ruta nativa vs mixin forzando `frappe.in_test=False`
-  (atributo de módulo, no `flags`), y path `task.save()` que usa Timesheet. **Suite 137/137.**
-- **Bloque 2 — `PMO Project Baseline` (D4–D7) ✅ HECHO.** DocType submittable (autoname `PMO-BL-.#####`);
-  engine `pmo/baseline.py` (snapshot canónico + hash sha256 determinista + preflight + baseline vigente
-  as-of); controller (invariantes de lineage lineal + `before_submit`); P4 en `permissions.py`
-  (`has_permission_baseline` read=`is_project_visible`, write/submit=owner, Executive read-only;
-  `get_permission_query_conditions_baseline`) + hooks. `override_hours` en snapshot solo si
-  `pmo_planned_hours>0` (coherente con el motor). Tests `test_project_baseline.py` (12). **Suite 149/149.**
-  Docs usuario (`baselines.md`) + técnico.
-- **Bloque 3 — Cierre.** Bump `__version__` → 0.5.0 (MINOR desde v0.4.0), CHANGELOG `[0.5.0]`; `/ship push`
-  + `/ship pr`; tras merge `/ship release` `v0.5.0`.
+- **Bloque 1 — ADR-0005 (docs) + CHANGELOG `[0.6.0]` en preparación.** *(commit en curso)*
+- **Bloque 2 — DocType `PMO Change Request` + P4** (hooks `permissions.py` + `hooks.py`;
+  `has_permission_change_request`, `get_permission_query_conditions_change_request`; patrón Baseline).
+- **Bloque 3 — Workflow nativo** (fixture) + acción "Aplicar Quotation al Project" + semántica
+  Aplicado/Implementado + `allow_on_submit` en campos post-aprobación.
+- **Bloque 4 — Comparator** (`pmo/compare.py` engine determinista sobre snapshots v1 + render modesto) + tests.
+- **Bloque 5 — Report View (Change Register)** P4-safe + docs (`docs/usuario/`, `docs/tecnico/`).
+- **Bloque 6 — bump `__version__`→0.6.0 + `migrate` en `test-pmo.localhost` (con autorización) + validación
+  funcional en `pmo-v16.dev`.** Luego `/ship push` + `/ship pr`.
 
-## Decisiones vigentes (ADR-0004, resumen)
-- 4 planos: Baseline / Current(Forecast) / Actual / Constraint(diferido).
-- Task group = summary/WBS con fechas **no vinculantes** (pueden quedar stale; sin rollup dinámico; warning
-  en preflight). `Project.expected_*` = forecast, no límite de la realidad.
-- Intervención: **mixin `extend_doctype_class` sobre Task**, solo los dos submétodos (upgrade-safe; guard
-  de drift; reconcilia drift upstream `7b0df4b` que ya restringe los 4 campos por abajo/arriba).
-- `PMO Project Baseline` submittable: lineage lineal (`baseline_type`, `supersedes_baseline`, sin
-  `is_current`), **Opción B** (sin future-effective; `effective_date <= approved_at`), aprobación fijada en
-  Submit (`approved_by`/`approved_at`), snapshot canónico (`schema_version`+`hash`) con `description` y
-  assignments `{user, employee, override_hours, effective_hours}`.
-- **Autoridad de aprobación = Project Owner** (Executive read-only; Manager sin cambios; separación de
-  funciones/CCB → v0.6.0). Read del Baseline respeta P4 (`is_project_visible`).
-- Capacity Planning **sin cambios**. Change Control/`erpnext_proposals` **fuera** de ADR-0004 (posible
-  ADR-0005 en v0.6.0). Comparador de snapshots = issue #5 (diferido).
+## Decisiones vigentes (ADR-0005, resumen)
+- **Único DocType nuevo `PMO Change Request`** (submittable, `PMO-CR-.#####`). Impacto mínimo: `priority`
+  (Baja/Media/Alta), 5 Checks (scope/schedule/effort/commercial/risk), deltas horas/días/monto (+`currency`),
+  `impact_notes`, `evaluation_notes`. Sin severidad por dimensión, sin fechas, sin calidad, sin business case.
+- **La Proposal ES una `Quotation`** (sin entidad nueva en `erpnext_proposals`). Scope Items = única fuente
+  del alcance; nunca recapturar Tasks.
+- **Workflow:** Draft → En revisión → Aprobado/Rechazado → Implementado → Cerrado. `Rechazado`=`docstatus 1`.
+  **Sin estado `Aplicado`** (campos `applied_*`). D3↔D7 coherentes.
+- **Aprobado ≠ Aplicado ≠ Implementado.** "Aplicar Quotation" solo materializa Scope Items + fija `applied_*`;
+  "Marcar implementado" es acto explícito posterior (gate: si hay `proposal_group`, exige `applied_to_project=1`).
+- **Gate baseline vigente** al formalizar (`En revisión`); `baseline_before` congelada. `baseline_before`/
+  `baseline_after` en el CR; **muchos CR → una misma `baseline_after`**; **sin** Link singular en Baseline.
+- **Autoridad Modelo 1:** con Proposal → autoridad comercial/cliente en el Workflow de la Quotation (gate
+  "Aplicar" exige `Ganada`); sin Proposal → Project Owner único gate. Executive read-only; Manager sin acceso.
+- **CR↔Quotation:** `proposal_group` (hilo/historial) + `applied_quotation` (versión Ganada aplicada). El
+  addendum usa `proposal_group` distinto del original. Nunca crea Project nuevo (reuse `proposal_project`).
+- **Persistencia post-submit vía `allow_on_submit`** (sin `frappe.db.set_value` de rescate). Amend no se usa;
+  Rechazado/Cerrado terminales.
+- **Comparator mínimo Baseline↔Baseline** (rotulado "cambios entre baselines", no atribución por CR).
+- **Change Register = Report View** nativo (P4-safe por `permission_query_conditions`).
 
-## Verificaciones hechas (spike)
-- `task.py:98-99` llama submétodos vía `self.<m>()` → override por MRO válido sin tocar `validate_dates()`.
-- `validate_parent_project_dates` local (16.32.1) solo usa `expected_end_date`; `7b0df4b` no está en el
-  bench; nuestra semántica es independiente del cuerpo upstream.
-- Timesheet `:182` hace `Task.save()` → dispara la validación sobre `act_*` (bug real a desbloquear).
-- `extend_doctype_class` y `override_doctype_class` existen en v16 (`base_document.py`); `erpnext_proposals`
-  usa `extend_doctype_class` para Quotation (precedente).
-- `Task.description` nativo (Text Editor). `get_planned_hours_per_assignee` devuelve horas efectivas.
+## Dependencia de entrega (bloqueante para "cerrado")
+`pmo v0.6.0` **no** se considera funcionalmente cerrado hasta que `erpnext_proposals` implemente/libere el
+helper `apply_addendum_to_project(quotation, project)` (ciclo Git separado, autorización propia) y pase la
+integración end-to-end: `CR → Quotation versionada → Ganada → aplicar al Project existente → Scope Items →
+Tasks → completar Current Plan → Baseline after → cerrar CR`, **sin crear otro Project**. Rutas sin Quotation
+(cronograma) no dependen del helper.
+
+## Verificaciones hechas (spike v0.6.0, contra código real)
+- `create_project_from_quotation` (`erpnext_proposals/.../utils/project.py`): idempotente, **reutiliza**
+  Project si `proposal_project` seteado; append con dedup por `source_quotation_scope_item`. `Ganada` NO
+  aplica sola (solo botón `quotation.js:503`).
+- Versioning (`proposal_versioning.py`): por rechazo, single-live por `proposal_group` (Ganada NO es estado
+  muerto → un addendum en el MISMO grupo se bloquearía; usar grupo distinto). `proposal_project` es
+  **read_only=1** → pre-setearlo exige helper server-side (gap real, no cero-cambio).
+- Programación del alcance vive en `Quotation Scope Item` (`planned_start_offset_days`,
+  `planned_duration_days`, `dependency_scope_item_codes`, `is_milestone`) anclada en `transaction_date` → no
+  duplicar fechas en el CR.
+- Post-submit nativo: `base_document._validate_update_after_submit` bloquea cambios salvo `allow_on_submit`;
+  `apply_workflow` (submitted→submitted) hace `doc.save()`. Amend requiere cancel previo.
 
 ## Cuidados / no repetir
-- Git solo vía `/ship`. No trabajar en `version-16`. Rutas Desk v16 = `/desk/...`.
-- one_offs/ ignorado. Consola rompe multilínea → one-off plano con `exec(open(...).read())`.
-- Tests: `frappe.in_test` hace early-return en la validación nativa → forzar `frappe.flags.in_test=False`
-  en `try/finally` para ejercer la ruta de producción, o llamar al método directamente.
+- Git solo vía `/ship`. No trabajar en `version-16`. Rutas Desk v16 = `/desk/...` (pero `pmo-v16.dev`
+  responde por `/app` — wizard forzado rompe `/desk`).
+- `erpnext_proposals` tiene la ruta anidada `apps/erpnext_proposals/erpnext_proposals/erpnext_proposals/...`.
+- one_offs/ ignorado. Linters solo `.py`/`.js`, nunca `.json`.
+- BD: cualquier escritura/`bench migrate` requiere autorización explícita. Tests en `test-pmo.localhost`.
 - ADR como referencia, no dogma: si aparece limitación real/alternativa más simple, reportar antes de
   desviarse (sin re-abrir toda la arquitectura).

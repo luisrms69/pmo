@@ -1,5 +1,31 @@
 # Changelog — pmo
 
+## [0.6.0] — En preparación
+
+> Release **no publicado**. La ruta comercial no se considera funcionalmente cerrada hasta que la versión
+> compatible de `erpnext_proposals` (`apply_addendum_to_project`) esté liberada y pase la integración
+> end-to-end (ver ADR-0005, "Dependencia de entrega").
+
+### Docs
+- **ADR-0005 — Integrated Change Control (Accepted)** — Change Control integrado sobre un único DocType
+  nuevo `PMO Change Request` (submittable + Workflow nativo) que **gobierna** el cambio, mientras
+  `Quotation`/`erpnext_proposals` define/valúa el alcance, `Project`/`Task` recibe el alcance aprobado,
+  `PMO Project Baseline` congela el before/after y `Timesheet` registra el Actual. Decisiones clave:
+  baseline vigente obligatoria para formalizar (`baseline_before` congelada); `baseline_before`/
+  `baseline_after` del lado del CR (muchos CR → una misma `baseline_after`, sin Link singular en
+  Baseline); autoridad **Modelo 1** (con Proposal → Workflow de la Quotation; sin Proposal → Project
+  Owner); **Aprobado ≠ Aplicado ≠ Implementado** (aplicar solo materializa Scope Items y fija `applied_*`;
+  "Marcar implementado" es acto explícito posterior); persistencia post-submit vía `allow_on_submit` (sin
+  bypass); comparator mínimo Baseline↔Baseline sobre snapshots v1; Change Register vía Report View P4-safe;
+  addendum sobre **Project existente** (nunca crea otro). Depende de un helper acotado en `erpnext_proposals`
+  (ciclo Git separado). Sin CCB/EVM/CPM/scenarios/Status Date.
+
+### Planned (implementación por bloques, aún no realizada)
+- DocType `PMO Change Request` + P4 (hooks).
+- Workflow nativo + acción "Aplicar Quotation al Project" + semántica Aplicado/Implementado.
+- Comparator (`pmo/compare.py`) + render modesto.
+- Report View (Change Register) + docs de usuario/técnico.
+
 ## [0.5.0] — 2026-09-05
 
 ### Added
