@@ -5,9 +5,10 @@ por qué se pide, qué impacto se prevé, quién lo decide y cómo se implementa
 su precio (eso vive en la Cotización/Proposal), **no** ejecuta el trabajo (eso son las Tasks del Project) y
 **no** congela el plan (eso es la Baseline). El CR es la **capa de gobernanza** que conecta todo.
 
-> **Estado (v0.6.0 en construcción):** por ahora está disponible el **documento y sus permisos**. El flujo
-> completo (estados de aprobación, "Aplicar Cotización al Project", comparación de baselines y el registro
-> de cambios) se habilita en las siguientes entregas del mismo release.
+> **Estado (v0.6.0 en construcción):** disponibles el documento, sus permisos y el **flujo de aprobación
+> (Workflow) con la acción "Aplicar Cotización al Project"**. La comparación de baselines y el registro de
+> cambios se habilitan en las siguientes entregas del mismo release. La ruta comercial (aplicar una
+> Cotización) requiere además la versión compatible de `erpnext_proposals` (ver nota al final).
 
 ## Qué captura
 
@@ -35,6 +36,25 @@ El acceso se **hereda del Project** (misma regla de privacidad que el resto de P
 - **Aprobar / rechazar / cerrar:** **solo el Project Owner**. Ser miembro no otorga autoridad de
   aprobación.
 - **Acceso ejecutivo:** solo lectura.
+
+## Flujo (estados)
+
+`Borrador → En revisión → Aprobado / Rechazado → Implementado → Cerrado`
+
+1. **Borrador:** el owner o un miembro crea el CR, describe el cambio y su impacto.
+2. **Enviar a revisión:** requiere que el Project tenga una **baseline vigente**; al formalizar se
+   **congela** la baseline previa (*before*). Sin baseline vigente el sistema no deja avanzar (aún estás en
+   planificación, no en control de cambios).
+3. **Aprobar / Rechazar:** **solo el Project Owner**. Aprobar autoriza el cambio (no lo aplica todavía).
+4. **Aplicar Cotización al Project** (si el cambio tiene alcance comercial): el owner usa el botón
+   *"Aplicar Cotización al Project"*, elige la Cotización **Ganada** y el sistema **anexa** su alcance
+   (Scope Items) como tareas al **Project existente** (nunca crea otro). Esto **materializa** el alcance,
+   pero todavía no marca el cambio como implementado.
+5. **Marcar implementado:** cuando el plan quedó completo (tareas, fechas, asignaciones ajustadas), el
+   owner lo marca. Si el cambio tenía Cotización, exige haberla aplicado primero.
+6. **Cerrar:** el owner liga la **nueva baseline** (*after*) que incorpora el cambio y cierra el CR.
+
+Un CR **Rechazado** o **Cerrado** es terminal (no se cancela); un nuevo intento es otro CR.
 
 ## Relación con los demás documentos
 

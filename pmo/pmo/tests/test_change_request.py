@@ -1,21 +1,25 @@
 # Copyright (c) 2026, Consultoria en Negocios y Aplicaciones and contributors
 # For license information, please see license.txt
 
-"""ADR-0005 — PMO Change Request (Bloque 2). Datos ficticios.
+"""ADR-0005 — PMO Change Request. Datos ficticios.
 
-Cubre las invariantes BASE del bloque (independientes del Workflow): defaults, `impact_summary`,
-moneda por company, integridad de baselines (mismo Project + orden de effective_date), aprobacion fijada
-en `before_submit`, guard de `before_cancel`; y P4 (read = visibilidad del Project; create/write = writer
-owner/member con write de member solo en docstatus 0; submit/cancel/amend = owner; Executive read-only;
-share denegado).
+Bloque 2: invariantes base (defaults, `impact_summary`, moneda, integridad de baselines, aprobacion en
+`before_submit`, guard de `before_cancel`) y P4.
+Bloque 3: Workflow (gate de baseline al formalizar + congelado de `baseline_before`; owner-only para
+aprobar/rechazar/implementar/cerrar; gates de `Implementado`/`Cerrado`; cancelacion terminal) y la accion
+"Aplicar Quotation al Project" (delegacion al contrato de erpnext_proposals; ruta no-disponible real +
+ruta exito mockeada).
 """
 
 import frappe
 from frappe.exceptions import ValidationError
+from frappe.model.workflow import apply_workflow
 from frappe.tests import IntegrationTestCase
 from frappe.utils import today
 
+from pmo import change_control
 from pmo.permissions import has_permission_change_request
+from pmo.pmo.doctype.pmo_change_request.pmo_change_request import aplicar_quotation_al_project
 
 
 def _user(email, roles=()):
@@ -54,8 +58,23 @@ def _project(name, owner="Administrator", members=(), company=None):
 	return pid
 
 
-def _cr(project, title="Cambio", reason="Motivo", submit=False, **kw):
+def _baseline(project, revision, btype="Original", supersedes=None, effective=None):
 	doc = frappe.get_doc(
+		{
+			"doctype": "PMO Project Baseline",
+			"project": project,
+			"revision": revision,
+			"baseline_type": btype,
+			"supersedes_baseline": supersedes,
+			"effective_date": effective or today(),
+		}
+	).insert(ignore_permissions=True)
+	doc.submit()
+	return doc
+
+
+def _cr(project, title="Cambio", reason="Motivo", **kw):
+	return frappe.get_doc(
 		{
 			"doctype": "PMO Change Request",
 			"project": project,
@@ -64,39 +83,35 @@ def _cr(project, title="Cambio", reason="Motivo", submit=False, **kw):
 			**kw,
 		}
 	).insert(ignore_permissions=True)
-	if submit:
-		doc.submit()
-	return doc
 
 
-def _baseline(project, revision, effective=None, submit=True):
-	doc = frappe.get_doc(
-		{
-			"doctype": "PMO Project Baseline",
-			"project": project,
-			"revision": revision,
-			"baseline_type": "Original",
-			"effective_date": effective or today(),
-		}
-	).insert(ignore_permissions=True)
-	if submit:
-		doc.submit()
-	return doc
+def _company():
+	return frappe.db.get_value("Company", {}, "name")
 
 
 class TestChangeRequest(IntegrationTestCase):
-	# --- comportamiento base -----------------------------------------------------
+	def _run(self, doc, action, user):
+		prev = frappe.session.user
+		frappe.set_user(user)
+		try:
+			apply_workflow(doc, action)
+		finally:
+			frappe.set_user(prev)
+		doc.reload()
+
+	# --- comportamiento base (Bloque 2) ------------------------------------------
 
 	def test_defaults_and_impact_summary(self):
 		p = _project("CR-P1")
 		cr = _cr(p, impacts_scope=1, impacts_commercial=1)
-		self.assertTrue(cr.raised_by)  # default sesion
+		self.assertTrue(cr.raised_by)
 		self.assertEqual(str(cr.request_date), today())
-		self.assertEqual(cr.priority, "Media")  # default del schema
-		self.assertEqual(cr.impact_summary, "Alcance, Comercial")  # orden estable
+		self.assertEqual(cr.priority, "Media")
+		self.assertEqual(cr.impact_summary, "Alcance, Comercial")
+		self.assertEqual(cr.workflow_state, "Borrador")  # estado inicial del Workflow
 
 	def test_currency_default_from_company(self):
-		company = frappe.db.get_value("Company", {}, "name")
+		company = _company()
 		expected = frappe.db.get_value("Company", company, "default_currency")
 		p = _project("CR-P2", company=company)
 		cr = _cr(p)
@@ -112,39 +127,37 @@ class TestChangeRequest(IntegrationTestCase):
 	def test_baseline_after_effective_order(self):
 		p = _project("CR-P4")
 		b1 = _baseline(p, "BL-001", effective="2026-01-01")
-		# sucesora mas nueva en la cadena (monotonia ADR-0004): 2026-02-01 >= 2026-01-01
-		b2 = frappe.get_doc(
-			{
-				"doctype": "PMO Project Baseline",
-				"project": p,
-				"revision": "BL-002",
-				"baseline_type": "Replan",
-				"supersedes_baseline": b1.name,
-				"effective_date": "2026-02-01",
-			}
-		).insert(ignore_permissions=True)
-		b2.submit()
+		b2 = _baseline(p, "BL-002", btype="Replan", supersedes=b1.name, effective="2026-02-01")
 		with self.assertRaises(ValidationError):
-			# before (b2, mas nueva) despues que after (b1, mas vieja) -> inconsistente
 			_cr(p, baseline_before=b2.name, baseline_after=b1.name)
 
 	def test_before_submit_sets_approval(self):
 		p = _project("CR-P5")
-		cr = _cr(p, submit=True)
+		_baseline(p, "BL-001")  # sin baseline vigente no se puede aprobar
+		cr = _cr(p)
+		cr.submit()  # ruta directa: aterriza en 'Aprobado' (primer doc_status=1)
 		cr.reload()
 		self.assertEqual(cr.docstatus, 1)
-		self.assertTrue(cr.approved_by)
-		self.assertTrue(cr.approved_at)
+		self.assertTrue(cr.approved_by and cr.approved_at)
+		self.assertTrue(cr.baseline_before)  # red de seguridad del gate
+
+	def test_submit_blocked_without_baseline(self):
+		p = _project("CR-P5B")  # sin baseline vigente
+		cr = _cr(p)
+		with self.assertRaises(ValidationError):
+			cr.submit()
 
 	def test_before_cancel_blocked_when_applied(self):
 		p = _project("CR-P6")
-		cr = _cr(p, submit=True)
+		_baseline(p, "BL-001")
+		cr = _cr(p)
+		cr.submit()
 		frappe.db.set_value("PMO Change Request", cr.name, "applied_to_project", 1)
 		cr.reload()
 		with self.assertRaises(ValidationError):
 			cr.cancel()
 
-	# --- P4 ----------------------------------------------------------------------
+	# --- P4 (Bloque 2) -----------------------------------------------------------
 
 	def test_permissions_read_write_submit(self):
 		owner = _user("cr-owner@example.com")
@@ -152,35 +165,193 @@ class TestChangeRequest(IntegrationTestCase):
 		other = _user("cr-other@example.com")
 		execu = _user("cr-exec@example.com", ["PMO Executive Access"])
 		p = _project("CR-P7", owner=owner, members=[member])
-		cr = _cr(p)  # docstatus 0
+		cr = _cr(p)
 
-		# READ = visibilidad del Project
 		self.assertTrue(has_permission_change_request(cr, "read", owner))
 		self.assertTrue(has_permission_change_request(cr, "read", member))
-		self.assertTrue(has_permission_change_request(cr, "read", execu))  # executive global
-		self.assertFalse(has_permission_change_request(cr, "read", other))  # ajeno
+		self.assertTrue(has_permission_change_request(cr, "read", execu))
+		self.assertFalse(has_permission_change_request(cr, "read", other))
 
-		# CREATE/WRITE = writer (owner o member) con CR editable
 		self.assertTrue(has_permission_change_request(cr, "write", owner))
 		self.assertTrue(has_permission_change_request(cr, "write", member))
 		self.assertFalse(has_permission_change_request(cr, "write", other))
-		self.assertFalse(has_permission_change_request(cr, "write", execu))  # executive read-only
+		self.assertFalse(has_permission_change_request(cr, "write", execu))
 
-		# SUBMIT/CANCEL/AMEND = owner-only
 		self.assertTrue(has_permission_change_request(cr, "submit", owner))
 		self.assertFalse(has_permission_change_request(cr, "submit", member))
 		self.assertFalse(has_permission_change_request(cr, "submit", execu))
 		self.assertFalse(has_permission_change_request(cr, "cancel", member))
-
-		# SHARE denegado (incluso owner)
 		self.assertFalse(has_permission_change_request(cr, "share", owner))
 
 	def test_member_write_denied_after_submit(self):
 		owner = _user("cr-owner2@example.com")
 		member = _user("cr-member2@example.com")
 		p = _project("CR-P8", owner=owner, members=[member])
-		cr = _cr(p, submit=True)  # docstatus 1
+		_baseline(p, "BL-001")
+		cr = _cr(p)
+		cr.submit()
 		cr.reload()
-		# tras aprobar (submit), el member ya NO escribe; el owner si (campos allow_on_submit)
 		self.assertFalse(has_permission_change_request(cr, "write", member))
 		self.assertTrue(has_permission_change_request(cr, "write", owner))
+
+	# --- Workflow (Bloque 3) -----------------------------------------------------
+
+	def test_workflow_happy_path_owner(self):
+		owner = _user("cr-wf1@example.com", ["Projects User"])
+		p = _project("CR-WF1", owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p)
+		self._run(cr, "Enviar a Revision", owner)
+		self.assertEqual(cr.workflow_state, "En Revision")
+		self.assertTrue(cr.baseline_before)  # congelada al formalizar
+		self._run(cr, "Aprobar", owner)
+		self.assertEqual(cr.workflow_state, "Aprobado")
+		self.assertEqual(cr.docstatus, 1)
+		self.assertTrue(cr.approved_by)
+
+	def test_review_gate_requires_baseline(self):
+		owner = _user("cr-wf2@example.com", ["Projects User"])
+		p = _project("CR-WF2", owner=owner)  # sin baseline
+		cr = _cr(p)
+		with self.assertRaises(ValidationError):
+			self._run(cr, "Enviar a Revision", owner)
+
+	def test_member_cannot_approve(self):
+		owner = _user("cr-wf3-o@example.com", ["Projects User"])
+		member = _user("cr-wf3-m@example.com", ["Projects User"])
+		p = _project("CR-WF3", owner=owner, members=[member])
+		_baseline(p, "BL-001")
+		cr = _cr(p)
+		self._run(cr, "Enviar a Revision", member)  # member SI puede formalizar
+		self.assertEqual(cr.workflow_state, "En Revision")
+		frappe.set_user(member)
+		try:
+			with self.assertRaises(Exception):
+				apply_workflow(cr, "Aprobar")  # condicion owner-only -> no es accion valida para member
+		finally:
+			frappe.set_user("Administrator")
+
+	def _assert_action_raises(self, doc, action, user):
+		"""apply_workflow que debe lanzar; recarga el doc después para limpiar el estado en memoria que
+		apply_workflow dejó seteado antes del throw (evita TimestampMismatch en pasos siguientes)."""
+		prev = frappe.session.user
+		frappe.set_user(user)
+		try:
+			with self.assertRaises(ValidationError):
+				apply_workflow(doc, action)
+		finally:
+			frappe.set_user(prev)
+		doc.reload()
+
+	def test_implemented_gate_and_close_gate(self):
+		owner = _user("cr-wf4@example.com", ["Projects User"])
+		p = _project("CR-WF4", owner=owner)
+		b1 = _baseline(p, "BL-001", effective="2026-01-01")
+		cr = _cr(p, proposal_group="GRP-1")  # con proposal -> exige aplicar antes de implementar
+		self._run(cr, "Enviar a Revision", owner)
+		self._run(cr, "Aprobar", owner)
+		# Marcar implementado sin aplicar la Quotation -> bloqueado
+		self._assert_action_raises(cr, "Marcar Implementado", owner)
+		# simular aplicacion (la accion real se prueba aparte) y avanzar
+		frappe.db.set_value("PMO Change Request", cr.name, "applied_to_project", 1)
+		cr.reload()
+		self._run(cr, "Marcar Implementado", owner)
+		self.assertEqual(cr.workflow_state, "Implementado")
+		# Cerrar sin baseline_after -> bloqueado
+		self._assert_action_raises(cr, "Cerrar", owner)
+		# ligar baseline_after (owner) y cerrar
+		b2 = _baseline(p, "BL-002", btype="Replan", supersedes=b1.name, effective="2026-02-01")
+		cr.reload()
+		frappe.set_user(owner)
+		try:
+			cr.baseline_after = b2.name
+			cr.save()
+			apply_workflow(cr, "Cerrar")
+		finally:
+			frappe.set_user("Administrator")
+		cr.reload()
+		self.assertEqual(cr.workflow_state, "Cerrado")
+
+	def test_implemented_ok_without_proposal(self):
+		owner = _user("cr-wf5@example.com", ["Projects User"])
+		p = _project("CR-WF5", owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p)  # sin proposal_group -> solo-cronograma
+		self._run(cr, "Enviar a Revision", owner)
+		self._run(cr, "Aprobar", owner)
+		self._run(cr, "Marcar Implementado", owner)  # OK sin aplicar Quotation
+		self.assertEqual(cr.workflow_state, "Implementado")
+
+	def test_cancel_blocked_on_terminal_state(self):
+		owner = _user("cr-wf6@example.com", ["Projects User"])
+		p = _project("CR-WF6", owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p)
+		self._run(cr, "Enviar a Revision", owner)
+		self._run(cr, "Rechazar", owner)
+		self.assertEqual(cr.workflow_state, "Rechazado")
+		frappe.set_user(owner)
+		try:
+			with self.assertRaises(ValidationError):
+				cr.cancel()  # estado terminal
+		finally:
+			frappe.set_user("Administrator")
+
+	# --- Accion "Aplicar Quotation al Project" (Bloque 3) ------------------------
+
+	def _approved_cr(self, name, owner_email):
+		owner = _user(owner_email, ["Projects User"])
+		p = _project(name, owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p, proposal_group="GRP-X")
+		self._run(cr, "Enviar a Revision", owner)
+		self._run(cr, "Aprobar", owner)
+		return owner, p, cr
+
+	def test_apply_action_integration_unavailable(self):
+		owner, _p, cr = self._approved_cr("CR-APP1", "cr-app1@example.com")
+		# erpnext_proposals no instalado en test-pmo.localhost -> el contrato no resuelve -> throw claro
+		frappe.set_user(owner)
+		try:
+			with self.assertRaises(ValidationError):
+				aplicar_quotation_al_project(cr.name, "QTN-FAKE")
+		finally:
+			frappe.set_user("Administrator")
+		cr.reload()
+		self.assertFalse(cr.applied_to_project)  # no se marca aplicado si el contrato falla
+
+	def test_apply_action_success_mocked(self):
+		owner, _p, cr = self._approved_cr("CR-APP2", "cr-app2@example.com")
+		q = self._quotation()
+		orig = change_control.apply_addendum_to_project
+		change_control.apply_addendum_to_project = lambda quotation, project: {
+			"project": project,
+			"tasks_created": 3,
+		}
+		try:
+			frappe.set_user(owner)
+			try:
+				res = aplicar_quotation_al_project(cr.name, q)
+			finally:
+				frappe.set_user("Administrator")
+		finally:
+			change_control.apply_addendum_to_project = orig
+		cr.reload()
+		self.assertTrue(cr.applied_to_project)
+		self.assertEqual(cr.applied_quotation, q)
+		self.assertEqual(cr.workflow_state, "Aprobado")  # la accion NO mueve el Workflow
+		self.assertEqual(res["tasks_created"], 3)
+
+	def _quotation(self):
+		"""Quotation mínima solo para satisfacer el link `applied_quotation`. El site de tests no tiene
+		Company ni Fiscal Year, así que se salta la validación de ERPNext (`ignore_validate`): el registro
+		solo necesita existir."""
+		cust_name = "CR-Test-Cust"
+		cust = frappe.db.exists("Customer", {"customer_name": cust_name})
+		if not cust:
+			c = frappe.get_doc({"doctype": "Customer", "customer_name": cust_name})
+			c.flags.ignore_validate = True
+			cust = c.insert(ignore_permissions=True, ignore_mandatory=True).name
+		q = frappe.get_doc({"doctype": "Quotation", "quotation_to": "Customer", "party_name": cust})
+		q.flags.ignore_validate = True
+		return q.insert(ignore_permissions=True, ignore_mandatory=True).name

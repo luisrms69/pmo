@@ -261,9 +261,9 @@ DocType **submittable** (`is_submittable`, autoname `PMO-CR-.#####`) que **gobie
 `Quotation`/`erpnext_proposals` (no se recapturan Scope Items); `Project`/`Task` recibe el alcance
 aprobado; `PMO Project Baseline` congela el before/after; `Timesheet` registra el Actual.
 
-> **Estado (v0.6.0 en construcción):** este bloque entrega el **DocType + P4 + invariantes base**. El
-> Workflow, la acción "Aplicar Quotation al Project", la semántica Aplicado/Implementado, el comparator y
-> el Change Register llegan en bloques posteriores del mismo release.
+> **Estado (v0.6.0 en construcción):** entregados el DocType + P4 + invariantes base y el **Workflow +
+> acción "Aplicar Quotation al Project" + semántica Aplicado/Implementado**. El comparator y el Change
+> Register llegan en bloques posteriores del mismo release.
 
 - **Campos:** solicitud (`project`, `title`, `raised_by`, `origin`, `request_date`, `priority`
   Baja/Media/Alta, `reason`, `description`); impacto mínimo estructurado (5 Checks
@@ -287,6 +287,39 @@ aprobado; `PMO Project Baseline` congela el before/after; `Timesheet` registra e
   **owner** → sella owner-only para aprobar/rechazar; Executive read-only; share denegado) +
   `get_permission_query_conditions_change_request` (listados solo de projects visibles). **PMO Manager sin
   acceso** por rol. Helper `_is_project_writer` (owner o member) reutilizado del boundary P0.
+
+### Workflow `PMO Change Request` (fixture) y gates
+
+`Borrador(0) → En Revision(0) → Aprobado(1) / Rechazado(1) → Implementado(1) → Cerrado(1)`. Fixtures:
+`workflow.json` (+ `workflow_state.json` con los 6 estados en español; el Custom Field `workflow_state`
+lo crea el propio Workflow). El framework auto-selecciona el primer estado con `doc_status=1` en un submit
+directo, por lo que el gate de baseline se ancla también en `before_submit` (red de seguridad).
+
+- **Autoridad owner-only** en `Aprobar`/`Rechazar`/`Marcar Implementado`/`Cerrar`: **doble capa** —
+  `condition` de transición `frappe.db.get_value("Project", doc.project, "owner") == frappe.session.user`
+  (la UI no ofrece la acción a quien no es owner) **y** el gate P4 sobre `submit`/`write`. `Enviar a
+  Revision` y `Devolver a Borrador` no llevan condición (los miembros participan). `allow_self_approval=1`
+  (se acepta autoaprobación del owner).
+- **Gates por transición** (`_apply_workflow_gates`): al entrar a `En Revision`, exige baseline vigente
+  (`get_effective_baseline`) y **congela `baseline_before`**; a `Implementado`, si hay `proposal_group`
+  exige `applied_to_project`; a `Cerrado`, exige `baseline_after`. Como Frappe ejecuta **solo**
+  `before_update_after_submit` (no `validate`) en transiciones submitted→submitted, los gates y la
+  integridad de baselines se re-aplican también en ese hook.
+- **`before_cancel`** añade el bloqueo de estados terminales (`Rechazado`/`Cerrado`) además de
+  `applied_to_project`/`baseline_after`.
+
+### Acción "Aplicar Quotation al Project" (D7) e integración con `erpnext_proposals`
+
+Método whitelisted `aplicar_quotation_al_project(change_request, quotation)` (botón en
+`public/js/pmo_change_request.js`, visible solo al owner sobre un CR `Aprobado` no aplicado). **No** mueve
+el Workflow: valida (Aprobado, no aplicado), **delega** en `pmo/change_control.py`
+(`apply_addendum_to_project` → resuelve por `frappe.get_attr` el contrato
+`erpnext_proposals.…utils.project.apply_addendum_to_project`) y, si completa, fija
+`applied_to_project`/`applied_at`/`applied_quotation` (campos `allow_on_submit`). **Frontera dura:** PMO
+**no** escribe `proposal_project` ni reproduce los guards comerciales (Ganada/single-live/…): eso es del
+helper de `erpnext_proposals`. Si el helper aún no existe en el entorno, la acción se detiene con un
+mensaje claro. **Dependencia de entrega:** la ruta comercial de v0.6 no se considera cerrada hasta que ese
+helper esté liberado y pase la integración end-to-end (ver ADR-0005).
 
 ## Fuera de alcance
 Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext

@@ -53,6 +53,9 @@ required_apps = ["erpnext"]
 # frappe.views.calendar["Task"].gantt.order_by = "lft" (ASC nativo en GanttView).
 doctype_calendar_js = {"Task": "public/js/task_calendar_pmo.js"}
 
+# ADR-0005 D7: acción "Aplicar Cotización al Project" en el form del Change Request.
+doctype_js = {"PMO Change Request": "public/js/pmo_change_request.js"}
+
 # Svg Icons
 # ------------------
 # include app icons in desk
@@ -173,6 +176,18 @@ fixtures = [
 				"report",
 				"in",
 				["Project Summary", "Delayed Tasks Summary", "Project wise Stock Tracking"],
+			]
+		],
+	},
+	# ADR-0005 D3: Workflow del Change Request + sus Workflow State masters (custom, en español).
+	{"dt": "Workflow", "filters": [["name", "=", "PMO Change Request"]]},
+	{
+		"dt": "Workflow State",
+		"filters": [
+			[
+				"workflow_state_name",
+				"in",
+				["Borrador", "En Revision", "Aprobado", "Rechazado", "Implementado", "Cerrado"],
 			]
 		],
 	},

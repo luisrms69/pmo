@@ -1,19 +1,38 @@
 # Copyright (c) 2026, Consultoria en Negocios y Aplicaciones and contributors
 # For license information, please see license.txt
 
-"""PMO Change Request (ADR-0005). Contenedor de gobernanza del cambio: submittable, con impacto
-estructurado minimo, decision del owner fijada al aprobar (Submit) y enlaces a la Quotation-addendum y a
-las baselines before/after.
+"""PMO Change Request (ADR-0005). Contenedor de gobernanza del cambio: submittable + Workflow nativo,
+con impacto estructurado mínimo, decisión del owner fijada al aprobar (Submit) y enlaces a la
+Quotation-addendum y a las baselines before/after.
 
-Alcance de este bloque (Bloque 2): esquema + invariantes BASE independientes del Workflow (defaults,
-`impact_summary`, moneda, integridad de baselines, aprobacion en Submit, guard de cancel). El Workflow, el
-gate de baseline vigente al formalizar (`En revision`), la congelacion de `baseline_before`, la accion
-"Aplicar Quotation al Project" y la semantica Aplicado/Implementado llegan en el Bloque 3.
+Semántica de estados (Workflow `PMO Change Request`):
+    Borrador → En Revision → Aprobado / Rechazado → Implementado → Cerrado
+
+- Al pasar a **En Revision** (formalizar): gate duro de baseline vigente + congelado de `baseline_before`.
+- **Aprobar/Rechazar** = Submit (autoridad owner-only sellada por P4 sobre `submit` + condición del
+  Workflow). `before_submit` fija `approved_by`/`approved_at` y actúa como **red de seguridad** del gate
+  de baseline (cubre cualquier ruta a `docstatus=1`).
+- **Aplicar Quotation al Project** (acción explícita, no transición): materializa los Scope Items vía el
+  contrato `erpnext_proposals.apply_addendum_to_project` y fija `applied_*`. **No** mueve el Workflow.
+- **Marcar Implementado**: transición Aprobado→Implementado; gate: si hay `proposal_group`, exige
+  `applied_to_project`.
+- **Cerrar**: transición Implementado→Cerrado; gate: exige `baseline_after`.
 """
 
 import frappe
 from frappe.model.document import Document
 from frappe.utils import getdate, now_datetime, today
+
+from pmo import change_control
+
+# Estados del Workflow (deben coincidir EXACTAMENTE con el fixture workflow.json / workflow_state.json).
+DRAFT = "Borrador"
+IN_REVIEW = "En Revision"
+APPROVED = "Aprobado"
+REJECTED = "Rechazado"
+IMPLEMENTED = "Implementado"
+CLOSED = "Cerrado"
+_TERMINAL_STATES = (REJECTED, CLOSED)
 
 # Etiquetas del resumen de impacto (para el Change Register). Orden estable.
 _IMPACT_LABELS = (
@@ -31,6 +50,15 @@ class PMOChangeRequest(Document):
 		self._compute_impact_summary()
 		self._set_currency_default()
 		self._validate_baseline_integrity()
+		self._apply_workflow_gates()
+
+	def before_update_after_submit(self):
+		"""En un doc submitted, Frappe ejecuta SOLO este hook (no `validate`). Las transiciones
+		submitted→submitted (Marcar Implementado, Cerrar) y la edición de `baseline_after` (campo
+		`allow_on_submit`) ocurren por esta vía, así que aquí re-aplicamos la integridad de baselines y los
+		gates de Workflow."""
+		self._validate_baseline_integrity()
+		self._apply_workflow_gates()
 
 	# --- defaults ------------------------------------------------------------------
 
@@ -79,11 +107,58 @@ class PMOChangeRequest(Document):
 					)
 				)
 
+	# --- gates de Workflow (por transición) ----------------------------------------
+
+	def _apply_workflow_gates(self):
+		"""Aplica los gates ligados a la transición de estado. Se detecta el cambio comparando el estado
+		nuevo (en memoria, ya seteado por `apply_workflow`) contra el previo persistido."""
+		new_state = self.get("workflow_state")
+		if not new_state:
+			return
+		before = self.get_doc_before_save()
+		old_state = before.get("workflow_state") if before else None
+		if new_state == old_state:
+			return
+		if new_state == IN_REVIEW:
+			self._ensure_baseline_before()  # gate duro + congelado
+		elif new_state == IMPLEMENTED:
+			if self.proposal_group and not self.applied_to_project:
+				frappe.throw(
+					frappe._(
+						"Aplica la Cotización al Project (los Scope Items) antes de marcar el cambio como implementado."
+					)
+				)
+		elif new_state == CLOSED:
+			if not self.baseline_after:
+				frappe.throw(
+					frappe._("Liga la nueva baseline (Baseline After) antes de cerrar el Change Request.")
+				)
+
+	def _ensure_baseline_before(self):
+		"""Gate duro (ADR-0005 D4): sin baseline vigente no hay Change Control. Congela `baseline_before`
+		con la baseline vigente del Project la primera vez que se formaliza/aprueba."""
+		if self.baseline_before:
+			return
+		from pmo.baseline import get_effective_baseline
+
+		bl = get_effective_baseline(self.project)
+		if not bl:
+			frappe.throw(
+				frappe._(
+					"No se puede formalizar/aprobar el Change Request: el Project no tiene una baseline vigente. "
+					"Crea y aprueba una PMO Project Baseline antes de enviar a revisión."
+				)
+			)
+		self.baseline_before = bl
+
 	# --- aprobacion fijada al Submit (D6/D10) --------------------------------------
 
 	def before_submit(self):
-		"""Aprobar/Rechazar el CR = Submit (la autoridad owner-only la sella P4 sobre `submit`). Se registra
-		quien aprueba y cuando. El contenido de la solicitud queda inmutable (no `allow_on_submit`)."""
+		"""Aprobar/Rechazar el CR = Submit (autoridad owner-only sellada por P4 sobre `submit`). Registra
+		la decisión y garantiza el gate de baseline como red de seguridad (cualquier ruta a `docstatus=1`,
+		incluido un submit directo que se salte 'En Revision'). El contenido de la solicitud queda inmutable
+		(no `allow_on_submit`)."""
+		self._ensure_baseline_before()
 		if not self.approved_by:
 			self.approved_by = frappe.session.user
 		if not self.approved_at:
@@ -92,10 +167,10 @@ class PMOChangeRequest(Document):
 	# --- cancel: escape controlado (D10) -------------------------------------------
 
 	def before_cancel(self):
-		"""Cancelar es "retirar" un CR aun no materializado. Bloqueado si el cambio ya se aplico al Project
-		(`applied_to_project`) o si el CR ya se cerro con una nueva baseline (`baseline_after`): en esos
-		casos la realidad/baseline ya cambio y revertir exige un CR nuevo.
-		Nota: el bloqueo por estado terminal `Rechazado`/`Cerrado` del Workflow se anade en el Bloque 3."""
+		"""Cancelar es "retirar" un CR aún no materializado. Bloqueado si el cambio ya se aplicó al Project
+		(`applied_to_project`), si ya se cerró con una nueva baseline (`baseline_after`) o si está en un
+		estado terminal del Workflow (`Rechazado`/`Cerrado`): en esos casos la realidad/baseline ya cambió o
+		el CR es evidencia terminal, y revertir exige un CR nuevo."""
 		if self.applied_to_project:
 			frappe.throw(
 				frappe._(
@@ -104,5 +179,41 @@ class PMOChangeRequest(Document):
 			)
 		if self.baseline_after:
 			frappe.throw(
-				frappe._("No se puede cancelar: el Change Request ya se cerro con una nueva baseline.")
+				frappe._("No se puede cancelar: el Change Request ya se cerró con una nueva baseline.")
 			)
+		if self.get("workflow_state") in _TERMINAL_STATES:
+			frappe.throw(
+				frappe._(
+					"No se puede cancelar un Change Request en estado terminal ({0}). Registra un Change Request nuevo."
+				).format(self.get("workflow_state"))
+			)
+
+
+# --- Acción explícita: Aplicar Quotation al Project (ADR-0005 D7) -------------------
+
+
+@frappe.whitelist()
+def aplicar_quotation_al_project(change_request: str, quotation: str):
+	"""Aplica los Scope Items de la Quotation-addendum al Project EXISTENTE del CR, delegando en el
+	contrato de `erpnext_proposals` (`apply_addendum_to_project`). Owner-only (P4 sobre write del CR
+	submitted). NO mueve el Workflow: solo fija `applied_to_project`/`applied_at`/`applied_quotation`. La
+	transición a `Implementado` es un paso explícito posterior ("Marcar Implementado")."""
+	doc = frappe.get_doc("PMO Change Request", change_request)
+	doc.check_permission("write")  # sobre un CR submitted → owner-only por P4
+	if doc.docstatus != 1 or doc.get("workflow_state") != APPROVED:
+		frappe.throw(
+			frappe._("Solo se puede aplicar una Cotización desde un Change Request en estado 'Aprobado'.")
+		)
+	if doc.applied_to_project:
+		frappe.throw(frappe._("La Cotización ya fue aplicada a este Change Request."))
+	if not quotation:
+		frappe.throw(frappe._("Indica la Cotización (Ganada) a aplicar."))
+
+	# Delegación: erpnext_proposals valida (Ganada/single-live/…), escribe proposal_project y anexa Tasks.
+	result = change_control.apply_addendum_to_project(quotation, doc.project)
+
+	doc.applied_to_project = 1
+	doc.applied_at = now_datetime()
+	doc.applied_quotation = quotation
+	doc.save()  # solo campos allow_on_submit sobre el CR submitted
+	return result

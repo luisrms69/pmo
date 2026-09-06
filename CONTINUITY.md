@@ -3,9 +3,11 @@
 **Fecha:** 2026-09-06
 **Rama activa:** `feat/change-control` (base `version-16` @ v0.5.0).
 **Tarea actual:** **v0.6.0 — Integrated Change Control.** Arquitectura cerrada y **ADR-0005 Accepted**.
-Bloque 1 (docs) ✅ commit `15fb9dd`. **Bloque 2 (DocType `PMO Change Request` + P4) ✅** (commit en curso):
-DocType submittable + invariantes base + P4 + tests + docs. `test-pmo.localhost` migrado. **Suite 159/159.**
-Bloques 3–6 pendientes. Sin push/PR todavía; sin cambios en `erpnext_proposals`.
+Bloque 1 (docs) ✅ `15fb9dd`. Bloque 2 (DocType + P4) ✅ `0974040`. **Bloque 3 (Workflow + acción Aplicar +
+Aplicado/Implementado) ✅** (commit en curso): Workflow fixture + gates + `before_update_after_submit` +
+acción delegada a `erpnext_proposals` (contrato mockeado). `test-pmo.localhost` migrado. **Suite 168/168.**
+Bloques 4–6 (comparator, Change Register, cierre+bump) pendientes. Sin push/PR; sin cambios en
+`erpnext_proposals` (helper `apply_addendum_to_project` = ciclo aparte, dependencia de entrega).
 
 > v0.5.0 ya está **mergeado y liberado** (PR #6 → `f4fb3bc`; tag/Release v0.5.0). DEMO en `pmo-v16.dev`
 > se dejó disponible (no limpiar aún).
@@ -29,8 +31,14 @@ ADR-0005 (Accepted) define Change Control integrado. Referencia viva:
   `before_cancel`), P4 (`has_permission_change_request` + `get_permission_query_conditions_change_request`,
   helper `_is_project_writer`) en `permissions.py`+`hooks.py`, tests `test_change_request.py` (8), docs
   técnico/usuario. **Suite 159/159.** *(commit en curso)*
-- **Bloque 3 — Workflow nativo** (fixture) + acción "Aplicar Quotation al Project" + semántica
-  Aplicado/Implementado + `allow_on_submit` en campos post-aprobación.
+- **Bloque 3 — Workflow + acción Aplicar + Aplicado/Implementado. ✅** Fixtures `workflow.json` +
+  `workflow_state.json` (estados en español, evita el default "Draft"); gates por transición
+  (`_apply_workflow_gates`) + `before_update_after_submit` (Frappe NO corre `validate` en
+  submitted→submitted); condición owner-only en transiciones de decisión (UI) + gate P4; `before_submit`
+  red de seguridad de baseline; `before_cancel` bloquea terminales. Acción whitelisted
+  `aplicar_quotation_al_project` delegando en `pmo/change_control.py` → contrato
+  `erpnext_proposals.apply_addendum_to_project` (mockeado en tests; sin escribir `proposal_project`).
+  JS `pmo_change_request.js`. Tests (17 en `test_change_request.py`). **Suite 168/168.** *(commit en curso)*
 - **Bloque 4 — Comparator** (`pmo/compare.py` engine determinista sobre snapshots v1 + render modesto) + tests.
 - **Bloque 5 — Report View (Change Register)** P4-safe + docs (`docs/usuario/`, `docs/tecnico/`).
 - **Bloque 6 — bump `__version__`→0.6.0 + `migrate` en `test-pmo.localhost` (con autorización) + validación
