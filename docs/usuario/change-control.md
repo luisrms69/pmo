@@ -64,6 +64,17 @@ estructura, estado y asignaciones, más cambios de fechas del Project. Es una **
 si varias solicitudes de cambio se consolidaron en la misma baseline resultante, el comparador muestra
 **todo** lo que cambió entre esas dos fotos, no solo lo de un CR concreto.
 
+## Registro de cambios (Change Register)
+
+El reporte **PMO Change Register** es la vista de operación de todos los Change Requests. Muestra, por cada
+CR: Project, número, título, estado, fecha, prioridad, tipos de impacto, horas/días/monto estimados,
+grupo de propuesta y Cotización aplicada, y las baselines *before/after*. Viene ordenado por fecha (más
+reciente primero) y luego por prioridad; puedes filtrar y ordenar por cualquier columna, y guardar tus
+propias vistas.
+
+**Solo ves los cambios de proyectos que puedes ver** (misma regla de privacidad): el registro no expone
+CRs de proyectos ajenos. El acceso ejecutivo ve todos; `PMO Manager` no accede.
+
 ## Relación con los demás documentos
 
 | Documento | Rol en el cambio |

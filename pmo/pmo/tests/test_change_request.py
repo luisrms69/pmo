@@ -183,6 +183,34 @@ class TestChangeRequest(IntegrationTestCase):
 		self.assertFalse(has_permission_change_request(cr, "cancel", member))
 		self.assertFalse(has_permission_change_request(cr, "share", owner))
 
+	def test_change_register_list_p4(self):
+		"""El Change Register es un Report Builder sobre la lista del CR → depende de
+		`permission_query_conditions`. Se valida que el listado filtra por visibilidad del Project."""
+		owner_a = _user("cr-reg-a@example.com", ["Projects User"])
+		owner_b = _user("cr-reg-b@example.com", ["Projects User"])
+		execu = _user("cr-reg-exec@example.com", ["PMO Executive Access"])
+		pa = _project("CR-REG-A", owner=owner_a)
+		pb = _project("CR-REG-B", owner=owner_b)
+		cra = _cr(pa, title="A change")
+		crb = _cr(pb, title="B change")
+		scope = {"project": ["in", [pa, pb]]}
+
+		frappe.set_user(owner_a)
+		try:
+			names = frappe.get_list("PMO Change Request", filters=scope, pluck="name")
+		finally:
+			frappe.set_user("Administrator")
+		self.assertIn(cra.name, names)
+		self.assertNotIn(crb.name, names)  # no ve el CR de otro Project
+
+		frappe.set_user(execu)
+		try:
+			names_e = frappe.get_list("PMO Change Request", filters=scope, pluck="name")
+		finally:
+			frappe.set_user("Administrator")
+		self.assertIn(cra.name, names_e)
+		self.assertIn(crb.name, names_e)  # lector global ve ambos
+
 	def test_member_write_denied_after_submit(self):
 		owner = _user("cr-owner2@example.com")
 		member = _user("cr-member2@example.com")

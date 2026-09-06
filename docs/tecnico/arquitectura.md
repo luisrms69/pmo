@@ -262,8 +262,9 @@ DocType **submittable** (`is_submittable`, autoname `PMO-CR-.#####`) que **gobie
 aprobado; `PMO Project Baseline` congela el before/after; `Timesheet` registra el Actual.
 
 > **Estado (v0.6.0 en construcción):** entregados el DocType + P4 + invariantes base, el **Workflow +
-> acción "Aplicar Quotation al Project" + semántica Aplicado/Implementado** y el **comparator
-> Baseline↔Baseline**. El Change Register llega en un bloque posterior del mismo release.
+> acción "Aplicar Quotation al Project" + semántica Aplicado/Implementado**, el **comparator
+> Baseline↔Baseline** y el **Change Register**. Pendiente: cierre + bump 0.6.0 y la validación comercial
+> end-to-end (dependencia de `erpnext_proposals`).
 
 - **Campos:** solicitud (`project`, `title`, `raised_by`, `origin`, `request_date`, `priority`
   Baja/Media/Alta, `reason`, `description`); impacto mínimo estructurado (5 Checks
@@ -341,6 +342,17 @@ consolidarse en una misma `baseline_after`).
 `app_include_js`) que abre un diálogo con secciones added/removed/changed. Botones: en el Change Request
 *"¿Qué cambió? (baselines)"* (cuando hay `baseline_before` y `baseline_after`) y en el Baseline *"Comparar
 con la anterior"* (cuando tiene `supersedes_baseline`). Sin overlay Gantt, timeline ni edición.
+
+### Change Register (D12)
+
+Reporte estándar **`PMO Change Register`** (`report_type = "Report Builder"`, `is_standard = Yes`,
+`ref_doctype = PMO Change Request`, módulo PMO) en `pmo/pmo/report/pmo_change_register/`. Al ser un Report
+Builder consulta la **lista del DocType**, por lo que aplica **`permission_query_conditions` automáticamente
+(P4-safe)** — se evita deliberadamente Query/Script Report (que ignoran `pqc`). Columnas: `name`, `project`,
+`title`, `workflow_state`, `request_date`, `priority`, `impact_summary`, `impact_hours`, `impact_days`,
+`currency`, `impact_amount`, `proposal_group`, `applied_quotation`, `baseline_before`, `baseline_after`.
+Orden por defecto `request_date` desc, luego `priority` desc. Roles: `Projects User`, `PMO Executive
+Access`, `System Manager` (abren el reporte; las filas las restringe `pqc`). **PMO Manager** no accede.
 
 ## Fuera de alcance
 Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext

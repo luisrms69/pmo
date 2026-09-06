@@ -3,11 +3,11 @@
 **Fecha:** 2026-09-06
 **Rama activa:** `feat/change-control` (base `version-16` @ v0.5.0).
 **Tarea actual:** **v0.6.0 — Integrated Change Control.** Arquitectura cerrada y **ADR-0005 Accepted**.
-Bloque 1 (docs) ✅ `15fb9dd`. Bloque 2 (DocType + P4) ✅ `0974040`. Bloque 3 (Workflow + acción Aplicar) ✅
-`6dbe531`. **Bloque 4 (Comparator Baseline↔Baseline) ✅** (commit en curso): `pmo/compare.py`
-(`compare_snapshots` puro + `compare_baselines` whitelisted con P4/mismo-Project) + UI diálogo
-(`baseline_compare.js` global + botones en CR y Baseline). **Suite 179/179.** Bloques 5–6 (Change Register,
-cierre+bump 0.6.0) pendientes. Sin push/PR; sin cambios en `erpnext_proposals` (dependencia de entrega).
+Bloques 1–4 ✅ (`15fb9dd`, `0974040`, `6dbe531`, `1bddaa2`). **Bloque 5 (Change Register, Report Builder
+P4-safe) ✅** (commit en curso): reporte estándar `PMO Change Register` + test de pqc en listado. `migrate`
+en `test-pmo.localhost`. **Suite 180/180.** Pendiente: **revisión funcional integrada** (usuario) y luego
+Bloque 6 (cierre + bump 0.6.0). Sin push/PR; sin cambios en `erpnext_proposals` (dependencia de entrega
+para la validación comercial end-to-end).
 
 > v0.5.0 ya está **mergeado y liberado** (PR #6 → `f4fb3bc`; tag/Release v0.5.0). DEMO en `pmo-v16.dev`
 > se dejó disponible (no limpiar aún).
@@ -45,9 +45,14 @@ ADR-0005 (Accepted) define Change Control integrado. Referencia viva:
   `public/js/baseline_compare.js` (global, `pmo_show_baseline_diff`) + botón en CR ("¿Qué cambió?
   (baselines)") y en Baseline ("Comparar con la anterior"). Tests `test_baseline_compare.py` (11).
   **Suite 179/179.** *(commit en curso)*
-- **Bloque 5 — Report View (Change Register)** P4-safe + docs (`docs/usuario/`, `docs/tecnico/`).
-- **Bloque 6 — bump `__version__`→0.6.0 + `migrate` en `test-pmo.localhost` (con autorización) + validación
-  funcional en `pmo-v16.dev`.** Luego `/ship push` + `/ship pr`.
+- **Bloque 5 — Change Register (Report Builder P4-safe). ✅** Reporte estándar `PMO Change Register`
+  (`pmo/pmo/report/pmo_change_register/`, is_standard=Yes, ref PMO Change Request): 15 columnas, orden
+  request_date desc + priority desc, roles Projects User/Executive/System Manager (pqc restringe filas).
+  Se evita Query/Script Report (ignoran pqc). Test `test_change_register_list_p4`. Docs técnico+usuario.
+  **Suite 180/180.** *(commit en curso)*
+- **Revisión funcional integrada (usuario)** antes del Bloque 6: separar *validación completa sin Quotation*
+  vs *pendiente de dependencia erpnext_proposals*.
+- **Bloque 6 — bump `__version__`→0.6.0 + validación funcional en `pmo-v16.dev`.** Luego `/ship push` + `/ship pr`.
 
 ## Decisiones vigentes (ADR-0005, resumen)
 - **Único DocType nuevo `PMO Change Request`** (submittable, `PMO-CR-.#####`). Impacto mínimo: `priority`
