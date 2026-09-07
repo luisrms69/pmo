@@ -339,9 +339,24 @@ snapshots persistidos y delega en `compare_snapshots`. El orden de argumentos de
 consolidarse en una misma `baseline_after`).
 
 **UI (modesta):** helper global `pmo_show_baseline_diff` (`public/js/baseline_compare.js`, vía
-`app_include_js`) que abre un diálogo con secciones added/removed/changed. Botones: en el Change Request
-*"¿Qué cambió? (baselines)"* (cuando hay `baseline_before` y `baseline_after`) y en el Baseline *"Comparar
-con la anterior"* (cuando tiene `supersedes_baseline`). Sin overlay Gantt, timeline ni edición.
+`app_include_js`) que abre un diálogo con secciones added/removed/changed **y una acción "Imprimir /
+Guardar como PDF"** (abre una vista imprimible en ventana nueva que escala para cambios grandes; usa la
+impresión del navegador → PDF). No se persiste ni adjunta ningún artefacto derivado (las baselines ya son
+inmutables y el diff es reproducible). Botones: en el Change Request *"Comparar líneas base"* (cuando hay
+`baseline_before` y `baseline_after`) y en el Baseline *"Comparar con línea base anterior"* (cuando tiene
+`supersedes_baseline`). Sin overlay Gantt, timeline ni edición.
+
+**`baseline_after` — selección explícita guiada (D5):** la relación es de negocio (qué baseline incorpora
+el cambio), **no** "la vigente al instante", así que **no** se automatiza. Se mantiene editable pero el
+picker se filtra con `baseline_after_query` (baselines Submitted del mismo Project, distintas de
+`baseline_before` y con `effective_date >= baseline_before.effective_date`), y un botón *"Usar línea base
+vigente"* (`get_current_baseline`, P4) la **prellena** como conveniencia sin impedir escoger otra. El gate
+de Cerrar sigue exigiendo `baseline_after`.
+
+**i18n:** las etiquetas visibles de `PMO Change Request` y `PMO Project Baseline` están en **español** en el
+JSON (convención del ecosistema; el sitio corre en `en`). Se mantienen en inglés los identificadores
+técnicos: fieldnames, valores de Select usados por el código (p. ej. `baseline_type`
+Original/Approved Change/Replan), y nombres de DocType/Report.
 
 ### Change Register (D12)
 

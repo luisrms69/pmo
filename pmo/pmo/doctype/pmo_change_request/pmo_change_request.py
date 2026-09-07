@@ -217,3 +217,47 @@ def aplicar_quotation_al_project(change_request: str, quotation: str):
 	doc.applied_quotation = quotation
 	doc.save()  # solo campos allow_on_submit sobre el CR submitted
 	return result
+
+
+# --- UX de baseline_after: selección explícita, más guiada (ADR-0005 D5) -----------
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def baseline_after_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Link query para `baseline_after`: baselines Submitted del mismo Project, distintas de
+	`baseline_before` y compatibles temporalmente (`effective_date >= baseline_before.effective_date`).
+	Reduce fricción sin automatizar la relación (que es de negocio, no "la vigente al instante")."""
+	filters = filters or {}
+	conds = ["b.docstatus = 1", "b.project = %(project)s"]
+	vals = {"project": filters.get("project"), "txt": f"%{txt or ''}%", "start": start, "page_len": page_len}
+	before = filters.get("baseline_before")
+	if before:
+		conds.append("b.name != %(before)s")
+		vals["before"] = before
+		eff = frappe.db.get_value("PMO Project Baseline", before, "effective_date")
+		if eff:
+			conds.append("b.effective_date >= %(eff)s")
+			vals["eff"] = eff
+	conds.append("(b.name like %(txt)s or b.revision like %(txt)s)")
+	return frappe.db.sql(
+		f"""select b.name, b.revision from `tabPMO Project Baseline` b
+			where {" and ".join(conds)}
+			order by b.effective_date desc, b.creation desc
+			limit %(page_len)s offset %(start)s""",
+		vals,
+	)
+
+
+@frappe.whitelist()
+def get_current_baseline(project: str):
+	"""Conveniencia para el botón 'Usar línea base vigente': devuelve la baseline vigente del Project si es
+	visible para el usuario (P4). NO fija nada; el usuario puede escoger otra."""
+	if not project:
+		return None
+	from pmo.baseline import get_effective_baseline
+	from pmo.permissions import is_project_visible
+
+	if not is_project_visible(project, frappe.session.user):
+		frappe.throw(frappe._("No tienes acceso a este Project."), frappe.PermissionError)
+	return get_effective_baseline(project)

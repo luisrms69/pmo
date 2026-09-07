@@ -56,13 +56,21 @@ El acceso se **hereda del Project** (misma regla de privacidad que el resto de P
 
 Un CR **Rechazado** o **Cerrado** es terminal (no se cancela); un nuevo intento es otro CR.
 
-## ¿Qué cambió entre baselines?
+## ¿Qué cambió entre líneas base?
 
-Cuando el CR tiene ligadas la baseline previa (*before*) y la resultante (*after*), el botón **"¿Qué
-cambió? (baselines)"** abre una comparación legible: tareas añadidas/eliminadas y cambios de fechas, horas,
-estructura, estado y asignaciones, más cambios de fechas del Project. Es una **diferencia entre baselines**:
-si varias solicitudes de cambio se consolidaron en la misma baseline resultante, el comparador muestra
-**todo** lo que cambió entre esas dos fotos, no solo lo de un CR concreto.
+Cuando el CR tiene ligadas la línea base previa (*Línea base previa*) y la resultante (*Línea base
+resultante*), el botón **"Comparar líneas base"** abre una comparación legible: tareas añadidas/eliminadas
+y cambios de fechas, horas, estructura, estado y asignaciones, más cambios de fechas del Proyecto. Es una
+**diferencia entre líneas base**: si varias solicitudes de cambio se consolidaron en la misma línea base
+resultante, muestra **todo** lo que cambió entre esas dos fotos, no solo lo de un CR concreto.
+
+Para cambios grandes, el diálogo incluye **"Imprimir / Guardar como PDF"**: abre una vista imprimible en
+una pestaña nueva que puedes guardar como PDF con la impresión del navegador. (No se adjunta un PDF
+automáticamente: las líneas base ya son inmutables y la comparación es reproducible.)
+
+**Ligar la Línea base resultante:** el owner la elige explícitamente (no se pone sola). El selector ya
+filtra a líneas base del mismo Proyecto, posteriores a la previa; y el botón **"Usar línea base vigente"**
+la prellena como atajo, sin impedir escoger otra.
 
 ## Registro de cambios (Change Register)
 

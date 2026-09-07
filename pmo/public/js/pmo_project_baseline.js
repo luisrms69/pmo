@@ -5,11 +5,11 @@
 frappe.ui.form.on("PMO Project Baseline", {
 	refresh(frm) {
 		if (frm.doc.docstatus === 1 && frm.doc.supersedes_baseline) {
-			frm.add_custom_button(__("Comparar con la anterior"), () => {
+			frm.add_custom_button(__("Comparar con línea base anterior"), () => {
 				window.pmo_show_baseline_diff(
 					frm.doc.supersedes_baseline,
 					frm.doc.name,
-					__("Cambios respecto a la baseline anterior")
+					__("Comparación con la línea base anterior")
 				);
 			});
 		}

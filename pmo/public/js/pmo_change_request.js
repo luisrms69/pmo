@@ -1,23 +1,57 @@
 // Copyright (c) 2026, Consultoria en Negocios y Aplicaciones and contributors
 // For license information, please see license.txt
 
-// ADR-0005 D7: acción explícita "Aplicar Cotización al Project". Solo visible al owner sobre un CR
-// Aprobado y aún no aplicado. Delega en el contrato de erpnext_proposals (server-side); el cliente no
-// escribe proposal_project ni reproduce sus guards. No mueve el Workflow: tras aplicar, el owner ejecuta
-// "Marcar Implementado" cuando el Current Plan esté completo.
 frappe.ui.form.on("PMO Change Request", {
 	refresh(frm) {
-		// ADR-0005 D11: comparar la baseline previa con la resultante (cambios entre baselines).
+		// baseline_after: selección explícita más guiada — filtra al mismo Project, Submitted, distinta de
+		// la previa y temporalmente compatible (ADR-0005 D5).
+		frm.set_query("baseline_after", () => ({
+			query: "pmo.pmo.doctype.pmo_change_request.pmo_change_request.baseline_after_query",
+			filters: { project: frm.doc.project, baseline_before: frm.doc.baseline_before },
+		}));
+
+		// ADR-0005 D11: comparar la línea base previa con la resultante (cambios entre líneas base).
 		if (frm.doc.baseline_before && frm.doc.baseline_after) {
-			frm.add_custom_button(__("¿Qué cambió? (baselines)"), () => {
+			frm.add_custom_button(__("Comparar líneas base"), () => {
 				window.pmo_show_baseline_diff(
 					frm.doc.baseline_before,
 					frm.doc.baseline_after,
-					__("Cambios entre baselines del Change Request")
+					__("Comparación de líneas base")
 				);
 			});
 		}
 
+		// Conveniencia: prellenar baseline_after con la vigente (sin impedir escoger otra).
+		if (
+			frm.doc.docstatus === 1 &&
+			!frm.doc.baseline_after &&
+			["Aprobado", "Implementado"].includes(frm.doc.workflow_state)
+		) {
+			frm.add_custom_button(__("Usar línea base vigente"), () => {
+				frappe
+					.call({
+						method: "pmo.pmo.doctype.pmo_change_request.pmo_change_request.get_current_baseline",
+						args: { project: frm.doc.project },
+					})
+					.then((r) => {
+						if (r.exc) return;
+						if (r.message) {
+							frm.set_value("baseline_after", r.message);
+							frappe.show_alert({
+								message: __(
+									"Prellenada con la línea base vigente. Revisa y guarda."
+								),
+								indicator: "blue",
+							});
+						} else {
+							frappe.msgprint(__("El Proyecto no tiene una línea base vigente."));
+						}
+					});
+			});
+		}
+
+		// ADR-0005 D7: acción "Aplicar Cotización al Project" (owner, CR Aprobado no aplicado). Delega en el
+		// contrato de erpnext_proposals (server-side); el cliente no escribe proposal_project.
 		if (
 			frm.doc.docstatus === 1 &&
 			frm.doc.workflow_state === "Aprobado" &&

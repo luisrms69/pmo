@@ -3,11 +3,13 @@
 **Fecha:** 2026-09-06
 **Rama activa:** `feat/change-control` (base `version-16` @ v0.5.0).
 **Tarea actual:** **v0.6.0 — Integrated Change Control.** Arquitectura cerrada y **ADR-0005 Accepted**.
-Bloques 1–4 ✅ (`15fb9dd`, `0974040`, `6dbe531`, `1bddaa2`). **Bloque 5 (Change Register, Report Builder
-P4-safe) ✅** (commit en curso): reporte estándar `PMO Change Register` + test de pqc en listado. `migrate`
-en `test-pmo.localhost`. **Suite 180/180.** Pendiente: **revisión funcional integrada** (usuario) y luego
-Bloque 6 (cierre + bump 0.6.0). Sin push/PR; sin cambios en `erpnext_proposals` (dependencia de entrega
-para la validación comercial end-to-end).
+Bloques 1–5 ✅ (`15fb9dd`, `0974040`, `6dbe531`, `1bddaa2`, `09a0e60`). Validación funcional integrada en
+`pmo-v16.dev` OK (sin Quotation end-to-end; con Quotation bloqueada limpio; negativos OK). **Incremento 5.1
+— Ajustes de UX ✅** (commit en curso): etiquetas ES en CR + Baseline (Change Register hereda); rename de
+botones a "líneas base"; comparador con vista imprimible ("Imprimir / Guardar como PDF"); `baseline_after`
+explícita con picker filtrado (`baseline_after_query`) + botón "Usar línea base vigente"
+(`get_current_baseline`). **Suite 182/182.** Pendiente: Bloque 6 (bump 0.6.0 + push/PR). Sin cambios en
+`erpnext_proposals`.
 
 > v0.5.0 ya está **mergeado y liberado** (PR #6 → `f4fb3bc`; tag/Release v0.5.0). DEMO en `pmo-v16.dev`
 > se dejó disponible (no limpiar aún).

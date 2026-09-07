@@ -57,7 +57,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Project",
+   "label": "Proyecto",
    "options": "Project",
    "reqd": 1
   },
@@ -65,7 +65,7 @@
    "fieldname": "title",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Title",
+   "label": "Título",
    "reqd": 1
   },
   {
@@ -73,10 +73,10 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Quien solicita/levanta el cambio.",
+   "description": "Quién solicita/levanta el cambio.",
    "fieldname": "raised_by",
    "fieldtype": "Link",
-   "label": "Raised By",
+   "label": "Solicitado por",
    "options": "User",
    "read_only": 1
   },
@@ -84,7 +84,7 @@
    "fieldname": "origin",
    "fieldtype": "Select",
    "in_standard_filter": 1,
-   "label": "Origin",
+   "label": "Origen",
    "options": "\nCliente\nInterno\nRegulatorio\nOtro"
   },
   {
@@ -92,7 +92,7 @@
    "fieldname": "request_date",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Request Date",
+   "label": "Fecha de solicitud",
    "read_only": 1
   },
   {
@@ -101,47 +101,47 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Priority",
+   "label": "Prioridad",
    "options": "Baja\nMedia\nAlta"
   },
   {
    "fieldname": "section_detail",
    "fieldtype": "Section Break",
-   "label": "Request"
+   "label": "Solicitud"
   },
   {
    "fieldname": "reason",
    "fieldtype": "Small Text",
-   "label": "Reason",
+   "label": "Motivo",
    "reqd": 1
   },
   {
    "fieldname": "description",
    "fieldtype": "Text Editor",
-   "label": "Description"
+   "label": "Descripción"
   },
   {
    "fieldname": "section_impact",
    "fieldtype": "Section Break",
-   "label": "Impact"
+   "label": "Impacto"
   },
   {
    "default": "0",
    "fieldname": "impacts_scope",
    "fieldtype": "Check",
-   "label": "Scope"
+   "label": "Alcance"
   },
   {
    "default": "0",
    "fieldname": "impacts_schedule",
    "fieldtype": "Check",
-   "label": "Schedule"
+   "label": "Cronograma"
   },
   {
    "default": "0",
    "fieldname": "impacts_effort",
    "fieldtype": "Check",
-   "label": "Effort / Resources"
+   "label": "Esfuerzo / Recursos"
   },
   {
    "fieldname": "column_break_impact",
@@ -151,37 +151,37 @@
    "default": "0",
    "fieldname": "impacts_commercial",
    "fieldtype": "Check",
-   "label": "Commercial"
+   "label": "Comercial"
   },
   {
    "default": "0",
    "fieldname": "impacts_risk",
    "fieldtype": "Check",
-   "label": "Risk"
+   "label": "Riesgo"
   },
   {
-   "description": "Resumen de los tipos de impacto marcados (para el Change Register).",
+   "description": "Resumen de los tipos de impacto marcados (para el Registro de cambios).",
    "fieldname": "impact_summary",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Impact Summary",
+   "label": "Resumen de impacto",
    "read_only": 1
   },
   {
    "fieldname": "section_impact_qty",
    "fieldtype": "Section Break",
-   "label": "Estimated Deltas (optional)"
+   "label": "Estimaciones (opcional)"
   },
   {
-   "description": "Estimacion no vinculante. La valuacion autoritativa vive en la Quotation.",
+   "description": "Estimación no vinculante. La valuación autoritativa vive en la Cotización.",
    "fieldname": "impact_hours",
    "fieldtype": "Float",
-   "label": "Impact Hours"
+   "label": "Horas (impacto)"
   },
   {
    "fieldname": "impact_days",
    "fieldtype": "Int",
-   "label": "Impact Days"
+   "label": "Días (impacto)"
   },
   {
    "fieldname": "column_break_impact_qty",
@@ -190,13 +190,13 @@
   {
    "fieldname": "currency",
    "fieldtype": "Link",
-   "label": "Currency",
+   "label": "Moneda",
    "options": "Currency"
   },
   {
    "fieldname": "impact_amount",
    "fieldtype": "Currency",
-   "label": "Impact Amount",
+   "label": "Monto (impacto)",
    "options": "currency"
   },
   {
@@ -206,31 +206,31 @@
   {
    "fieldname": "impact_notes",
    "fieldtype": "Small Text",
-   "label": "Impact Notes"
+   "label": "Notas de impacto"
   },
   {
-   "description": "Evaluacion tecnica/PM del cambio. La discusion multi-actor usa Comments nativos.",
+   "description": "Evaluación técnica/PM del cambio. La discusión multi-actor usa Comentarios nativos.",
    "fieldname": "evaluation_notes",
    "fieldtype": "Text",
-   "label": "Evaluation Notes"
+   "label": "Notas de evaluación"
   },
   {
    "collapsible": 1,
    "fieldname": "section_proposal",
    "fieldtype": "Section Break",
-   "label": "Proposal (Quotation)"
+   "label": "Propuesta (Cotización)"
   },
   {
-   "description": "Hilo logico (Proposal Group) de la Quotation-addendum. Preserva el historial de versiones.",
+   "description": "Hilo lógico (Proposal Group) de la Cotización-addendum. Preserva el historial de versiones.",
    "fieldname": "proposal_group",
    "fieldtype": "Data",
-   "label": "Proposal Group"
+   "label": "Grupo de propuesta"
   },
   {
-   "description": "Version Ganada efectivamente aplicada al Project. Se fija al aplicar.",
+   "description": "Versión Ganada efectivamente aplicada al Proyecto. Se fija al aplicar.",
    "fieldname": "applied_quotation",
    "fieldtype": "Link",
-   "label": "Applied Quotation",
+   "label": "Cotización aplicada",
    "options": "Quotation",
    "read_only": 1,
    "allow_on_submit": 1
@@ -238,41 +238,41 @@
   {
    "fieldname": "section_baselines",
    "fieldtype": "Section Break",
-   "label": "Baselines"
+   "label": "Líneas base"
   },
   {
-   "description": "Baseline vigente al formalizar el CR (congelada). Se resuelve en la transicion a 'En revision' (Bloque 3).",
+   "description": "Línea base vigente al formalizar el cambio (congelada al pasar a 'En Revision').",
    "fieldname": "baseline_before",
    "fieldtype": "Link",
-   "label": "Baseline Before",
+   "label": "Línea base previa",
    "options": "PMO Project Baseline",
    "read_only": 1
   },
   {
-   "description": "Nueva baseline que incorpora el cambio. La liga el owner antes de cerrar (post-implementacion).",
+   "description": "Línea base que incorpora el cambio. La liga el owner (selección explícita) antes de cerrar.",
    "fieldname": "baseline_after",
    "fieldtype": "Link",
-   "label": "Baseline After",
+   "label": "Línea base resultante",
    "options": "PMO Project Baseline",
    "allow_on_submit": 1
   },
   {
    "fieldname": "section_decision",
    "fieldtype": "Section Break",
-   "label": "Decision"
+   "label": "Decisión"
   },
   {
-   "description": "Fijado automaticamente al aprobar (Submit).",
+   "description": "Fijado automáticamente al aprobar (Submit).",
    "fieldname": "approved_by",
    "fieldtype": "Link",
-   "label": "Approved By",
+   "label": "Aprobado por",
    "options": "User",
    "read_only": 1
   },
   {
    "fieldname": "approved_at",
    "fieldtype": "Datetime",
-   "label": "Approved At",
+   "label": "Aprobado el",
    "read_only": 1
   },
   {
@@ -282,18 +282,18 @@
   {
    "fieldname": "decision_notes",
    "fieldtype": "Small Text",
-   "label": "Decision Notes"
+   "label": "Notas de decisión"
   },
   {
    "fieldname": "section_implementation",
    "fieldtype": "Section Break",
-   "label": "Implementation"
+   "label": "Implementación"
   },
   {
-   "description": "Los Scope Items de la Quotation quedaron materializados como Tasks. No implica 'Implementado'.",
+   "description": "Los Scope Items de la Cotización quedaron materializados como Tasks. No implica 'Implementado'.",
    "fieldname": "applied_to_project",
    "fieldtype": "Check",
-   "label": "Applied to Project",
+   "label": "Aplicado al Proyecto",
    "read_only": 1,
    "allow_on_submit": 1,
    "default": "0"
@@ -301,20 +301,20 @@
   {
    "fieldname": "applied_at",
    "fieldtype": "Datetime",
-   "label": "Applied At",
+   "label": "Aplicado el",
    "read_only": 1,
    "allow_on_submit": 1
   },
   {
    "fieldname": "implementation_notes",
    "fieldtype": "Small Text",
-   "label": "Implementation Notes",
+   "label": "Notas de implementación",
    "allow_on_submit": 1
   },
   {
    "fieldname": "amended_from",
    "fieldtype": "Link",
-   "label": "Amended From",
+   "label": "Enmendado desde",
    "no_copy": 1,
    "options": "PMO Change Request",
    "print_hide": 1,

@@ -19,7 +19,11 @@ from frappe.utils import today
 
 from pmo import change_control
 from pmo.permissions import has_permission_change_request
-from pmo.pmo.doctype.pmo_change_request.pmo_change_request import aplicar_quotation_al_project
+from pmo.pmo.doctype.pmo_change_request.pmo_change_request import (
+	aplicar_quotation_al_project,
+	baseline_after_query,
+	get_current_baseline,
+)
 
 
 def _user(email, roles=()):
@@ -322,6 +326,39 @@ class TestChangeRequest(IntegrationTestCase):
 		try:
 			with self.assertRaises(ValidationError):
 				cr.cancel()  # estado terminal
+		finally:
+			frappe.set_user("Administrator")
+
+	# --- UX baseline_after: query filtrada + conveniencia vigente (5.1) ----------
+
+	def test_baseline_after_query_filters(self):
+		p = _project("CR-BAQ")
+		other = _project("CR-BAQ-OTHER")
+		b1 = _baseline(p, "BL-001", effective="2026-02-01")
+		b2 = _baseline(p, "BL-002", btype="Replan", supersedes=b1.name, effective="2026-03-01")
+		bother = _baseline(other, "BL-001", effective="2026-03-01")
+		rows = baseline_after_query(
+			"PMO Project Baseline", "", "name", 0, 20, {"project": p, "baseline_before": b1.name}
+		)
+		names = [r[0] for r in rows]
+		self.assertIn(b2.name, names)  # posterior, mismo Project
+		self.assertNotIn(b1.name, names)  # excluye la propia baseline_before
+		self.assertNotIn(bother.name, names)  # excluye otro Project
+
+	def test_get_current_baseline_p4(self):
+		owner = _user("cr-gcb-owner@example.com")
+		outsider = _user("cr-gcb-out@example.com")
+		p = _project("CR-GCB", owner=owner)
+		b1 = _baseline(p, "BL-001")
+		frappe.set_user(owner)
+		try:
+			self.assertEqual(get_current_baseline(p), b1.name)
+		finally:
+			frappe.set_user("Administrator")
+		frappe.set_user(outsider)
+		try:
+			with self.assertRaises(frappe.PermissionError):
+				get_current_baseline(p)
 		finally:
 			frappe.set_user("Administrator")
 

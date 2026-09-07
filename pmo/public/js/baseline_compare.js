@@ -1,10 +1,10 @@
 // Copyright (c) 2026, Consultoria en Negocios y Aplicaciones and contributors
 // For license information, please see license.txt
 
-// ADR-0005 D11: render modesto del comparator Baseline ↔ Baseline. Diálogo con secciones
-// added / removed / changed. Es una diferencia ENTRE baselines (puede consolidar varios Change Requests),
-// no una atribución por CR. Se incluye globalmente (app_include_js) para reutilizarlo desde el form del
-// Change Request y del PMO Project Baseline.
+// ADR-0005 D11: render del comparador de líneas base. Diálogo con secciones added/removed/changed +
+// acción "Imprimir / Guardar como PDF" (vista imprimible que escala para cambios grandes, vía impresión
+// del navegador). Es una diferencia ENTRE líneas base (puede consolidar varios Change Requests), no una
+// atribución por CR. Se incluye globalmente (app_include_js) y lo reutilizan el Change Request y el Baseline.
 
 (function () {
 	function esc(v) {
@@ -60,10 +60,10 @@
 
 	function format(diff) {
 		if (!diff.has_changes) {
-			return `<p>${__("Sin diferencias entre ambas baselines.")}</p>`;
+			return `<p>${__("Sin diferencias entre ambas líneas base.")}</p>`;
 		}
 		let html = `<p class="text-muted">${__(
-			"Diferencia entre baselines (puede consolidar varios Change Requests)."
+			"Diferencia entre líneas base (puede consolidar varios Change Requests)."
 		)}</p>`;
 
 		const pc = diff.project_changes || {};
@@ -77,14 +77,14 @@
 
 		if ((diff.tasks_added || []).length) {
 			html += section(
-				__("Tasks añadidas"),
+				__("Tareas añadidas"),
 				tblHead + diff.tasks_added.map(taskRow).join("") + "</tbody></table>",
 				diff.tasks_added.length
 			);
 		}
 		if ((diff.tasks_removed || []).length) {
 			html += section(
-				__("Tasks eliminadas"),
+				__("Tareas eliminadas"),
 				tblHead + diff.tasks_removed.map(taskRow).join("") + "</tbody></table>",
 				diff.tasks_removed.length
 			);
@@ -98,36 +98,64 @@
 							${fieldChangesHtml(t.fields)}${assignmentsHtml(t.assignments)}</div>`
 				)
 				.join("");
-			html += section(__("Tasks modificadas"), body, diff.tasks_changed.length);
+			html += section(__("Tareas modificadas"), body, diff.tasks_changed.length);
 		}
 		return html;
 	}
 
+	function headerHtml(m) {
+		if (!m || !m.before || !m.after) return "";
+		return `<p><b>${esc(m.before.revision || m.before.name)}</b> (${esc(
+			m.before.effective_date
+		)}) → <b>${esc(m.after.revision || m.after.name)}</b> (${esc(
+			m.after.effective_date
+		)})</p>`;
+	}
+
+	// Vista imprimible: ventana nueva con CSS de impresión → el usuario usa Imprimir / Guardar como PDF.
+	function openPrintable(title, innerHtml) {
+		const w = window.open("", "_blank");
+		if (!w) {
+			frappe.msgprint(__("Permite las ventanas emergentes para abrir la vista imprimible."));
+			return;
+		}
+		const css =
+			"<style>body{font-family:sans-serif;margin:24px;color:#111}" +
+			"h1{font-size:18px;margin:0 0 4px}h5{margin:16px 0 4px}" +
+			"table{border-collapse:collapse;width:100%;font-size:12px}" +
+			"th,td{border:1px solid #ccc;padding:4px 6px;text-align:left}" +
+			"ul{margin:.25rem 0}code{background:#f4f4f4;padding:0 3px}.text-muted{color:#666}" +
+			"@media print{.noprint{display:none}}</style>";
+		w.document.write(
+			`<html><head><meta charset="utf-8"><title>${esc(title)}</title>${css}</head><body>` +
+				`<div class="noprint" style="margin-bottom:12px"><button onclick="window.print()">${__(
+					"Imprimir / Guardar como PDF"
+				)}</button></div>` +
+				`<h1>${esc(title)}</h1>${innerHtml}</body></html>`
+		);
+		w.document.close();
+	}
+
 	window.pmo_show_baseline_diff = function (before_name, after_name, title) {
+		title = title || __("Comparación de líneas base");
 		frappe
 			.call({
 				method: "pmo.compare.compare_baselines",
 				args: { baseline_before: before_name, baseline_after: after_name },
 				freeze: true,
-				freeze_message: __("Comparando baselines…"),
+				freeze_message: __("Comparando líneas base…"),
 			})
 			.then((r) => {
 				if (r.exc || !r.message) return;
-				const m = r.message.meta || {};
+				const body = headerHtml(r.message.meta) + format(r.message);
 				const dlg = new frappe.ui.Dialog({
-					title: title || __("Cambios entre baselines"),
+					title: title,
 					size: "large",
 					fields: [{ fieldtype: "HTML", fieldname: "diff" }],
 				});
-				const header =
-					m.before && m.after
-						? `<p><b>${esc(m.before.revision || m.before.name)}</b> (${esc(
-								m.before.effective_date
-						  )}) → <b>${esc(m.after.revision || m.after.name)}</b> (${esc(
-								m.after.effective_date
-						  )})</p>`
-						: "";
-				dlg.fields_dict.diff.$wrapper.html(header + format(r.message));
+				dlg.fields_dict.diff.$wrapper.html(body);
+				dlg.set_secondary_action_label(__("Imprimir / Guardar como PDF"));
+				dlg.set_secondary_action(() => openPrintable(title, body));
 				dlg.show();
 			});
 	};
