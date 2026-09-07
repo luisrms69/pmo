@@ -163,14 +163,15 @@ has_permission = {
 	"PMO Change Request": "pmo.permissions.has_permission_change_request",
 }
 
-# Fixtures: Custom Field pmo_members en Project + roles PMO + Custom Role de reports (P0 Inc. 4).
+# Fixtures: Custom Field ToDo-pmo_planned_hours + roles PMO + Custom Role de reports (P0 Inc. 4).
+# (La membresía de Project ya NO usa un Custom Field/child: se deriva de owner + DocShare + ToDo; ADR-0002.)
 # Los Custom Role restringen 3 Script Reports de ERPNext (que ignoran pqc vía get_all/db.sql) a
 # `PMO Executive Access`/`Administrator`. Viven en doctype aparte (el sync del Report no los pisa) y el
 # fixture los re-aplica en cada migrate → self-heal del drift. Ver pmo/overrides.py y ADR-0002.
 fixtures = [
 	{
 		"dt": "Custom Field",
-		"filters": [["name", "in", ["Project-pmo_members", "ToDo-pmo_planned_hours"]]],
+		"filters": [["name", "in", ["ToDo-pmo_planned_hours"]]],
 	},
 	{"dt": "Role", "filters": [["name", "in", ["PMO Manager", "PMO Executive Access"]]]},
 	{

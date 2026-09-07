@@ -61,11 +61,8 @@ class TestPrivacyRead(IntegrationTestCase):
 		cls.t3 = _task(f"{MARK}-T3", cls.p2)
 		cls.orphan = _task(f"{MARK}-ORPHAN", None)
 
-		# member de P1
-		proj = frappe.get_doc("Project", cls.p1)
-		proj.append("pmo_members", {"member": cls.member})
-		proj.flags.ignore_mandatory = True
-		proj.save(ignore_permissions=True)
+		# member de P1 = DocShare(read) del Project (membresía derivada; ADR-0002 revisado)
+		frappe.share.add("Project", cls.p1, cls.member, read=1, notify=0)
 
 		# assignee: solo asignado a T1 (de P1), NO miembro
 		assign_to.add({"doctype": "Task", "name": cls.t1, "assign_to": frappe.as_json([cls.assignee])})

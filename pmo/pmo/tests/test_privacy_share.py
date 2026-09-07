@@ -1,11 +1,12 @@
 # Copyright (c) 2026, Consultoria en Negocios y Aplicaciones and contributors
 # For license information, please see license.txt
 
-"""P0 Incremento 3 — SHARE de Project/Task (ADR-0002 D7). Datos ficticios.
+"""P0 Incremento 3 — SHARE de Project/Task (ADR-0002 D7, revisado v0.6.0). Datos ficticios.
 
-Política: SHARE manual solo `PMO Executive Access` / `Administrator`; owner/member/assignee/otros NO.
-Implementado por el permiso nativo vía `has_permission(ptype="share")` (sin Custom DocPerm).
-Además: `assign_to` NO crea auto-share (la visibilidad del asignado viene del ToDo).
+Política: SHARE de **Project** = **owner** (comparte su propio Project) + `PMO Executive Access` /
+`Administrator`. SHARE de **Task** = solo Executive/Administrator (excepcional). El resto (DocShare-read,
+assignee, outsider) NO. Implementado por el permiso nativo vía `has_permission(ptype="share")` (sin
+Custom DocPerm). `assign_to` NO crea auto-share (la visibilidad del asignado viene del ToDo).
 """
 
 import frappe
@@ -60,10 +61,8 @@ class TestPrivacyShare(IntegrationTestCase):
 		cls.p1 = _project(f"{MARK}-P1", cls.owner)
 		cls.t1 = _task(f"{MARK}-T1", cls.p1)
 
-		proj = frappe.get_doc("Project", cls.p1)
-		proj.append("pmo_members", {"member": cls.member})
-		proj.flags.ignore_mandatory = True
-		proj.save(ignore_permissions=True)
+		# member = DocShare(read) del Project (membresía derivada; ADR-0002 revisado)
+		frappe.share.add("Project", cls.p1, cls.member, read=1, notify=0)
 
 		assign_to.add({"doctype": "Task", "name": cls.t1, "assign_to": frappe.as_json([cls.assignee])})
 
@@ -77,34 +76,49 @@ class TestPrivacyShare(IntegrationTestCase):
 
 	# --- has_permission(ptype="share") ------------------------------------
 
-	def test_share_permission_restricted_to_executive(self):
+	def test_share_permission_owner_and_executive(self):
+		# D7 (revisado): el OWNER comparte su propio Project; Executive/Admin también.
+		self.assertTrue(self._can_share("Project", self.p1, self.owner))
 		self.assertTrue(self._can_share("Project", self.p1, self.exec_user))
 		self.assertTrue(self._can_share("Task", self.t1, self.exec_user))
-		self.assertFalse(self._can_share("Project", self.p1, self.owner))
+		# Task share sigue excepcional (solo Executive/Admin): ni siquiera el owner comparte la Task.
+		self.assertFalse(self._can_share("Task", self.t1, self.owner))
+		# member (DocShare-read), assignee y outsider NO comparten
 		self.assertFalse(self._can_share("Project", self.p1, self.member))
 		self.assertFalse(self._can_share("Task", self.t1, self.assignee))
 		self.assertFalse(self._can_share("Project", self.p1, self.outsider))
 
 	# --- Share manual real ------------------------------------------------
 
-	def test_manual_share_blocked_for_non_executive(self):
-		frappe.set_user(self.member)
+	def test_manual_share_blocked_for_non_owner_non_executive(self):
+		frappe.set_user(self.member)  # DocShare-read: ni owner ni executive
 		try:
 			with self.assertRaises(frappe.PermissionError):
 				frappe.share.add("Project", self.p1, self.outsider)
 		finally:
 			frappe.set_user("Administrator")
 
-	def test_manual_share_allowed_for_executive(self):
-		frappe.set_user(self.exec_user)
+	def test_manual_share_allowed_for_owner(self):
+		frappe.set_user(self.owner)
 		try:
-			frappe.share.add("Project", self.p1, self.outsider)
+			frappe.share.add("Project", self.p1, self.outsider, read=1, notify=0)
 		finally:
 			frappe.set_user("Administrator")
 		self.assertTrue(
 			frappe.db.exists(
 				"DocShare", {"share_doctype": "Project", "share_name": self.p1, "user": self.outsider}
 			)
+		)
+
+	def test_manual_share_allowed_for_executive(self):
+		other = _user(f"{MARK}-other@example.com", BASE)
+		frappe.set_user(self.exec_user)
+		try:
+			frappe.share.add("Project", self.p1, other, read=1, notify=0)
+		finally:
+			frappe.set_user("Administrator")
+		self.assertTrue(
+			frappe.db.exists("DocShare", {"share_doctype": "Project", "share_name": self.p1, "user": other})
 		)
 
 	# --- assign_to NO crea auto-share -------------------------------------

@@ -1,7 +1,12 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-09-06
+**Fecha:** 2026-09-07
 **Rama activa:** `feat/change-control` (base `version-16` @ v0.5.0).
+**E2E comercial: RECHAZADO como gate** (revisión funcional). NO avanzar a bump/push/PR/release. Se corrigen
+hallazgos uno por uno. **Punto 1 (PMO Members) ✅**: retirado `PMO Project Member` + `Project-pmo_members`;
+membresía **derivada nativa** `owner + DocShare(Project) + ToDo activo` (D6 honra flags; owner comparte su
+Project). Patch `migrate_pmo_members_to_docshare`. ADR-0002 revisado (D1/D2/D6/D7/D8). **Suite 188/188.**
+Siguiente pendiente del usuario: **Punto 2 — Proposal Group**.
 **Tarea actual:** **v0.6.0 — Integrated Change Control.** Arquitectura cerrada y **ADR-0005 Accepted**.
 Bloques 1–5 ✅ + UX 5.1 ✅ (`3dfa02c`). **UX 5.2 — comparador como reporte real ✅** (commit en curso):
 Script Report `PMO Baseline Comparison` (pantalla completa, `execute` reutiliza `compare_baselines`, P4 por

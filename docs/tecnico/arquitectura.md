@@ -40,17 +40,22 @@ Aislamiento **fail-closed**: `Project` y `Task` son privados por defecto. Decisi
 
 ### Modelo de acceso (quién ve qué)
 
+> **Membresía derivada (revisado v0.6.0):** no hay lista custom de miembros. El equipo del Project se
+> deriva de `owner + DocShare(Project) + ToDo activo(Task)`.
+
 ```
-Project visible si:  owner  OR  PMO Project Member  OR  PMO Executive Access  OR  DocShare
+Project visible si:  owner  OR  DocShare(Project, read)  OR  PMO Executive Access
 Task visible si:     project vacío (reglas estándar ERPNext)
-                     OR Project(Task) visible          (Task hereda la frontera del Project)
+                     OR Project(Task) visible   (Task hereda la frontera; un DocShare de Project alcanza
+                                                 sus Tasks por decisión del hook)
                      OR ToDo activo (asignación directa: SOLO esa Task)
-                     OR PMO Executive Access  OR  DocShare
+                     OR PMO Executive Access
 ```
 
 - **Asignar una Task ≠ ser miembro del Project**: no concede el Project ni otras Tasks.
-- **WRITE** — owner: Project + todas sus Tasks · member: Tasks del Project (no el Project) · assignee:
-  solo su Task · `PMO Executive Access`: solo lectura · `PMO Manager`: nada por el rol.
+- **WRITE (D6, honra flags de DocShare)** — owner: Project + todas sus Tasks · `DocShare(Project, write)`:
+  Project + sus Tasks · `DocShare(Project, read)`: solo lectura · assignee (ToDo): solo su Task ·
+  `PMO Executive Access`: solo lectura · `PMO Manager`: nada por el rol.
 
 ### Capa de enforcement (dos mecanismos nativos, sin tocar DocPerms de read/write)
 
@@ -62,9 +67,10 @@ Task visible si:     project vacío (reglas estándar ERPNext)
   `has_permission_project|task`. Semántica v16 verificada: el controlador **solo restringe** — `True`
   concede dentro de la capacidad de rol (AND con el DocPerm), `False`/`None` deniegan → devolvemos
   siempre `True`/`False`.
-- **SHARE manual** (`ptype == "share"`): el mismo `has_permission` lo restringe a `PMO Executive Access`
-  (+ `Administrator`). No se usa Custom DocPerm (ver ADR-0002 D7). `assign_to` **no** crea auto-share:
-  el asignado ya está permitido por el ToDo, así que `assign_to` omite `share.add`.
+- **SHARE manual** (`ptype == "share"`): el mismo `has_permission` permite compartir el **Project** al
+  **owner** (así incorpora colaboradores) + `PMO Executive Access`/`Administrator`; el share de **Task**
+  queda a Executive/Admin (excepcional). No se usa Custom DocPerm (ver ADR-0002 D7). `assign_to` **no**
+  crea auto-share: el asignado ya está permitido por el ToDo, así que `assign_to` omite `share.add`.
 
 ### Cierre de vectores que ignoran `pqc` (ADR-0002 D11)
 
@@ -82,12 +88,14 @@ fixture los re-crea). Reports sustitutos de `pmo` que respeten el boundary: dife
 
 ### Objetos nuevos (pmo) y wiring
 
-- **`PMO Project Member`** — child DocType (`istable`), campo `member: Link User`. Custom Field
-  `Project-pmo_members` (Table) lo añade a `Project`.
+- **Membresía derivada (v0.6.0)** — sin child DocType. Fuentes nativas: `owner`, `DocShare(Project)`
+  (helper `_has_project_share` / subquery en `tabDocShare`), `ToDo` activo (`_has_active_todo`). Patch
+  `pmo.patches.v0_6_0.migrate_pmo_members_to_docshare` retiró el child `PMO Project Member` y el Custom
+  Field `Project-pmo_members`, migrando membresías existentes a `DocShare(read+write)`.
 - **Roles** — `PMO Manager` (funcional, sin acceso por el rol), `PMO Executive Access` (read global +
   share; necesita además un rol con capacidad read, p. ej. `Projects User`).
 - **`hooks.py`** — `permission_query_conditions`, `has_permission`, `override_whitelisted_methods`.
-- **Fixtures** (`pmo/fixtures/`) — `custom_field.json` (`Project-pmo_members`), `role.json`
+- **Fixtures** (`pmo/fixtures/`) — `custom_field.json` (`ToDo-pmo_planned_hours`), `role.json`
   (roles PMO), `custom_role.json` (restricción de los 3 reports).
 - **Tests** — `pmo/pmo/tests/test_privacy_{read,write,share,reports}.py`.
 

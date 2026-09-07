@@ -71,14 +71,9 @@ def _project(name, owner, members=()):
 		.name
 	)
 	frappe.db.set_value("Project", p, "owner", owner)
-	if members:
-		doc = frappe.get_doc("Project", p)
-		existing = {m.member for m in doc.get("pmo_members", [])}
-		for m in members:
-			if m not in existing:
-				doc.append("pmo_members", {"member": m})
-		doc.flags.ignore_mandatory = True
-		doc.save(ignore_permissions=True)
+	# Membresía derivada: un "member" = DocShare(read) del Project (ADR-0002 revisado).
+	for m in members:
+		frappe.share.add("Project", p, m, read=1, notify=0)
 	return p
 
 

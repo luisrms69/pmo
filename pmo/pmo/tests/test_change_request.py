@@ -45,20 +45,24 @@ def _user(email, roles=()):
 def _project(name, owner="Administrator", members=(), company=None):
 	pid = frappe.db.exists("Project", {"project_name": name})
 	if not pid:
-		doc = frappe.get_doc(
-			{
-				"doctype": "Project",
-				"project_name": name,
-				"expected_start_date": "2026-01-01",
-				"expected_end_date": "2026-03-31",
-				"status": "Open",
-				"company": company,
-			}
+		pid = (
+			frappe.get_doc(
+				{
+					"doctype": "Project",
+					"project_name": name,
+					"expected_start_date": "2026-01-01",
+					"expected_end_date": "2026-03-31",
+					"status": "Open",
+					"company": company,
+				}
+			)
+			.insert(ignore_permissions=True, ignore_mandatory=True)
+			.name
 		)
-		for m in members:
-			doc.append("pmo_members", {"member": m})
-		pid = doc.insert(ignore_permissions=True, ignore_mandatory=True).name
 	frappe.db.set_value("Project", pid, "owner", owner)
+	# Membresía derivada: un "member" = DocShare(read+write) del Project (ADR-0002 revisado).
+	for m in members:
+		frappe.share.add("Project", pid, m, read=1, write=1, notify=0)
 	return pid
 
 
