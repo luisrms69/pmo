@@ -58,15 +58,19 @@ Un CR **Rechazado** o **Cerrado** es terminal (no se cancela); un nuevo intento 
 
 ## ¿Qué cambió entre líneas base?
 
-Cuando el CR tiene ligadas la línea base previa (*Línea base previa*) y la resultante (*Línea base
-resultante*), el botón **"Comparar líneas base"** abre una comparación legible: tareas añadidas/eliminadas
-y cambios de fechas, horas, estructura, estado y asignaciones, más cambios de fechas del Proyecto. Es una
-**diferencia entre líneas base**: si varias solicitudes de cambio se consolidaron en la misma línea base
-resultante, muestra **todo** lo que cambió entre esas dos fotos, no solo lo de un CR concreto.
+Cuando el CR tiene ligadas la línea base previa y la resultante, el botón **"Comparar líneas base"** abre
+el reporte **PMO Baseline Comparison** a **pantalla completa** (no un cuadro emergente): tareas
+añadidas/eliminadas y cambios de fechas, horas, estructura, estado y asignaciones, más cambios de fechas
+del Proyecto, con una columna de **Variación** (±días / ±horas) y un **resumen** arriba. Muestra **solo las
+diferencias**.
 
-Para cambios grandes, el diálogo incluye **"Imprimir / Guardar como PDF"**: abre una vista imprimible en
-una pestaña nueva que puedes guardar como PDF con la impresión del navegador. (No se adjunta un PDF
-automáticamente: las líneas base ya son inmutables y la comparación es reproducible.)
+Es una **comparación entre líneas base**: si varias solicitudes de cambio se consolidaron en la misma línea
+base resultante, muestra **todo** lo que cambió entre esas dos fotos, no solo lo de un CR. Cuando lo abres
+desde un CR, ese CR aparece como **contexto de apertura**, no como “origen” del diff.
+
+Para cambios grandes es una tabla completa que puedes **filtrar, ordenar y exportar** (Excel/CSV) o
+**imprimir/guardar como PDF** con las acciones nativas del reporte. No se guarda ni adjunta un artefacto
+derivado: las líneas base ya son inmutables y la comparación es reproducible.
 
 **Ligar la Línea base resultante:** el owner la elige explícitamente (no se pone sola). El selector ya
 filtra a líneas base del mismo Proyecto, posteriores a la previa; y el botón **"Usar línea base vigente"**

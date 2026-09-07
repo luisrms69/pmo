@@ -53,14 +53,12 @@ required_apps = ["erpnext"]
 # frappe.views.calendar["Task"].gantt.order_by = "lft" (ASC nativo en GanttView).
 doctype_calendar_js = {"Task": "public/js/task_calendar_pmo.js"}
 
-# ADR-0005 D7/D11: acciones en los forms del Change Request y del Baseline.
+# ADR-0005 D7/D11: acciones en los forms del Change Request y del Baseline (abren el reporte
+# PMO Baseline Comparison ya parametrizado).
 doctype_js = {
 	"PMO Change Request": "public/js/pmo_change_request.js",
 	"PMO Project Baseline": "public/js/pmo_project_baseline.js",
 }
-
-# ADR-0005 D11: helper global del comparator Baseline↔Baseline (reutilizado por ambos forms).
-app_include_js = ["/assets/pmo/js/baseline_compare.js"]
 
 # Svg Icons
 # ------------------

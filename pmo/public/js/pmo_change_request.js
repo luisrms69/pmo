@@ -10,14 +10,16 @@ frappe.ui.form.on("PMO Change Request", {
 			filters: { project: frm.doc.project, baseline_before: frm.doc.baseline_before },
 		}));
 
-		// ADR-0005 D11: comparar la línea base previa con la resultante (cambios entre líneas base).
+		// ADR-0005 D11: abrir el reporte PMO Baseline Comparison ya parametrizado (before → after). El CR
+		// va como contexto de apertura, no como atribución del diff (varios CR pueden compartir after).
 		if (frm.doc.baseline_before && frm.doc.baseline_after) {
 			frm.add_custom_button(__("Comparar líneas base"), () => {
-				window.pmo_show_baseline_diff(
-					frm.doc.baseline_before,
-					frm.doc.baseline_after,
-					__("Comparación de líneas base")
-				);
+				frappe.set_route("query-report", "PMO Baseline Comparison", {
+					project: frm.doc.project,
+					baseline_before: frm.doc.baseline_before,
+					baseline_after: frm.doc.baseline_after,
+					change_request: frm.doc.name,
+				});
 			});
 		}
 

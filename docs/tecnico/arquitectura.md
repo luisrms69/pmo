@@ -338,13 +338,19 @@ snapshots persistidos y delega en `compare_snapshots`. El orden de argumentos de
 (from→to); no reordena. Es una **diferencia entre baselines**, no una atribución por CR (varios CR pueden
 consolidarse en una misma `baseline_after`).
 
-**UI (modesta):** helper global `pmo_show_baseline_diff` (`public/js/baseline_compare.js`, vía
-`app_include_js`) que abre un diálogo con secciones added/removed/changed **y una acción "Imprimir /
-Guardar como PDF"** (abre una vista imprimible en ventana nueva que escala para cambios grandes; usa la
-impresión del navegador → PDF). No se persiste ni adjunta ningún artefacto derivado (las baselines ya son
-inmutables y el diff es reproducible). Botones: en el Change Request *"Comparar líneas base"* (cuando hay
-`baseline_before` y `baseline_after`) y en el Baseline *"Comparar con línea base anterior"* (cuando tiene
-`supersedes_baseline`). Sin overlay Gantt, timeline ni edición.
+**UI — Script Report `PMO Baseline Comparison` (patrón `Compare Projects` de MS Project):** reporte a
+**pantalla completa** (`report_type = "Script Report"`, `ref_doctype = PMO Project Baseline`) que reemplaza
+al modal (retirado). Filtros: `project`, `baseline_before`, `baseline_after` (+ `change_request` como
+**contexto de apertura**, no atribución). `execute(filters)` **reutiliza `compare_baselines()`** (no otro
+engine): esa función impone la **P4** (read en ambas + mismo Project); como los Script Report **no** aplican
+`pqc`, la P4 se valida ahí dentro por delegación (patrón de los reports P4 de la app). Aplana el diff a
+**solo diferencias**, una **fila por diferencia atómica** — columnas *Tipo de cambio / WBS-Tarea / Campo /
+Antes / Después / Variación* (variación en `±días` para fechas y `±h` para horas) — con cabecera
+(`message`) y tarjetas de resumen (`report_summary`: añadidas/eliminadas/modificadas/asignaciones/cambios
+de Project). **Exportación/impresión nativas** del Report (Excel/CSV/Print), secundarias. No persiste el
+diff. Accesos: botones en el Change Request (*"Comparar líneas base"*, con `baseline_before`+`baseline_after`,
+pasa el CR como contexto) y en el Baseline (*"Comparar con línea base anterior"*, usa `supersedes_baseline`)
+que hacen `set_route` al reporte ya parametrizado. Sin overlay Gantt, timeline, gráficos ni edición.
 
 **`baseline_after` — selección explícita guiada (D5):** la relación es de negocio (qué baseline incorpora
 el cambio), **no** "la vigente al instante", así que **no** se automatiza. Se mantiene editable pero el

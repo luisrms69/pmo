@@ -3,13 +3,22 @@
 **Fecha:** 2026-09-06
 **Rama activa:** `feat/change-control` (base `version-16` @ v0.5.0).
 **Tarea actual:** **v0.6.0 — Integrated Change Control.** Arquitectura cerrada y **ADR-0005 Accepted**.
-Bloques 1–5 ✅ (`15fb9dd`, `0974040`, `6dbe531`, `1bddaa2`, `09a0e60`). Validación funcional integrada en
-`pmo-v16.dev` OK (sin Quotation end-to-end; con Quotation bloqueada limpio; negativos OK). **Incremento 5.1
-— Ajustes de UX ✅** (commit en curso): etiquetas ES en CR + Baseline (Change Register hereda); rename de
-botones a "líneas base"; comparador con vista imprimible ("Imprimir / Guardar como PDF"); `baseline_after`
-explícita con picker filtrado (`baseline_after_query`) + botón "Usar línea base vigente"
-(`get_current_baseline`). **Suite 182/182.** Pendiente: Bloque 6 (bump 0.6.0 + push/PR). Sin cambios en
-`erpnext_proposals`.
+Bloques 1–5 ✅ + UX 5.1 ✅ (`3dfa02c`). **UX 5.2 — comparador como reporte real ✅** (commit en curso):
+Script Report `PMO Baseline Comparison` (pantalla completa, `execute` reutiliza `compare_baselines`, P4 por
+delegación, solo diferencias, una fila por diferencia atómica, resumen + variación, export/print nativos);
+**modal retirado** (`baseline_compare.js` + `app_include_js` eliminados); botones de CR/Baseline hacen
+`set_route` al reporte (CR = contexto, no atribución). **Suite 187/187.**
+
+**Dependencia `erpnext_proposals` RESUELTA:** contrato `apply_addendum_to_project(quotation, project)`
+implementado y liberado en **v0.20.0** (`d2c2c3a`): Project existente únicamente, guards comerciales
+reutilizados, `write` sobre Project como autoridad, idempotencia de Tasks, `proposal_project` fijado solo
+tras materializar, sin commit interno, `Ganada` no dispara nada. ADR-0019 (en ese repo) quedó como
+`Propuesto` pese a estar liberado — inconsistencia documental menor, no bloquea.
+
+**Siguiente paso (antes del Bloque 6): E2E comercial real** en `pmo-v16.dev`: instalar/verificar
+`erpnext_proposals v0.20.0` → CR → Quotation/Addendum Ganada → Aplicar al Project existente → Tasks sin
+duplicar → Current Plan → Implementado → baseline_after → Cerrado → reporte de comparación. Si pasa → Bloque
+6 (bump 0.6.0 + push/PR).
 
 > v0.5.0 ya está **mergeado y liberado** (PR #6 → `f4fb3bc`; tag/Release v0.5.0). DEMO en `pmo-v16.dev`
 > se dejó disponible (no limpiar aún).
@@ -52,9 +61,13 @@ ADR-0005 (Accepted) define Change Control integrado. Referencia viva:
   request_date desc + priority desc, roles Projects User/Executive/System Manager (pqc restringe filas).
   Se evita Query/Script Report (ignoran pqc). Test `test_change_register_list_p4`. Docs técnico+usuario.
   **Suite 180/180.** *(commit en curso)*
-- **Revisión funcional integrada (usuario)** antes del Bloque 6: separar *validación completa sin Quotation*
-  vs *pendiente de dependencia erpnext_proposals*.
-- **Bloque 6 — bump `__version__`→0.6.0 + validación funcional en `pmo-v16.dev`.** Luego `/ship push` + `/ship pr`.
+- **UX 5.2 — comparador como Script Report `PMO Baseline Comparison`. ✅** *(commit en curso)* Reemplaza el
+  modal (retirado). `execute` reutiliza `compare_baselines`; P4 por delegación; solo diferencias; una fila
+  por diferencia atómica (Tipo/WBS-Tarea/Campo/Antes/Después/Variación); resumen superior; CR = contexto.
+  Botones de CR/Baseline con `set_route`. Tests `test_report_baseline_comparison.py` (5). **Suite 187/187.**
+- **E2E comercial real** (dependencia resuelta, `erpnext_proposals v0.20.0`): instalar/verificar en
+  `pmo-v16.dev` y correr el flujo con Quotation completo.
+- **Bloque 6 — bump `__version__`→0.6.0 + cierre.** Luego `/ship push` + `/ship pr`.
 
 ## Decisiones vigentes (ADR-0005, resumen)
 - **Único DocType nuevo `PMO Change Request`** (submittable, `PMO-CR-.#####`). Impacto mínimo: `priority`
