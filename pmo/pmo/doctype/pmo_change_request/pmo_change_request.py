@@ -21,7 +21,8 @@ Semántica de estados (Workflow `PMO Change Request`):
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import getdate, now_datetime, today
+from frappe.query_builder import Order
+from frappe.utils import cint, getdate, now_datetime, today
 
 from pmo import change_control
 
@@ -268,29 +269,40 @@ def crear_addenda(change_request: str):
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-def baseline_after_query(doctype, txt, searchfield, start, page_len, filters):
+def baseline_after_query(
+	doctype: str,
+	txt: str,
+	searchfield: str,
+	start: int,
+	page_len: int,
+	filters: dict | None = None,
+):
 	"""Link query para `baseline_after`: baselines Submitted del mismo Project, distintas de
 	`baseline_before` y compatibles temporalmente (`effective_date >= baseline_before.effective_date`).
-	Reduce fricción sin automatizar la relación (que es de negocio, no "la vigente al instante")."""
+	Reduce fricción sin automatizar la relación (que es de negocio, no "la vigente al instante").
+
+	Construido con Query Builder (`frappe.qb`): sin SQL por f-string; los valores viajan como parámetros."""
 	filters = filters or {}
-	conds = ["b.docstatus = 1", "b.project = %(project)s"]
-	vals = {"project": filters.get("project"), "txt": f"%{txt or ''}%", "start": start, "page_len": page_len}
+	like = f"%{txt or ''}%"
+	b = frappe.qb.DocType("PMO Project Baseline")
+	query = (
+		frappe.qb.from_(b)
+		.select(b.name, b.revision)
+		.where(b.docstatus == 1)
+		.where(b.project == filters.get("project"))
+		.where(b.name.like(like) | b.revision.like(like))
+		.orderby(b.effective_date, order=Order.desc)
+		.orderby(b.creation, order=Order.desc)
+		.limit(cint(page_len))
+		.offset(cint(start))
+	)
 	before = filters.get("baseline_before")
 	if before:
-		conds.append("b.name != %(before)s")
-		vals["before"] = before
+		query = query.where(b.name != before)
 		eff = frappe.db.get_value("PMO Project Baseline", before, "effective_date")
 		if eff:
-			conds.append("b.effective_date >= %(eff)s")
-			vals["eff"] = eff
-	conds.append("(b.name like %(txt)s or b.revision like %(txt)s)")
-	return frappe.db.sql(
-		f"""select b.name, b.revision from `tabPMO Project Baseline` b
-			where {" and ".join(conds)}
-			order by b.effective_date desc, b.creation desc
-			limit %(page_len)s offset %(start)s""",
-		vals,
-	)
+			query = query.where(b.effective_date >= eff)
+	return query.run()
 
 
 @frappe.whitelist()
