@@ -1,30 +1,46 @@
 # Changelog — pmo
 
-## [0.6.0] — En preparación
+## [0.6.1] — 2026-09-08
 
-> Release **no publicado**. La ruta comercial no se considera funcionalmente cerrada hasta que la versión
-> compatible de `erpnext_proposals` (`apply_addendum_to_project`) esté liberada y pase la integración
-> end-to-end (ver ADR-0005, "Dependencia de entrega").
+### Fixed
+- **CHANGELOG** — corrige la sección `[0.6.0]`, que había quedado como "En preparación / Release no
+  publicado" con un apartado "Planned (aún no realizada)", cuando `v0.6.0` ya fue implementada y
+  publicada (tag `v0.6.0` + GitHub Release). Sin cambios funcionales.
+
+## [0.6.0] — 2026-09-08
+
+Integrated Change Control (ADR-0005): gestión de cambios sobre el `Project` nativo de ERPNext, integrada
+con el contrato publicado de `erpnext_proposals v0.22.0`.
+
+### Added
+- **DocType `PMO Change Request`** (submittable, `PMO-CR-.#####`) + **Workflow nativo**
+  (Borrador → En Revisión → Aprobado/Rechazado → Implementado → Cerrado) que **gobierna** el cambio, con
+  permisos **P4** (owner-only en las decisiones de aprobación; acceso ejecutivo read-only). Impacto
+  estructurado mínimo (prioridad, checks scope/schedule/effort/commercial/risk, deltas horas/días/monto).
+- **Integración con `erpnext_proposals v0.22.0`** por delegación (`pmo/change_control.py`, feature-detection
+  vía `frappe.get_attr`): crear addenda comercial (`create_addendum_quotation`) y aplicar la addenda al
+  **Project existente** (`apply_addendum_to_project`) — nunca crea otro Project. Acción `crear_addenda` +
+  botón "Crear addenda comercial". `Ganada ≠ Aplicada`; aplicación explícita; `applied_*` solo tras éxito.
+  Precondición: `erpnext_proposals >= 0.22.0`.
+- **Comparador Baseline↔Baseline** — `pmo/compare.py` (`compare_snapshots` puro + `compare_baselines`
+  whitelisted P4) y **Script Report `PMO Baseline Comparison`** (una fila por diferencia atómica).
+- **Change Register** — Report Builder **P4-safe** (`permission_query_conditions`).
+- **Gate de baseline vigente** al formalizar (`baseline_before` congelada); `baseline_before`/
+  `baseline_after` del lado del CR (muchos CR → una misma `baseline_after`). **Aprobado ≠ Aplicado ≠
+  Implementado**; persistencia post-submit vía `allow_on_submit` (sin bypass).
+
+### Changed
+- **Membresía de Project derivada nativa** (`owner + DocShare(Project) + ToDo`) — ADR-0002 revisado.
+  DocShare honra sus flags read/write; el owner comparte su propio Project.
+
+### Removed
+- **`PMO Project Member`** y el Custom Field `Project-pmo_members` — retirados del código y de las fixtures
+  **sin migration patch** (regla del proyecto). Instalación nueva limpia por construcción; los sitios de
+  desarrollo existentes se limpian con una operación one-off manual (no distribuida).
 
 ### Docs
-- **ADR-0005 — Integrated Change Control (Accepted)** — Change Control integrado sobre un único DocType
-  nuevo `PMO Change Request` (submittable + Workflow nativo) que **gobierna** el cambio, mientras
-  `Quotation`/`erpnext_proposals` define/valúa el alcance, `Project`/`Task` recibe el alcance aprobado,
-  `PMO Project Baseline` congela el before/after y `Timesheet` registra el Actual. Decisiones clave:
-  baseline vigente obligatoria para formalizar (`baseline_before` congelada); `baseline_before`/
-  `baseline_after` del lado del CR (muchos CR → una misma `baseline_after`, sin Link singular en
-  Baseline); autoridad **Modelo 1** (con Proposal → Workflow de la Quotation; sin Proposal → Project
-  Owner); **Aprobado ≠ Aplicado ≠ Implementado** (aplicar solo materializa Scope Items y fija `applied_*`;
-  "Marcar implementado" es acto explícito posterior); persistencia post-submit vía `allow_on_submit` (sin
-  bypass); comparator mínimo Baseline↔Baseline sobre snapshots v1; Change Register vía Report View P4-safe;
-  addendum sobre **Project existente** (nunca crea otro). Depende de un helper acotado en `erpnext_proposals`
-  (ciclo Git separado). Sin CCB/EVM/CPM/scenarios/Status Date.
-
-### Planned (implementación por bloques, aún no realizada)
-- DocType `PMO Change Request` + P4 (hooks).
-- Workflow nativo + acción "Aplicar Quotation al Project" + semántica Aplicado/Implementado.
-- Comparator (`pmo/compare.py`) + render modesto.
-- Report View (Change Register) + docs de usuario/técnico.
+- **ADR-0005 — Integrated Change Control (Accepted)**; **ADR-0002** revisado; `docs/tecnico/arquitectura.md`
+  y `docs/usuario/change-control.md`.
 
 ## [0.5.0] — 2026-09-05
 

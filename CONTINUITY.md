@@ -1,50 +1,37 @@
 # CONTINUITY.md — pmo
 
 **Fecha:** 2026-09-08
-**Rama activa:** `feat/change-control` (base `version-16` @ v0.5.0).
-**Estado:** **v0.6.0 — Integrated Change Control (ADR-0005) VALIDADO.** Commit del bloque + bump
-`__version__ → 0.6.0`; se procede a `/ship push` + `/ship pr` (PR hacia `version-16`). **No merge/tag/release.**
+**Rama activa:** `docs/changelog-060-release` (base `version-16` @ v0.6.0, commit `3a6fa72`).
+**Estado:** post-release de **v0.6.0** (tag `v0.6.0` + GitHub Release publicados y alineados). Follow-up
+documental: corregir la sección `[0.6.0]` del CHANGELOG (había quedado "En preparación / no publicado") y
+bump **`__version__` → 0.6.1** (PATCH, por modificar `version-16` tras la release).
 
 ## Plan que estoy siguiendo
-`docs/adr/0005-integrated-change-control.md` (Accepted) + revisión funcional v0.6.0. Bloques 1–5 + UX 5.1/5.2
-✅. Punto 1 (retiro `PMO Project Member`) ✅. Integración con contrato publicado de `erpnext_proposals
-v0.22.0` ✅. E2E formal en `proposals-acti.dev` **PASS**.
+Cierre correcto del ciclo post-release + fix del desfase del CHANGELOG. Un solo PR mínimo hacia `version-16`,
+**detenerse antes del merge**.
 
-## Qué se implementó en este bloque
-- **Integración Change Control ↔ `erpnext_proposals v0.22.0`** por delegación (`pmo/change_control.py`,
-  `frappe.get_attr` feature-detection): `create_addendum_quotation` + `apply_addendum_to_project`. Sin elevar
-  permisos, sin duplicar lógica. Precondición: `erpnext_proposals >= 0.22.0`.
-- **Acción `crear_addenda`** en `PMO Change Request` (autoría comercial la impone `erpnext_proposals`;
-  P4 exige `write` sobre el CR editable) + botón "Crear addenda comercial". `Ganada ≠ Aplicada`.
-- **Retiro definitivo de `PMO Project Member` SIN patch** (regla del proyecto: no migration patches):
-  eliminada la línea de `patches.txt` y borrado `pmo/patches/v0_6_0/`. Membresía derivada nativa
-  `owner + DocShare(Project) + ToDo` (ya vigente desde `319ad00`).
-- Docs: ADR-0002 (retiro sin patch), ADR-0005 (contrato v0.22.0 + doble autoridad + precondición),
-  `arquitectura.md`, `usuario/change-control.md`. Tests cruzados en `test_change_request.py`.
-- Bump `__version__` 0.5.0 → **0.6.0** (MINOR).
+## Qué se hizo en esta rama
+- `docs/CHANGELOG.md`: sección `[0.6.0]` reescrita para reflejar la release real (fecha 2026-09-08; sin
+  "En preparación / Release no publicado / Planned"); contenido movido a Added/Changed/Removed/Docs, fiel a
+  ADR-0005 y a las release notes publicadas. Añadida entrada `[0.6.1] — 2026-09-08` (Fixed: corrección del
+  CHANGELOG). Secciones históricas (`[0.5.0]` y anteriores) intactas.
+- `pmo/__init__.py`: `__version__` 0.6.0 → **0.6.1**.
 
-## Evidencia de validación
-- Suite completa PMO: **191/191** (`test-pmo.localhost`).
-- `ruff` + `prettier@2.7.1` + `mkdocs build --strict`: verdes.
-- **E2E formal v0.6.0 en `proposals-acti.dev`: PASS** (exit 0). ROOT `SAL-QTN-2026-00040` → `PROJ-0071`
-  (3 Tasks) → CR `PMO-CR-00004` → addenda `SAL-QTN-2026-00041` (`…-ADD-01`) → aplica solo el delta (2 Tasks:
-  `TASK-2026-00027/00028`), `proposal_project`/`applied_*` correctos, idempotencia, guard Project incorrecto,
-  rollback transaccional. Evidencia documental verificada 1×1.
+## SemVer
+- Base `upstream/version-16` = 0.6.0. Cambio documental sobre `version-16` post-release → regla `/ship`:
+  todo PR mergeado ≥ PATCH → objetivo **0.6.1**. Sin cambio funcional para satisfacer SemVer.
 
-## Decisión operativa importante (no está en código)
-- **`proposals-acti.dev`** requirió una **limpieza one-off manual** de metadata legacy (`Custom Field
-  Project-pmo_members` + DocType `PMO Project Member`, 0 filas) para que `Project` cargara. Se hizo con APIs
-  Frappe (sin SQL destructivo), **no** como patch. Vive en `one_offs/` (gitignored).
-- **`pmo-v16.dev` tiene 3 filas** en `PMO Project Member`: su limpieza está **bloqueada** (el guard aborta si
-  hay filas) hasta decidir qué hacer con esas membresías. Pendiente del usuario.
-- Los sitios `test-pmo.localhost` ya está limpio (el patch, ahora retirado, corrió ahí antes).
+## Gates
+- Diff exacto revisado (2 archivos). Gate de datos de cliente: limpio. `ruff` (import-sort/linter/format):
+  OK. `mkdocs build --strict`: sin ERROR/WARNING. No aplica E2E ni suite (cambio exclusivamente documental
+  + bump).
+
+## Housekeeping pendiente (decisión del usuario)
+- `feat/change-control`: mergeada por **squash** (PR #7). `git branch --merged` no la detecta (artefacto de
+  squash); borrado local exigiría `git branch -D` (**force**, prohibido) → **no borrada**. Remota aún existe.
+- `pmo-v16.dev`: 3 filas legacy de `PMO Project Member`; limpieza one-off bloqueada por el guard (pendiente
+  de decisión). `one_offs/` y metadata legacy: **sin tocar**.
 
 ## Siguiente paso
-Crear el PR `feat/change-control → version-16` (v0.6.0, MINOR) y detenerse. No merge/tag/release.
-
-## Cuidados / no repetir
-- Git solo vía `/ship`. Nunca trabajar en `version-16`. **En pmo NO se usan migration patches.**
-- `erpnext_proposals` tiene ruta anidada `apps/erpnext_proposals/erpnext_proposals/erpnext_proposals/…`;
-  contrato en `utils/addendum.py` (`create_addendum_quotation`) y `utils/project.py` (`apply_addendum_to_project`).
-- `one_offs/` ignorado (E2E, cleanup, inspector). Linters solo `.py`/`.js`, nunca `.json`.
-- BD / `bench migrate`: autorización explícita. Tests en `test-pmo.localhost`. Rutas Desk v16 = `/desk/...`.
+`/ship commit` → `/ship push` → `/ship pr` (base `version-16`). Detenerse con el PR abierto y CI evaluado.
+No merge/tag/release.
