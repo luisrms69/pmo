@@ -3,38 +3,53 @@
 
 """Integración de Change Control con `erpnext_proposals` (ADR-0005).
 
-Frontera dura: `pmo` **no** reproduce ni puentea la lógica de `erpnext_proposals`. La aplicación de un
-addendum a un Project existente se **delega** al contrato acordado
-`apply_addendum_to_project(quotation, project)` de `erpnext_proposals`, que es el único responsable de
-validar (Ganada, docstatus, superseded, single-live, customer/company), **escribir `proposal_project`** y
-anexar los Scope Items como Tasks (reuse + dedup). `pmo` nunca escribe `proposal_project` ni copia esos
-guards.
+Frontera dura: `pmo` **no** reproduce ni puentea la lógica de `erpnext_proposals`. Delega en su contrato
+publicado (>= 0.22.0):
 
-Este módulo aísla el punto de integración para poder probarlo con el contrato mockeado mientras el helper
-todavía no existe en `erpnext_proposals` (ciclo Git separado, con su propia autorización).
+- `create_addendum_quotation(root_quotation) -> str` (`utils.addendum`): crea ATÓMICAMENTE la siguiente
+  addenda `ROOT-ADD-NN` (delta comercial) a partir de una Quotation del contrato; resuelve el root, calcula
+  la secuencia y exige **autoría comercial** (`assert_can_manage_proposals`). `pmo` NO interpreta
+  `<ROOT>-ADD-<NN>`, NO calcula secuencia, NO crea `proposal_group`.
+- `apply_addendum_to_project(quotation, project) -> dict` (`utils.project`): valida (Ganada, docstatus,
+  superseded, single-live, customer/company), **escribe `proposal_project`** y anexa los Scope Items como
+  Tasks (reuse + dedup). `pmo` NUNCA escribe `proposal_project` ni copia esos guards.
+
+Ambos se resuelven por `frappe.get_attr` (feature-detection): si el entorno tiene una versión de
+`erpnext_proposals` sin el contrato (< 0.22.0) o el app no está instalado, se lanza un error claro. `pmo`
+no eleva permisos ni hace bypass: la autoría comercial la impone `erpnext_proposals`.
 """
 
 import frappe
 from frappe import _
 
-# Contrato acordado (vive en erpnext_proposals, ruta canónica junto a create_project_from_quotation).
-ADDENDUM_APPLIER = "erpnext_proposals.erpnext_proposals.utils.project.apply_addendum_to_project"
+# Contrato publicado en erpnext_proposals (>= 0.22.0).
+_ADDENDUM_APPLIER = "erpnext_proposals.erpnext_proposals.utils.project.apply_addendum_to_project"
+_ADDENDUM_CREATOR = "erpnext_proposals.erpnext_proposals.utils.addendum.create_addendum_quotation"
 
 
-def apply_addendum_to_project(quotation: str, project: str):
-	"""Delega en el contrato de `erpnext_proposals`. Devuelve lo que devuelva el helper (resumen del
-	append). Lanza un error claro si la integración aún no está disponible en el entorno.
-
-	NO valida reglas comerciales ni escribe `proposal_project`: eso es responsabilidad exclusiva del
-	helper de `erpnext_proposals`.
-	"""
+def _resolve(path, contrato):
+	"""Resuelve un contrato de erpnext_proposals por dotted-path; error claro si no está disponible."""
 	try:
-		fn = frappe.get_attr(ADDENDUM_APPLIER)
+		return frappe.get_attr(path)
 	except Exception:
 		frappe.throw(
 			_(
-				"La integración con erpnext_proposals no está disponible: falta el helper "
-				"{0}. Actualiza erpnext_proposals (ciclo aparte) antes de aplicar la Cotización al Project."
-			).format("apply_addendum_to_project(quotation, project)")
+				"La integración con erpnext_proposals no está disponible: falta el contrato {0}. "
+				"Requiere erpnext_proposals >= 0.22.0 instalado en el sitio."
+			).format(contrato)
 		)
+
+
+def create_addendum_quotation(root_quotation: str) -> str:
+	"""Delega en `erpnext_proposals` la creación de la siguiente addenda `ROOT-ADD-NN`. Devuelve el `name`
+	de la nueva Quotation. La autoría comercial (`Proposals Manager`/`System Manager`) la valida
+	`erpnext_proposals`; `pmo` no eleva permisos."""
+	fn = _resolve(_ADDENDUM_CREATOR, "create_addendum_quotation(root_quotation)")
+	return fn(root_quotation)
+
+
+def apply_addendum_to_project(quotation: str, project: str):
+	"""Delega en el contrato de `erpnext_proposals` la aplicación del addendum al Project existente. Devuelve
+	el resumen del append. NO valida reglas comerciales ni escribe `proposal_project`."""
+	fn = _resolve(_ADDENDUM_APPLIER, "apply_addendum_to_project(quotation, project)")
 	return fn(quotation, project)

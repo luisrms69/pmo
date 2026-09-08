@@ -10,6 +10,41 @@ frappe.ui.form.on("PMO Change Request", {
 			filters: { project: frm.doc.project, baseline_before: frm.doc.baseline_before },
 		}));
 
+		// ADR-0005: crear la addenda comercial (delta) desde el CR editable, sin proposal_group aún.
+		// Delega en erpnext_proposals (autoría comercial la valida ese app; PMO no eleva permisos).
+		if (
+			!frm.is_new() &&
+			frm.doc.docstatus === 0 &&
+			!frm.doc.proposal_group &&
+			frm.doc.project
+		) {
+			frm.add_custom_button(__("Crear addenda comercial"), () => {
+				frappe.confirm(
+					__(
+						"Se creará una Cotización/Addenda comercial del contrato original. Requiere autoría comercial (Proposals Manager). ¿Continuar?"
+					),
+					() => {
+						frappe
+							.call({
+								method: "pmo.pmo.doctype.pmo_change_request.pmo_change_request.crear_addenda",
+								args: { change_request: frm.doc.name },
+								freeze: true,
+								freeze_message: __("Creando addenda…"),
+							})
+							.then((r) => {
+								if (r.exc || !r.message) return;
+								frm.reload_doc();
+								frappe.show_alert({
+									message: __("Addenda creada: {0}", [r.message]),
+									indicator: "green",
+								});
+								frappe.set_route("Form", "Quotation", r.message);
+							});
+					}
+				);
+			});
+		}
+
 		// ADR-0005 D11: abrir el reporte PMO Baseline Comparison ya parametrizado (before → after). El CR
 		// va como contexto de apertura, no como atribución del diff (varios CR pueden compartir after).
 		if (frm.doc.baseline_before && frm.doc.baseline_after) {

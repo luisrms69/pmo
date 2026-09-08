@@ -193,35 +193,44 @@ acceso. Los miembros pueden crear, documentar, evaluar y enviar a revisión, per
 members**. Coherencia de UI: `condition` en las transiciones de aprobación (además del gate P4), para no
 depender solo de que el submit falle tras pulsar.
 
-## Interacción con `erpnext_proposals` (gap identificado; PR y autorización separados)
+## Interacción con `erpnext_proposals` — contrato publicado (v0.22.0)
 
-**Extensión de comportamiento de `Quotation`**, no un modelo nuevo, **cero DocTypes**: función whitelisted
-`apply_addendum_to_project(quotation, project)` que valida (Ganada, docstatus 1, no superseded,
-single-live de su grupo, mismo customer/company), **pre-setea `proposal_project`** (hoy `read_only`) y
-llama a `create_project_from_quotation`. Cero-cambio **no** es posible (por `proposal_project` read-only +
-rama de creación de Project). No se implementa en el ciclo de `pmo`; es un ciclo aparte en su repo con
-autorización propia.
+El contrato vive en `erpnext_proposals` (repo/ciclo aparte) y quedó **publicado en `v0.22.0`**. PMO lo
+**consume por delegación** (`pmo/change_control.py`, vía `frappe.get_attr` = feature-detection; error claro
+si el app no está o es `< 0.22.0`). PMO **no** interpreta `<ROOT>-ADD-<NN>`, **no** calcula secuencia,
+**no** crea `proposal_group`, **no** resuelve el Project desde `project_name`, **no** escribe
+`proposal_project`, **no** crea Tasks del addendum.
 
-## Dependencia de entrega — `erpnext_proposals` (v0.6.0)
+- **Convención de grupo (en `erpnext_proposals`):** un addendum usa un `proposal_group` **nuevo**
+  `<ROOT>-ADD-<NN>`; sus versiones conservan ese grupo (versioning por rechazo intacto, single-live por
+  grupo). El sufijo `-ADD-<NN>` es marca reservada (un grupo normal no puede introducirlo manualmente).
+- **`create_addendum_quotation(root_quotation) -> str`** (`utils.addendum`): resuelve el root canónico,
+  bloquea por root, calcula la secuencia y crea **atómicamente** la addenda (delta comercial: hereda solo
+  contexto comercial seguro; **no** copia items/scope/`proposal_project`/template). Exige **autoría
+  comercial** (`assert_can_manage_proposals` → `Proposals Manager`/`System Manager`).
+- **`apply_addendum_to_project(quotation, project) -> dict`** (`utils.project`): valida (Ganada, docstatus 1,
+  no superseded, single-live del grupo, mismo customer/company), **escribe `proposal_project`** y anexa los
+  Scope Items como Tasks (reuse + dedup). Resuelve/valida el Project destino por la relación persistente
+  `Quotation.proposal_project` (nunca por nombre).
 
-El helper `apply_addendum_to_project(quotation, project)` vive en `erpnext_proposals`, con rama/PR/release y
-**autorización propia** (dos ciclos Git independientes). No obstante, **la ruta comercial de v0.6 depende
-funcionalmente de él**: sin ese helper, la acción PMO "Aplicar Quotation al Project" no puede cumplir la
-promesa central de **añadir alcance a un Project existente sin crear otro**.
+**Consumo desde PMO (sin campos nuevos):** la acción `crear_addenda` del CR localiza una Quotation del
+contrato por `Quotation.proposal_project == CR.project` y delega en `create_addendum_quotation`; persiste la
+identidad de la addenda en el campo existente **`proposal_group`**. La aplicación usa
+`apply_addendum_to_project` y fija `applied_*` solo tras retorno exitoso. Precondición: **`erpnext_proposals
+>= 0.22.0`** instalado en el sitio.
 
-Por tanto, **`pmo v0.6.0` no se considera funcionalmente cerrado/validado** hasta que:
+### Autoridad (ADR-0005 Modelo 1) — sin elevación de permisos
 
-1. la versión compatible de `erpnext_proposals` (con `apply_addendum_to_project`) esté implementada y
-   liberada, y
-2. pase la **integración end-to-end**:
+Dos autoridades **distintas y ambas nativas**, sin bypass/`ignore_permissions`/impersonation:
+- **Crear la addenda (acto comercial):** `assert_can_manage_proposals` (`Proposals Manager`/`System
+  Manager`), impuesta por `erpnext_proposals`. La acción PMO además exige **`write` sobre el CR** editable
+  (owner o colaborador con DocShare-write; P4). Es la **intersección** de ambas autoridades (participante
+  del proyecto **con** autoría comercial); si falta la comercial → `PermissionError` claro.
+- **Gobernar/aplicar/cerrar el CR y sellar la Baseline:** **Project Owner** (P4). `Ganada` ≠ `Aplicada`: la
+  aplicación es un acto **explícito** desde el CR.
 
-   `CR → Quotation versionada → Ganada → aplicar al Project existente → Scope Items convertidos en Tasks →
-   completar Current Plan → Baseline after → cerrar CR`
-
-   **sin crear un Project nuevo.**
-
-Las rutas **sin Quotation** (cambios de cronograma/asignaciones) no dependen de este helper y pueden
-validarse de forma independiente.
+No es una incompatibilidad arquitectónica: es la separación de funciones que ADR-0005 ya definía (autoridad
+comercial en la Quotation; gobernanza en PMO).
 
 ## Consecuencias
 

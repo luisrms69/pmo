@@ -35,6 +35,9 @@ El acceso se **hereda del Project** (misma regla de privacidad que el resto de P
   pueden levantar, documentar y evaluar el cambio.
 - **Aprobar / rechazar / cerrar:** **solo el Project Owner**. Ser miembro no otorga autoridad de
   aprobación.
+- **Crear la addenda comercial:** además de poder editar el CR, exige **autoría comercial** (rol
+  *Proposals Manager*). Es una autoridad distinta de la de gobierno del CR: quien gobierna el cambio no
+  necesariamente puede emitir la addenda, y viceversa.
 - **Acceso ejecutivo:** solo lectura.
 
 ## Flujo (estados)
@@ -42,17 +45,24 @@ El acceso se **hereda del Project** (misma regla de privacidad que el resto de P
 `Borrador → En revisión → Aprobado / Rechazado → Implementado → Cerrado`
 
 1. **Borrador:** el owner o un miembro crea el CR, describe el cambio y su impacto.
-2. **Enviar a revisión:** requiere que el Project tenga una **baseline vigente**; al formalizar se
+2. **Crear addenda comercial** (opcional, si el cambio tiene alcance comercial): mientras el CR es
+   **editable** (Borrador / En revisión) y aún no tiene addenda, el botón *"Crear addenda comercial"* genera
+   una **Cotización/Addenda** del contrato original (una versión comercial nueva `…-ADD-01`, `…-ADD-02`, …)
+   sin tocar el contrato base. La addenda nace **en borrador** para negociarse aparte. **Requiere autoría
+   comercial** (rol *Proposals Manager*): un miembro sin ese rol no puede crearla, aunque pueda editar el CR.
+   Crear la addenda **no** aplica nada todavía.
+3. **Enviar a revisión:** requiere que el Project tenga una **baseline vigente**; al formalizar se
    **congela** la baseline previa (*before*). Sin baseline vigente el sistema no deja avanzar (aún estás en
    planificación, no en control de cambios).
-3. **Aprobar / Rechazar:** **solo el Project Owner**. Aprobar autoriza el cambio (no lo aplica todavía).
-4. **Aplicar Cotización al Project** (si el cambio tiene alcance comercial): el owner usa el botón
+4. **Aprobar / Rechazar:** **solo el Project Owner**. Aprobar autoriza el cambio (no lo aplica todavía).
+5. **Aplicar Cotización al Project** (si el cambio tiene alcance comercial): el owner usa el botón
    *"Aplicar Cotización al Project"*, elige la Cotización **Ganada** y el sistema **anexa** su alcance
    (Scope Items) como tareas al **Project existente** (nunca crea otro). Esto **materializa** el alcance,
-   pero todavía no marca el cambio como implementado.
-5. **Marcar implementado:** cuando el plan quedó completo (tareas, fechas, asignaciones ajustadas), el
+   pero todavía no marca el cambio como implementado. **Ganada ≠ Aplicada:** que la cotización se gane no
+   la aplica sola; la aplicación es un acto explícito del owner desde el CR.
+6. **Marcar implementado:** cuando el plan quedó completo (tareas, fechas, asignaciones ajustadas), el
    owner lo marca. Si el cambio tenía Cotización, exige haberla aplicado primero.
-6. **Cerrar:** el owner liga la **nueva baseline** (*after*) que incorpora el cambio y cierra el CR.
+7. **Cerrar:** el owner liga la **nueva baseline** (*after*) que incorpora el cambio y cierra el CR.
 
 Un CR **Rechazado** o **Cerrado** es terminal (no se cancela); un nuevo intento es otro CR.
 

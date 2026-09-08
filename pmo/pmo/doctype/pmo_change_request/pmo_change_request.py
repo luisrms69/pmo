@@ -219,6 +219,50 @@ def aplicar_quotation_al_project(change_request: str, quotation: str):
 	return result
 
 
+@frappe.whitelist()
+def crear_addenda(change_request: str):
+	"""Inicia la addenda comercial del cambio delegando en `erpnext_proposals.create_addendum_quotation`.
+
+	Autoridad (ADR-0005 Modelo 1, sin elevación): (a) **gobernanza PMO** — se exige `write` sobre el CR
+	editable (owner o colaborador con DocShare-write; P4); (b) **autoría comercial** — la impone
+	`erpnext_proposals` (`Proposals Manager`/`System Manager`). Si el usuario carece de autoría comercial,
+	`create_addendum_quotation` lanza `PermissionError` (sin bypass).
+
+	El root de la propuesta se localiza por la **relación persistente** `Quotation.proposal_project = Project`
+	(no se parsea `project_name` ni `-ADD-NN`). Persiste la identidad de la addenda en `proposal_group`
+	(campo existente). Devuelve el `name` de la nueva Quotation. Atómico con el request (sin commit manual)."""
+	doc = frappe.get_doc("PMO Change Request", change_request)
+	doc.check_permission("write")  # CR editable (docstatus 0) → owner o DocShare-write por P4
+	if doc.docstatus != 0:
+		frappe.throw(
+			frappe._("La addenda se crea mientras el Change Request es editable (Borrador/En Revisión).")
+		)
+	if doc.proposal_group:
+		frappe.throw(frappe._("Este Change Request ya tiene una addenda ({0}).").format(doc.proposal_group))
+
+	# Localizar una Quotation del contrato original vía la relación persistente (no por nombre del Project).
+	root_q = frappe.db.get_value(
+		"Quotation", {"proposal_project": doc.project}, "name", order_by="creation asc"
+	)
+	if not root_q:
+		frappe.throw(
+			frappe._(
+				"El Project no proviene de una propuesta (sin Cotización con proposal_project); no se puede crear una addenda."
+			)
+		)
+
+	# Delegación: erpnext_proposals crea la addenda ROOT-ADD-NN (exige autoría comercial) — sin elevar permisos.
+	new_quotation = change_control.create_addendum_quotation(root_q)
+
+	# Persistir la identidad de la addenda (grupo estable) en el modelo existente. Leer el grupo NO es
+	# interpretar el patrón: es leer el campo persistente que fijó erpnext_proposals.
+	group = frappe.db.get_value("Quotation", new_quotation, "proposal_group")
+	if group:
+		doc.proposal_group = group
+		doc.save()
+	return new_quotation
+
+
 # --- UX de baseline_after: selección explícita, más guiada (ADR-0005 D5) -----------
 
 

@@ -89,9 +89,11 @@ fixture los re-crea). Reports sustitutos de `pmo` que respeten el boundary: dife
 ### Objetos nuevos (pmo) y wiring
 
 - **Membresía derivada (v0.6.0)** — sin child DocType. Fuentes nativas: `owner`, `DocShare(Project)`
-  (helper `_has_project_share` / subquery en `tabDocShare`), `ToDo` activo (`_has_active_todo`). Patch
-  `pmo.patches.v0_6_0.migrate_pmo_members_to_docshare` retiró el child `PMO Project Member` y el Custom
-  Field `Project-pmo_members`, migrando membresías existentes a `DocShare(read+write)`.
+  (helper `_has_project_share` / subquery en `tabDocShare`), `ToDo` activo (`_has_active_todo`). El child
+  `PMO Project Member` y el Custom Field `Project-pmo_members` se **retiran del código y de las fixtures**
+  (una instalación nueva nunca los crea). En pmo **no se distribuyen migration patches**: la limpieza de
+  un sitio de desarrollo que aún los tenga es una operación **manual, puntual y fuera de banda** (no
+  shippeada, no `after_migrate`, no hook), que aborta si hubiera filas para no perder membresía silenciosa.
 - **Roles** — `PMO Manager` (funcional, sin acceso por el rol), `PMO Executive Access` (read global +
   share; necesita además un rol con capacidad read, p. ej. `Projects User`).
 - **`hooks.py`** — `permission_query_conditions`, `has_permission`, `override_whitelisted_methods`.
@@ -317,18 +319,30 @@ directo, por lo que el gate de baseline se ancla también en `before_submit` (re
 - **`before_cancel`** añade el bloqueo de estados terminales (`Rechazado`/`Cerrado`) además de
   `applied_to_project`/`baseline_after`.
 
-### Acción "Aplicar Quotation al Project" (D7) e integración con `erpnext_proposals`
+### Integración con `erpnext_proposals` — contrato publicado (>= 0.22.0)
 
-Método whitelisted `aplicar_quotation_al_project(change_request, quotation)` (botón en
-`public/js/pmo_change_request.js`, visible solo al owner sobre un CR `Aprobado` no aplicado). **No** mueve
-el Workflow: valida (Aprobado, no aplicado), **delega** en `pmo/change_control.py`
-(`apply_addendum_to_project` → resuelve por `frappe.get_attr` el contrato
-`erpnext_proposals.…utils.project.apply_addendum_to_project`) y, si completa, fija
-`applied_to_project`/`applied_at`/`applied_quotation` (campos `allow_on_submit`). **Frontera dura:** PMO
-**no** escribe `proposal_project` ni reproduce los guards comerciales (Ganada/single-live/…): eso es del
-helper de `erpnext_proposals`. Si el helper aún no existe en el entorno, la acción se detiene con un
-mensaje claro. **Dependencia de entrega:** la ruta comercial de v0.6 no se considera cerrada hasta que ese
-helper esté liberado y pase la integración end-to-end (ver ADR-0005).
+PMO **delega** en el contrato publicado de `erpnext_proposals` vía `pmo/change_control.py` (dos delegadores
+resueltos por `frappe.get_attr` = feature-detection; error claro si el app no está o es `< 0.22.0`). PMO no
+interpreta `<ROOT>-ADD-<NN>`, no calcula secuencia, no crea `proposal_group`, no resuelve el Project desde
+`project_name`, no escribe `proposal_project` ni crea Tasks del addendum.
+
+- **Crear addenda** — `crear_addenda(change_request)` (botón "Crear addenda comercial", visible sobre un CR
+  **editable** `docstatus 0` sin `proposal_group`). Localiza la Quotation del contrato por la relación
+  persistente `Quotation.proposal_project == CR.project` y delega en
+  `change_control.create_addendum_quotation` → `erpnext_proposals.utils.addendum.create_addendum_quotation`
+  (crea la addenda `ROOT-ADD-NN`, delta comercial, atómica). Persiste la identidad en el campo existente
+  `proposal_group`. **Autoridad (sin elevación):** exige `write` P4 sobre el CR **y** autoría comercial
+  (`assert_can_manage_proposals` la impone `erpnext_proposals`; si falta → `PermissionError`).
+- **Aplicar** — `aplicar_quotation_al_project(change_request, quotation)` (botón, owner sobre CR `Aprobado`
+  no aplicado). Delega en `change_control.apply_addendum_to_project` →
+  `erpnext_proposals.utils.project.apply_addendum_to_project`; si completa, fija
+  `applied_to_project`/`applied_at`/`applied_quotation` (`allow_on_submit`). **`Ganada` ≠ `Aplicada`**: la
+  aplicación es explícita. **Frontera dura:** PMO no escribe `proposal_project` ni reproduce guards
+  comerciales.
+- **Atomicidad:** ambas acciones son atómicas con su request (sin commit manual en el contrato); un fallo
+  externo revierte también la addenda / no deja `applied_*` parciales.
+- **Precondición de entrega:** `erpnext_proposals >= 0.22.0` instalado en el sitio (feature-detection por
+  `get_attr`). Ver ADR-0005.
 
 ### Comparator Baseline ↔ Baseline (D11)
 

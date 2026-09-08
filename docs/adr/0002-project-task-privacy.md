@@ -9,7 +9,10 @@
 > `owner + DocShare(Project) + ToDo activo(Task)`. `DocShare` honra sus flags (`read`/`write`). El **owner
 > puede compartir su propio Project**. Cambian D1/D2/D6/D7/D8 (abajo). Motivo: no duplicar en una lista
 > custom lo que Frappe ya resuelve nativamente; `User Permissions` sigue descartada (alcance global
-> cross-doctype). Migración por patch `PMO Project Member → DocShare(read+write)`.
+> cross-doctype). Retiro **sin migration patch** (regla del proyecto): el child y el Custom Field se
+> quitan del código y de las fixtures (instalación nueva limpia por construcción); un sitio de desarrollo
+> que aún los tenga se limpia **una sola vez, manualmente y fuera de banda**, abortando si hubiera filas
+> (no se convierte membresía silenciosamente).
 
 ## Contexto
 

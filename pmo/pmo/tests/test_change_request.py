@@ -22,6 +22,7 @@ from pmo.permissions import has_permission_change_request
 from pmo.pmo.doctype.pmo_change_request.pmo_change_request import (
 	aplicar_quotation_al_project,
 	baseline_after_query,
+	crear_addenda,
 	get_current_baseline,
 )
 
@@ -365,6 +366,27 @@ class TestChangeRequest(IntegrationTestCase):
 				get_current_baseline(p)
 		finally:
 			frappe.set_user("Administrator")
+
+	# --- Crear addenda comercial (delegación a erpnext_proposals) ----------------
+
+	def test_create_addendum_delegator_unavailable(self):
+		# erpnext_proposals no instalado en test-pmo.localhost -> el contrato no resuelve -> error claro
+		with self.assertRaises(ValidationError):
+			change_control.create_addendum_quotation("QTN-INEXISTENTE")
+
+	def test_crear_addenda_requires_editable(self):
+		p = _project("CR-ADD-E")
+		_baseline(p, "BL-001")
+		cr = _cr(p)
+		cr.submit()  # docstatus 1 -> ya no editable
+		with self.assertRaises(ValidationError):
+			crear_addenda(cr.name)
+
+	def test_crear_addenda_blocks_if_group_set(self):
+		p = _project("CR-ADD-G")
+		cr = _cr(p, proposal_group="GRP-YA")  # ya tiene addenda
+		with self.assertRaises(ValidationError):
+			crear_addenda(cr.name)
 
 	# --- Accion "Aplicar Quotation al Project" (Bloque 3) ------------------------
 
