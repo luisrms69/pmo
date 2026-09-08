@@ -96,10 +96,10 @@ class TestBaselineComparisonReport(IntegrationTestCase):
 
 	def test_rows_only_differences_and_summary(self):
 		owner = _user("rpt-owner@example.com")
-		p, task, b1, b2 = self._pair("RPT-P1", owner)
+		p, _task, b1, b2 = self._pair("RPT-P1", owner)
 		frappe.set_user(owner)
 		try:
-			columns, data, message, chart, summary = execute(
+			columns, data, _message, _chart, summary = execute(
 				{"project": p, "baseline_before": b1.name, "baseline_after": b2.name}
 			)
 		finally:
