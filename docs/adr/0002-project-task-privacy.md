@@ -1,8 +1,18 @@
 # ADR-0002: Project/Task Privacy, Security Boundary y Permisos
 
-**Estado:** Propuesto
-**Fecha:** 2026-09-02
+**Estado:** Aceptado · **Revisado v0.6.0** (D2/D6/D7/D8: membresía derivada de fuentes nativas)
+**Fecha:** 2026-09-02 · **Revisión:** 2026-09-07
 **App:** pmo · **Rama protegida:** version-16
+
+> **Revisión v0.6.0 (2026-09-07):** se **retira** el child DocType `PMO Project Member` y el Custom Field
+> `Project-pmo_members`. La **membresía de Project ya no se persiste**: se **deriva** de fuentes nativas
+> `owner + DocShare(Project) + ToDo activo(Task)`. `DocShare` honra sus flags (`read`/`write`). El **owner
+> puede compartir su propio Project**. Cambian D1/D2/D6/D7/D8 (abajo). Motivo: no duplicar en una lista
+> custom lo que Frappe ya resuelve nativamente; `User Permissions` sigue descartada (alcance global
+> cross-doctype). Retiro **sin migration patch** (regla del proyecto): el child y el Custom Field se
+> quitan del código y de las fixtures (instalación nueva limpia por construcción); un sitio de desarrollo
+> que aún los tenga se limpia **una sola vez, manualmente y fuera de banda**, abortando si hubiera filas
+> (no se convierte membresía silenciosamente).
 
 ## Contexto
 
@@ -25,24 +35,26 @@ definidas.
 
 ```
 Project visible si:  user == owner
-                     OR user ∈ PMO Project Member(project)
+                     OR existe DocShare(Project, read) para user   (miembro = share explícito)
                      OR user tiene PMO Executive Access
-                     OR existe DocShare legítimo del Project
 Task visible si:     Task.project vacío → reglas estándar ERPNext
-                     OR Project(Task) visible-para-user           (Task hereda la frontera del Project)
+                     OR Project(Task) visible-para-user           (Task hereda la frontera del Project;
+                                                                    un DocShare de Project alcanza sus Tasks
+                                                                    por decisión de frontera del hook)
                      OR existe ToDo activo (Task, user)            (asignación directa: SOLO esa Task)
                      OR user tiene PMO Executive Access
-                     OR existe DocShare legítimo de la Task
 ```
 
 - `Task assignment ≠ Project membership`: no concede el Project ni otras Tasks, ni convierte en miembro.
 
-### D2 — Membresía = `PMO Project Member` (simple), no `Project User`
+### D2 — Membresía **derivada** de fuentes nativas (revisado v0.6.0)
 
-Child DocType propio en `Project` (Custom Field `Table`), campo `member: User`. **Sin niveles**
-(`pmo_role` eliminado del MVP: no hay diferencia funcional de permisos; la única distinción real es
-owner vs member). Se añadirá Observer/PM más adelante solo con justificación. Motivo de no usar
-`Project User`: dispara `control_access_for_project_users` → DocShare + emails de portal.
+**No** hay child DocType ni Custom Field de membresía. El "equipo del Project" se **deriva** de
+`owner + DocShare(Project) + ToDo activo(Task)` y, si se necesita mostrarlo en UX, se **calcula** de esas
+fuentes (no se persiste). Un "miembro" es un usuario con `DocShare(Project)` explícito. `Project User`
+sigue descartado (dispara `control_access_for_project_users` → DocShare + emails de portal); `User
+Permissions` descartada (alcance global cross-doctype, no fail-closed sin ajuste global).
+*(Histórico: en el MVP la membresía se persistía en el child `PMO Project Member`; retirado en v0.6.0.)*
 
 ### D3 — Enforcement por hooks (alcance), no por DocPerm de read/write
 
@@ -65,21 +77,23 @@ owner vs member). Se añadirá Observer/PM más adelante solo con justificación
 `reports_to`/departamento **no** forma parte del ACL (propaga permisos de forma peligrosa). Jerarquía,
 si acaso, solo para **reportes agregados** en P2, nunca para abrir Project/Task.
 
-### D6 — Política de WRITE
+### D6 — Política de WRITE (revisado v0.6.0: `DocShare` honra flags)
 
 Capacidad (rol nativo) × alcance (hooks):
 
 - **Owner**: write Project + write todas sus Tasks.
-- **PMO Project Member**: **no** write del documento Project; **sí** read/write de las Tasks de su
-  Project (dentro de su capacidad de rol).
-- **Task-only assignee**: read/write **solo** su Task.
+- **`DocShare(Project, write)`**: write del **Project y de sus Tasks** (honra el flag del share).
+- **`DocShare(Project, read)`**: solo lectura del Project y sus Tasks.
+- **Task-only assignee (ToDo)**: read/write **solo** su Task.
 - **PMO Executive Access**: read global, **write no**.
 - **PMO Manager**: nada por el rol.
 
-### D7 — Política de SHARE manual (nativa, sin lógica custom de autorización)
+### D7 — Política de SHARE manual (revisado v0.6.0: el owner comparte su Project)
 
-- **Permitido:** `PMO Executive Access` y `Administrator`. **Denegado** al resto (`PMO Manager`,
-  `System Manager` (no por defecto), owner/member/assignee).
+- **Project share — Permitido:** el **owner** de su propio Project (así **incorpora colaboradores**),
+  `PMO Executive Access` y `Administrator`. **Denegado** al resto.
+- **Task share — Permitido:** solo `PMO Executive Access`/`Administrator` (excepcional).
+- `assign_to` sigue **sin** auto-share (la visibilidad del asignado viene del ToDo).
 - **Implementación upgrade-safe:** controlar `ptype == "share"` en el **`has_permission` hook**
   existente (deniega a no-ejecutivos; concede a Executive). **No** usar Custom DocPerm parcial
   (reemplaza el conjunto nativo completo y congela permisos). **Fallback** solo si el hook no puede
@@ -99,12 +113,13 @@ Capacidad (rol nativo) × alcance (hooks):
 > **Decisión final:** el hook nativo `has_permission(ptype="share")` es **suficiente**. **No** se usa el
 > fallback de Custom DocPerm completo. (El ejecutivo debe tener un rol con capacidad `share`.)
 
-### D8 — Política de `DocShare` (se conserva el mecanismo nativo)
+### D8 — Política de `DocShare` (revisado v0.6.0: `DocShare(Project)` = membresía)
 
 - Share = mecanismo nativo legítimo, **aditivo y revocable**; **no** se bloquea/neutraliza/sustituye
   globalmente.
-- Share manual de **Project** → acceso **solo al Project**, **no** a sus Tasks (empírico). Share manual
-  de **Task** → **solo esa Task** (empírico).
+- **`DocShare(Project)` es la fuente de membresía**: por **decisión de frontera del hook** (D3), concede
+  acceso al **Project y a sus Tasks** (read/write según flags). Ya **no** dependemos del comportamiento
+  nativo empírico "share de Project = solo el Project". Share manual de **Task** → **solo esa Task**.
 - **Auto-share de asignación:** en nuestro modelo, el asignado obtiene visibilidad por el **`ToDo`
   activo** (D1), y como el `ToDo` se crea **antes** del check en `assign_to`, éste **omite** el
   `share.add` → **no se crea auto-share** → desaparece el "share huérfano". Criterio de aceptación P0:
@@ -151,12 +166,12 @@ de upstream. **Aún no** se construyen reports sustitutos de `pmo` (diferido).
 
 | Actor | Read Project | Write Project | Read Task | Write Task | Manual Share |
 |---|---|---|---|---|---|
-| Project creator (owner) | ✅ | ✅ | ✅ todas | ✅ todas | ❌ |
-| PMO Project Member | ✅ | ❌ | ✅ (de su Project) | ✅ (de su Project) | ❌ |
-| Task-only assignee | ❌ | ❌ | ✅ solo esa Task | ✅ solo esa Task | ❌ |
+| Project creator (owner) | ✅ | ✅ | ✅ todas | ✅ todas | ✅ (su Project) |
+| `DocShare(Project, read)` | ✅ | ❌ | ✅ (de su Project) | ❌ | ❌ |
+| `DocShare(Project, write)` | ✅ | ✅ | ✅ (de su Project) | ✅ (de su Project) | ❌ |
+| Task-only assignee (ToDo) | ❌ | ❌ | ✅ solo esa Task | ✅ solo esa Task | ❌ |
 | PMO Manager | ❌ | ❌ | ❌ | ❌ | ❌ |
 | PMO Executive Access | ✅ todos | ❌ | ✅ todas | ❌ | ✅ |
-| Share explícito | según flags | según flags | según flags | según flags | ❌ |
 | System Manager | ❌ (no auto) | ❌ | ❌ (no auto) | ❌ | ❌ (no por defecto) |
 | Administrator | ✅ | ✅ | ✅ | ✅ | ✅ |
 
@@ -185,9 +200,9 @@ de upstream. **Aún no** se construyen reports sustitutos de `pmo` (diferido).
 
 - **Nativo:** sin cambios de core; **sin** cambios de DocPerm de read/write/create. La capacidad
   `share` se gestiona por hook (no por Custom DocPerm) salvo fallback.
-- **Nuevos (pmo):** `PMO Project Member` (child, `member`); roles `PMO Manager`, `PMO Executive
-  Access`; hooks `permission_query_conditions` y `has_permission` para Project y Task (alcance
-  read/write + gate de `ptype=share`).
+- **Nuevos (pmo):** roles `PMO Manager`, `PMO Executive Access`; hooks `permission_query_conditions` y
+  `has_permission` para Project y Task (alcance read/write + gate de `ptype=share`). **Membresía derivada
+  de `DocShare(Project)` + `ToDo`** (revisado v0.6.0; **sin** child DocType propio).
 
 ## Consecuencias
 
@@ -197,16 +212,20 @@ de vectores auditados explícitamente en P0. Sharing nativo intacto. Sin congela
 ## Riesgos
 
 - `pqc` no cascada a satélites ni a métodos con `get_all` → auditoría (matriz).
-- Performance: subconsulta de membresía por listado (indexar `PMO Project Member`).
+- Performance: subconsulta de membresía por listado sobre `tabDocShare` (indexada nativamente por
+  `share_doctype`/`share_name`/`user`).
 - SHARE: dependemos de la semántica grant/restrict del controlador (verificación P0); fallback = Custom
   DocPerm completo + re-sync (con drift a gestionar).
 - Dependencia `assign_to` ↔ ToDo (verificación P0).
 
 ## Alternativas descartadas
 
-`Project User`/Share como enforcement; User Permissions; modificar DocPerm de read/write; jerarquía en
-el ACL; bloquear/neutralizar/desactivar DocShare; `_assign` como llave del Project; Custom DocPerm
-parcial para `share` (reemplaza el conjunto nativo y congela permisos); `pmo_role` de 3 niveles en el
+`Project User` como enforcement (dispara `control_access_for_project_users` → DocShare + emails);
+**`PMO Project Member` (child de membresía) — retirado en v0.6.0** a favor de `DocShare(Project)` + `ToDo`;
+User Permissions (alcance global cross-doctype, no fail-closed sin ajuste global); modificar DocPerm de
+read/write; jerarquía en el ACL; bloquear/neutralizar/desactivar DocShare; `_assign` como llave del
+Project; Custom DocPerm parcial para `share` (reemplaza el conjunto nativo y congela permisos);
+`pmo_role` de 3 niveles en el
 MVP.
 
 ## Estrategia de pruebas (P0-implementación, site con Company/Stock)

@@ -1,11 +1,11 @@
 # Copyright (c) 2026, Consultoria en Negocios y Aplicaciones and contributors
 # For license information, please see license.txt
 
-"""P0 Incremento 2 — Aislamiento WRITE de Project/Task (ADR-0002 D6). Datos ficticios.
+"""P0 Incremento 2 — Aislamiento WRITE de Project/Task (ADR-0002 D6, revisado v0.6.0). Datos ficticios.
 
-Política:
-- Project: owner escribe; PMO Project Member y PMO Executive Access NO escriben el Project.
-- Task: owner/member del Project y assignee (ToDo) escriben; PMO Executive Access solo lectura.
+Política (membresía derivada de DocShare; honra flags):
+- Project: owner y DocShare(write) escriben; DocShare(read) y PMO Executive Access solo lectura.
+- Task: owner, DocShare(write) del Project y assignee (ToDo, solo su Task) escriben; Executive read-only.
 - Capacidad (rol) x alcance (hooks): todos los usuarios tienen rol con write; el hook aplica el alcance.
 """
 
@@ -53,7 +53,8 @@ class TestPrivacyWrite(IntegrationTestCase):
 		super().setUpClass()
 		frappe.flags.mute_emails = True
 		cls.owner = _user(f"{MARK}-owner@example.com", BASE)
-		cls.member = _user(f"{MARK}-member@example.com", BASE)
+		cls.writer = _user(f"{MARK}-writer@example.com", BASE)  # DocShare(write)
+		cls.reader = _user(f"{MARK}-reader@example.com", BASE)  # DocShare(read)
 		cls.assignee = _user(f"{MARK}-assignee@example.com", BASE)
 		cls.outsider = _user(f"{MARK}-outsider@example.com", BASE)
 		cls.exec_user = _user(f"{MARK}-exec@example.com", [*BASE, "PMO Executive Access"])
@@ -64,10 +65,9 @@ class TestPrivacyWrite(IntegrationTestCase):
 		cls.t2 = _task(f"{MARK}-T2", cls.p1)
 		cls.t3 = _task(f"{MARK}-T3", cls.p2)
 
-		proj = frappe.get_doc("Project", cls.p1)
-		proj.append("pmo_members", {"member": cls.member})
-		proj.flags.ignore_mandatory = True
-		proj.save(ignore_permissions=True)
+		# Membresía derivada (ADR-0002 revisado, D6 honra flags de DocShare):
+		frappe.share.add("Project", cls.p1, cls.writer, read=1, write=1, notify=0)
+		frappe.share.add("Project", cls.p1, cls.reader, read=1, notify=0)
 
 		assign_to.add({"doctype": "Task", "name": cls.t1, "assign_to": frappe.as_json([cls.assignee])})
 
@@ -83,19 +83,24 @@ class TestPrivacyWrite(IntegrationTestCase):
 
 	def test_project_write(self):
 		self.assertTrue(self._can("Project", self.p1, self.owner, "write"))
-		self.assertFalse(self._can("Project", self.p1, self.member, "write"))  # member NO escribe Project
+		# D6: DocShare(write) SÍ escribe el Project (honra el flag); DocShare(read) no.
+		self.assertTrue(self._can("Project", self.p1, self.writer, "write"))
+		self.assertFalse(self._can("Project", self.p1, self.reader, "write"))
+		self.assertTrue(self._can("Project", self.p1, self.reader, "read"))
 		self.assertFalse(self._can("Project", self.p1, self.exec_user, "write"))  # executive read-only
 		self.assertFalse(self._can("Project", self.p1, self.outsider, "write"))
-		# read del executive sí
 		self.assertTrue(self._can("Project", self.p1, self.exec_user, "read"))
 
 	# --- Task WRITE -------------------------------------------------------
 
 	def test_task_write(self):
-		# owner y member del Project → escriben Tasks del Project
+		# owner y DocShare(write) del Project → escriben Tasks del Project
 		self.assertTrue(self._can("Task", self.t1, self.owner, "write"))
-		self.assertTrue(self._can("Task", self.t1, self.member, "write"))
-		self.assertFalse(self._can("Task", self.t3, self.member, "write"))  # Task de P2 → no
+		self.assertTrue(self._can("Task", self.t1, self.writer, "write"))
+		self.assertFalse(self._can("Task", self.t3, self.writer, "write"))  # Task de P2 → no
+		# DocShare(read): lee pero no escribe
+		self.assertFalse(self._can("Task", self.t1, self.reader, "write"))
+		self.assertTrue(self._can("Task", self.t1, self.reader, "read"))
 		# assignee escribe solo su Task
 		self.assertTrue(self._can("Task", self.t1, self.assignee, "write"))
 		self.assertFalse(self._can("Task", self.t2, self.assignee, "write"))

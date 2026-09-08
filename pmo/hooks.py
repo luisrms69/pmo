@@ -53,6 +53,13 @@ required_apps = ["erpnext"]
 # frappe.views.calendar["Task"].gantt.order_by = "lft" (ASC nativo en GanttView).
 doctype_calendar_js = {"Task": "public/js/task_calendar_pmo.js"}
 
+# ADR-0005 D7/D11: acciones en los forms del Change Request y del Baseline (abren el reporte
+# PMO Baseline Comparison ya parametrizado).
+doctype_js = {
+	"PMO Change Request": "public/js/pmo_change_request.js",
+	"PMO Project Baseline": "public/js/pmo_project_baseline.js",
+}
+
 # Svg Icons
 # ------------------
 # include app icons in desk
@@ -145,22 +152,26 @@ permission_query_conditions = {
 	"Task": "pmo.permissions.get_permission_query_conditions_task",
 	# ADR-0004 D7: el Baseline hereda la visibilidad del Project.
 	"PMO Project Baseline": "pmo.permissions.get_permission_query_conditions_baseline",
+	# ADR-0005 D13: el Change Request hereda la visibilidad del Project.
+	"PMO Change Request": "pmo.permissions.get_permission_query_conditions_change_request",
 }
 
 has_permission = {
 	"Project": "pmo.permissions.has_permission_project",
 	"Task": "pmo.permissions.has_permission_task",
 	"PMO Project Baseline": "pmo.permissions.has_permission_baseline",
+	"PMO Change Request": "pmo.permissions.has_permission_change_request",
 }
 
-# Fixtures: Custom Field pmo_members en Project + roles PMO + Custom Role de reports (P0 Inc. 4).
+# Fixtures: Custom Field ToDo-pmo_planned_hours + roles PMO + Custom Role de reports (P0 Inc. 4).
+# (La membresía de Project ya NO usa un Custom Field/child: se deriva de owner + DocShare + ToDo; ADR-0002.)
 # Los Custom Role restringen 3 Script Reports de ERPNext (que ignoran pqc vía get_all/db.sql) a
 # `PMO Executive Access`/`Administrator`. Viven en doctype aparte (el sync del Report no los pisa) y el
 # fixture los re-aplica en cada migrate → self-heal del drift. Ver pmo/overrides.py y ADR-0002.
 fixtures = [
 	{
 		"dt": "Custom Field",
-		"filters": [["name", "in", ["Project-pmo_members", "ToDo-pmo_planned_hours"]]],
+		"filters": [["name", "in", ["ToDo-pmo_planned_hours"]]],
 	},
 	{"dt": "Role", "filters": [["name", "in", ["PMO Manager", "PMO Executive Access"]]]},
 	{
@@ -170,6 +181,18 @@ fixtures = [
 				"report",
 				"in",
 				["Project Summary", "Delayed Tasks Summary", "Project wise Stock Tracking"],
+			]
+		],
+	},
+	# ADR-0005 D3: Workflow del Change Request + sus Workflow State masters (custom, en español).
+	{"dt": "Workflow", "filters": [["name", "=", "PMO Change Request"]]},
+	{
+		"dt": "Workflow State",
+		"filters": [
+			[
+				"workflow_state_name",
+				"in",
+				["Borrador", "En Revision", "Aprobado", "Rechazado", "Implementado", "Cerrado"],
 			]
 		],
 	},

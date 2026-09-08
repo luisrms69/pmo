@@ -1,0 +1,128 @@
+[
+ {
+  "doctype": "Workflow",
+  "name": "PMO Change Request",
+  "workflow_name": "PMO Change Request",
+  "document_type": "PMO Change Request",
+  "workflow_state_field": "workflow_state",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "states": [
+   {
+    "doctype": "Workflow Document State",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Borrador",
+    "doc_status": "0",
+    "allow_edit": "Projects User"
+   },
+   {
+    "doctype": "Workflow Document State",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "En Revision",
+    "doc_status": "0",
+    "allow_edit": "Projects User"
+   },
+   {
+    "doctype": "Workflow Document State",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Aprobado",
+    "doc_status": "1",
+    "allow_edit": "Projects User"
+   },
+   {
+    "doctype": "Workflow Document State",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rechazado",
+    "doc_status": "1",
+    "allow_edit": "Projects User"
+   },
+   {
+    "doctype": "Workflow Document State",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Implementado",
+    "doc_status": "1",
+    "allow_edit": "Projects User"
+   },
+   {
+    "doctype": "Workflow Document State",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Cerrado",
+    "doc_status": "1",
+    "allow_edit": "Projects User"
+   }
+  ],
+  "transitions": [
+   {
+    "doctype": "Workflow Transition",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Borrador",
+    "action": "Enviar a Revision",
+    "next_state": "En Revision",
+    "allowed": "Projects User",
+    "allow_self_approval": 1
+   },
+   {
+    "doctype": "Workflow Transition",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "En Revision",
+    "action": "Devolver a Borrador",
+    "next_state": "Borrador",
+    "allowed": "Projects User",
+    "allow_self_approval": 1
+   },
+   {
+    "doctype": "Workflow Transition",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "En Revision",
+    "action": "Aprobar",
+    "next_state": "Aprobado",
+    "allowed": "Projects User",
+    "allow_self_approval": 1,
+    "condition": "frappe.db.get_value(\"Project\", doc.project, \"owner\") == frappe.session.user"
+   },
+   {
+    "doctype": "Workflow Transition",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "En Revision",
+    "action": "Rechazar",
+    "next_state": "Rechazado",
+    "allowed": "Projects User",
+    "allow_self_approval": 1,
+    "condition": "frappe.db.get_value(\"Project\", doc.project, \"owner\") == frappe.session.user"
+   },
+   {
+    "doctype": "Workflow Transition",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Aprobado",
+    "action": "Marcar Implementado",
+    "next_state": "Implementado",
+    "allowed": "Projects User",
+    "allow_self_approval": 1,
+    "condition": "frappe.db.get_value(\"Project\", doc.project, \"owner\") == frappe.session.user"
+   },
+   {
+    "doctype": "Workflow Transition",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Implementado",
+    "action": "Cerrar",
+    "next_state": "Cerrado",
+    "allowed": "Projects User",
+    "allow_self_approval": 1,
+    "condition": "frappe.db.get_value(\"Project\", doc.project, \"owner\") == frappe.session.user"
+   }
+  ]
+ }
+]

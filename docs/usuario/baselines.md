@@ -56,5 +56,7 @@ La aprobación por autoridades adicionales (Sponsor / comité de cambios) llegar
 
 - Una baseline nueva es un **documento nuevo** (no un "Amend" de la anterior). Cancelar solo sirve para
   anular una baseline creada por error.
-- La **comparación** entre baselines (o baseline vs plan actual) aún no está disponible; el snapshot ya se
-  guarda con el detalle necesario para incorporarla más adelante.
+- **Comparar líneas base:** en una línea base con *Sustituye a línea base*, el botón **"Comparar con línea
+  base anterior"** abre el reporte **PMO Baseline Comparison** (pantalla completa) con qué cambió (tareas,
+  fechas, horas, estructura, estado, asignaciones y fechas del Proyecto) respecto a la que sustituye,
+  exportable/imprimible. La comparación **línea base vs plan actual** aún no está disponible.

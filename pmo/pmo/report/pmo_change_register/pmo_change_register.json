@@ -1,0 +1,31 @@
+{
+ "add_total_row": 0,
+ "columns": [],
+ "creation": "2026-09-06 00:00:00.000000",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "json": "{\"add_total_row\": 0, \"add_totals_row\": 0, \"sort_by\": \"PMO Change Request.request_date\", \"sort_order\": \"desc\", \"sort_by_next\": \"PMO Change Request.priority\", \"sort_order_next\": \"desc\", \"filters\": [], \"columns\": [[\"name\", \"PMO Change Request\"], [\"project\", \"PMO Change Request\"], [\"title\", \"PMO Change Request\"], [\"workflow_state\", \"PMO Change Request\"], [\"request_date\", \"PMO Change Request\"], [\"priority\", \"PMO Change Request\"], [\"impact_summary\", \"PMO Change Request\"], [\"impact_hours\", \"PMO Change Request\"], [\"impact_days\", \"PMO Change Request\"], [\"currency\", \"PMO Change Request\"], [\"impact_amount\", \"PMO Change Request\"], [\"proposal_group\", \"PMO Change Request\"], [\"applied_quotation\", \"PMO Change Request\"], [\"baseline_before\", \"PMO Change Request\"], [\"baseline_after\", \"PMO Change Request\"]]}",
+ "letterhead": null,
+ "module": "PMO",
+ "name": "PMO Change Register",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "PMO Change Request",
+ "report_name": "PMO Change Register",
+ "report_type": "Report Builder",
+ "roles": [
+  {
+   "role": "Projects User"
+  },
+  {
+   "role": "PMO Executive Access"
+  },
+  {
+   "role": "System Manager"
+  }
+ ]
+}

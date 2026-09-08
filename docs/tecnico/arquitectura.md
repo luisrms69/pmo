@@ -40,17 +40,22 @@ Aislamiento **fail-closed**: `Project` y `Task` son privados por defecto. Decisi
 
 ### Modelo de acceso (quién ve qué)
 
+> **Membresía derivada (revisado v0.6.0):** no hay lista custom de miembros. El equipo del Project se
+> deriva de `owner + DocShare(Project) + ToDo activo(Task)`.
+
 ```
-Project visible si:  owner  OR  PMO Project Member  OR  PMO Executive Access  OR  DocShare
+Project visible si:  owner  OR  DocShare(Project, read)  OR  PMO Executive Access
 Task visible si:     project vacío (reglas estándar ERPNext)
-                     OR Project(Task) visible          (Task hereda la frontera del Project)
+                     OR Project(Task) visible   (Task hereda la frontera; un DocShare de Project alcanza
+                                                 sus Tasks por decisión del hook)
                      OR ToDo activo (asignación directa: SOLO esa Task)
-                     OR PMO Executive Access  OR  DocShare
+                     OR PMO Executive Access
 ```
 
 - **Asignar una Task ≠ ser miembro del Project**: no concede el Project ni otras Tasks.
-- **WRITE** — owner: Project + todas sus Tasks · member: Tasks del Project (no el Project) · assignee:
-  solo su Task · `PMO Executive Access`: solo lectura · `PMO Manager`: nada por el rol.
+- **WRITE (D6, honra flags de DocShare)** — owner: Project + todas sus Tasks · `DocShare(Project, write)`:
+  Project + sus Tasks · `DocShare(Project, read)`: solo lectura · assignee (ToDo): solo su Task ·
+  `PMO Executive Access`: solo lectura · `PMO Manager`: nada por el rol.
 
 ### Capa de enforcement (dos mecanismos nativos, sin tocar DocPerms de read/write)
 
@@ -62,9 +67,10 @@ Task visible si:     project vacío (reglas estándar ERPNext)
   `has_permission_project|task`. Semántica v16 verificada: el controlador **solo restringe** — `True`
   concede dentro de la capacidad de rol (AND con el DocPerm), `False`/`None` deniegan → devolvemos
   siempre `True`/`False`.
-- **SHARE manual** (`ptype == "share"`): el mismo `has_permission` lo restringe a `PMO Executive Access`
-  (+ `Administrator`). No se usa Custom DocPerm (ver ADR-0002 D7). `assign_to` **no** crea auto-share:
-  el asignado ya está permitido por el ToDo, así que `assign_to` omite `share.add`.
+- **SHARE manual** (`ptype == "share"`): el mismo `has_permission` permite compartir el **Project** al
+  **owner** (así incorpora colaboradores) + `PMO Executive Access`/`Administrator`; el share de **Task**
+  queda a Executive/Admin (excepcional). No se usa Custom DocPerm (ver ADR-0002 D7). `assign_to` **no**
+  crea auto-share: el asignado ya está permitido por el ToDo, así que `assign_to` omite `share.add`.
 
 ### Cierre de vectores que ignoran `pqc` (ADR-0002 D11)
 
@@ -82,12 +88,16 @@ fixture los re-crea). Reports sustitutos de `pmo` que respeten el boundary: dife
 
 ### Objetos nuevos (pmo) y wiring
 
-- **`PMO Project Member`** — child DocType (`istable`), campo `member: Link User`. Custom Field
-  `Project-pmo_members` (Table) lo añade a `Project`.
+- **Membresía derivada (v0.6.0)** — sin child DocType. Fuentes nativas: `owner`, `DocShare(Project)`
+  (helper `_has_project_share` / subquery en `tabDocShare`), `ToDo` activo (`_has_active_todo`). El child
+  `PMO Project Member` y el Custom Field `Project-pmo_members` se **retiran del código y de las fixtures**
+  (una instalación nueva nunca los crea). En pmo **no se distribuyen migration patches**: la limpieza de
+  un sitio de desarrollo que aún los tenga es una operación **manual, puntual y fuera de banda** (no
+  shippeada, no `after_migrate`, no hook), que aborta si hubiera filas para no perder membresía silenciosa.
 - **Roles** — `PMO Manager` (funcional, sin acceso por el rol), `PMO Executive Access` (read global +
   share; necesita además un rol con capacidad read, p. ej. `Projects User`).
 - **`hooks.py`** — `permission_query_conditions`, `has_permission`, `override_whitelisted_methods`.
-- **Fixtures** (`pmo/fixtures/`) — `custom_field.json` (`Project-pmo_members`), `role.json`
+- **Fixtures** (`pmo/fixtures/`) — `custom_field.json` (`ToDo-pmo_planned_hours`), `role.json`
   (roles PMO), `custom_role.json` (restricción de los 3 reports).
 - **Tests** — `pmo/pmo/tests/test_privacy_{read,write,share,reports}.py`.
 
@@ -253,6 +263,139 @@ completa). Engine sin persistencia en `pmo/baseline.py`.
 - **Baseline vigente as-of:** `get_effective_baseline(project, as_of)` = cabeza de la cadena (mayor
   `effective_date <= as_of`, Submitted/no-Cancelada).
 - **Comparación de snapshots:** diferida (issue #5); el esquema canónico ya la habilita.
+
+## PMO Change Request (ADR-0005)
+
+DocType **submittable** (`is_submittable`, autoname `PMO-CR-.#####`) que **gobierna** un cambio del Project
+(por qué, impacto previsto, decisión, implementación). El **alcance** y su valuación viven en la
+`Quotation`/`erpnext_proposals` (no se recapturan Scope Items); `Project`/`Task` recibe el alcance
+aprobado; `PMO Project Baseline` congela el before/after; `Timesheet` registra el Actual.
+
+> **Estado (v0.6.0 en construcción):** entregados el DocType + P4 + invariantes base, el **Workflow +
+> acción "Aplicar Quotation al Project" + semántica Aplicado/Implementado**, el **comparator
+> Baseline↔Baseline** y el **Change Register**. Pendiente: cierre + bump 0.6.0 y la validación comercial
+> end-to-end (dependencia de `erpnext_proposals`).
+
+- **Campos:** solicitud (`project`, `title`, `raised_by`, `origin`, `request_date`, `priority`
+  Baja/Media/Alta, `reason`, `description`); impacto mínimo estructurado (5 Checks
+  `impacts_scope|schedule|effort|commercial|risk` → `impact_summary` computado; deltas `impact_hours`/
+  `impact_days`/`impact_amount` con `currency`; `impact_notes`, `evaluation_notes`); proposal
+  (`proposal_group`, `applied_quotation`); baselines (`baseline_before`, `baseline_after`); decisión
+  (`approved_by`, `approved_at`, `decision_notes`); implementación (`applied_to_project`, `applied_at`,
+  `implementation_notes`). **Sin** severidad por dimensión, fechas propias, dimensión de calidad ni
+  business case (viven en Quotation/Tasks/Baseline o son gaps reconocidos).
+- **Persistencia post-submit:** los campos que cambian tras aprobar son **`allow_on_submit`**
+  (`applied_to_project`, `applied_at`, `applied_quotation`, `baseline_after`, `implementation_notes`); el
+  contenido de la solicitud queda **inmutable** por el core (`_validate_update_after_submit`), sin
+  `frappe.db.set_value` de rescate.
+- **Invariantes base (`pmo_change_request.py`):** defaults (`raised_by`, `request_date`, `priority`);
+  `impact_summary` (orden estable de los 5 tipos); `currency` = moneda de la company del Project;
+  integridad de baselines (mismo Project; `baseline_after` ≠ `baseline_before`; `effective_date` de
+  after ≥ before). `before_submit` fija `approved_by`/`approved_at` (aprobar = Submit). `before_cancel`
+  bloquea si `applied_to_project` o `baseline_after` (la realidad/baseline ya cambió → revertir = CR nuevo).
+- **P4 (ADR-0002/0005 D13):** `has_permission_change_request` (read = `is_project_visible`; create/write =
+  project writer owner o member, con write de **member solo en `docstatus 0`**; submit/cancel/amend =
+  **owner** → sella owner-only para aprobar/rechazar; Executive read-only; share denegado) +
+  `get_permission_query_conditions_change_request` (listados solo de projects visibles). **PMO Manager sin
+  acceso** por rol. Helper `_is_project_writer` (owner o member) reutilizado del boundary P0.
+
+### Workflow `PMO Change Request` (fixture) y gates
+
+`Borrador(0) → En Revision(0) → Aprobado(1) / Rechazado(1) → Implementado(1) → Cerrado(1)`. Fixtures:
+`workflow.json` (+ `workflow_state.json` con los 6 estados en español; el Custom Field `workflow_state`
+lo crea el propio Workflow). El framework auto-selecciona el primer estado con `doc_status=1` en un submit
+directo, por lo que el gate de baseline se ancla también en `before_submit` (red de seguridad).
+
+- **Autoridad owner-only** en `Aprobar`/`Rechazar`/`Marcar Implementado`/`Cerrar`: **doble capa** —
+  `condition` de transición `frappe.db.get_value("Project", doc.project, "owner") == frappe.session.user`
+  (la UI no ofrece la acción a quien no es owner) **y** el gate P4 sobre `submit`/`write`. `Enviar a
+  Revision` y `Devolver a Borrador` no llevan condición (los miembros participan). `allow_self_approval=1`
+  (se acepta autoaprobación del owner).
+- **Gates por transición** (`_apply_workflow_gates`): al entrar a `En Revision`, exige baseline vigente
+  (`get_effective_baseline`) y **congela `baseline_before`**; a `Implementado`, si hay `proposal_group`
+  exige `applied_to_project`; a `Cerrado`, exige `baseline_after`. Como Frappe ejecuta **solo**
+  `before_update_after_submit` (no `validate`) en transiciones submitted→submitted, los gates y la
+  integridad de baselines se re-aplican también en ese hook.
+- **`before_cancel`** añade el bloqueo de estados terminales (`Rechazado`/`Cerrado`) además de
+  `applied_to_project`/`baseline_after`.
+
+### Integración con `erpnext_proposals` — contrato publicado (>= 0.22.0)
+
+PMO **delega** en el contrato publicado de `erpnext_proposals` vía `pmo/change_control.py` (dos delegadores
+resueltos por `frappe.get_attr` = feature-detection; error claro si el app no está o es `< 0.22.0`). PMO no
+interpreta `<ROOT>-ADD-<NN>`, no calcula secuencia, no crea `proposal_group`, no resuelve el Project desde
+`project_name`, no escribe `proposal_project` ni crea Tasks del addendum.
+
+- **Crear addenda** — `crear_addenda(change_request)` (botón "Crear addenda comercial", visible sobre un CR
+  **editable** `docstatus 0` sin `proposal_group`). Localiza la Quotation del contrato por la relación
+  persistente `Quotation.proposal_project == CR.project` y delega en
+  `change_control.create_addendum_quotation` → `erpnext_proposals.utils.addendum.create_addendum_quotation`
+  (crea la addenda `ROOT-ADD-NN`, delta comercial, atómica). Persiste la identidad en el campo existente
+  `proposal_group`. **Autoridad (sin elevación):** exige `write` P4 sobre el CR **y** autoría comercial
+  (`assert_can_manage_proposals` la impone `erpnext_proposals`; si falta → `PermissionError`).
+- **Aplicar** — `aplicar_quotation_al_project(change_request, quotation)` (botón, owner sobre CR `Aprobado`
+  no aplicado). Delega en `change_control.apply_addendum_to_project` →
+  `erpnext_proposals.utils.project.apply_addendum_to_project`; si completa, fija
+  `applied_to_project`/`applied_at`/`applied_quotation` (`allow_on_submit`). **`Ganada` ≠ `Aplicada`**: la
+  aplicación es explícita. **Frontera dura:** PMO no escribe `proposal_project` ni reproduce guards
+  comerciales.
+- **Atomicidad:** ambas acciones son atómicas con su request (sin commit manual en el contrato); un fallo
+  externo revierte también la addenda / no deja `applied_*` parciales.
+- **Precondición de entrega:** `erpnext_proposals >= 0.22.0` instalado en el sitio (feature-detection por
+  `get_attr`). Ver ADR-0005.
+
+### Comparator Baseline ↔ Baseline (D11)
+
+`pmo/compare.py`: `compare_snapshots(before, after)` es una **función pura** que opera **solo sobre los
+snapshots v1 ya almacenados** (no reconstruye ni lee el Current Plan). Detecta: Tasks añadidas/eliminadas
+(identidad = `name`), y por Task cambios en `exp_start_date`/`exp_end_date`/`expected_time`/`status`/
+`parent_task`/`wbs_order` y en assignments (usuarios añadidos/eliminados, `override_hours`,
+`effective_hours`); más cambios de Project (`expected_start_date`/`expected_end_date`/`status`). Orden
+determinista (todo ordenado por `name`/`user`). Devuelve `project_changes`/`tasks_added`/`tasks_removed`/
+`tasks_changed`/`has_changes`.
+
+`compare_baselines(baseline_before, baseline_after)` (whitelisted): **P4** = `check_permission("read")` sobre
+**ambas** baselines (= `is_project_visible`) + exige **mismo Project** (sin fuga cross-project); carga los
+snapshots persistidos y delega en `compare_snapshots`. El orden de argumentos define la dirección
+(from→to); no reordena. Es una **diferencia entre baselines**, no una atribución por CR (varios CR pueden
+consolidarse en una misma `baseline_after`).
+
+**UI — Script Report `PMO Baseline Comparison` (patrón `Compare Projects` de MS Project):** reporte a
+**pantalla completa** (`report_type = "Script Report"`, `ref_doctype = PMO Project Baseline`) que reemplaza
+al modal (retirado). Filtros: `project`, `baseline_before`, `baseline_after` (+ `change_request` como
+**contexto de apertura**, no atribución). `execute(filters)` **reutiliza `compare_baselines()`** (no otro
+engine): esa función impone la **P4** (read en ambas + mismo Project); como los Script Report **no** aplican
+`pqc`, la P4 se valida ahí dentro por delegación (patrón de los reports P4 de la app). Aplana el diff a
+**solo diferencias**, una **fila por diferencia atómica** — columnas *Tipo de cambio / WBS-Tarea / Campo /
+Antes / Después / Variación* (variación en `±días` para fechas y `±h` para horas) — con cabecera
+(`message`) y tarjetas de resumen (`report_summary`: añadidas/eliminadas/modificadas/asignaciones/cambios
+de Project). **Exportación/impresión nativas** del Report (Excel/CSV/Print), secundarias. No persiste el
+diff. Accesos: botones en el Change Request (*"Comparar líneas base"*, con `baseline_before`+`baseline_after`,
+pasa el CR como contexto) y en el Baseline (*"Comparar con línea base anterior"*, usa `supersedes_baseline`)
+que hacen `set_route` al reporte ya parametrizado. Sin overlay Gantt, timeline, gráficos ni edición.
+
+**`baseline_after` — selección explícita guiada (D5):** la relación es de negocio (qué baseline incorpora
+el cambio), **no** "la vigente al instante", así que **no** se automatiza. Se mantiene editable pero el
+picker se filtra con `baseline_after_query` (baselines Submitted del mismo Project, distintas de
+`baseline_before` y con `effective_date >= baseline_before.effective_date`), y un botón *"Usar línea base
+vigente"* (`get_current_baseline`, P4) la **prellena** como conveniencia sin impedir escoger otra. El gate
+de Cerrar sigue exigiendo `baseline_after`.
+
+**i18n:** las etiquetas visibles de `PMO Change Request` y `PMO Project Baseline` están en **español** en el
+JSON (convención del ecosistema; el sitio corre en `en`). Se mantienen en inglés los identificadores
+técnicos: fieldnames, valores de Select usados por el código (p. ej. `baseline_type`
+Original/Approved Change/Replan), y nombres de DocType/Report.
+
+### Change Register (D12)
+
+Reporte estándar **`PMO Change Register`** (`report_type = "Report Builder"`, `is_standard = Yes`,
+`ref_doctype = PMO Change Request`, módulo PMO) en `pmo/pmo/report/pmo_change_register/`. Al ser un Report
+Builder consulta la **lista del DocType**, por lo que aplica **`permission_query_conditions` automáticamente
+(P4-safe)** — se evita deliberadamente Query/Script Report (que ignoran `pqc`). Columnas: `name`, `project`,
+`title`, `workflow_state`, `request_date`, `priority`, `impact_summary`, `impact_hours`, `impact_days`,
+`currency`, `impact_amount`, `proposal_group`, `applied_quotation`, `baseline_before`, `baseline_after`.
+Orden por defecto `request_date` desc, luego `priority` desc. Roles: `Projects User`, `PMO Executive
+Access`, `System Manager` (abren el reporte; las filas las restringe `pqc`). **PMO Manager** no accede.
 
 ## Fuera de alcance
 Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext
