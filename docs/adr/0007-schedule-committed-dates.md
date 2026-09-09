@@ -1,6 +1,16 @@
 # ADR-0007: Fecha comprometida de cronograma (Task deadline / Project committed end)
 
-**App:** pmo · **Rama protegida:** version-16 · **Estado:** Proposed · **Ciclo:** v0.8.0 (Gobierno avanzado del cronograma — fase 1)
+**App:** pmo · **Rama protegida:** version-16 · **Estado:** Accepted · **Ciclo:** v0.8.0 (Gobierno avanzado del cronograma — fase 1)
+
+## Aceptación (2026-09-09)
+
+Implementado en v0.8.0 sin desviaciones respecto de D1–D5. Custom Fields `Task.pmo_deadline` y
+`Project.pmo_committed_end_date` (Date, por fixture); validaciones suaves (`pmo/schedule_commit.py`,
+`doc_events` `Task`/`Project` `validate`) que **avisan y no bloquean** (D4) — el aviso usa fecha ISO directa
+(no `format_date`) para no depender del locale. `snapshot_schema_version` sigue en 1; Baseline y Status Date
+sin cambios; ADR-0004/0006 sin modificar (D5). Sin constraints tipados. Verificado con `bench migrate` en
+`test-pmo.localhost` (campos creados), smoke test (breach → avisa y guarda; sin breach → guarda sin aviso;
+persiste) y suite 211/211.
 
 ## Contexto
 

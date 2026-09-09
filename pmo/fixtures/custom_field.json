@@ -5,11 +5,11 @@
   "dt": "Task",
   "module": "PMO",
   "fieldname": "pmo_deadline",
-  "label": "PMO Deadline",
+  "label": "PMO — Fecha comprometida (deadline)",
   "fieldtype": "Date",
   "insert_after": "exp_end_date",
   "no_copy": 1,
-  "description": "Fecha comprometida/límite de la tarea (ADR-0007). Es un compromiso de negocio/acordado: no se desplaza automáticamente con la reprogramación (sí puede cambiarse por decisión autorizada). No mueve la tarea ni bloquea la ejecución real; si el fin planeado la excede, se muestra un aviso."
+  "description": "Fecha comprometida/límite de la tarea (compromiso de negocio o acordado). Distinta del Expected End Date, que es la fecha calculada. No se desplaza automáticamente con la reprogramación (puede cambiarse manualmente). No mueve la tarea ni bloquea el guardado ni el registro real; si el fin planeado la supera, solo se muestra un aviso. Vacío = sin compromiso."
  },
  {
   "doctype": "Custom Field",
@@ -17,11 +17,11 @@
   "dt": "Project",
   "module": "PMO",
   "fieldname": "pmo_committed_end_date",
-  "label": "PMO Committed End Date",
+  "label": "PMO — Fin comprometido",
   "fieldtype": "Date",
   "insert_after": "expected_end_date",
   "no_copy": 1,
-  "description": "Fecha comprometida de terminación del Project (ADR-0007), distinta de expected_end_date (calculada). Compromiso de negocio/acordado: no se desplaza automáticamente con el cronograma. No bloquea; si el fin calculado la excede, se muestra un aviso."
+  "description": "Fecha comprometida de terminación del proyecto (compromiso de negocio o acordado). Distinta del Expected End Date, que es la fecha calculada. No se desplaza automáticamente con el cronograma (puede cambiarse manualmente). No bloquea el guardado; si el fin calculado la supera, solo se muestra un aviso. Vacío = sin compromiso."
  },
  {
   "doctype": "Custom Field",
