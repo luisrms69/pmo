@@ -1,5 +1,22 @@
 # Changelog — pmo
 
+## [0.8.0] — 2026-09-09
+
+Gobierno avanzado del cronograma, fase 1 — **fecha comprometida** (ADR-0007, Accepted): distingue la fecha
+planeada/calculada (nativa) de la fecha comprometida (compromiso de negocio/acordado).
+
+### Added
+- **`Task.pmo_deadline`** (Date, Custom Field por fixture) — fecha comprometida/límite de la tarea.
+- **`Project.pmo_committed_end_date`** (Date, Custom Field por fixture) — fecha comprometida de fin del
+  proyecto, distinta de `expected_end_date` (calculada).
+- **Validaciones suaves** (`pmo/schedule_commit.py`, `doc_events` `Task.validate` + `Project.validate`):
+  avisan si el fin planeado supera el compromiso. **No bloquean** el guardado ni el Actual/Timesheet; campos
+  vacíos = sin aviso. La fecha comprometida no se desplaza automáticamente (sí puede editarse).
+
+### Notes
+- Fuera de alcance (ADR-0007): constraints tipados (SNET/FNLT/MSO/MFO), auto-reprogramación, scheduler.
+  `snapshot_schema_version` sigue en 1; Baseline y Status Date sin cambios; ADR-0004/0006 sin modificar.
+
 ## [0.7.0] — 2026-09-08
 
 Control a fecha de corte / Status Date (ADR-0006, Accepted): responde "¿cómo estaba el proyecto a una fecha

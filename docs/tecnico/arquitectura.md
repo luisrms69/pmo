@@ -421,6 +421,24 @@ Access`, `System Manager` (abren el reporte; las filas las restringe `pqc`). **P
 - **Fuera (ADR-0006 D6):** EVM/forecast, CPM (#9), reservas de capacidad (#10), Planned-vs-Actual completo
   de horas, avance % histórico y fecha futura.
 
+## Fecha comprometida de cronograma (ADR-0007)
+
+Distingue la fecha **planeada/calculada** (nativa: `Task.exp_end_date`, `Project.expected_end_date`, que se
+desplazan con dependencias/reprogramación; forecast no vinculante, ADR-0004) de la fecha **comprometida**
+(compromiso de negocio/acordado, no necesariamente contractual; no se desplaza automáticamente con el
+cronograma, pero **sí** puede cambiarse por edición autorizada).
+
+- **Campos (Custom Field por fixture):** `Task.pmo_deadline` (Date) y `Project.pmo_committed_end_date`
+  (Date). Requieren `bench migrate` para sincronizar metadata; sin data/migration patch.
+- **Validaciones suaves** (`pmo/schedule_commit.py`, `doc_events` `Task.validate` + `Project.validate`):
+  avisan (`msgprint`, indicador naranja) si `exp_end_date` > `pmo_deadline` o `expected_end_date` >
+  `pmo_committed_end_date`. **No bloquean** el guardado ni el Actual/Timesheet (coherente con ADR-0004);
+  campos vacíos = sin aviso. Las fechas del aviso se formatean en ISO directo (no `format_date`) para no
+  depender del locale (evita que el aviso se vuelva excepción en sesiones sin idioma).
+- **Fuera de alcance (ADR-0007):** constraints tipados (SNET/FNLT/MSO/MFO), auto-reprogramación, scheduler
+  propio. **No** cambia el snapshot de Baseline (`snapshot_schema_version` sigue en 1) ni el reporte Status
+  Date.
+
 ## Fuera de alcance
 Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext
 ni de DocPerm de read/write; solo hooks, un child DocType propio, roles y `Custom Role` por fixture.

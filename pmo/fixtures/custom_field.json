@@ -1,6 +1,30 @@
 [
  {
   "doctype": "Custom Field",
+  "name": "Task-pmo_deadline",
+  "dt": "Task",
+  "module": "PMO",
+  "fieldname": "pmo_deadline",
+  "label": "PMO — Fecha comprometida (deadline)",
+  "fieldtype": "Date",
+  "insert_after": "exp_end_date",
+  "no_copy": 1,
+  "description": "Fecha comprometida/límite de la tarea (compromiso de negocio o acordado). Distinta del Expected End Date, que es la fecha calculada. No se desplaza automáticamente con la reprogramación (puede cambiarse manualmente). No mueve la tarea ni bloquea el guardado ni el registro real; si el fin planeado la supera, solo se muestra un aviso. Vacío = sin compromiso."
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_committed_end_date",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_committed_end_date",
+  "label": "PMO — Fin comprometido",
+  "fieldtype": "Date",
+  "insert_after": "expected_end_date",
+  "no_copy": 1,
+  "description": "Fecha comprometida de terminación del proyecto (compromiso de negocio o acordado). Distinta del Expected End Date, que es la fecha calculada. No se desplaza automáticamente con el cronograma (puede cambiarse manualmente). No bloquea el guardado; si el fin calculado la supera, solo se muestra un aviso. Vacío = sin compromiso."
+ },
+ {
+  "doctype": "Custom Field",
   "name": "Project-pmo_status_date",
   "dt": "Project",
   "module": "PMO",

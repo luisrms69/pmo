@@ -1,37 +1,36 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-09-08
-**Rama activa:** `feat/status-date` (base `version-16` @ v0.6.1, commit `18d30c2`).
-**Ciclo:** v0.7.0 — Control a fecha de corte / Status Date (ADR-0006, **Accepted**). Cierre técnico → PR a `version-16`.
+**Fecha:** 2026-09-09
+**Rama activa:** `feat/schedule-commit-dates` (base `version-16` @ v0.7.0, commit `17c0f61`).
+**Ciclo:** v0.8.0 — Gobierno avanzado del cronograma, fase 1 (fechas comprometidas, ADR-0007 Proposed).
 
 ## Plan que estoy siguiendo
-ADR-0006 (Accepted). Entrega por bloques (1–3) completada; cierre con bump 0.7.0 + CHANGELOG → PR único.
+ADR-0007 (alcance mínimo): distinguir fecha **planeada/calculada** (nativa) de fecha **comprometida**
+(compromiso de negocio/acordado; no se desplaza automáticamente, sí modificable por decisión autorizada).
+Entrega por bloques pequeños → PR único a `version-16`. Bump `__version__ → 0.8.0` pendiente antes del PR.
 
-## Qué se implementó (v0.7.0)
-- **Bloque 1** (`b4ef1d7`): Custom Field `Project.pmo_status_date` (fixture) + validación `<= today`
-  (`doc_events Project.validate`). ADR-0006 (Proposed→Accepted en el cierre).
-- **Bloque 2** (`c105794`): motor `pmo/status_date.py` — `build_status_report` (P4) compone Baseline as-of
-  + Current + Actual (Timesheet fechado + `completed_on`) + indicadores D5. `compute_status` pura.
-- **Bloque 3** (`93258df`): Script Report P4-safe `PMO Status Report` + UX (JS: default `pmo_status_date`,
-  tope `today`) + docs usuario/técnico + tests de presentación.
-- **Cierre** (este commit): ADR-0006 Accepted, `__version__` 0.6.1→0.7.0, CHANGELOG `[0.7.0]`.
+## Estado por bloques
+- **Bloque 1 — Custom Fields + warnings + tests. ✅ (commit en curso)**
+  - `Task.pmo_deadline` (Date) y `Project.pmo_committed_end_date` (Date), por fixture. `bench migrate` en
+    `test-pmo.localhost` OK (campos creados).
+  - Warnings suaves (`pmo/schedule_commit.py`, `doc_events` Task.validate + Project.validate): si el fin
+    planeado excede el compromiso → aviso; **no bloquea** guardado ni Actual. Campos vacíos = sin aviso.
+  - Tests `test_schedule_commit.py` (6). **Suite 211/211.** Smoke test en `test-pmo.localhost`: breach→avisa+guarda,
+    no-breach→guarda sin aviso, persiste.
+  - **Defecto corregido en el bloque:** el warning usaba `format_date` (dependiente de locale); con sesión
+    sin idioma lanzaba y bloqueaba el guardado. Se cambió a fecha ISO directa → aviso robusto, nunca bloquea.
 
-## Validación
-- Suite completa: **205/205**. Ruff + prettier limpios. (pmo NO usa MkDocs — sin gate mkdocs.)
-- **E2E integrado en `proposals-acti.dev`** (Project+Tasks+Baseline Submitted+Timesheet Submitted):
-  D5.1=11d, D5.2=1, D5.3=12h, D5.4=1/2, futura→ValidationError, sin-baseline→note, P4 outsider→PermissionError. **PASS.**
-
-## Decisiones vigentes (ADR-0006)
-- Status Date en `Project.pmo_status_date` (un valor, sin historial). Solo `<= today` en v0.7.0.
-- Baseline vigente a la fecha = `get_effective_baseline(project, status_date)`. Current = plan de hoy (no
-  reconstruye histórico). Actual = Timesheet fechado + `completed_on` (proxy). Sin % histórico.
-- Fuera: EVM/forecast, CPM (#9), reservas de capacidad (#10), Planned-vs-Actual completo, fecha futura.
+## Alcance / límites (ADR-0007)
+- Solo `pmo_deadline` + `pmo_committed_end_date` + warnings. **Sin** constraints tipados (SNET/FNLT/MSO/MFO),
+  **sin** auto-reprogramación, **sin** scheduler propio.
+- **`snapshot_schema_version` sigue en 1**; Baseline y Status Date **sin cambios**; ADR-0004/0006 sin modificar.
 
 ## Siguiente paso
-`/ship commit` (cierre) → `/ship push` → `/ship pr` a `version-16`. Detenerse con el PR abierto y CI
-evaluado. No merge/tag/release.
+Tras el commit del Bloque 1: definir bloques siguientes (p. ej. UX en el formulario y/o docs usuario/técnico),
+bump 0.8.0 antes del PR. Sin push/PR/release aún.
 
 ## Cuidados / no repetir
-- Git solo vía `/ship`. Nunca trabajar en `version-16`. En pmo NO se usan migration patches.
-- pmo NO usa MkDocs. `test-pmo.localhost` tiene 0 Companies (tests que requieran Company → E2E en site con
-  Company, p. ej. `proposals-acti.dev`). BD/`bench migrate`: autorización explícita.
+- No usar `format_date`/locale-dependientes en validaciones no bloqueantes (bug framework `get_locale_value`
+  con sesión sin idioma → convierte warning en excepción). Usar fecha ISO directa.
+- Git solo vía `/ship`. Nunca trabajar en `version-16`. pmo NO usa migration patches ni MkDocs.
+  `test-pmo.localhost` tiene 0 Companies. BD/`bench migrate`: autorización explícita.
