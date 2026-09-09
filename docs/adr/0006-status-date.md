@@ -1,6 +1,16 @@
 # ADR-0006: Control a fecha de corte / Status Date
 
-**App:** pmo · **Rama protegida:** version-16 · **Estado:** Proposed · **Ciclo:** v0.7.0
+**App:** pmo · **Rama protegida:** version-16 · **Estado:** Accepted · **Ciclo:** v0.7.0
+
+## Aceptación (2026-09-08)
+
+Implementado en v0.7.0 sin desviaciones respecto de D1–D8. Custom Field `Project.pmo_status_date` (fixture)
++ validación `<= today` (D1/D2); motor `pmo/status_date.py` (`build_status_report`, P4) que compone Baseline
+as-of (`get_effective_baseline`, D3), Current (`build_snapshot`, D4) y Actual (Timesheet fechado + proxy
+`completed_on`, D4) y los indicadores D5; reporte P4-safe `PMO Status Report` (D7). Sin DocType nuevo, sin
+data/migration patch, ADR-0003/0004/0005 sin cambios (D8). Validado end-to-end en `proposals-acti.dev`
+(Project + Tasks + Baseline Submitted + Timesheet Submitted): D5.1 = 11 días, D5.2 = 1 vencida, D5.3 = 12 h,
+D5.4 = 1/2; Status Date futura → error; caso sin baseline → `note`; P4 outsider → `PermissionError`.
 
 ## Contexto
 

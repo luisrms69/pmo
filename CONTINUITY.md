@@ -2,33 +2,36 @@
 
 **Fecha:** 2026-09-08
 **Rama activa:** `feat/status-date` (base `version-16` @ v0.6.1, commit `18d30c2`).
-**Ciclo:** v0.7.0 — Control a fecha de corte / Status Date (ADR-0006, Proposed).
+**Ciclo:** v0.7.0 — Control a fecha de corte / Status Date (ADR-0006, **Accepted**). Cierre técnico → PR a `version-16`.
 
 ## Plan que estoy siguiendo
-`docs/adr/0006-status-date.md` (ADR-0006). Entrega por bloques hacia un PR único a `version-16`.
-Bump `__version__ → 0.7.0` (MINOR) pendiente **antes del PR** (aún no aplicado).
+ADR-0006 (Accepted). Entrega por bloques (1–3) completada; cierre con bump 0.7.0 + CHANGELOG → PR único.
 
-## Estado por bloques
-- **Bloque 1 — Status Date persistente + validación. ✅ (commit en curso)**
-  - Custom Field `Project.pmo_status_date` (Date, fixture; `bench migrate` requerido — corrido en
-    `test-pmo.localhost`, exit 0). `doc_events` `Project.validate` → `pmo.status_date.validate_project_status_date`
-    (D2: rechaza fecha futura; vacío válido). Tests `test_status_date.py` (4). **Suite 195/195.**
-- **Bloque 2 — Motor (siguiente).** `pmo/status_date.py`: composición Baseline (`get_effective_baseline`
-  as_of) + Current (`build_snapshot`) + Actual (Timesheet a fecha, `pmo/actual.py`) + indicadores D5.
-  Whitelisted P4 + tests. **No** Planned-vs-Actual de horas (diferido), **no** regla todo-o-nada.
-- **Bloque 3 — Reporte P4-safe `PMO Status Report`** + UX + docs usuario/técnico + tests.
+## Qué se implementó (v0.7.0)
+- **Bloque 1** (`b4ef1d7`): Custom Field `Project.pmo_status_date` (fixture) + validación `<= today`
+  (`doc_events Project.validate`). ADR-0006 (Proposed→Accepted en el cierre).
+- **Bloque 2** (`c105794`): motor `pmo/status_date.py` — `build_status_report` (P4) compone Baseline as-of
+  + Current + Actual (Timesheet fechado + `completed_on`) + indicadores D5. `compute_status` pura.
+- **Bloque 3** (`93258df`): Script Report P4-safe `PMO Status Report` + UX (JS: default `pmo_status_date`,
+  tope `today`) + docs usuario/técnico + tests de presentación.
+- **Cierre** (este commit): ADR-0006 Accepted, `__version__` 0.6.1→0.7.0, CHANGELOG `[0.7.0]`.
 
-## Decisiones vigentes (ADR-0006, resumen)
-- Status Date vive en `Project.pmo_status_date` (un valor; sin DocType ni historial). Solo `<= today` en v0.7.0.
-- Baseline vigente a la fecha = `get_effective_baseline(project, status_date)` (ADR-0004, sin modificar 0004).
-- Current = plan de hoy evaluado contra el corte (NO reconstruye plan histórico).
-- Actual = Timesheet fechado (fiable) + `completed_on <= status_date` (proxy). Sin % histórico.
-- Indicadores D5: (1) deslizamiento de fecha final Baseline vs Current (días); (2) tareas que debían estar
-  terminadas a la fecha y no lo estaban; (3) Actual hours acumuladas a la fecha; (4) conteos simples fiables.
-- Fuera: EVM, forecast, CPM (#9), reservas de capacidad (#10), Planned-vs-Actual completo, fecha futura.
+## Validación
+- Suite completa: **205/205**. Ruff + prettier limpios. (pmo NO usa MkDocs — sin gate mkdocs.)
+- **E2E integrado en `proposals-acti.dev`** (Project+Tasks+Baseline Submitted+Timesheet Submitted):
+  D5.1=11d, D5.2=1, D5.3=12h, D5.4=1/2, futura→ValidationError, sin-baseline→note, P4 outsider→PermissionError. **PASS.**
+
+## Decisiones vigentes (ADR-0006)
+- Status Date en `Project.pmo_status_date` (un valor, sin historial). Solo `<= today` en v0.7.0.
+- Baseline vigente a la fecha = `get_effective_baseline(project, status_date)`. Current = plan de hoy (no
+  reconstruye histórico). Actual = Timesheet fechado + `completed_on` (proxy). Sin % histórico.
+- Fuera: EVM/forecast, CPM (#9), reservas de capacidad (#10), Planned-vs-Actual completo, fecha futura.
+
+## Siguiente paso
+`/ship commit` (cierre) → `/ship push` → `/ship pr` a `version-16`. Detenerse con el PR abierto y CI
+evaluado. No merge/tag/release.
 
 ## Cuidados / no repetir
 - Git solo vía `/ship`. Nunca trabajar en `version-16`. En pmo NO se usan migration patches.
-- **pmo NO usa MkDocs** (no hay `mkdocs.yml`): no usar `mkdocs build --strict` como gate aquí.
-- `test-pmo.localhost` tiene 0 Companies → tests que requieran Company deben skip o probar la lógica pura.
-- BD / `bench migrate`: autorización explícita. Tests en `test-pmo.localhost`.
+- pmo NO usa MkDocs. `test-pmo.localhost` tiene 0 Companies (tests que requieran Company → E2E en site con
+  Company, p. ej. `proposals-acti.dev`). BD/`bench migrate`: autorización explícita.

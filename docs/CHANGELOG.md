@@ -1,5 +1,28 @@
 # Changelog — pmo
 
+## [0.7.0] — 2026-09-08
+
+Control a fecha de corte / Status Date (ADR-0006, Accepted): responde "¿cómo estaba el proyecto a una fecha
+respecto de lo planeado, la línea base aprobada y lo realmente ejecutado?".
+
+### Added
+- **Status Date (Data Date)** — Custom Field `Project.pmo_status_date` (Date, fixture; requiere `bench
+  migrate`). Solo `<= today` (validación en `Project.validate`, ADR-0006 D2). Lo edita el owner (P4).
+- **Motor** `pmo/status_date.py` — `build_status_report(project, status_date)` (whitelisted, P4) compone a
+  la fecha de corte: **Baseline** vigente (`get_effective_baseline` as-of), **Current** (`build_snapshot`,
+  plan de hoy) y **Actual** (Timesheet fechado, ADR-0003, + `completed_on` como proxy). Sin reconstrucción
+  de % histórico.
+- **Indicadores D5** — (1) deslizamiento de fecha final Baseline vs Current (días); (2) tareas que debían
+  estar terminadas a la fecha y no lo estaban; (3) Actual hours acumuladas a la fecha; (4) conteos simples
+  (previstas/completadas).
+- **Reporte** `PMO Status Report` — Script Report **P4-safe** (por delegación en `build_status_report`);
+  filtros `project` + `status_date` (default desde `pmo_status_date`, tope `today`); resumen = indicadores
+  D5, detalle = tareas vencidas no terminadas.
+
+### Notes
+- Fuera de alcance (ADR-0006 D6): EVM/forecast, CPM (#9), reservas de capacidad (#10), comparación completa
+  Planificado vs Real de horas, avance % histórico y fecha futura. ADR-0004/0005 sin cambios.
+
 ## [0.6.1] — 2026-09-08
 
 ### Fixed
