@@ -1,37 +1,34 @@
 # CONTINUITY.md — pmo
 
 **Fecha:** 2026-09-08
-**Rama activa:** `docs/changelog-060-release` (base `version-16` @ v0.6.0, commit `3a6fa72`).
-**Estado:** post-release de **v0.6.0** (tag `v0.6.0` + GitHub Release publicados y alineados). Follow-up
-documental: corregir la sección `[0.6.0]` del CHANGELOG (había quedado "En preparación / no publicado") y
-bump **`__version__` → 0.6.1** (PATCH, por modificar `version-16` tras la release).
+**Rama activa:** `feat/status-date` (base `version-16` @ v0.6.1, commit `18d30c2`).
+**Ciclo:** v0.7.0 — Control a fecha de corte / Status Date (ADR-0006, Proposed).
 
 ## Plan que estoy siguiendo
-Cierre correcto del ciclo post-release + fix del desfase del CHANGELOG. Un solo PR mínimo hacia `version-16`,
-**detenerse antes del merge**.
+`docs/adr/0006-status-date.md` (ADR-0006). Entrega por bloques hacia un PR único a `version-16`.
+Bump `__version__ → 0.7.0` (MINOR) pendiente **antes del PR** (aún no aplicado).
 
-## Qué se hizo en esta rama
-- `docs/CHANGELOG.md`: sección `[0.6.0]` reescrita para reflejar la release real (fecha 2026-09-08; sin
-  "En preparación / Release no publicado / Planned"); contenido movido a Added/Changed/Removed/Docs, fiel a
-  ADR-0005 y a las release notes publicadas. Añadida entrada `[0.6.1] — 2026-09-08` (Fixed: corrección del
-  CHANGELOG). Secciones históricas (`[0.5.0]` y anteriores) intactas.
-- `pmo/__init__.py`: `__version__` 0.6.0 → **0.6.1**.
+## Estado por bloques
+- **Bloque 1 — Status Date persistente + validación. ✅ (commit en curso)**
+  - Custom Field `Project.pmo_status_date` (Date, fixture; `bench migrate` requerido — corrido en
+    `test-pmo.localhost`, exit 0). `doc_events` `Project.validate` → `pmo.status_date.validate_project_status_date`
+    (D2: rechaza fecha futura; vacío válido). Tests `test_status_date.py` (4). **Suite 195/195.**
+- **Bloque 2 — Motor (siguiente).** `pmo/status_date.py`: composición Baseline (`get_effective_baseline`
+  as_of) + Current (`build_snapshot`) + Actual (Timesheet a fecha, `pmo/actual.py`) + indicadores D5.
+  Whitelisted P4 + tests. **No** Planned-vs-Actual de horas (diferido), **no** regla todo-o-nada.
+- **Bloque 3 — Reporte P4-safe `PMO Status Report`** + UX + docs usuario/técnico + tests.
 
-## SemVer
-- Base `upstream/version-16` = 0.6.0. Cambio documental sobre `version-16` post-release → regla `/ship`:
-  todo PR mergeado ≥ PATCH → objetivo **0.6.1**. Sin cambio funcional para satisfacer SemVer.
+## Decisiones vigentes (ADR-0006, resumen)
+- Status Date vive en `Project.pmo_status_date` (un valor; sin DocType ni historial). Solo `<= today` en v0.7.0.
+- Baseline vigente a la fecha = `get_effective_baseline(project, status_date)` (ADR-0004, sin modificar 0004).
+- Current = plan de hoy evaluado contra el corte (NO reconstruye plan histórico).
+- Actual = Timesheet fechado (fiable) + `completed_on <= status_date` (proxy). Sin % histórico.
+- Indicadores D5: (1) deslizamiento de fecha final Baseline vs Current (días); (2) tareas que debían estar
+  terminadas a la fecha y no lo estaban; (3) Actual hours acumuladas a la fecha; (4) conteos simples fiables.
+- Fuera: EVM, forecast, CPM (#9), reservas de capacidad (#10), Planned-vs-Actual completo, fecha futura.
 
-## Gates
-- Diff exacto revisado (2 archivos). Gate de datos de cliente: limpio. `ruff` (import-sort/linter/format):
-  OK. `mkdocs build --strict`: sin ERROR/WARNING. No aplica E2E ni suite (cambio exclusivamente documental
-  + bump).
-
-## Housekeeping pendiente (decisión del usuario)
-- `feat/change-control`: mergeada por **squash** (PR #7). `git branch --merged` no la detecta (artefacto de
-  squash); borrado local exigiría `git branch -D` (**force**, prohibido) → **no borrada**. Remota aún existe.
-- `pmo-v16.dev`: 3 filas legacy de `PMO Project Member`; limpieza one-off bloqueada por el guard (pendiente
-  de decisión). `one_offs/` y metadata legacy: **sin tocar**.
-
-## Siguiente paso
-`/ship commit` → `/ship push` → `/ship pr` (base `version-16`). Detenerse con el PR abierto y CI evaluado.
-No merge/tag/release.
+## Cuidados / no repetir
+- Git solo vía `/ship`. Nunca trabajar en `version-16`. En pmo NO se usan migration patches.
+- **pmo NO usa MkDocs** (no hay `mkdocs.yml`): no usar `mkdocs build --strict` como gate aquí.
+- `test-pmo.localhost` tiene 0 Companies → tests que requieran Company deben skip o probar la lógica pura.
+- BD / `bench migrate`: autorización explícita. Tests en `test-pmo.localhost`.

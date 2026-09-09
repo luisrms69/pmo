@@ -163,7 +163,14 @@ has_permission = {
 	"PMO Change Request": "pmo.permissions.has_permission_change_request",
 }
 
-# Fixtures: Custom Field ToDo-pmo_planned_hours + roles PMO + Custom Role de reports (P0 Inc. 4).
+# ADR-0006 D2: la Status Date (Data Date) del Project solo puede ser hoy o pasada (no futura en v0.7.0).
+doc_events = {
+	"Project": {
+		"validate": "pmo.status_date.validate_project_status_date",
+	},
+}
+
+# Fixtures: Custom Fields (Project-pmo_status_date + ToDo-pmo_planned_hours) + roles PMO + Custom Role de reports.
 # (La membresía de Project ya NO usa un Custom Field/child: se deriva de owner + DocShare + ToDo; ADR-0002.)
 # Los Custom Role restringen 3 Script Reports de ERPNext (que ignoran pqc vía get_all/db.sql) a
 # `PMO Executive Access`/`Administrator`. Viven en doctype aparte (el sync del Report no los pisa) y el
@@ -171,7 +178,7 @@ has_permission = {
 fixtures = [
 	{
 		"dt": "Custom Field",
-		"filters": [["name", "in", ["ToDo-pmo_planned_hours"]]],
+		"filters": [["name", "in", ["Project-pmo_status_date", "ToDo-pmo_planned_hours"]]],
 	},
 	{"dt": "Role", "filters": [["name", "in", ["PMO Manager", "PMO Executive Access"]]]},
 	{
