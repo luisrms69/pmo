@@ -1,6 +1,18 @@
 [
  {
   "doctype": "Custom Field",
+  "name": "Project-pmo_status_date",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_status_date",
+  "label": "PMO Status Date",
+  "fieldtype": "Date",
+  "insert_after": "expected_end_date",
+  "no_copy": 1,
+  "description": "Fecha de corte (Data Date) del control a fecha del Project (ADR-0006). Solo hoy o pasada; no admite fecha futura. Es el valor por defecto del reporte de status a fecha de corte."
+ },
+ {
+  "doctype": "Custom Field",
   "name": "ToDo-pmo_planned_hours",
   "dt": "ToDo",
   "module": "PMO",

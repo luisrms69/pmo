@@ -397,6 +397,30 @@ Builder consulta la **lista del DocType**, por lo que aplica **`permission_query
 Orden por defecto `request_date` desc, luego `priority` desc. Roles: `Projects User`, `PMO Executive
 Access`, `System Manager` (abren el reporte; las filas las restringe `pqc`). **PMO Manager** no accede.
 
+## Control a fecha de corte / Status Date (ADR-0006)
+
+- **Status Date** — Custom Field **`Project.pmo_status_date`** (Date, por **fixture**; requiere `bench
+  migrate` para sincronizar la metadata, sin data/migration patch). Es la Data Date vigente del Project.
+  Validación en `Project.validate` (`doc_events` → `pmo.status_date.validate_project_status_date`): **solo
+  `<= today`** (D2; vacío válido). Lo edita el owner (P4 write del Project).
+- **Motor** `pmo/status_date.py`: `build_status_report(project, status_date)` (**whitelisted, P4** vía
+  `has_permission("Project", "read", throw)`) compone tres planos a la fecha de corte:
+  - **Baseline** = snapshot de `get_effective_baseline(project, as_of=status_date)` (ADR-0004, sin
+    modificar 0004); None + `note` si no hay baseline vigente a la fecha.
+  - **Current** = `build_snapshot(project)` (plan de hoy; **no** reconstruye el plan histórico).
+  - **Actual** = `_actual_hours_to_date` (Timesheet, ADR-0003, docstatus=1; **SQL estática parametrizada**,
+    semgrep-safe) + `completed_on` como proxy de completitud.
+  - **Indicadores D5** (`compute_status`, pura): (1) deslizamiento de fecha final Baseline vs Current en
+    días; (2) tareas que debían estar terminadas a la fecha y no lo estaban; (3) Actual hours acumuladas;
+    (4) conteos simples (due/completadas). `is_group` excluidas.
+- **Reporte** `PMO Status Report` (`report_type = Script Report`, `is_standard = Yes`, `ref_doctype =
+  Project`, módulo PMO) en `pmo/pmo/report/pmo_status_report/`. **P4-safe por delegación**: `execute` llama a
+  `build_status_report` (que impone P4), ya que los Script Report no aplican `pqc`. Resumen = indicadores
+  D5; detalle = tareas vencidas no terminadas. Filtros `project` + `status_date` (default desde
+  `pmo_status_date`, tope `today`). Roles `Projects User` / `PMO Executive Access` / `System Manager`.
+- **Fuera (ADR-0006 D6):** EVM/forecast, CPM (#9), reservas de capacidad (#10), Planned-vs-Actual completo
+  de horas, avance % histórico y fecha futura.
+
 ## Fuera de alcance
 Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext
 ni de DocPerm de read/write; solo hooks, un child DocType propio, roles y `Custom Role` por fixture.

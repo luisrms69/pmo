@@ -1,37 +1,37 @@
 # CONTINUITY.md — pmo
 
 **Fecha:** 2026-09-08
-**Rama activa:** `docs/changelog-060-release` (base `version-16` @ v0.6.0, commit `3a6fa72`).
-**Estado:** post-release de **v0.6.0** (tag `v0.6.0` + GitHub Release publicados y alineados). Follow-up
-documental: corregir la sección `[0.6.0]` del CHANGELOG (había quedado "En preparación / no publicado") y
-bump **`__version__` → 0.6.1** (PATCH, por modificar `version-16` tras la release).
+**Rama activa:** `feat/status-date` (base `version-16` @ v0.6.1, commit `18d30c2`).
+**Ciclo:** v0.7.0 — Control a fecha de corte / Status Date (ADR-0006, **Accepted**). Cierre técnico → PR a `version-16`.
 
 ## Plan que estoy siguiendo
-Cierre correcto del ciclo post-release + fix del desfase del CHANGELOG. Un solo PR mínimo hacia `version-16`,
-**detenerse antes del merge**.
+ADR-0006 (Accepted). Entrega por bloques (1–3) completada; cierre con bump 0.7.0 + CHANGELOG → PR único.
 
-## Qué se hizo en esta rama
-- `docs/CHANGELOG.md`: sección `[0.6.0]` reescrita para reflejar la release real (fecha 2026-09-08; sin
-  "En preparación / Release no publicado / Planned"); contenido movido a Added/Changed/Removed/Docs, fiel a
-  ADR-0005 y a las release notes publicadas. Añadida entrada `[0.6.1] — 2026-09-08` (Fixed: corrección del
-  CHANGELOG). Secciones históricas (`[0.5.0]` y anteriores) intactas.
-- `pmo/__init__.py`: `__version__` 0.6.0 → **0.6.1**.
+## Qué se implementó (v0.7.0)
+- **Bloque 1** (`b4ef1d7`): Custom Field `Project.pmo_status_date` (fixture) + validación `<= today`
+  (`doc_events Project.validate`). ADR-0006 (Proposed→Accepted en el cierre).
+- **Bloque 2** (`c105794`): motor `pmo/status_date.py` — `build_status_report` (P4) compone Baseline as-of
+  + Current + Actual (Timesheet fechado + `completed_on`) + indicadores D5. `compute_status` pura.
+- **Bloque 3** (`93258df`): Script Report P4-safe `PMO Status Report` + UX (JS: default `pmo_status_date`,
+  tope `today`) + docs usuario/técnico + tests de presentación.
+- **Cierre** (este commit): ADR-0006 Accepted, `__version__` 0.6.1→0.7.0, CHANGELOG `[0.7.0]`.
 
-## SemVer
-- Base `upstream/version-16` = 0.6.0. Cambio documental sobre `version-16` post-release → regla `/ship`:
-  todo PR mergeado ≥ PATCH → objetivo **0.6.1**. Sin cambio funcional para satisfacer SemVer.
+## Validación
+- Suite completa: **205/205**. Ruff + prettier limpios. (pmo NO usa MkDocs — sin gate mkdocs.)
+- **E2E integrado en `proposals-acti.dev`** (Project+Tasks+Baseline Submitted+Timesheet Submitted):
+  D5.1=11d, D5.2=1, D5.3=12h, D5.4=1/2, futura→ValidationError, sin-baseline→note, P4 outsider→PermissionError. **PASS.**
 
-## Gates
-- Diff exacto revisado (2 archivos). Gate de datos de cliente: limpio. `ruff` (import-sort/linter/format):
-  OK. `mkdocs build --strict`: sin ERROR/WARNING. No aplica E2E ni suite (cambio exclusivamente documental
-  + bump).
-
-## Housekeeping pendiente (decisión del usuario)
-- `feat/change-control`: mergeada por **squash** (PR #7). `git branch --merged` no la detecta (artefacto de
-  squash); borrado local exigiría `git branch -D` (**force**, prohibido) → **no borrada**. Remota aún existe.
-- `pmo-v16.dev`: 3 filas legacy de `PMO Project Member`; limpieza one-off bloqueada por el guard (pendiente
-  de decisión). `one_offs/` y metadata legacy: **sin tocar**.
+## Decisiones vigentes (ADR-0006)
+- Status Date en `Project.pmo_status_date` (un valor, sin historial). Solo `<= today` en v0.7.0.
+- Baseline vigente a la fecha = `get_effective_baseline(project, status_date)`. Current = plan de hoy (no
+  reconstruye histórico). Actual = Timesheet fechado + `completed_on` (proxy). Sin % histórico.
+- Fuera: EVM/forecast, CPM (#9), reservas de capacidad (#10), Planned-vs-Actual completo, fecha futura.
 
 ## Siguiente paso
-`/ship commit` → `/ship push` → `/ship pr` (base `version-16`). Detenerse con el PR abierto y CI evaluado.
-No merge/tag/release.
+`/ship commit` (cierre) → `/ship push` → `/ship pr` a `version-16`. Detenerse con el PR abierto y CI
+evaluado. No merge/tag/release.
+
+## Cuidados / no repetir
+- Git solo vía `/ship`. Nunca trabajar en `version-16`. En pmo NO se usan migration patches.
+- pmo NO usa MkDocs. `test-pmo.localhost` tiene 0 Companies (tests que requieran Company → E2E en site con
+  Company, p. ej. `proposals-acti.dev`). BD/`bench migrate`: autorización explícita.
