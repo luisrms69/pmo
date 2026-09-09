@@ -137,7 +137,7 @@ def compute_status(baseline_snapshot, current_snapshot, actual_hours, completed_
 
 
 @frappe.whitelist()
-def build_status_report(project: str, status_date=None) -> dict:
+def build_status_report(project: str, status_date: str | None = None) -> dict:
 	"""Reporte de control a fecha de corte (ADR-0006). P4: exige READ sobre el Project.
 
 	Compone Baseline (vigente a la fecha) + Current (plan de hoy) + Actual (Timesheet a la fecha) e indicadores
