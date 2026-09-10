@@ -42,10 +42,15 @@ No hay que capturar el plan dos veces: la carga se **deriva** de lo que ya exist
 | **Comprometido (confidencial)** | Horas planificadas en proyectos que no puedes ver — **agregado, sin identidad**. |
 | **Planned total** | Suma de planificado (visible + confidencial). |
 | **Actual visible / confidencial / total** | Tiempo real (Timesheet), con el mismo criterio de privacidad. |
-| **Libre** | Availability − Planned total (negativo = sobreasignado). |
-| **Sobreasignación** | Cuánto excede el plan a la disponibilidad. |
-| **Util. planificada / real** | Planned/Availability y Actual/Availability (nunca se suman entre sí). |
+| **Libre** | Availability − Planned total (negativo = sobreasignado). **N/D** si no hay capacidad configurada. |
+| **Sobreasignación** | Cuánto excede el plan a la disponibilidad. **N/D** si no hay capacidad configurada (no se reporta como sobreasignación). |
+| **Util. planificada / real** | Planned/Availability y Actual/Availability (nunca se suman entre sí). **N/D** si no hay capacidad. |
 | **Estado** | Avisos de planificación (inconsistencias, tareas sin fechas, capacidad faltante, mapeo). |
+
+> **Capacidad faltante (importante):** si una persona **no tiene capacidad configurada** para el periodo,
+> las columnas derivadas (Availability, Libre, Sobreasignación, Utilización) aparecen **vacías / N/D**, **no
+> como 0**. Así **no** se marca como "sobreasignada" solo por faltar su capacidad. Esas personas se cuentan en
+> el KPI **"Recursos sin capacidad vigente"** del resumen y quedan señaladas con estado *capacidad faltante*.
 
 ## Privacidad (qué ve cada quien)
 
@@ -104,5 +109,7 @@ que no te corresponde. Estas vistas muestran **solo lo planificado** (no el tiem
 - Solo cuentan como carga las Tasks **en curso** (Open, Working, Pending Review, Overdue). Las
   **Completadas** ya no son plan pendiente (su tiempo real se ve en *Actual*).
 - Una Task **sin fechas** no puede ubicarse en el calendario: sus horas se reportan como *sin fechas*.
-- Si una persona no tiene capacidad configurada, se marca **capacidad faltante** (no se asume un valor).
+- Si una persona no tiene capacidad configurada, se marca **capacidad faltante**: sus métricas derivadas
+  quedan **N/D** (no 0) y **no** cuenta como sobreasignada. El resumen indica cuántos **recursos sin
+  capacidad vigente** hay para que se configure su capacidad.
 - **HRMS es opcional**: si está instalado, las ausencias aprobadas reducen la disponibilidad.

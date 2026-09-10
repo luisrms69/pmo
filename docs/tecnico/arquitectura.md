@@ -146,6 +146,17 @@ de asignaciones. Decisiones en `docs/adr/0003-resource-capacity.md`; uso en `doc
 - Infra interna (no whitelisted): `get_planned_load_by_project`, `get_actual_by_project`,
   `permissions.is_project_visible`.
 
+#### Confiabilidad ante capacidad faltante (ADR-0010, v0.11.0)
+- **A — señal honesta:** por fila se marca `has_cap` = si **algún** día del periodo tiene capacidad resoluble
+  (`get_capacity` ≠ None). Si no hay capacidad en el periodo, `capacity`/`availability`/`free`/
+  `overallocation`/`util_planned`/`util_actual` = **`None`** (no 0) → no se reporta sobreasignación falsa; el
+  `Estado` conserva "capacidad faltante". Días sin capacidad en un periodo **parcialmente** configurado
+  aportan 0 de disponibilidad real (comportamiento vigente). El `chart` coacciona `None → 0` solo para render.
+- **B — cobertura:** `report_summary` agrega **"Recursos sin capacidad vigente"** = Employees **con actividad**
+  en el periodo cuya capacidad es no resoluble en todas sus filas; *Sobreasignados* ignora `None` (solo
+  sobreasignación real). Deriva de `data` ya scoped; sin modelo nuevo ni esquema. Solo capa de reporte
+  (`pmo/pmo/report/pmo_capacity_planning`); `capacity.py`/`availability.py`/`planned_load.py` sin cambios.
+
 ### Vistas (reportes + Workspace) — estilo MS Project
 Todo sobre el motor derivado (no recalcula); enmascarado P4 dentro de `execute()`:
 - **`PMO Capacity Planning`** (extendido): `Day/Week/Month/Total` (Total = Centro de recursos),

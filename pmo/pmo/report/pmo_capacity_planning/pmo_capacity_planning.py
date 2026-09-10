@@ -131,8 +131,11 @@ def _employee_rows(emp, observer, from_date, to_date, granularity):
 		avail = get_availability(emp, day)
 		bucket = buckets.setdefault(
 			_bucket_key(day, granularity),
-			{"cap": 0.0, "avail": 0.0, "pv": 0.0, "pc": 0.0, "av": 0.0, "ac": 0.0},
+			{"cap": 0.0, "avail": 0.0, "pv": 0.0, "pc": 0.0, "av": 0.0, "ac": 0.0, "has_cap": False},
 		)
+		# ADR-0010 D1: marca si ALGÚN día del periodo tiene capacidad resoluble; si ninguno, las métricas
+		# derivadas quedan None (no 0) para no reportar sobreasignación falsa por capacidad sin configurar.
+		bucket["has_cap"] = bucket["has_cap"] or (cap is not None)
 		bucket["cap"] += flt(cap) if cap is not None else 0
 		bucket["avail"] += flt(avail) if avail is not None else 0
 		bucket["pv"] += pv
@@ -153,14 +156,17 @@ def _employee_rows(emp, observer, from_date, to_date, granularity):
 		b = buckets[key]
 		planned_total = flt(b["pv"] + b["pc"], 2)
 		actual_total = flt(b["av"] + b["ac"], 2)
-		avail = flt(b["avail"], 2)
+		# ADR-0010 D1: sin capacidad configurada en el periodo → availability/free/overallocation/util = None
+		# (no derivables). No es 0 ni sobreasignación; el recurso queda marcado como "capacidad faltante".
+		has_cap = b["has_cap"]
+		avail = flt(b["avail"], 2) if has_cap else None
 		rows.append(
 			{
 				"employee": emp,
 				"designation": designation,
 				"department": department,
 				"period": _period_label(key, granularity),
-				"capacity": flt(b["cap"], 2),
+				"capacity": flt(b["cap"], 2) if has_cap else None,
 				"availability": avail,
 				"planned_visible": flt(b["pv"], 2),
 				"confidential": flt(b["pc"], 2),
@@ -168,10 +174,10 @@ def _employee_rows(emp, observer, from_date, to_date, granularity):
 				"actual_visible": flt(b["av"], 2),
 				"actual_confidential": flt(b["ac"], 2),
 				"actual_total": actual_total,
-				"free": flt(avail - planned_total, 2),
-				"overallocation": flt(max(0.0, planned_total - avail), 2),
-				"util_planned": flt(planned_total / avail * 100, 1) if avail > 0 else None,
-				"util_actual": flt(actual_total / avail * 100, 1) if avail > 0 else None,
+				"free": flt(avail - planned_total, 2) if has_cap else None,
+				"overallocation": flt(max(0.0, planned_total - avail), 2) if has_cap else None,
+				"util_planned": flt(planned_total / avail * 100, 1) if (has_cap and avail > 0) else None,
+				"util_actual": flt(actual_total / avail * 100, 1) if (has_cap and avail > 0) else None,
 				"status": status,
 			}
 		)
@@ -234,7 +240,7 @@ def _build_chart(data, filters):
 
 	if filters.get("employee"):
 		labels = [row["period"] for row in data]
-		availability = [row["availability"] for row in data]
+		availability = [flt(row["availability"]) for row in data]  # ADR-0010: None -> 0 solo para el gráfico
 		planned = [row["planned_total"] for row in data]
 	else:
 		# agregar todo el rango por Employee (una barra por persona → vista Centro de recursos)
@@ -270,7 +276,18 @@ def _build_summary(data):
 		return []
 
 	employees = {row["employee"] for row in data}
-	overallocated = {row["employee"] for row in data if flt(row["overallocation"]) > 0}
+	# ADR-0010 D1: solo cuenta sobreasignación REAL (con capacidad presente); None no es sobreasignación.
+	overallocated = {
+		row["employee"] for row in data if row["overallocation"] is not None and row["overallocation"] > 0
+	}
+	# ADR-0010 D2: recursos con actividad pero SIN capacidad vigente en el periodo (availability None en
+	# todas sus filas). Reutiliza el scope/permisos ya aplicados a `data` (no crea modelo nuevo).
+	emp_has_capacity = {}
+	for row in data:
+		emp_has_capacity[row["employee"]] = emp_has_capacity.get(row["employee"], False) or (
+			row["availability"] is not None
+		)
+	without_capacity = {emp for emp, has in emp_has_capacity.items() if not has}
 	total_availability = sum(flt(row["availability"]) for row in data)
 	total_planned = sum(flt(row["planned_total"]) for row in data)
 	utilization = flt(total_planned / total_availability * 100, 1) if total_availability > 0 else 0.0
@@ -282,6 +299,12 @@ def _build_summary(data):
 			"label": frappe._("Sobreasignados"),
 			"datatype": "Int",
 			"indicator": "Red" if overallocated else "Green",
+		},
+		{
+			"value": len(without_capacity),
+			"label": frappe._("Recursos sin capacidad vigente"),
+			"datatype": "Int",
+			"indicator": "Orange" if without_capacity else "Green",
 		},
 		{"value": utilization, "label": frappe._("Utilización planificada media"), "datatype": "Percent"},
 	]
