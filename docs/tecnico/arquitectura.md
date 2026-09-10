@@ -516,6 +516,22 @@ entrega armados por Project/Task. **Sin** motor nuevo, DocType, Custom Field ni 
   end-to-end; P4 bloquea a no-miembros). `test_control_workspace.py`: existencia, 4 shortcuts, roles, sin
   métricas cacheadas, y `PMO Capacity` intacto.
 
+## PMO Portfolio — salud multi-proyecto (v0.12.0)
+Script Report P4-safe de **consumo**: una fila por Project visible al observador. **No** introduce motor:
+- Salud de cronograma por proyecto = `build_status_report` (ADR-0006/0009) — impone P4 (READ del Project) y
+  compone Baseline/forecast/desviaciones. `status_date` = `Project.pmo_status_date` o **hoy** (pasada como
+  `str`, porque `build_status_report` es whitelisted con type-check).
+- Esfuerzo = Σ `Task.expected_time` vs `Task.actual_time` de Tasks hoja (semántica nativa ADR-0008), sin
+  duplicar el reporte por Task.
+- **P4:** `_visible_projects` lista solo proyectos legibles — executive/Administrator (`_is_global_reader`) →
+  todos; normal → `_member_projects_subquery` (owner + DocShare-read). Cada `build_status_report` se envuelve
+  en `try/except PermissionError` (defensa en profundidad: un proyecto no legible se **omite**, no rompe el
+  dashboard).
+- **Salud** (`_health`): `Desviado` si slip-vs-compromiso>0 o vencidas>0 o forecast-excede-compromiso>0;
+  `En riesgo` si slip-vs-baseline>0; `En plan` en otro caso (adelantos no penalizan). Excluye Cancelled
+  siempre y Completed salvo `include_completed`. Roles: Projects User / PMO Manager / PMO Executive Access /
+  System Manager. Tests: `test_portfolio.py`. El detalle por proyecto sigue en Status Report / Planned vs Actual.
+
 ## Fuera de alcance
 Planificado vs Real (ADR-0008): sin EVM (EV/PV/AC), CPI/SPI, forecast (EAC/ETC), planned time-phased/BCWS,
 ni Baseline como fuente del plan; el Workspace de control no añade Number Cards ni charts.

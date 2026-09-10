@@ -23,12 +23,18 @@ Guardarraíles: P4; nativo primero; sin motores paralelos; sin tocar #9/#10/cons
     observador; sin Project/Task). `pmo_capacity.js` (default from_date + intro). Docs usuario+arquitectura.
   - migrate en test-pmo OK (report registrado); smoke `execute()` OK. Tests `test_resource_capacity.py` (7).
     **Suite 244/244**, sin regresión Capacity/Availability.
-- **Commits #2–#5: pendientes** (en orden).
+- **Commit #2 — Portafolio multi-proyecto. ✅ (commit en curso)**
+  - Report `PMO Portfolio`: fila por Project visible (salud En plan/En riesgo/Desviado, forecast, slips,
+    vencidas, forecast>compromiso, Planned/Actual/%); reusa `build_status_report` (P4) + suma esfuerzo nativa.
+    `try/except PermissionError` por proyecto. Filtros Company + Incluir completados. Docs usuario+arquitectura.
+  - migrate en test-pmo OK (registrado); smoke `execute()` OK. Tests `test_portfolio.py` (7). **Suite 251/251**.
+- **Commits #3–#5: pendientes** (en orden).
 
 ## Siguiente paso
-Tras commit #1 → **Commit #2 (Portafolio multi-proyecto)**: agregación P4 de indicadores por Project ya
-existentes (Status/Planned-vs-Actual/forecast), sin motor nuevo. Diseño mínimo → implementar → tests →
-reportar → autorización de commit.
+**Commit #3 — Status Report presentable.** ANTES de diseñar: localizar y revisar el Print Format de proyecto
+existente en `frappe-infrastructure` (con gráficos, aún sin PMO); reportar qué reutilizar y cómo integrar PMO
+(Status Date, Baseline, forecast vigente, fecha comprometida, desviaciones) ANTES de implementar. Objetivo:
+salida por Project imprimible/PDF para stakeholder.
 No push/PR/release hasta terminar los 5 commits.
 
 ## Cuidados / no repetir
