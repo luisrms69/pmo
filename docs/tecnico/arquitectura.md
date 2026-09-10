@@ -221,10 +221,19 @@ Decisión de diseño tomada en el cierre de esta etapa (2026-09-05), **no implem
 - El motor ya expone `Actual` (`get_actual`, `get_actual_by_project`) y el reporte `PMO Capacity Planning`
   ya calcula `actual_*` server-side con P4 — la base existe; solo falta la vista y sus indicadores.
 
+### Reporte `PMO Resource Capacity` (Script Report, cobertura/mantenimiento — v0.12.0)
+Vista de **configuración** de capacidad (no de carga): por recurso, capacidad efectiva a `as_of`, **origen**
+(`Override`/`Global`/`Faltante`) y `from_date` vigente. Reutiliza la **resolución única**
+`pmo.capacity.get_capacity_detail(employee, date)` → `{hours, origin, from_date}` (nuevo; `get_capacity`
+pasa a ser wrapper, sin cambio de comportamiento) — no reimplementa la regla override/global (ADR-0003 D1).
+Tiering de observador propio (normal→su Employee; manager/executive→activos, filtros Employee/Departamento);
+**no** expone Project/Task (identidad organizacional + capacidad). Ergonomía de captura en `pmo_capacity.js`
+(default `from_date`=hoy + intro). Tests: `test_resource_capacity.py`.
+
 ### Objetos nuevos / wiring
 - **DocType** `PMO Capacity`. **Custom Field** `ToDo-pmo_planned_hours` (Float, opcional; fixture).
-- **Reports** `PMO Capacity Planning`, `PMO Resource Usage by Project`, `PMO Work by Resource`;
-  **Workspace** `PMO Capacity`. **DocPerm** `report` en PMO Capacity para Employee/Executive.
+- **Reports** `PMO Capacity Planning`, `PMO Resource Usage by Project`, `PMO Work by Resource`,
+  `PMO Resource Capacity`; **Workspace** `PMO Capacity`. **DocPerm** `report` en PMO Capacity para Employee/Executive.
 - Helpers internos: `get_planned_load_by_project|task`, `get_actual_by_project`,
   `permissions.is_project_visible`, `permissions.is_task_visible`.
 - **Page** `capacity_planning` + endpoint `pmo.capacity_page.get_resources` (ver subsección Page).
