@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-09
 **Rama activa:** `feat/planned-vs-actual` (base `version-16` @ v0.8.0, commit `eb4e897`).
-**Ciclo:** v0.9.0 — Planificado vs Real (ADR-0008, Proposed). Bump `__version__ → 0.9.0` incluido.
+**Ciclo:** v0.9.0 — Planificado vs Real (ADR-0008, **Accepted** 2026-09-09). Bump `__version__ → 0.9.0` incluido.
 
 ## Plan que estoy siguiendo
 ADR-0008 (capacidad de **reporting**, no planificación): poner lado a lado esfuerzo Planned vs Actual por

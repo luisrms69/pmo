@@ -1,6 +1,19 @@
 # ADR-0008: Planificado vs Real — reporte de esfuerzo visible desde PMO
 
-**App:** pmo · **Rama protegida:** version-16 · **Estado:** Proposed · **Ciclo:** v0.9.0
+**App:** pmo · **Rama protegida:** version-16 · **Estado:** Accepted · **Ciclo:** v0.9.0
+
+## Aceptación (2026-09-09)
+
+Implementado en v0.9.0 sin desviaciones respecto de D1–D5. **Bloque 1:** Script Report `PMO Planned vs Actual`
+(D1) con Planned=`Task.expected_time` y Actual nativo o `as-of` por Timesheet (D2), P4 impuesto en `execute()`
+y `status_date` con default `pmo_status_date` (D3); helpers `get_actual_hours_asof`/`get_actual_hours_by_task_asof`
+en `pmo/actual.py` con corte inclusivo hasta el fin del día (`date(from_time) <= status_date`), `docstatus=1`,
+SQL estática parametrizada. **Bloque 2:** Workspace público `PMO Control` con shortcuts a los 4 reportes de
+control (D4), `PMO Capacity` intacto, sin Number Cards ni charts. Sin motor, DocTypes, Custom Fields ni cambios
+a Baseline — `snapshot_schema_version` sigue en 1 (D5). Verificado con `bench migrate` en `test-pmo.localhost`
+(exit 0; Report y Workspace sincronizados) y suite **227/227** (incluye corte `as-of`, `execute()` end-to-end y
+P4). Fuera de alcance (EVM, CPI/SPI, forecast, time-phased/BCWS, CPM #9, reservas #10, constraints/deadlines,
+Number Cards/charts) sin cambios.
 
 ## Contexto
 
