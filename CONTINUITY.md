@@ -41,8 +41,9 @@ Project/Task con datos ya nativos. Entrega en 2 bloques → PR único a `version
   fuente del plan, CPM (#9), reservas de capacidad (#10), constraints/deadlines, Number Cards/charts.
 
 ## Siguiente paso
-Bloques 1 y 2 commiteados en `feat/planned-vs-actual`. Falta: `/ship push` → `/ship pr` (base `version-16`)
-→ tras merge, `/ship release` v0.9.0. Sin push/PR/release aún (pendiente de autorización).
+**PR #13** abierto contra `version-16` (https://github.com/luisrms69/pmo/pull/13). Bloques 1+2 y cierre
+documental (ADR-0008 Accepted) pusheados. Esperando CI. Tras merge (lo hace el usuario en GitHub):
+`/sync-check` → `/ship release` v0.9.0 (tag + GitHub Release). Sin merge/tag/release aún.
 
 ## Cuidados / no repetir
 - La suite corre en **dos lotes** (integración + unitarios): `Ran 194...OK` + `Ran 25...OK` = 222. No leer
