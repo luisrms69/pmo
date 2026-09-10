@@ -91,43 +91,118 @@ def _completed_on_map(task_names: list) -> dict:
 	return {r.name: r.completed_on for r in rows}
 
 
-def compute_status(baseline_snapshot, current_snapshot, actual_hours, completed_on_map, status_date) -> dict:
-	"""Composición pura de los indicadores D5 (sin acceso a BD; testeable en aislamiento).
+def _current_task_map(project: str) -> dict:
+	"""{task: {exp_end_date, pmo_deadline, is_group}} del plan VIGENTE (forecast) por Task (ADR-0009).
 
-	`baseline_snapshot` puede ser None (sin baseline vigente a la fecha)."""
+	`exp_end_date` es el forecast nativo de ERPNext; `pmo_deadline` la fecha comprometida (ADR-0007)."""
+	rows = frappe.get_all(
+		"Task",
+		filters={"project": project},
+		fields=["name", "exp_end_date", "pmo_deadline", "is_group"],
+	)
+	return {
+		r.name: {
+			"exp_end_date": r.exp_end_date,
+			"pmo_deadline": r.pmo_deadline,
+			"is_group": int(r.is_group or 0),
+		}
+		for r in rows
+	}
+
+
+def compute_status(
+	baseline_snapshot,
+	current_snapshot,
+	actual_hours,
+	completed_on_map,
+	status_date,
+	committed_end_date=None,
+	current_task_map=None,
+) -> dict:
+	"""Composición pura de los indicadores (sin acceso a BD; testeable en aislamiento).
+
+	`baseline_snapshot` puede ser None (sin baseline vigente a la fecha). ADR-0009 agrega, de forma opcional
+	y retrocompatible:
+	- `committed_end_date`: `Project.pmo_committed_end_date` (fecha o None) para la desviación vs compromiso;
+	- `current_task_map`: {task_name: {"exp_end_date", "pmo_deadline", "is_group"}} con el plan vigente por
+	  Task (forecast) + su fecha comprometida.
+	"""
 	sd = getdate(status_date)
+	current_task_map = current_task_map or {}
+
+	c_end = (current_snapshot.get("project") or {}).get("expected_end_date")
 
 	# D5.1 — deslizamiento de fecha final Baseline vs Current (días).
 	final_date_slip_days = None
 	if baseline_snapshot:
 		b_end = (baseline_snapshot.get("project") or {}).get("expected_end_date")
-		c_end = (current_snapshot.get("project") or {}).get("expected_end_date")
 		if b_end and c_end:
 			final_date_slip_days = (getdate(c_end) - getdate(b_end)).days
 
+	# ADR-0009 D2 — desviación Project: Current/Forecast End vs fecha comprometida (positivo = excede).
+	slip_vs_committed_days = None
+	if c_end and committed_end_date:
+		slip_vs_committed_days = (getdate(c_end) - getdate(committed_end_date)).days
+
+	# ADR-0009 D2 — conteo de Tasks (no grupo) cuyo forecast (exp_end_date) excede su pmo_deadline.
+	# NO es "vencida": puede ser fecha futura con incumplimiento ya proyectado.
+	forecast_exceeds_commitment = 0
+	for cur in current_task_map.values():
+		if cur.get("is_group"):
+			continue
+		fc, dl = cur.get("exp_end_date"), cur.get("pmo_deadline")
+		if fc and dl and getdate(fc) > getdate(dl):
+			forecast_exceeds_commitment += 1
+
 	# D5.2 / D5.4 — tareas que debían estar terminadas a la fecha (baseline) y su completitud real.
+	# ADR-0009 D2 — además, una sola tabla ampliada por Task (con baseline): forecast/slip/deadline/vencida.
 	due_by_cutoff = 0
 	completed_by_cutoff = 0
 	overdue = []
+	tasks_vs_baseline = []
 	if baseline_snapshot:
 		for t in baseline_snapshot.get("tasks", []):
 			if t.get("is_group"):
 				continue  # las summary no son trabajo entregable
 			b_end = t.get("exp_end_date")
-			if not b_end or getdate(b_end) > sd:
-				continue  # no debía estar terminada a la fecha
-			due_by_cutoff += 1
+			if not b_end:
+				continue  # sin fecha baseline no hay slip que medir
+			cur = current_task_map.get(t["name"], {})
+			cur_end = cur.get("exp_end_date")
 			done_on = completed_on_map.get(t["name"])
-			if done_on and getdate(done_on) <= sd:
-				completed_by_cutoff += 1
-			else:
-				overdue.append(
-					{"name": t["name"], "subject": t.get("subject"), "baseline_exp_end_date": b_end}
-				)
+			completed_at_sd = bool(done_on and getdate(done_on) <= sd)
+			overdue_at_sd = getdate(b_end) <= sd and not completed_at_sd
+
+			if getdate(b_end) <= sd:
+				due_by_cutoff += 1
+				if completed_at_sd:
+					completed_by_cutoff += 1
+				else:
+					overdue.append(
+						{"name": t["name"], "subject": t.get("subject"), "baseline_exp_end_date": b_end}
+					)
+
+			tasks_vs_baseline.append(
+				{
+					"name": t["name"],
+					"subject": t.get("subject"),
+					"baseline_exp_end_date": b_end,
+					"current_exp_end_date": str(getdate(cur_end)) if cur_end else None,
+					"slip_days": (getdate(cur_end) - getdate(b_end)).days if cur_end else None,
+					"pmo_deadline": str(getdate(cur.get("pmo_deadline")))
+					if cur.get("pmo_deadline")
+					else None,
+					"overdue_at_status_date": overdue_at_sd,
+					"completed_at_status_date": completed_at_sd,
+				}
+			)
 
 	return {
 		"final_date_slip_days": final_date_slip_days,
+		"slip_vs_committed_days": slip_vs_committed_days,
+		"forecast_exceeds_commitment": {"count": forecast_exceeds_commitment},
 		"tasks_overdue_at_cutoff": {"count": len(overdue), "tasks": overdue},
+		"tasks_vs_baseline": tasks_vs_baseline,
 		"actual_hours_to_date": flt(actual_hours, 2),
 		"counts": {
 			"baseline_due_by_cutoff": due_by_cutoff,
@@ -172,13 +247,26 @@ def build_status_report(project: str, status_date: str | None = None) -> dict:
 		names = [t["name"] for t in baseline_snapshot.get("tasks", []) if not t.get("is_group")]
 		completed_map = _completed_on_map(names)
 
-	indicators = compute_status(baseline_snapshot, current_snapshot, actual_hours, completed_map, sd)
+	# ADR-0009: fecha comprometida del Project (ADR-0007) + plan vigente por Task (forecast + deadline).
+	committed_end_date = frappe.db.get_value("Project", project, "pmo_committed_end_date")
+	current_task_map = _current_task_map(project)
+
+	indicators = compute_status(
+		baseline_snapshot,
+		current_snapshot,
+		actual_hours,
+		completed_map,
+		sd,
+		committed_end_date=committed_end_date,
+		current_task_map=current_task_map,
+	)
 
 	return {
 		"project": project,
 		"status_date": str(sd),
 		"baseline": baseline_meta,
 		"current": {"expected_end_date": (current_snapshot.get("project") or {}).get("expected_end_date")},
+		"committed_end_date": str(getdate(committed_end_date)) if committed_end_date else None,
 		"note": note,
 		"indicators": indicators,
 	}
