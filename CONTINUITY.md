@@ -46,8 +46,8 @@ Guardarraíles: P4; nativo primero; sin motores paralelos; sin tocar #9/#10/cons
 - **Commit release-prep — bump 0.11.0 → 0.12.0 + CHANGELOG [0.12.0]. ✅ (commit en curso)**
 
 ## Siguiente paso
-Ronda de 5 commits + prep completa. Se ejecuta `/ship push` → `/ship pr` (base `version-16`, v0.12.0 MINOR).
-Tras merge (usuario): `/sync-check` → `/ship release` v0.12.0. No merge/tag/release por Claude.
+**PR #16** abierto contra `version-16` (https://github.com/luisrms69/pmo/pull/16), v0.12.0 MINOR. Esperando
+CI. Tras merge (lo hace el usuario): `/sync-check` → `/ship release` v0.12.0. No merge/tag/release por Claude.
 
 ## Cuidados / no repetir
 - La suite corre en dos lotes (integración + unitarios); no leer solo el último "Ran N".
