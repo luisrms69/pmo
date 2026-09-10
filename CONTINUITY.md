@@ -43,10 +43,11 @@ Guardarraíles: P4; nativo primero; sin motores paralelos; sin tocar #9/#10/cons
     config. Sin charts/number_cards. `PMO Capacity`/`PMO Control` intactos (regression test). migrate OK.
     Tests `test_pmo_workspace.py` (5). **Suite 260/260 (+1 skip PDF)**.
 
+- **Commit release-prep — bump 0.11.0 → 0.12.0 + CHANGELOG [0.12.0]. ✅ (commit en curso)**
+
 ## Siguiente paso
-**Ronda de 5 commits COMPLETA.** Falta bump `__version__ → 0.12.0` (aún en 0.11.0) antes del PR, docs de
-release, y `/ship push` → `/ship pr` (base `version-16`). El bump lo aplico en el paso de PR-ready (un solo
-bump por PR). No push/PR/release aún.
+Ronda de 5 commits + prep completa. Se ejecuta `/ship push` → `/ship pr` (base `version-16`, v0.12.0 MINOR).
+Tras merge (usuario): `/sync-check` → `/ship release` v0.12.0. No merge/tag/release por Claude.
 
 ## Cuidados / no repetir
 - La suite corre en dos lotes (integración + unitarios); no leer solo el último "Ran N".
