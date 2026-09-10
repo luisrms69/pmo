@@ -1,6 +1,18 @@
 # ADR-0009: Forecast vigente y desviaciones
 
-**App:** pmo · **Rama protegida:** version-16 · **Estado:** Proposed · **Ciclo:** v0.10.0
+**App:** pmo · **Rama protegida:** version-16 · **Estado:** Accepted · **Ciclo:** v0.10.0
+
+## Aceptación (2026-09-09)
+
+Implementado en v0.10.0 sin desviaciones respecto de D1–D5. **Bloque 1 (motor):** `compute_status` /
+`build_status_report` (ADR-0006) amplían, de forma retrocompatible (la firma de 5 args sigue válida), con
+`slip_vs_committed_days` (D2), `forecast_exceeds_commitment` (D2, distinto de vencida — D3), `tasks_vs_baseline`
+(tabla única por Task, D2) y `committed_end_date`; el forecast vigente es `expected_end_date` (D1), sin segundo
+motor. **Bloque 2 (presentación):** `PMO Status Report` muestra la tabla única (baseline/forecast/slip/deadline/
+vencida, ordenada por slip) y las tarjetas de forecast vigente + desviaciones vs Baseline y vs compromiso;
+`tasks_overdue_at_cutoff` se mantiene diferenciado (D3). **`PMO Planned vs Actual` intacto** (D4): sin ETC/EAC
+ni forecast por `progress`. Sin DocTypes/Custom Fields/esquema — `snapshot_schema_version` sigue en 1 (D5).
+Verificado con suite completa y sin regresión en Status Date/Status Report.
 
 ## Contexto
 

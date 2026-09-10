@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-09
 **Rama activa:** `feat/forecast-deviations` (base `version-16` @ v0.9.0, commit `063c7b5`).
-**Ciclo:** v0.10.0 — Forecast vigente y desviaciones (ADR-0009, Proposed). Bump a 0.10.0 pendiente (Bloque 2).
+**Ciclo:** v0.10.0 — Forecast vigente y desviaciones (ADR-0009, **Accepted**). Bump a 0.10.0 incluido.
 
 ## Plan que estoy siguiendo
 ADR-0009: el forecast vigente es el plan vivo de ERPNext (`expected_end_date`/`exp_end_date`); PMO **no**
@@ -22,7 +22,12 @@ crea un segundo motor predictivo, solo agrega señales de desviación. Entrega e
   - Preservado sin cambios: `final_date_slip_days`, `tasks_overdue_at_cutoff`, `counts`, `actual_hours_to_date`.
   - Tests `test_forecast_deviations.py` (6). Sin regresión (status_date 10/10, status_report 4/4).
     **Suite 233/233.**
-- **Bloque 2 — presentación + docs + bump. ⏳ pendiente (siguiente paso inmediato).**
+- **Bloque 2 — presentación + docs + bump. ✅ (commit en curso)**
+  - `PMO Status Report`: `_columns`/`_rows`/`_summary` ampliados — tabla única por Task (baseline/forecast/
+    slip/deadline/vencida, orden por slip desc) + tarjetas de forecast vigente y desviaciones vs Baseline y
+    vs compromiso. `PMO Planned vs Actual` intacto. No requiere migrate (lógica del Script Report, no fixture).
+  - ADR-0009 → Accepted; docs usuario/arquitectura/CHANGELOG; bump 0.9.0 → 0.10.0.
+  - Suite 233/233; presentación 4/4.
 
 ## Alcance / límites (ADR-0009)
 - Sin DocTypes/Custom Fields/esquema (`snapshot_schema_version` = 1). Sin patch. `PMO Planned vs Actual`
@@ -31,9 +36,8 @@ crea un segundo motor predictivo, solo agrega señales de desviación. Entrega e
   segunda fecha final calculada.
 
 ## Siguiente paso
-Bloque 2: actualizar `pmo/pmo/report/pmo_status_report` (`_columns`/`_rows`/`_summary`) para la tabla ampliada
-y las tarjetas de desviación; docs usuario/arquitectura; CHANGELOG `[0.10.0]`; ADR-0009 → Accepted; bump
-`0.9.0 → 0.10.0`. Reportar antes del commit. Sin push/PR/release aún.
+Bloques 1 y 2 commiteados en `feat/forecast-deviations`. Falta: `/ship push` → `/ship pr` (base `version-16`)
+→ esperar CI. Tras merge (usuario): `/sync-check` → `/ship release` v0.10.0. Sin push/PR/release aún.
 
 ## Cuidados / no repetir
 - La suite corre en dos lotes (integración + unitarios); no leer solo el último "Ran N" con `tail`.
