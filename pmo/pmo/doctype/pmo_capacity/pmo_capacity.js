@@ -13,9 +13,7 @@ frappe.ui.form.on("PMO Capacity", {
 	refresh(frm) {
 		frm.set_intro(
 			__(
-				"Capacidad efectivo-datada: Employee vacío = baseline global; con Employee = override individual. " +
-					"Rige desde From Date hasta que otra fila del mismo tipo la reemplace. Sin fila vigente, el recurso " +
-					"queda como capacidad faltante (no se asume ningún valor)."
+				"Capacidad efectivo-datada: Employee vacío = baseline global; con Employee = override individual. Rige desde From Date hasta que otra fila del mismo tipo la reemplace. Sin fila vigente, el recurso queda como capacidad faltante (no se asume ningún valor)."
 			),
 			"blue"
 		);
