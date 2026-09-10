@@ -1,6 +1,16 @@
 # ADR-0010: Confiabilidad de Capacity Planning — señal honesta y cobertura
 
-**App:** pmo · **Rama protegida:** version-16 · **Estado:** Proposed · **Ciclo:** v0.11.0 (último funcional antes de la revisión global)
+**App:** pmo · **Rama protegida:** version-16 · **Estado:** Accepted · **Ciclo:** v0.11.0 (último funcional antes de la revisión global)
+
+## Aceptación (2026-09-09)
+
+Implementado en v0.11.0 sin desviaciones respecto de D1–D3. **A:** `PMO Capacity Planning` marca `has_cap` por
+fila; sin capacidad vigente → `capacity/availability/free/overallocation/util_*` = `None` (no 0), no cuenta
+como sobreasignado y conserva `status="capacidad faltante"`; chart blindado ante `None`. **B:** KPI "Recursos
+sin capacidad vigente" (recursos con actividad sin capacidad) y *Sobreasignados* ignora `None`. Solo capa de
+reporte: sin DocTypes/Custom Fields/fixtures, sin cambios a `capacity.py`/`availability.py`/`planned_load.py`,
+ADR-0003 sin modificar; no requiere `bench migrate`. C (Tentativo/Confirmado) y demás pendientes quedan en
+`docs/roadmap.md` para la revisión global. Verificado: capacity report 17/17, suite 237/237.
 
 ## Contexto
 

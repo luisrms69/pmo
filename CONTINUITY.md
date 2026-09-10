@@ -2,8 +2,8 @@
 
 **Fecha:** 2026-09-09
 **Rama activa:** `feat/capacity-reliability` (base `version-16` @ v0.10.0, commit `8218a31`).
-**Ciclo:** v0.11.0 — Confiabilidad de Capacity Planning (ADR-0010, Proposed). **Último ciclo funcional** de
-la ronda; después → **revisión global de producto** (no otro ciclo automático).
+**Ciclo:** v0.11.0 — Confiabilidad de Capacity Planning (ADR-0010, **Accepted**). Bump a 0.11.0 incluido.
+**Último ciclo funcional** de la ronda; después → **revisión global de producto** (no otro ciclo automático).
 
 ## Plan que estoy siguiendo
 ADR-0010 (A+B), solo capa de reporte, sin esquema:
@@ -19,7 +19,9 @@ Entrega en 2 bloques → PR único a `version-16`.
   - `docs/roadmap.md`: backlog durable (6 pendientes + revisión global; referencia #9/#10).
   - ADR-0010 Proposed. Tests: +1 integración (sin capacidad → None) + clase pura (3). **Suite 237/237**;
     capacity report 17/17.
-- **Bloque 2 — docs + bump + ADR Accepted. ⏳ pendiente (siguiente paso inmediato).**
+- **Bloque 2 — docs + bump + ADR Accepted. ✅ (commit en curso)**
+  - ADR-0010 → Accepted; docs usuario (N/D + KPI cobertura) + arquitectura (subsección ADR-0010) + CHANGELOG
+    `[0.11.0]`; bump 0.10.0 → 0.11.0. Sin funcionalidad nueva. Suite 237/237.
 
 ## Backlog diferido (docs/roadmap.md) — para la revisión global
 1. Tentativo/Confirmado (posible `ToDo.pmo_commitment`) — sin issue, decidir forma en revisión global.
@@ -31,8 +33,9 @@ Entrega en 2 bloques → PR único a `version-16`.
   `capacity.py`/`availability.py`/`planned_load.py`. ADR-0003 sin modificar. No requiere migrate. C diferido.
 
 ## Siguiente paso
-Bloque 2: docs usuario (capacity-planning.md) + arquitectura + CHANGELOG `[0.11.0]` + bump 0.10.0→0.11.0 +
-ADR-0010 Accepted. Reportar antes del commit. Sin push/PR/release aún. Tras liberar v0.11.0: **revisión global**.
+Bloques 1 y 2 commiteados. Falta: `/ship push` → `/ship pr` (base `version-16`) → CI. Tras merge (usuario):
+`/sync-check` → `/ship release` v0.11.0. **Tras liberar: DETENER — revisión global de producto** (priorizar
+`docs/roadmap.md`), no iniciar otro ciclo automáticamente.
 
 ## Cuidados / no repetir
 - La suite corre en dos lotes (integración + unitarios); no leer solo el último "Ran N".

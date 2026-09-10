@@ -1,5 +1,28 @@
 # Changelog — pmo
 
+## [0.11.0] — 2026-09-09
+
+Confiabilidad de Capacity Planning (ADR-0010, Accepted): señal de sobreasignación honesta y visibilidad de
+cobertura de capacidad. Solo capa de reporte; sin esquema. **Último ciclo funcional** de la ronda; después,
+revisión global de producto (backlog en `docs/roadmap.md`).
+
+### Changed
+- **`PMO Capacity Planning` — señal honesta (A):** si un recurso no tiene `PMO Capacity` vigente en el
+  periodo, `capacity`/`availability`/`free`/`overallocation`/`util_planned`/`util_actual` quedan en **`None`**
+  (no 0); ya **no** se marca como sobreasignado por falta de capacidad (conserva `status="capacidad faltante"`).
+- **KPI *Sobreasignados*** ahora cuenta solo sobreasignación **real** (con capacidad presente).
+
+### Added
+- **KPI "Recursos sin capacidad vigente" (B):** nº de recursos **con actividad** en el periodo sin capacidad
+  configurada, para detectar y corregir el hueco.
+- **`docs/roadmap.md`:** backlog técnico durable con los pendientes diferidos (Tentativo/Confirmado; reservas
+  #10; CPM #9; constraints SNET/FNLT/MSO/MFO; UX `pmo_planned_hours`; UX captura `PMO Capacity`) y la regla de
+  revisión global posterior a v0.11.0.
+
+### Notes
+- Sin DocTypes/Custom Fields/fixtures; sin cambios a `capacity.py`/`availability.py`/`planned_load.py`;
+  ADR-0003 sin modificar. No requiere `bench migrate`.
+
 ## [0.10.0] — 2026-09-09
 
 Forecast vigente y desviaciones (ADR-0009, Accepted): el forecast es el plan vivo de ERPNext
