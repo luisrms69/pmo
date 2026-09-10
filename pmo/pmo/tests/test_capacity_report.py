@@ -8,10 +8,12 @@ visible/confidencial (bucket = total - Sigma visibles, sin identidad), los KPIs 
 utilizaciones), la separación estricta Planned!=Actual y la granularidad.
 """
 
+import unittest
+
 import frappe
 from frappe.tests import IntegrationTestCase
 
-from pmo.pmo.report.pmo_capacity_planning.pmo_capacity_planning import execute
+from pmo.pmo.report.pmo_capacity_planning.pmo_capacity_planning import _build_summary, execute
 
 HL = "PMO-HL-TEST"
 
@@ -237,6 +239,28 @@ class TestCapacityReport(IntegrationTestCase):
 		self.assertEqual(row["overallocation"], 8.0)
 		self.assertEqual(row["util_planned"], 200.0)
 
+	# --- ADR-0010: señal honesta de capacidad faltante ---------------------
+
+	def test_missing_capacity_reports_none_not_overallocation(self):
+		# Periodo 2025 (anterior a la capacidad global 2026-01-01) → sin capacidad resoluble.
+		u = _user("cr-nocap@example.com")
+		emp = _employee("CR NoCap", u)
+		_assign(_task("CR-T-NOCAP", _project("CR-P-NOCAP", owner=u), 4, "2025-06-02", "2025-06-02"), u)
+		data, _chart, summary = self._run_full(
+			self.exec_user, from_date="2025-06-02", to_date="2025-06-02", employee=emp
+		)
+		row = self._row(data, emp)
+		self.assertEqual(row["planned_total"], 4.0)  # la carga sí se conoce
+		self.assertIsNone(row["availability"])  # pero sin capacidad → None, no 0
+		self.assertIsNone(row["free"])
+		self.assertIsNone(row["overallocation"])  # NO es sobreasignación
+		self.assertIsNone(row["util_planned"])
+		self.assertIn("capacidad faltante", row["status"])
+		over = next(s for s in summary if s["label"] == "Sobreasignados")
+		self.assertEqual(over["value"], 0)  # no cuenta como sobreasignado
+		nocap = next(s for s in summary if s["label"] == "Recursos sin capacidad vigente")
+		self.assertEqual(nocap["value"], 1)
+
 	def test_planned_and_actual_never_summed(self):
 		_subj, emp, p_open, _pc = self._p4_scenario()
 		_timesheet(emp, p_open, 5)  # 5h reales en proyecto visible
@@ -305,3 +329,42 @@ class TestCapacityReport(IntegrationTestCase):
 		_data, chart, _summary = self._run_full(subj, from_date="2026-01-05", to_date="2026-01-06")
 		self.assertIn(emp, chart["data"]["labels"])
 		self.assertEqual(len(chart["data"]["datasets"]), 2)  # Availability vs Planned total
+
+
+def _r(emp, availability, overallocation, planned_total=0.0):
+	return {
+		"employee": emp,
+		"availability": availability,
+		"overallocation": overallocation,
+		"planned_total": planned_total,
+	}
+
+
+class TestCapacitySummaryReliability(unittest.TestCase):
+	"""ADR-0010 — `_build_summary` puro: sobreasignación ignora None; cuenta recursos sin capacidad."""
+
+	def test_missing_capacity_not_overallocated_and_counted(self):
+		data = [
+			_r("E1", None, None, planned_total=5.0),  # sin capacidad → no derivable
+			_r("E2", 8.0, 4.0, planned_total=12.0),  # sobreasignado real
+			_r("E3", 8.0, 0.0, planned_total=6.0),  # dentro de capacidad
+		]
+		cards = {c["label"]: c for c in _build_summary(data)}
+		self.assertEqual(cards["Recursos"]["value"], 3)
+		self.assertEqual(cards["Sobreasignados"]["value"], 1)  # solo E2 (None no cuenta)
+		self.assertEqual(cards["Sobreasignados"]["indicator"], "Red")
+		self.assertEqual(cards["Recursos sin capacidad vigente"]["value"], 1)  # E1
+		self.assertEqual(cards["Recursos sin capacidad vigente"]["indicator"], "Orange")
+
+	def test_partial_capacity_same_employee_not_counted_as_missing(self):
+		# Un Employee con una fila sin capacidad y otra con capacidad NO se cuenta como sin capacidad.
+		data = [_r("E1", None, None, 5.0), _r("E1", 8.0, 0.0, 6.0)]
+		cards = {c["label"]: c for c in _build_summary(data)}
+		self.assertEqual(cards["Recursos sin capacidad vigente"]["value"], 0)
+
+	def test_no_missing_all_have_capacity(self):
+		data = [_r("E1", 8.0, 0.0, 4.0), _r("E2", 8.0, 2.0, 10.0)]
+		cards = {c["label"]: c for c in _build_summary(data)}
+		self.assertEqual(cards["Recursos sin capacidad vigente"]["value"], 0)
+		self.assertEqual(cards["Recursos sin capacidad vigente"]["indicator"], "Green")
+		self.assertEqual(cards["Sobreasignados"]["value"], 1)
