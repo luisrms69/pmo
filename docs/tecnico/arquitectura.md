@@ -532,6 +532,22 @@ Script Report P4-safe de **consumo**: una fila por Project visible al observador
   siempre y Completed salvo `include_completed`. Roles: Projects User / PMO Manager / PMO Executive Access /
   System Manager. Tests: `test_portfolio.py`. El detalle por proyecto sigue en Status Report / Planned vs Actual.
 
+## PMO Project Status — Print Format presentable (v0.12.0)
+Salida imprimible/PDF por Project para stakeholders. **Print Format estándar** Jinja `PMO Project Status`
+(`pmo/pmo/print_format/pmo_project_status/`, `doc_type` Project, `standard: Yes`, sync por migrate).
+- **Datos:** método Jinja `pmo.print_status.pmo_project_status(project, status_date=None)` (registrado en
+  `hooks.jinja.methods`). Reutiliza `build_status_report` (ADR-0006/0009; **impone P4** READ del Project) +
+  `_effort_totals`/`_health` del reporte de portafolio; **sin motor nuevo**.
+- **Contenido:** encabezado + resumen ejecutivo (avance nativo, Status Date, Baseline+slip, forecast vs
+  compromiso+slip, vencidas, forecast>compromiso, Planned/Actual/%, salud) + evaluación de tareas
+  **relevantes** (`_relevant`: vencida al corte / slip != 0 / forecast>`pmo_deadline` / hito), ordenada por
+  slip, con conteo de omitidas (no oculta información). Hitos anotados con `is_milestone`.
+- **Robustez:** fechas en **ISO directo** (sin `format_date`) → evita el bug `get_locale_value` en sesiones
+  sin idioma (PDF/jobs). **Sin recursos externos** ni `url()` (portable en wkhtmltopdf/Gotenberg). **No** fija
+  `pdf_generator`: respeta la config del site (wkhtmltopdf por defecto; Gotenberg opcional). No toca el Print
+  Format del cliente. Tests: `test_print_status.py` (relevante puro + contexto + render HTML + smoke PDF
+  guardado). Sin ADR (reutiliza decisiones vigentes; sin modelo/decisión nuevos).
+
 ## Fuera de alcance
 Planificado vs Real (ADR-0008): sin EVM (EV/PV/AC), CPI/SPI, forecast (EAC/ETC), planned time-phased/BCWS,
 ni Baseline como fuente del plan; el Workspace de control no añade Number Cards ni charts.

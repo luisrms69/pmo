@@ -28,13 +28,18 @@ Guardarraíles: P4; nativo primero; sin motores paralelos; sin tocar #9/#10/cons
     vencidas, forecast>compromiso, Planned/Actual/%); reusa `build_status_report` (P4) + suma esfuerzo nativa.
     `try/except PermissionError` por proyecto. Filtros Company + Incluir completados. Docs usuario+arquitectura.
   - migrate en test-pmo OK (registrado); smoke `execute()` OK. Tests `test_portfolio.py` (7). **Suite 251/251**.
-- **Commits #3–#5: pendientes** (en orden).
+- **Commit #3 — Status Report presentable. ✅ (commit en curso)**
+  - Print Format estándar `PMO Project Status` (Jinja, doc_type Project) resumen-primero + tareas relevantes;
+    método Jinja `pmo.print_status.pmo_project_status` (reusa build_status_report; P4). Fechas ISO (evita bug
+    locale). Agnóstico al generador PDF (wkhtmltopdf 1º; Gotenberg vía config del site). No toca el PF del
+    cliente. migrate OK; render HTML ✔; PDF generado (18KB, quirk de exit de wkhtmltopdf en headless → test
+    skip). Tests `test_print_status.py` (4). **Suite 255/255 (+1 skip)**.
+- **Commits #4–#5: pendientes** (en orden).
 
 ## Siguiente paso
-**Commit #3 — Status Report presentable.** ANTES de diseñar: localizar y revisar el Print Format de proyecto
-existente en `frappe-infrastructure` (con gráficos, aún sin PMO); reportar qué reutilizar y cómo integrar PMO
-(Status Date, Baseline, forecast vigente, fecha comprometida, desviaciones) ANTES de implementar. Objetivo:
-salida por Project imprimible/PDF para stakeholder.
+**Commit #4 — documental:** corregir `docs/usuario/capacity-planning.md` (texto stale "Actual no se muestra"
+que contradice el reporte) + actualizar `docs/roadmap.md` con el roadmap global consolidado (10 puntos, tiers
+alta/posterior/diferido), preservando TODOS los pendientes diferidos. Sin funcionalidad. Reportar antes del commit.
 No push/PR/release hasta terminar los 5 commits.
 
 ## Cuidados / no repetir
