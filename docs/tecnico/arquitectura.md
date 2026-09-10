@@ -221,10 +221,19 @@ Decisión de diseño tomada en el cierre de esta etapa (2026-09-05), **no implem
 - El motor ya expone `Actual` (`get_actual`, `get_actual_by_project`) y el reporte `PMO Capacity Planning`
   ya calcula `actual_*` server-side con P4 — la base existe; solo falta la vista y sus indicadores.
 
+### Reporte `PMO Resource Capacity` (Script Report, cobertura/mantenimiento — v0.12.0)
+Vista de **configuración** de capacidad (no de carga): por recurso, capacidad efectiva a `as_of`, **origen**
+(`Override`/`Global`/`Faltante`) y `from_date` vigente. Reutiliza la **resolución única**
+`pmo.capacity.get_capacity_detail(employee, date)` → `{hours, origin, from_date}` (nuevo; `get_capacity`
+pasa a ser wrapper, sin cambio de comportamiento) — no reimplementa la regla override/global (ADR-0003 D1).
+Tiering de observador propio (normal→su Employee; manager/executive→activos, filtros Employee/Departamento);
+**no** expone Project/Task (identidad organizacional + capacidad). Ergonomía de captura en `pmo_capacity.js`
+(default `from_date`=hoy + intro). Tests: `test_resource_capacity.py`.
+
 ### Objetos nuevos / wiring
 - **DocType** `PMO Capacity`. **Custom Field** `ToDo-pmo_planned_hours` (Float, opcional; fixture).
-- **Reports** `PMO Capacity Planning`, `PMO Resource Usage by Project`, `PMO Work by Resource`;
-  **Workspace** `PMO Capacity`. **DocPerm** `report` en PMO Capacity para Employee/Executive.
+- **Reports** `PMO Capacity Planning`, `PMO Resource Usage by Project`, `PMO Work by Resource`,
+  `PMO Resource Capacity`; **Workspace** `PMO Capacity`. **DocPerm** `report` en PMO Capacity para Employee/Executive.
 - Helpers internos: `get_planned_load_by_project|task`, `get_actual_by_project`,
   `permissions.is_project_visible`, `permissions.is_task_visible`.
 - **Page** `capacity_planning` + endpoint `pmo.capacity_page.get_resources` (ver subsección Page).
@@ -506,6 +515,48 @@ entrega armados por Project/Task. **Sin** motor nuevo, DocType, Custom Field ni 
   integración (corte `as-of` cuenta las horas del propio día de corte y excluye el día siguiente; `execute()`
   end-to-end; P4 bloquea a no-miembros). `test_control_workspace.py`: existencia, 4 shortcuts, roles, sin
   métricas cacheadas, y `PMO Capacity` intacto.
+
+## PMO Portfolio — salud multi-proyecto (v0.12.0)
+Script Report P4-safe de **consumo**: una fila por Project visible al observador. **No** introduce motor:
+- Salud de cronograma por proyecto = `build_status_report` (ADR-0006/0009) — impone P4 (READ del Project) y
+  compone Baseline/forecast/desviaciones. `status_date` = `Project.pmo_status_date` o **hoy** (pasada como
+  `str`, porque `build_status_report` es whitelisted con type-check).
+- Esfuerzo = Σ `Task.expected_time` vs `Task.actual_time` de Tasks hoja (semántica nativa ADR-0008), sin
+  duplicar el reporte por Task.
+- **P4:** `_visible_projects` lista solo proyectos legibles — executive/Administrator (`_is_global_reader`) →
+  todos; normal → `_member_projects_subquery` (owner + DocShare-read). Cada `build_status_report` se envuelve
+  en `try/except PermissionError` (defensa en profundidad: un proyecto no legible se **omite**, no rompe el
+  dashboard).
+- **Salud** (`_health`): `Desviado` si slip-vs-compromiso>0 o vencidas>0 o forecast-excede-compromiso>0;
+  `En riesgo` si slip-vs-baseline>0; `En plan` en otro caso (adelantos no penalizan). Excluye Cancelled
+  siempre y Completed salvo `include_completed`. Roles: Projects User / PMO Manager / PMO Executive Access /
+  System Manager. Tests: `test_portfolio.py`. El detalle por proyecto sigue en Status Report / Planned vs Actual.
+
+## Workspace landing `PMO` (v0.12.0)
+Punto de entrada único (public, module PMO, `sequence_id` 10 → antes de `PMO Capacity`/`PMO Control`). Solo
+**navegación**: shortcuts hero (PMO Portfolio, PMO Status Report, PMO Capacity Planning) + **cards** que
+agrupan por área todos los reportes: *Portafolio y control* (Portfolio, Status Report, Planned vs Actual,
+Baseline Comparison, Change Register), *Capacidad* (Capacity Planning, Resource Capacity, Resource Usage by
+Project, Work by Resource) y *Configuración PMO* (DocTypes PMO Capacity, PMO Project Baseline, PMO Change
+Request). **Sin** charts/number_cards (no duplica métricas). **No modifica** `PMO Capacity` ni `PMO Control`
+(se conservan como agrupaciones detalladas). Roles: Projects User / Employee / PMO Manager / PMO Executive
+Access / System Manager. Tests: `test_pmo_workspace.py`.
+
+## PMO Project Status — Print Format presentable (v0.12.0)
+Salida imprimible/PDF por Project para stakeholders. **Print Format estándar** Jinja `PMO Project Status`
+(`pmo/pmo/print_format/pmo_project_status/`, `doc_type` Project, `standard: Yes`, sync por migrate).
+- **Datos:** método Jinja `pmo.print_status.pmo_project_status(project, status_date=None)` (registrado en
+  `hooks.jinja.methods`). Reutiliza `build_status_report` (ADR-0006/0009; **impone P4** READ del Project) +
+  `_effort_totals`/`_health` del reporte de portafolio; **sin motor nuevo**.
+- **Contenido:** encabezado + resumen ejecutivo (avance nativo, Status Date, Baseline+slip, forecast vs
+  compromiso+slip, vencidas, forecast>compromiso, Planned/Actual/%, salud) + evaluación de tareas
+  **relevantes** (`_relevant`: vencida al corte / slip != 0 / forecast>`pmo_deadline` / hito), ordenada por
+  slip, con conteo de omitidas (no oculta información). Hitos anotados con `is_milestone`.
+- **Robustez:** fechas en **ISO directo** (sin `format_date`) → evita el bug `get_locale_value` en sesiones
+  sin idioma (PDF/jobs). **Sin recursos externos** ni `url()` (portable en wkhtmltopdf/Gotenberg). **No** fija
+  `pdf_generator`: respeta la config del site (wkhtmltopdf por defecto; Gotenberg opcional). No toca el Print
+  Format del cliente. Tests: `test_print_status.py` (relevante puro + contexto + render HTML + smoke PDF
+  guardado). Sin ADR (reutiliza decisiones vigentes; sin modelo/decisión nuevos).
 
 ## Fuera de alcance
 Planificado vs Real (ADR-0008): sin EVM (EV/PV/AC), CPI/SPI, forecast (EAC/ETC), planned time-phased/BCWS,

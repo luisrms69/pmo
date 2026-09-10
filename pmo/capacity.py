@@ -25,16 +25,27 @@ def get_capacity(employee: str | None, date=None, throw: bool = False) -> float 
 	`date` acepta str o date (por defecto hoy). El override del `employee` tiene prioridad sobre el
 	baseline global. No asume ningún default (p. ej. 8h) cuando no hay capacidad configurada.
 	"""
+	detail = get_capacity_detail(employee, date, throw=throw)
+	return detail["hours"] if detail else None
+
+
+def get_capacity_detail(employee: str | None, date=None, throw: bool = False) -> dict | None:
+	"""Resolución de capacidad con **origen** y **fecha vigente** (ADR-0003 D1; fuente única).
+
+	Devuelve `{hours, origin, from_date}` donde `origin` es `"override"` (fila del propio Employee) o
+	`"global"` (baseline sin Employee). `None` si no hay config (con `throw=True` lanza). No asume 8h.
+	La resolución más-específico-luego-global vive **solo aquí**; reportes/UX la reutilizan (no la
+	reimplementan)."""
 	on_date = getdate(date)
 
 	if employee:
-		hours = _latest_capacity(on_date, employee=employee)
-		if hours is not None:
-			return hours
+		row = _latest_capacity_row(on_date, employee=employee)
+		if row is not None:
+			return {"hours": row[0], "origin": "override", "from_date": row[1]}
 
-	hours = _latest_capacity(on_date, employee=None)
-	if hours is not None:
-		return hours
+	row = _latest_capacity_row(on_date, employee=None)
+	if row is not None:
+		return {"hours": row[0], "origin": "global", "from_date": row[1]}
 
 	if throw:
 		frappe.throw(
@@ -45,15 +56,16 @@ def get_capacity(employee: str | None, date=None, throw: bool = False) -> float 
 	return None
 
 
-def _latest_capacity(on_date, employee: str | None = None) -> float | None:
-	"""Capacidad más reciente vigente (`from_date <= on_date`) para el scope dado.
+def _latest_capacity_row(on_date, employee: str | None = None):
+	"""Fila `(capacity_hours_per_day, from_date)` más reciente vigente (`from_date <= on_date`) del scope.
 
-	`employee` informado → override de ese Employee; None → scope global (`employee` vacío/NULL).
+	`employee` informado → override de ese Employee; None → scope global (`employee` vacío/NULL). None si
+	no hay fila.
 	"""
 	cap = frappe.qb.DocType("PMO Capacity")
 	query = (
 		frappe.qb.from_(cap)
-		.select(cap.capacity_hours_per_day)
+		.select(cap.capacity_hours_per_day, cap.from_date)
 		.where(cap.from_date <= on_date)
 		.orderby(cap.from_date, order=Order.desc)
 		.limit(1)
@@ -63,4 +75,4 @@ def _latest_capacity(on_date, employee: str | None = None) -> float | None:
 	)
 
 	rows = query.run()
-	return rows[0][0] if rows else None
+	return rows[0] if rows else None

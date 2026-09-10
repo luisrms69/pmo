@@ -89,10 +89,11 @@ doctype_js = {
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "pmo.utils.jinja_methods",
-# 	"filters": "pmo.utils.jinja_filters"
-# }
+# `pmo_project_status(project, status_date=None)` alimenta el Print Format "PMO Project Status"
+# (reutiliza build_status_report; P4 lo impone esa función).
+jinja = {
+	"methods": ["pmo.print_status.pmo_project_status"],
+}
 
 # Installation
 # ------------

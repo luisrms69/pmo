@@ -1,43 +1,55 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-09-09
-**Rama activa:** `feat/capacity-reliability` (base `version-16` @ v0.10.0, commit `8218a31`).
-**Ciclo:** v0.11.0 — Confiabilidad de Capacity Planning (ADR-0010, **Accepted**). Bump a 0.11.0 incluido.
-**Último ciclo funcional** de la ronda; después → **revisión global de producto** (no otro ciclo automático).
+**Fecha:** 2026-09-10
+**Rama activa:** `feat/product-readiness-round` (base `version-16` @ v0.11.0, commit `6ff63cb`).
+**Ronda:** Product readiness — **una rama, 5 commits, objetivo release `v0.12.0`.**
 
 ## Plan que estoy siguiendo
-ADR-0010 (A+B), solo capa de reporte, sin esquema:
-- **A** — señal honesta: sin capacidad vigente → `capacity/availability/free/overallocation/util_*` = `None`
-  (no 0); no cuenta como sobreasignado; `status="capacidad faltante"`.
-- **B** — KPI "Recursos sin capacidad vigente" (recursos **con actividad** en el periodo sin capacidad).
-Entrega en 2 bloques → PR único a `version-16`.
+5 mejoras, un commit independiente por cada una (no rama/PR por mejora):
+1. UX captura/mantenimiento `PMO Capacity`.  ← **commit en curso**
+2. Dashboard / portafolio multi-proyecto.
+3. Salida presentable `PMO Status Report` (Commit #3: revisar primero el Print Format existente en
+   `frappe-infrastructure` antes de diseñar — acordado).
+4. Corrección documental `capacity-planning.md` (texto stale de Actual/Util. real) + actualización completa
+   de `docs/roadmap.md` (integrada aquí, sin sexto commit).
+5. Workspace PMO unificado / landing enlazando las capacidades implementadas.
 
-## Estado por bloques
-- **Bloque 1 — motor de presentación + tests + backlog. ✅ (commit en curso)**
-  - `pmo_capacity_planning.py`: `has_cap` por bucket (A) + KPI cobertura y *Sobreasignados* ignora None (B);
-    chart blindado ante `None`.
-  - `docs/roadmap.md`: backlog durable (6 pendientes + revisión global; referencia #9/#10).
-  - ADR-0010 Proposed. Tests: +1 integración (sin capacidad → None) + clase pura (3). **Suite 237/237**;
-    capacity report 17/17.
-- **Bloque 2 — docs + bump + ADR Accepted. ✅ (commit en curso)**
-  - ADR-0010 → Accepted; docs usuario (N/D + KPI cobertura) + arquitectura (subsección ADR-0010) + CHANGELOG
-    `[0.11.0]`; bump 0.10.0 → 0.11.0. Sin funcionalidad nueva. Suite 237/237.
+Guardarraíles: P4; nativo primero; sin motores paralelos; sin tocar #9/#10/constraints; sin rediseñar ADRs.
 
-## Backlog diferido (docs/roadmap.md) — para la revisión global
-1. Tentativo/Confirmado (posible `ToDo.pmo_commitment`) — sin issue, decidir forma en revisión global.
-2. Reservas de capacidad — **issue #10**. 3. CPM/ruta crítica — **issue #9**.
-4. Constraints tipados SNET/FNLT/MSO/MFO — sin issue. 5. UX `pmo_planned_hours`. 6. UX captura `PMO Capacity`.
+## Estado por commits
+- **Commit #1 — UX `PMO Capacity`. ✅ (commit en curso)**
+  - `pmo/capacity.py`: `get_capacity_detail` (resolver único {hours,origin,from_date}; `get_capacity` wrapper).
+  - Report `PMO Resource Capacity` (cobertura: capacidad efectiva/origen/vigencia por recurso; scope por
+    observador; sin Project/Task). `pmo_capacity.js` (default from_date + intro). Docs usuario+arquitectura.
+  - migrate en test-pmo OK (report registrado); smoke `execute()` OK. Tests `test_resource_capacity.py` (7).
+    **Suite 244/244**, sin regresión Capacity/Availability.
+- **Commit #2 — Portafolio multi-proyecto. ✅ (commit en curso)**
+  - Report `PMO Portfolio`: fila por Project visible (salud En plan/En riesgo/Desviado, forecast, slips,
+    vencidas, forecast>compromiso, Planned/Actual/%); reusa `build_status_report` (P4) + suma esfuerzo nativa.
+    `try/except PermissionError` por proyecto. Filtros Company + Incluir completados. Docs usuario+arquitectura.
+  - migrate en test-pmo OK (registrado); smoke `execute()` OK. Tests `test_portfolio.py` (7). **Suite 251/251**.
+- **Commit #3 — Status Report presentable. ✅ (commit en curso)**
+  - Print Format estándar `PMO Project Status` (Jinja, doc_type Project) resumen-primero + tareas relevantes;
+    método Jinja `pmo.print_status.pmo_project_status` (reusa build_status_report; P4). Fechas ISO (evita bug
+    locale). Agnóstico al generador PDF (wkhtmltopdf 1º; Gotenberg vía config del site). No toca el PF del
+    cliente. migrate OK; render HTML ✔; PDF generado (18KB, quirk de exit de wkhtmltopdf en headless → test
+    skip). Tests `test_print_status.py` (4). **Suite 255/255 (+1 skip)**.
+- **Commit #4 — documental. ✅ (commit en curso)**
+  - `capacity-planning.md`: corregida nota stale (Actual SÍ se muestra en el reporte + Planned vs Actual).
+  - `docs/roadmap.md`: consolidado (Entregado v0.7–v0.11; v0.12.0 marcada **En implementación, sin release**;
+    Workspace landing = pendiente Commit #5). 7 pendientes preservados con tiers; #9/#10 referenciados.
+- **Commit #5 — Workspace PMO unificado / landing. ✅ (commit en curso)**
+  - Workspace público `PMO` (seq 10, primero): shortcuts hero + cards agrupando 9 reportes + 3 DocTypes de
+    config. Sin charts/number_cards. `PMO Capacity`/`PMO Control` intactos (regression test). migrate OK.
+    Tests `test_pmo_workspace.py` (5). **Suite 260/260 (+1 skip PDF)**.
 
-## Alcance / límites (ADR-0010)
-- Solo `pmo/pmo/report/pmo_capacity_planning/` + tests. Sin DocTypes/Custom Fields/fixtures. Sin cambios a
-  `capacity.py`/`availability.py`/`planned_load.py`. ADR-0003 sin modificar. No requiere migrate. C diferido.
+- **Commit release-prep — bump 0.11.0 → 0.12.0 + CHANGELOG [0.12.0]. ✅ (commit en curso)**
 
 ## Siguiente paso
-**PR #15** abierto contra `version-16` (https://github.com/luisrms69/pmo/pull/15). Esperando CI. Tras merge
-(usuario): `/sync-check` → `/ship release` v0.11.0. **Tras liberar: DETENER — revisión global de producto**
-(priorizar `docs/roadmap.md`), no iniciar otro ciclo automáticamente.
+**PR #16** abierto contra `version-16` (https://github.com/luisrms69/pmo/pull/16), v0.12.0 MINOR. Esperando
+CI. Tras merge (lo hace el usuario): `/sync-check` → `/ship release` v0.12.0. No merge/tag/release por Claude.
 
 ## Cuidados / no repetir
 - La suite corre en dos lotes (integración + unitarios); no leer solo el último "Ran N".
-- Para forzar "sin capacidad" en tests con capacidad global 2026, consultar un periodo 2025 (get_capacity None).
-- Git solo vía `/ship`. Nunca trabajar en `version-16`. pmo NO usa migration patches ni MkDocs.
+- Print Format base para #3 vive en `frappe-infrastructure` (revisar al iniciar #3, no antes).
+- Rama protegida `version-16`; remoto `upstream`; BD/`bench migrate` con autorización; git solo vía `/ship`.

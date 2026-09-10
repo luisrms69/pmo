@@ -1,5 +1,35 @@
 # Changelog — pmo
 
+## [0.12.0] — 2026-09-10
+
+Ronda "product-readiness": preparar PMO para uso/venta cerrando huecos de consumo (visión de portafolio,
+captura de capacidad, salida presentable) sin nueva capa de planificación. Solo capa de reporte/navegación;
+sin DocTypes/Custom Fields/esquema. Backlog diferido preservado en `docs/roadmap.md`.
+
+### Added
+- **`PMO Resource Capacity`** (Script Report) — cobertura/mantenimiento de capacidad: por recurso, capacidad
+  efectiva a una fecha, **origen** (Override/Global/**Faltante**) y vigencia; scope por observador. Nuevo
+  resolver único `pmo.capacity.get_capacity_detail` (`get_capacity` queda como wrapper). Ergonomía del
+  formulario `PMO Capacity` (default From Date + ayuda).
+- **`PMO Portfolio`** (Script Report P4) — salud multi-proyecto: una fila por Project visible (En plan/En
+  riesgo/Desviado, forecast, slip vs Baseline/compromiso, vencidas, forecast>compromiso, Planned/Actual/%).
+  Reutiliza `build_status_report` + esfuerzo nativo; sin motor nuevo.
+- **`PMO Project Status`** (Print Format estándar Jinja, doc_type Project) — salida presentable a stakeholder
+  (HTML/PDF): resumen ejecutivo + evaluación organizada de tareas **relevantes** (vencidas/slip≠0/forecast>
+  deadline/hitos) con conteo de omitidas. Método Jinja `pmo.print_status.pmo_project_status`. Fechas ISO;
+  agnóstico al generador PDF (wkhtmltopdf por defecto; Gotenberg vía config del site).
+- **Workspace `PMO`** (landing) — punto de entrada único: shortcuts hero + cards que agrupan los reportes de
+  control y capacidad + configuración. No modifica `PMO Capacity`/`PMO Control`.
+
+### Changed
+- **`docs/usuario/capacity-planning.md`** — corrige nota stale: `PMO Capacity Planning` **sí** muestra Actual
+  (columnas + Util. real %); Planned y Actual no se suman.
+- **`docs/roadmap.md`** — índice consolidado del backlog (entregado vs diferido con tiers).
+
+### Notes
+- Sin DocTypes/Custom Fields/esquema; requiere `bench migrate` (sincroniza reportes, Print Format y
+  workspace, fixtures `is_standard`). No toca el modelo derivado de ADR-0003 ni el Print Format del cliente.
+
 ## [0.11.0] — 2026-09-09
 
 Confiabilidad de Capacity Planning (ADR-0010, Accepted): señal de sobreasignación honesta y visibilidad de

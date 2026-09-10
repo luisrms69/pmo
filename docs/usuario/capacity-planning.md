@@ -101,11 +101,27 @@ Todos/Limpiar) mantiene tu selección al cambiar de vista. Cinco vistas:
 Toda la privacidad se mantiene igual que en los reportes: nunca verás el nombre de un proyecto o tarea
 que no te corresponde. Estas vistas muestran **solo lo planificado** (no el tiempo real).
 
+## Cobertura de capacidad — reporte **PMO Resource Capacity**
+
+Para **configurar y mantener** la capacidad de los recursos. Menú **Reportes → PMO Resource Capacity**.
+Responde: *¿qué capacidad efectiva tiene hoy cada recurso y quién no la tiene configurada?*
+
+- Filtros: **A la fecha** (por defecto hoy), **Employee** y **Departamento** (opcionales).
+- Columnas: recurso, nombre, departamento, **Capacidad h/día**, **Origen** y **Vigente desde**.
+- **Origen:** `Override` (fila propia del Employee), `Global` (baseline sin Employee) o **`Faltante`** (no hay
+  capacidad vigente a la fecha → se debe configurar en `PMO Capacity`).
+- Resumen: **Recursos**, **Sin capacidad configurada** (naranja si hay) y **Con override individual**.
+- Alcance: tú ves **tu** recurso; PMO Manager / acceso ejecutivo ven todos. No muestra Project/Task.
+
+Complementa el KPI *"Recursos sin capacidad vigente"* del reporte de planificación: aquí lo ves a nivel de
+**configuración** (aunque el recurso aún no tenga carga), para no dejar recursos sin capacidad en silencio.
+
 ## Notas
 
-- **`Actual` (tiempo real) no se muestra en estas vistas.** Se reserva para una vista futura de análisis
-  histórico (*Planificado vs Real* / *Cumplimiento de planificación*), aún no disponible.
-
+- **`Actual` (tiempo real, de Timesheet) sí se muestra** en `PMO Capacity Planning`: columnas **Actual
+  visible / confidencial / total** y **Utilización real (%)**. Planned y Actual **nunca se suman** entre sí:
+  son dos utilizaciones separadas (planificada = Planned/Availability; real = Actual/Availability). El
+  detalle de esfuerzo **Planificado vs Real por tarea** está en el reporte `PMO Planned vs Actual`.
 - Solo cuentan como carga las Tasks **en curso** (Open, Working, Pending Review, Overdue). Las
   **Completadas** ya no son plan pendiente (su tiempo real se ve en *Actual*).
 - Una Task **sin fechas** no puede ubicarse en el calendario: sus horas se reportan como *sin fechas*.
