@@ -36,8 +36,9 @@ crea un segundo motor predictivo, solo agrega señales de desviación. Entrega e
   segunda fecha final calculada.
 
 ## Siguiente paso
-Bloques 1 y 2 commiteados en `feat/forecast-deviations`. Falta: `/ship push` → `/ship pr` (base `version-16`)
-→ esperar CI. Tras merge (usuario): `/sync-check` → `/ship release` v0.10.0. Sin push/PR/release aún.
+**PR #14** abierto contra `version-16` (https://github.com/luisrms69/pmo/pull/14). Bloques 1+2 pusheados.
+Esperando CI. Tras merge (usuario): `/sync-check` → `/ship release` v0.10.0 (tag + GitHub Release). Sin
+merge/tag/release aún.
 
 ## Cuidados / no repetir
 - La suite corre en dos lotes (integración + unitarios); no leer solo el último "Ran N" con `tail`.
