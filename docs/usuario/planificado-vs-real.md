@@ -7,6 +7,12 @@ Es una capacidad de **reporte**: pone lado a lado datos que ya existen de forma 
 (`Task.expected_time`, `Task.actual_time`, horas de `Timesheet`). No introduce una nueva forma de planificar
 ni de capturar horas.
 
+## Dónde encontrarlo
+
+Desde el **Workspace `PMO Control`** (menú lateral), que reúne los reportes de control del proyecto:
+Planificado vs Real, Status Report, Comparación de línea base y Registro de cambios. También desde el menú
+**Reportes → PMO Planned vs Actual**.
+
 ## El reporte "PMO Planned vs Actual"
 
 Menú **Reportes → PMO Planned vs Actual**. Parámetros:

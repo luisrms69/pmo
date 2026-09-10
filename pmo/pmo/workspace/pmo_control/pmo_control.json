@@ -1,0 +1,60 @@
+{
+ "charts": [],
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>PMO Control</b></span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Planificado vs Real\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Status Report (control a fecha)\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Comparación de línea base\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Registro de cambios\",\"col\":3}}]",
+ "creation": "2026-09-09 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "project",
+ "idx": 0,
+ "label": "PMO Control",
+ "links": [],
+ "modified": "2026-09-09 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "PMO",
+ "name": "PMO Control",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {"role": "Projects User"},
+  {"role": "PMO Executive Access"},
+  {"role": "System Manager"}
+ ],
+ "sequence_id": 30.0,
+ "shortcuts": [
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Planificado vs Real",
+   "link_to": "PMO Planned vs Actual",
+   "type": "Report"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Status Report (control a fecha)",
+   "link_to": "PMO Status Report",
+   "type": "Report"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Comparación de línea base",
+   "link_to": "PMO Baseline Comparison",
+   "type": "Report"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Registro de cambios",
+   "link_to": "PMO Change Register",
+   "type": "Report"
+  }
+ ],
+ "title": "PMO Control"
+}

@@ -467,9 +467,15 @@ entrega armados por Project/Task. **Sin** motor nuevo, DocType, Custom Field ni 
   resto de reportes P4 de la app; si no, `frappe.PermissionError`.
 - **Cliente** (`.js`): al elegir Project prellena `status_date` desde `Project.pmo_status_date`; `status_date`
   admite solo `≤ today`.
+- **Workspace `PMO Control`** (public, module PMO, `is_standard`; roles Projects User / PMO Executive
+  Access / System Manager) — mismo patrón de shortcuts que `PMO Capacity` (header + bloques `shortcut` tipo
+  Report): enruta a `PMO Planned vs Actual`, `PMO Status Report`, `PMO Baseline Comparison` y
+  `PMO Change Register`. **Solo navega** (sin `charts`/`number_cards`; no duplica lógica ni caché). **No
+  toca `PMO Capacity`**. Sincroniza por `bench migrate`.
 - **Tests** — `test_planned_vs_actual.py`: puros (`_rows`/`_pct`/`_columns`, exclusión de `is_group`) +
   integración (corte `as-of` cuenta las horas del propio día de corte y excluye el día siguiente; `execute()`
-  end-to-end; P4 bloquea a no-miembros).
+  end-to-end; P4 bloquea a no-miembros). `test_control_workspace.py`: existencia, 4 shortcuts, roles, sin
+  métricas cacheadas, y `PMO Capacity` intacto.
 
 ## Fuera de alcance
 Planificado vs Real (ADR-0008): sin EVM (EV/PV/AC), CPI/SPI, forecast (EAC/ETC), planned time-phased/BCWS,

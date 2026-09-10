@@ -15,6 +15,10 @@ capa de planificación.
 - **Helpers `as-of`** en `pmo/actual.py` (`get_actual_hours_asof`, `get_actual_hours_by_task_asof`) — corte
   inclusivo hasta el fin del día de `status_date` (`date(from_time) <= status_date`), `docstatus = 1`, SQL
   estática parametrizada. Único código nuevo de cálculo.
+- **Workspace público `PMO Control`** (module PMO, `is_standard`) — punto de acceso a los reportes de
+  control con shortcuts a `PMO Planned vs Actual`, `PMO Status Report`, `PMO Baseline Comparison` y
+  `PMO Change Register`. Solo navegación (sin Number Cards ni charts). `PMO Capacity` queda intacto
+  (dedicado a capacidad). Requiere `bench migrate`.
 
 ### Notes
 - Sin motor nuevo, DocTypes, Custom Fields ni cambios a Baseline (`snapshot_schema_version` sigue en 1).

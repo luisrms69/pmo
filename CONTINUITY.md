@@ -26,7 +26,14 @@ Project/Task con datos ya nativos. Entrega en 2 bloques → PR único a `version
     bloquea no-miembros). **Suite 222/222.**
   - Docs: ADR-0008 (Proposed), `docs/usuario/planificado-vs-real.md`, sección en `arquitectura.md`,
     CHANGELOG `[0.9.0]`. Bump `__version__ 0.8.0 → 0.9.0`.
-- **Bloque 2 — Workspace `PMO Control`. ⏳ pendiente (siguiente paso inmediato).**
+- **Bloque 2 — Workspace `PMO Control`. ✅ (commit en curso)**
+  - `pmo/pmo/workspace/pmo_control/pmo_control.json` (public, module PMO, `is_standard`; roles Projects
+    User / PMO Executive Access / System Manager). 4 shortcuts tipo Report → `PMO Planned vs Actual`,
+    `PMO Status Report`, `PMO Baseline Comparison`, `PMO Change Register`. Sin charts/number_cards.
+    `PMO Capacity` intacto. Mismo patrón de shortcuts que Capacity.
+  - `bench migrate` en `test-pmo.localhost` OK — Workspace sincronizado (verificado en BD: 4 shortcuts;
+    Capacity con sus 3 originales).
+  - Tests `test_control_workspace.py` (5). **Suite 227/227.**
 
 ## Alcance / límites (ADR-0008)
 - Sin motor nuevo, DocTypes, Custom Fields ni cambios a Baseline (`snapshot_schema_version` sigue en 1).
@@ -34,8 +41,8 @@ Project/Task con datos ya nativos. Entrega en 2 bloques → PR único a `version
   fuente del plan, CPM (#9), reservas de capacidad (#10), constraints/deadlines, Number Cards/charts.
 
 ## Siguiente paso
-Implementar Bloque 2 (Workspace `PMO Control`, 4 shortcuts, reusando el patrón de `PMO Capacity`; no tocarlo).
-Reportar Bloque 2 antes de su commit. Sin push/PR/release aún.
+Bloques 1 y 2 commiteados en `feat/planned-vs-actual`. Falta: `/ship push` → `/ship pr` (base `version-16`)
+→ tras merge, `/ship release` v0.9.0. Sin push/PR/release aún (pendiente de autorización).
 
 ## Cuidados / no repetir
 - La suite corre en **dos lotes** (integración + unitarios): `Ran 194...OK` + `Ran 25...OK` = 222. No leer
