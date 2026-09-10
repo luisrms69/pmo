@@ -194,6 +194,11 @@ Project/Task). El cliente **no** recalcula nada ni reconstruye P4/buckets. Se de
   Executive Access/System Manager; `.js`) + `pmo/capacity_page.py` (`get_resources`, whitelisted).
 
 ### Pendiente futuro — vista `Planificado vs Real` (a.k.a. `Cumplimiento de planificación`)
+> **Actualización (ADR-0008):** el reporte de esfuerzo Planificado vs Real por Project/Task ya se entregó
+> como Script Report independiente `PMO Planned vs Actual` (ver sección "Planificado vs Real — reporte de
+> esfuerzo (ADR-0008)"). Lo que sigue pendiente aquí es la **vista integrada en la Page de Capacity** con el
+> rango temporal Desde/Hasta; esa integración no se abordó y las restricciones de abajo siguen vigentes.
+
 Decisión de diseño tomada en el cierre de esta etapa (2026-09-05), **no implementada**:
 - Las 5 vistas actuales **no muestran `Actual`**, aunque el rango `Desde/Hasta` pueda abarcar pasado y
   futuro. `Actual` se **reserva** para una vista futura de **análisis histórico**.
@@ -439,7 +444,42 @@ cronograma, pero **sí** puede cambiarse por edición autorizada).
   propio. **No** cambia el snapshot de Baseline (`snapshot_schema_version` sigue en 1) ni el reporte Status
   Date.
 
+## Planificado vs Real — reporte de esfuerzo (ADR-0008)
+
+Capacidad de **reporting** (no una capa de planificación): pone lado a lado datos ya nativos, que ERPNext no
+entrega armados por Project/Task. **Sin** motor nuevo, DocType, Custom Field ni cambios a Baseline
+(`snapshot_schema_version` sigue en 1); toda la lógica vive en el `execute()` del reporte + dos helpers
+`as-of` en `pmo/actual.py`.
+
+- **Report** `PMO Planned vs Actual` (Script Report `is_standard`, `ref_doctype` Project; roles Projects
+  User / PMO Executive Access / System Manager). Sincroniza por `bench migrate` (fixture `is_standard`).
+- **Planned** = `Task.expected_time`. **Actual**: sin `status_date` → `Task.actual_time` (acumulado nativo);
+  con `status_date` → Σ `Timesheet Detail.hours` submitted hasta el **fin del día** de corte.
+- **Indicadores por Task hoja:** Planned, Actual, **Variance** = `Actual - Planned`, **% Consumed** =
+  `Actual / Planned` (guarda de división por 0 → vacío). **Rollup** excluye `is_group` (envelope, evita doble
+  conteo). Total de Project en las tarjetas de `report_summary`.
+- **Helpers `as-of`** (`pmo/actual.py`, internos): `get_actual_hours_asof(project, status_date)` y
+  `get_actual_hours_by_task_asof(...)`. Corte inclusivo `from_time <= timestamp(status_date, '24:00:00')`
+  (= medianoche del día siguiente ≡ `date(from_time) <= status_date`); solo `docstatus = 1`; SQL estática
+  parametrizada (semgrep `frappe-sql-format-injection`). Misma semántica de horas de ADR-0003.
+- **P4:** los Script Report no aplican `permission_query_conditions`, así que `execute()` **exige**
+  `pmo.permissions.is_project_visible(project, user)` (owner / DocShare / PMO Executive Access), como el
+  resto de reportes P4 de la app; si no, `frappe.PermissionError`.
+- **Cliente** (`.js`): al elegir Project prellena `status_date` desde `Project.pmo_status_date`; `status_date`
+  admite solo `≤ today`.
+- **Workspace `PMO Control`** (public, module PMO, `is_standard`; roles Projects User / PMO Executive
+  Access / System Manager) — mismo patrón de shortcuts que `PMO Capacity` (header + bloques `shortcut` tipo
+  Report): enruta a `PMO Planned vs Actual`, `PMO Status Report`, `PMO Baseline Comparison` y
+  `PMO Change Register`. **Solo navega** (sin `charts`/`number_cards`; no duplica lógica ni caché). **No
+  toca `PMO Capacity`**. Sincroniza por `bench migrate`.
+- **Tests** — `test_planned_vs_actual.py`: puros (`_rows`/`_pct`/`_columns`, exclusión de `is_group`) +
+  integración (corte `as-of` cuenta las horas del propio día de corte y excluye el día siguiente; `execute()`
+  end-to-end; P4 bloquea a no-miembros). `test_control_workspace.py`: existencia, 4 shortcuts, roles, sin
+  métricas cacheadas, y `PMO Capacity` intacto.
+
 ## Fuera de alcance
+Planificado vs Real (ADR-0008): sin EVM (EV/PV/AC), CPI/SPI, forecast (EAC/ETC), planned time-phased/BCWS,
+ni Baseline como fuente del plan; el Workspace de control no añade Number Cards ni charts.
 Gantt/Tag: sin DocTypes, Custom Fields, fixtures ni patches. Privacidad P0: sin cambios de core ERPNext
 ni de DocPerm de read/write; solo hooks, un child DocType propio, roles y `Custom Role` por fixture.
 Capacity Planning: derivado de Task+Assignment (sin captura paralela); snapshots/baselines, captura de

@@ -114,3 +114,42 @@ def _sum_hours(employee: str, from_date, to_date, project: str | None) -> float:
 			params,
 		)
 	return flt(rows[0][0], 2)
+
+
+# --- Actual as-of por Project/Task (ADR-0008, Planificado vs Real) --------------------
+# Corte inclusivo hasta el FIN del dia de `status_date`: `from_time <= timestamp(status_date,
+# '24:00:00')` = medianoche del dia siguiente, equivalente a `date(from_time) <= status_date`. Cuenta
+# las horas registradas durante el propio dia de corte (mismo patron de fin de dia que ADR-0003;
+# semantica docstatus=1/`hours`). SQL estatica parametrizada (semgrep frappe-sql-format-injection).
+# Interna: la capa de reporte aplica P4.
+
+
+def get_actual_hours_asof(project: str, status_date) -> float:
+	"""Σ `Timesheet Detail.hours` (submitted) del Project hasta `status_date` (inclusive el día)."""
+	rows = frappe.db.sql(
+		"""select coalesce(sum(td.hours), 0)
+			from `tabTimesheet Detail` td
+			inner join `tabTimesheet` ts on td.parent = ts.name
+			where ts.docstatus = 1
+				and td.project = %(project)s
+				and td.from_time <= timestamp(%(status_date)s, '24:00:00')""",
+		{"project": project, "status_date": status_date},
+	)
+	return flt(rows[0][0], 2)
+
+
+def get_actual_hours_by_task_asof(project: str, status_date) -> dict:
+	"""{task: horas} de Timesheet (submitted) del Project hasta `status_date`. Solo líneas con `task`."""
+	rows = frappe.db.sql(
+		"""select td.task, coalesce(sum(td.hours), 0) as hours
+			from `tabTimesheet Detail` td
+			inner join `tabTimesheet` ts on td.parent = ts.name
+			where ts.docstatus = 1
+				and td.project = %(project)s
+				and ifnull(td.task, '') != ''
+				and td.from_time <= timestamp(%(status_date)s, '24:00:00')
+			group by td.task""",
+		{"project": project, "status_date": status_date},
+		as_dict=True,
+	)
+	return {r.task: flt(r.hours, 2) for r in rows}
