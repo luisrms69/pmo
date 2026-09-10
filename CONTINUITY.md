@@ -33,9 +33,9 @@ Entrega en 2 bloques → PR único a `version-16`.
   `capacity.py`/`availability.py`/`planned_load.py`. ADR-0003 sin modificar. No requiere migrate. C diferido.
 
 ## Siguiente paso
-Bloques 1 y 2 commiteados. Falta: `/ship push` → `/ship pr` (base `version-16`) → CI. Tras merge (usuario):
-`/sync-check` → `/ship release` v0.11.0. **Tras liberar: DETENER — revisión global de producto** (priorizar
-`docs/roadmap.md`), no iniciar otro ciclo automáticamente.
+**PR #15** abierto contra `version-16` (https://github.com/luisrms69/pmo/pull/15). Esperando CI. Tras merge
+(usuario): `/sync-check` → `/ship release` v0.11.0. **Tras liberar: DETENER — revisión global de producto**
+(priorizar `docs/roadmap.md`), no iniciar otro ciclo automáticamente.
 
 ## Cuidados / no repetir
 - La suite corre en dos lotes (integración + unitarios); no leer solo el último "Ran N".
