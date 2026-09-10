@@ -5,7 +5,7 @@
 frappe.ui.form.on("PMO Project Baseline", {
 	refresh(frm) {
 		if (frm.doc.docstatus === 1 && frm.doc.supersedes_baseline) {
-			frm.add_custom_button(__("Comparar con línea base anterior"), () => {
+			frm.add_custom_button(__("Compare with previous baseline"), () => {
 				frappe.set_route("query-report", "PMO Baseline Comparison", {
 					project: frm.doc.project,
 					baseline_before: frm.doc.supersedes_baseline,

@@ -35,15 +35,15 @@ class TestPortfolioPure(unittest.TestCase):
 
 	def test_summary_counts(self):
 		data = [
-			{"health": HEALTH_OFF_TRACK, "has_baseline": True},
-			{"health": HEALTH_AT_RISK, "has_baseline": False},
-			{"health": HEALTH_ON_TRACK, "has_baseline": False},
+			{"health_key": HEALTH_OFF_TRACK, "has_baseline": True},
+			{"health_key": HEALTH_AT_RISK, "has_baseline": False},
+			{"health_key": HEALTH_ON_TRACK, "has_baseline": False},
 		]
 		cards = {c["label"]: c for c in _summary(data)}
-		self.assertEqual(cards["Proyectos"]["value"], 3)
-		self.assertEqual(cards["Desviados"]["value"], 1)
-		self.assertEqual(cards["En riesgo"]["value"], 1)
-		self.assertEqual(cards["Sin línea base"]["value"], 2)
+		self.assertEqual(cards["Projects"]["value"], 3)
+		self.assertEqual(cards["Deviated"]["value"], 1)
+		self.assertEqual(cards["At risk"]["value"], 1)
+		self.assertEqual(cards["Without baseline"]["value"], 2)
 
 
 def _user(email, roles=()):
@@ -124,5 +124,5 @@ class TestPortfolioP4(IntegrationTestCase):
 		self.assertEqual(row["planned_hours"], 10.0)
 		self.assertEqual(row["actual_hours"], 4.0)
 		self.assertEqual(row["pct_consumed"], 40.0)
-		self.assertEqual(row["health"], HEALTH_ON_TRACK)  # sin baseline/vencidas/compromiso
+		self.assertEqual(row["health_key"], HEALTH_ON_TRACK)  # valor interno estable (sin baseline/vencidas)
 		self.assertFalse(row["has_baseline"])

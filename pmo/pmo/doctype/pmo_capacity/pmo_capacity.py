@@ -19,7 +19,7 @@ class PMOCapacity(Document):
 
 	def _validate_positive_capacity(self):
 		if not self.capacity_hours_per_day or self.capacity_hours_per_day <= 0:
-			frappe.throw(_("Capacity Hours Per Day debe ser mayor que 0."))
+			frappe.throw(_("Capacity Hours Per Day must be greater than 0."))
 
 	def _validate_unique_scope_from_date(self):
 		"""Evita configuraciones ambiguas: un solo registro por scope + from_date.
@@ -41,7 +41,7 @@ class PMOCapacity(Document):
 			if same_scope:
 				scope_label = _("global") if scope_is_global else self.employee
 				frappe.throw(
-					_("Ya existe una capacidad para el scope {0} desde {1} ({2}).").format(
+					_("A capacity already exists for scope {0} from {1} ({2}).").format(
 						scope_label, frappe.format(self.from_date, {"fieldtype": "Date"}), row.name
 					)
 				)

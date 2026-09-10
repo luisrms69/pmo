@@ -50,17 +50,17 @@ def _parse_csv(csv_content):
 	(en cuyo caso `rows` viene vacío).
 	"""
 	if not (csv_content or "").strip():
-		return [], _("El CSV está vacío.")
+		return [], _("The CSV is empty.")
 
 	reader = csv.reader(io.StringIO(csv_content))
 	try:
 		header = next(reader)
 	except StopIteration:
-		return [], _("El CSV está vacío.")
+		return [], _("The CSV is empty.")
 
 	header = [h.strip().lower() for h in header]
 	if header[: len(EXPECTED_COLUMNS)] != EXPECTED_COLUMNS:
-		return [], _("Encabezado inválido. Se esperaba: {0}").format(", ".join(EXPECTED_COLUMNS))
+		return [], _("Invalid header. Expected: {0}").format(", ".join(EXPECTED_COLUMNS))
 
 	rows = []
 	for i, raw in enumerate(reader, start=2):  # fila 1 = encabezado
@@ -119,7 +119,7 @@ def _validate(csv_content):
 		return result, []
 
 	if not rows:
-		result["errores"].append({"row": 1, "error": _("El CSV no contiene filas de datos.")})
+		result["errores"].append({"row": 1, "error": _("The CSV contains no data rows.")})
 		return result, []
 
 	requested_pairs = set()  # (doctype, document, tag) únicos solicitados
@@ -133,37 +133,35 @@ def _validate(csv_content):
 		row_no = r["row"]
 
 		if r["malformed"]:
-			_add_error(
-				row_no, None, None, _("Fila mal formada: se requieren columnas doctype, document, tags.")
-			)
+			_add_error(row_no, None, None, _("Malformed row: doctype, document, tags columns are required."))
 			continue
 
 		dt, dn, tags = r["doctype"], r["document"], r["tags"]
 
 		if not dt or not dn:
-			_add_error(row_no, dt, dn, _("doctype y document son obligatorios."))
+			_add_error(row_no, dt, dn, _("doctype and document are required."))
 			continue
 
 		if not tags:
-			_add_error(row_no, dt, dn, _("No hay Tags válidos en la fila (columna tags vacía)."))
+			_add_error(row_no, dt, dn, _("No valid Tags in the row (empty tags column)."))
 			continue
 
 		# ¿existe el DocType?
 		if dt not in doctype_exists_cache:
 			doctype_exists_cache[dt] = bool(frappe.db.exists("DocType", dt))
 		if not doctype_exists_cache[dt]:
-			_add_error(row_no, dt, dn, _("DocType inexistente: {0}").format(dt))
+			_add_error(row_no, dt, dn, _("Nonexistent DocType: {0}").format(dt))
 			continue
 
 		# ¿existe el documento?
 		if not frappe.db.exists(dt, dn):
 			result["documentos_inexistentes"].append(f"{dt}:{dn}")
-			_add_error(row_no, dt, dn, _("Documento inexistente: {0} {1}").format(dt, dn))
+			_add_error(row_no, dt, dn, _("Nonexistent document: {0} {1}").format(dt, dn))
 			continue
 
 		# ¿permiso de escritura sobre el documento?
 		if not frappe.has_permission(doctype=dt, ptype="write", doc=dn):
-			_add_error(row_no, dt, dn, _("Sin permiso de escritura sobre {0} {1}").format(dt, dn))
+			_add_error(row_no, dt, dn, _("No write permission on {0} {1}").format(dt, dn))
 			continue
 
 		# documento válido; calcular diff contra Tags existentes

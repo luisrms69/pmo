@@ -5,11 +5,11 @@
   "dt": "Task",
   "module": "PMO",
   "fieldname": "pmo_deadline",
-  "label": "PMO — Fecha comprometida (deadline)",
+  "label": "PMO — Committed date (deadline)",
   "fieldtype": "Date",
   "insert_after": "exp_end_date",
   "no_copy": 1,
-  "description": "Fecha comprometida/límite de la tarea (compromiso de negocio o acordado). Distinta del Expected End Date, que es la fecha calculada. No se desplaza automáticamente con la reprogramación (puede cambiarse manualmente). No mueve la tarea ni bloquea el guardado ni el registro real; si el fin planeado la supera, solo se muestra un aviso. Vacío = sin compromiso."
+  "description": "Committed/deadline date of the task (business or agreed commitment). Different from the Expected End Date, which is the calculated date. It does not shift automatically with rescheduling (can be changed manually). It does not move the task, block saving, or the actual log; if the planned end exceeds it, only a warning is shown. Empty = no commitment."
  },
  {
   "doctype": "Custom Field",
@@ -17,11 +17,11 @@
   "dt": "Project",
   "module": "PMO",
   "fieldname": "pmo_committed_end_date",
-  "label": "PMO — Fin comprometido",
+  "label": "PMO — Committed end",
   "fieldtype": "Date",
   "insert_after": "expected_end_date",
   "no_copy": 1,
-  "description": "Fecha comprometida de terminación del proyecto (compromiso de negocio o acordado). Distinta del Expected End Date, que es la fecha calculada. No se desplaza automáticamente con el cronograma (puede cambiarse manualmente). No bloquea el guardado; si el fin calculado la supera, solo se muestra un aviso. Vacío = sin compromiso."
+  "description": "Committed completion date of the project (business or agreed commitment). Different from the Expected End Date, which is the calculated date. It does not shift automatically with the schedule (can be changed manually). It does not block saving; if the calculated end exceeds it, only a warning is shown. Empty = no commitment."
  },
  {
   "doctype": "Custom Field",
@@ -33,7 +33,7 @@
   "fieldtype": "Date",
   "insert_after": "expected_end_date",
   "no_copy": 1,
-  "description": "Fecha de corte (Data Date) del control a fecha del Project (ADR-0006). Solo hoy o pasada; no admite fecha futura. Es el valor por defecto del reporte de status a fecha de corte."
+  "description": "Cutoff date (Data Date) of the Project's as-of control (ADR-0006). Only today or past; no future date allowed. It is the default value of the cutoff-date status report."
  },
  {
   "doctype": "Custom Field",
@@ -45,6 +45,6 @@
   "fieldtype": "Float",
   "insert_after": "priority",
   "no_copy": 1,
-  "description": "Horas planificadas de este asignado para la Task (Capacity Planning). Vacío = reparto uniforme de Task.expected_time entre los asignados."
+  "description": "Planned hours of this assignee for the Task (Capacity Planning). Empty = uniform split of Task.expected_time among assignees."
  }
 ]

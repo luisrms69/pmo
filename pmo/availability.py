@@ -50,7 +50,7 @@ def get_availability_range(employee: str, from_date, to_date) -> dict:
 	"""{date: availability|None} por cada día de [from_date, to_date] (inclusive)."""
 	start, end = getdate(from_date), getdate(to_date)
 	if end < start:
-		frappe.throw(_("To Date no puede ser anterior a From Date."))
+		frappe.throw(_("To Date cannot be earlier than From Date."))
 
 	result = {}
 	day = start

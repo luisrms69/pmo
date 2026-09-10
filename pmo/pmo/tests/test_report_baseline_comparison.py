@@ -107,12 +107,12 @@ class TestBaselineComparisonReport(IntegrationTestCase):
 
 		self.assertEqual(len(columns), 6)
 		# solo diferencias: la fila del cambio de Fin con variación en días
-		fin = [r for r in data if r["field"] == "Fin"]
+		fin = [r for r in data if r["field"] == "End"]
 		self.assertEqual(len(fin), 1)
-		self.assertEqual(fin[0]["change_type"], "Modificada")
-		self.assertEqual(fin[0]["variance"], "+11 días")
+		self.assertEqual(fin[0]["change_type"], "Modified")
+		self.assertEqual(fin[0]["variance"], "+11 days")
 		# resumen: 1 tarea modificada
-		mod = next(s for s in summary if s["label"] == "Tareas modificadas")
+		mod = next(s for s in summary if s["label"] == "Tasks modified")
 		self.assertEqual(mod["value"], 1)
 
 	def test_p4_read_on_both(self):
@@ -155,4 +155,4 @@ class TestBaselineComparisonReport(IntegrationTestCase):
 		finally:
 			frappe.set_user("Administrator")
 		self.assertIn("PMO-CR-XYZ", message)
-		self.assertIn("no atribuye", message)  # contexto, no atribución
+		self.assertIn("does not attribute", message)  # contexto, no atribución

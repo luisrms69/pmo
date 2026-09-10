@@ -255,10 +255,10 @@ class TestCapacityReport(IntegrationTestCase):
 		self.assertIsNone(row["free"])
 		self.assertIsNone(row["overallocation"])  # NO es sobreasignación
 		self.assertIsNone(row["util_planned"])
-		self.assertIn("capacidad faltante", row["status"])
-		over = next(s for s in summary if s["label"] == "Sobreasignados")
+		self.assertIn("missing capacity", row["status"])
+		over = next(s for s in summary if s["label"] == "Overallocated")
 		self.assertEqual(over["value"], 0)  # no cuenta como sobreasignado
-		nocap = next(s for s in summary if s["label"] == "Recursos sin capacidad vigente")
+		nocap = next(s for s in summary if s["label"] == "Resources without current capacity")
 		self.assertEqual(nocap["value"], 1)
 
 	def test_planned_and_actual_never_summed(self):
@@ -350,21 +350,21 @@ class TestCapacitySummaryReliability(unittest.TestCase):
 			_r("E3", 8.0, 0.0, planned_total=6.0),  # dentro de capacidad
 		]
 		cards = {c["label"]: c for c in _build_summary(data)}
-		self.assertEqual(cards["Recursos"]["value"], 3)
-		self.assertEqual(cards["Sobreasignados"]["value"], 1)  # solo E2 (None no cuenta)
-		self.assertEqual(cards["Sobreasignados"]["indicator"], "Red")
-		self.assertEqual(cards["Recursos sin capacidad vigente"]["value"], 1)  # E1
-		self.assertEqual(cards["Recursos sin capacidad vigente"]["indicator"], "Orange")
+		self.assertEqual(cards["Resources"]["value"], 3)
+		self.assertEqual(cards["Overallocated"]["value"], 1)  # solo E2 (None no cuenta)
+		self.assertEqual(cards["Overallocated"]["indicator"], "Red")
+		self.assertEqual(cards["Resources without current capacity"]["value"], 1)  # E1
+		self.assertEqual(cards["Resources without current capacity"]["indicator"], "Orange")
 
 	def test_partial_capacity_same_employee_not_counted_as_missing(self):
 		# Un Employee con una fila sin capacidad y otra con capacidad NO se cuenta como sin capacidad.
 		data = [_r("E1", None, None, 5.0), _r("E1", 8.0, 0.0, 6.0)]
 		cards = {c["label"]: c for c in _build_summary(data)}
-		self.assertEqual(cards["Recursos sin capacidad vigente"]["value"], 0)
+		self.assertEqual(cards["Resources without current capacity"]["value"], 0)
 
 	def test_no_missing_all_have_capacity(self):
 		data = [_r("E1", 8.0, 0.0, 4.0), _r("E2", 8.0, 2.0, 10.0)]
 		cards = {c["label"]: c for c in _build_summary(data)}
-		self.assertEqual(cards["Recursos sin capacidad vigente"]["value"], 0)
-		self.assertEqual(cards["Recursos sin capacidad vigente"]["indicator"], "Green")
-		self.assertEqual(cards["Sobreasignados"]["value"], 1)
+		self.assertEqual(cards["Resources without current capacity"]["value"], 0)
+		self.assertEqual(cards["Resources without current capacity"]["indicator"], "Green")
+		self.assertEqual(cards["Overallocated"]["value"], 1)

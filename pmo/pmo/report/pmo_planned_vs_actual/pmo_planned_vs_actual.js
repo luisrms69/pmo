@@ -23,7 +23,7 @@ frappe.query_reports["PMO Planned vs Actual"] = {
 		},
 		{
 			fieldname: "status_date",
-			label: __("Status Date (corte, opcional)"),
+			label: __("Status Date (cutoff, optional)"),
 			fieldtype: "Date",
 			max_date: frappe.datetime.get_today(),
 		},

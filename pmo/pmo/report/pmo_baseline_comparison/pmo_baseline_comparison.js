@@ -5,14 +5,14 @@ frappe.query_reports["PMO Baseline Comparison"] = {
 	filters: [
 		{
 			fieldname: "project",
-			label: __("Proyecto"),
+			label: __("Project"),
 			fieldtype: "Link",
 			options: "Project",
 			reqd: 1,
 		},
 		{
 			fieldname: "baseline_before",
-			label: __("Línea base previa"),
+			label: __("Before baseline"),
 			fieldtype: "Link",
 			options: "PMO Project Baseline",
 			reqd: 1,
@@ -23,7 +23,7 @@ frappe.query_reports["PMO Baseline Comparison"] = {
 		},
 		{
 			fieldname: "baseline_after",
-			label: __("Línea base posterior"),
+			label: __("After baseline"),
 			fieldtype: "Link",
 			options: "PMO Project Baseline",
 			reqd: 1,
@@ -35,7 +35,7 @@ frappe.query_reports["PMO Baseline Comparison"] = {
 		{
 			// Solo contexto de apertura (no filtra datos; el reporte compara líneas base, no atribuye por CR).
 			fieldname: "change_request",
-			label: __("Change Request (contexto)"),
+			label: __("Change Request (context)"),
 			fieldtype: "Link",
 			options: "PMO Change Request",
 		},

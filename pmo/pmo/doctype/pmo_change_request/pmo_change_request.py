@@ -6,42 +6,56 @@ con impacto estructurado mínimo, decisión del owner fijada al aprobar (Submit)
 Quotation-addendum y a las baselines before/after.
 
 Semántica de estados (Workflow `PMO Change Request`):
-    Borrador → En Revision → Aprobado / Rechazado → Implementado → Cerrado
+    Draft → In Review → Approved / Rejected → Implemented → Closed
 
-- Al pasar a **En Revision** (formalizar): gate duro de baseline vigente + congelado de `baseline_before`.
+- Al pasar a **In Review** (formalizar): gate duro de baseline vigente + congelado de `baseline_before`.
 - **Aprobar/Rechazar** = Submit (autoridad owner-only sellada por P4 sobre `submit` + condición del
   Workflow). `before_submit` fija `approved_by`/`approved_at` y actúa como **red de seguridad** del gate
   de baseline (cubre cualquier ruta a `docstatus=1`).
 - **Aplicar Quotation al Project** (acción explícita, no transición): materializa los Scope Items vía el
   contrato `erpnext_proposals.apply_addendum_to_project` y fija `applied_*`. **No** mueve el Workflow.
-- **Marcar Implementado**: transición Aprobado→Implementado; gate: si hay `proposal_group`, exige
+- **Marcar Implementado**: transición Approved→Implemented; gate: si hay `proposal_group`, exige
   `applied_to_project`.
-- **Cerrar**: transición Implementado→Cerrado; gate: exige `baseline_after`.
+- **Cerrar**: transición Implemented→Closed; gate: exige `baseline_after`.
 """
 
 import frappe
+from frappe import N_
 from frappe.model.document import Document
 from frappe.query_builder import Order
 from frappe.utils import cint, getdate, now_datetime, today
 
 from pmo import change_control
 
-# Estados del Workflow (deben coincidir EXACTAMENTE con el fixture workflow.json / workflow_state.json).
-DRAFT = "Borrador"
-IN_REVIEW = "En Revision"
-APPROVED = "Aprobado"
-REJECTED = "Rechazado"
-IMPLEMENTED = "Implementado"
-CLOSED = "Cerrado"
+# Estados del Workflow (valor canónico en inglés; DEBEN coincidir EXACTAMENTE con workflow.json /
+# workflow_state.json). N_() los marca para extracción al POT sin traducirlos en runtime (es no-op): la
+# lógica compara estos valores estables y el es.po aporta el español mostrado (translated_doctype).
+DRAFT = N_("Draft")
+IN_REVIEW = N_("In Review")
+APPROVED = N_("Approved")
+REJECTED = N_("Rejected")
+IMPLEMENTED = N_("Implemented")
+CLOSED = N_("Closed")
 _TERMINAL_STATES = (REJECTED, CLOSED)
+
+# Workflow Action labels (canónicos en inglés, definidos en workflow.json). Solo marcados para
+# extracción (N_ es no-op): el motor de Workflow compara estos valores; el es.po da el español visible.
+_WORKFLOW_ACTIONS = (
+	N_("Send for Review"),
+	N_("Return to Draft"),
+	N_("Approve"),
+	N_("Reject"),
+	N_("Mark Implemented"),
+	N_("Close"),
+)
 
 # Etiquetas del resumen de impacto (para el Change Register). Orden estable.
 _IMPACT_LABELS = (
-	("impacts_scope", "Alcance"),
-	("impacts_schedule", "Cronograma"),
-	("impacts_effort", "Esfuerzo/Recursos"),
-	("impacts_commercial", "Comercial"),
-	("impacts_risk", "Riesgo"),
+	("impacts_scope", "Scope"),
+	("impacts_schedule", "Schedule"),
+	("impacts_effort", "Effort / Resources"),
+	("impacts_commercial", "Commercial"),
+	("impacts_risk", "Risk"),
 )
 
 
@@ -69,7 +83,9 @@ class PMOChangeRequest(Document):
 		if not self.request_date:
 			self.request_date = today()
 		if not self.priority:
-			self.priority = "Media"  # default robusto (la ruta get_doc(dict) no aplica el default del schema)
+			self.priority = (
+				"Medium"  # default robusto (la ruta get_doc(dict) no aplica el default del schema)
+			)
 
 	def _compute_impact_summary(self):
 		marcados = [label for field, label in _IMPACT_LABELS if self.get(field)]
@@ -91,19 +107,19 @@ class PMOChangeRequest(Document):
 			bl = self.get(fieldname)
 			if bl and frappe.db.get_value("PMO Project Baseline", bl, "project") != self.project:
 				frappe.throw(
-					frappe._("{0} debe pertenecer al mismo Project del Change Request.").format(
+					frappe._("{0} must belong to the same Project as the Change Request.").format(
 						frappe.bold(self.meta.get_label(fieldname))
 					)
 				)
 
 		if self.baseline_before and self.baseline_after:
 			if self.baseline_before == self.baseline_after:
-				frappe.throw(frappe._("Baseline After no puede ser igual a Baseline Before."))
+				frappe.throw(frappe._("Baseline After cannot be the same as Baseline Before."))
 			eb = frappe.db.get_value("PMO Project Baseline", self.baseline_before, "effective_date")
 			ea = frappe.db.get_value("PMO Project Baseline", self.baseline_after, "effective_date")
 			if eb and ea and getdate(ea) < getdate(eb):
 				frappe.throw(
-					frappe._("Baseline After no puede ser efectiva antes que Baseline Before ({0}).").format(
+					frappe._("Baseline After cannot be effective earlier than Baseline Before ({0}).").format(
 						eb
 					)
 				)
@@ -126,13 +142,13 @@ class PMOChangeRequest(Document):
 			if self.proposal_group and not self.applied_to_project:
 				frappe.throw(
 					frappe._(
-						"Aplica la Cotización al Project (los Scope Items) antes de marcar el cambio como implementado."
+						"Apply the Quotation to the Project (the Scope Items) before marking the change as implemented."
 					)
 				)
 		elif new_state == CLOSED:
 			if not self.baseline_after:
 				frappe.throw(
-					frappe._("Liga la nueva baseline (Baseline After) antes de cerrar el Change Request.")
+					frappe._("Link the new baseline (Baseline After) before closing the Change Request.")
 				)
 
 	def _ensure_baseline_before(self):
@@ -146,8 +162,7 @@ class PMOChangeRequest(Document):
 		if not bl:
 			frappe.throw(
 				frappe._(
-					"No se puede formalizar/aprobar el Change Request: el Project no tiene una baseline vigente. "
-					"Crea y aprueba una PMO Project Baseline antes de enviar a revisión."
+					"The Change Request cannot be formalized/approved: the Project has no baseline in effect. Create and approve a PMO Project Baseline before sending it for review."
 				)
 			)
 		self.baseline_before = bl
@@ -175,17 +190,17 @@ class PMOChangeRequest(Document):
 		if self.applied_to_project:
 			frappe.throw(
 				frappe._(
-					"No se puede cancelar: el cambio ya fue aplicado al Project. Registra un Change Request nuevo para revertirlo."
+					"Cannot cancel: the change was already applied to the Project. Record a new Change Request to revert it."
 				)
 			)
 		if self.baseline_after:
 			frappe.throw(
-				frappe._("No se puede cancelar: el Change Request ya se cerró con una nueva baseline.")
+				frappe._("Cannot cancel: the Change Request was already closed with a new baseline.")
 			)
 		if self.get("workflow_state") in _TERMINAL_STATES:
 			frappe.throw(
 				frappe._(
-					"No se puede cancelar un Change Request en estado terminal ({0}). Registra un Change Request nuevo."
+					"Cannot cancel a Change Request in a terminal state ({0}). Record a new Change Request."
 				).format(self.get("workflow_state"))
 			)
 
@@ -198,17 +213,17 @@ def aplicar_quotation_al_project(change_request: str, quotation: str):
 	"""Aplica los Scope Items de la Quotation-addendum al Project EXISTENTE del CR, delegando en el
 	contrato de `erpnext_proposals` (`apply_addendum_to_project`). Owner-only (P4 sobre write del CR
 	submitted). NO mueve el Workflow: solo fija `applied_to_project`/`applied_at`/`applied_quotation`. La
-	transición a `Implementado` es un paso explícito posterior ("Marcar Implementado")."""
+	transición a `Implemented` es un paso explícito posterior ("Mark Implemented")."""
 	doc = frappe.get_doc("PMO Change Request", change_request)
 	doc.check_permission("write")  # sobre un CR submitted → owner-only por P4
 	if doc.docstatus != 1 or doc.get("workflow_state") != APPROVED:
 		frappe.throw(
-			frappe._("Solo se puede aplicar una Cotización desde un Change Request en estado 'Aprobado'.")
+			frappe._("A Quotation can only be applied from a Change Request in the 'Approved' state.")
 		)
 	if doc.applied_to_project:
-		frappe.throw(frappe._("La Cotización ya fue aplicada a este Change Request."))
+		frappe.throw(frappe._("The Quotation was already applied to this Change Request."))
 	if not quotation:
-		frappe.throw(frappe._("Indica la Cotización (Ganada) a aplicar."))
+		frappe.throw(frappe._("Specify the (Won) Quotation to apply."))
 
 	# Delegación: erpnext_proposals valida (Ganada/single-live/…), escribe proposal_project y anexa Tasks.
 	result = change_control.apply_addendum_to_project(quotation, doc.project)
@@ -236,10 +251,12 @@ def crear_addenda(change_request: str):
 	doc.check_permission("write")  # CR editable (docstatus 0) → owner o DocShare-write por P4
 	if doc.docstatus != 0:
 		frappe.throw(
-			frappe._("La addenda se crea mientras el Change Request es editable (Borrador/En Revisión).")
+			frappe._("The addendum is created while the Change Request is editable (Draft / In Review).")
 		)
 	if doc.proposal_group:
-		frappe.throw(frappe._("Este Change Request ya tiene una addenda ({0}).").format(doc.proposal_group))
+		frappe.throw(
+			frappe._("This Change Request already has an addendum ({0}).").format(doc.proposal_group)
+		)
 
 	# Localizar una Quotation del contrato original vía la relación persistente (no por nombre del Project).
 	root_q = frappe.db.get_value(
@@ -248,7 +265,7 @@ def crear_addenda(change_request: str):
 	if not root_q:
 		frappe.throw(
 			frappe._(
-				"El Project no proviene de una propuesta (sin Cotización con proposal_project); no se puede crear una addenda."
+				"The Project does not come from a proposal (no Quotation with proposal_project); an addendum cannot be created."
 			)
 		)
 
@@ -315,5 +332,5 @@ def get_current_baseline(project: str):
 	from pmo.permissions import is_project_visible
 
 	if not is_project_visible(project, frappe.session.user):
-		frappe.throw(frappe._("No tienes acceso a este Project."), frappe.PermissionError)
+		frappe.throw(frappe._("You do not have access to this Project."), frappe.PermissionError)
 	return get_effective_baseline(project)

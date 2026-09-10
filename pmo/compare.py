@@ -114,9 +114,7 @@ def compare_snapshots(before: dict, after: dict) -> dict:
 def _load_snapshot(doc) -> dict:
 	if not doc.snapshot:
 		frappe.throw(
-			_("La baseline {0} no tiene snapshot (no está congelada/Submitted).").format(
-				frappe.bold(doc.name)
-			)
+			_("Baseline {0} has no snapshot (it is not frozen/Submitted).").format(frappe.bold(doc.name))
 		)
 	return json.loads(doc.snapshot)
 
@@ -131,7 +129,7 @@ def compare_baselines(baseline_before: str, baseline_after: str) -> dict:
 	a.check_permission("read")
 	b.check_permission("read")
 	if a.project != b.project:
-		frappe.throw(_("Solo se pueden comparar baselines del mismo Project."))
+		frappe.throw(_("Only baselines from the same Project can be compared."))
 
 	result = compare_snapshots(_load_snapshot(a), _load_snapshot(b))
 	result["meta"] = {

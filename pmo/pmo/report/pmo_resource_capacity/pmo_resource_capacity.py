@@ -11,7 +11,7 @@ Executive / Administrator → todos los Employees activos (con filtros opcionale
 """
 
 import frappe
-from frappe import _
+from frappe import N_, _
 from frappe.utils import getdate, today
 
 from pmo.capacity import get_capacity_detail
@@ -57,24 +57,29 @@ def _rows(employees, as_of):
 	for emp in employees:
 		meta = frappe.db.get_value("Employee", emp, ["employee_name", "department"], as_dict=True) or {}
 		detail = get_capacity_detail(emp, as_of)
+		# origin_key: valor interno estable ("override"/"global"/"missing"); "missing" si no hay fila vigente.
+		origin_key = detail["origin"] if detail else "missing"
 		rows.append(
 			{
 				"employee": emp,
 				"employee_name": meta.get("employee_name"),
 				"department": meta.get("department"),
 				"capacity_hours_per_day": detail["hours"] if detail else None,
-				# origen legible; "Faltante" cuando no hay ni override ni global vigente al corte.
-				"origin": _origin_label(detail),
+				"origin_key": origin_key,  # lógica/resumen (independiente del idioma)
+				"origin": _origin_label(detail),  # presentación traducida
 				"effective_from": str(detail["from_date"]) if detail else None,
 			}
 		)
 	return rows
 
 
+# ORIGIN internos estables → etiqueta de presentación (se traduce con `_()`).
+ORIGIN_LABELS = {"override": N_("Override"), "global": N_("Global"), "missing": N_("Missing")}
+
+
 def _origin_label(detail):
-	if not detail:
-		return _("Faltante")
-	return _("Override") if detail["origin"] == "override" else _("Global")
+	origin_key = detail["origin"] if detail else "missing"
+	return _(ORIGIN_LABELS[origin_key])
 
 
 def _columns():
@@ -86,16 +91,16 @@ def _columns():
 			"options": "Employee",
 			"width": 160,
 		},
-		{"fieldname": "employee_name", "label": _("Nombre"), "fieldtype": "Data", "width": 200},
-		{"fieldname": "department", "label": _("Departamento"), "fieldtype": "Data", "width": 180},
+		{"fieldname": "employee_name", "label": _("Name"), "fieldtype": "Data", "width": 200},
+		{"fieldname": "department", "label": _("Department"), "fieldtype": "Data", "width": 180},
 		{
 			"fieldname": "capacity_hours_per_day",
-			"label": _("Capacidad h/día"),
+			"label": _("Capacity h/day"),
 			"fieldtype": "Float",
 			"width": 130,
 		},
-		{"fieldname": "origin", "label": _("Origen"), "fieldtype": "Data", "width": 110},
-		{"fieldname": "effective_from", "label": _("Vigente desde"), "fieldtype": "Date", "width": 120},
+		{"fieldname": "origin", "label": _("Origin"), "fieldtype": "Data", "width": 110},
+		{"fieldname": "effective_from", "label": _("Effective from"), "fieldtype": "Date", "width": 120},
 	]
 
 
@@ -104,14 +109,14 @@ def _summary(data):
 		return []
 	total = len(data)
 	missing = sum(1 for r in data if r["capacity_hours_per_day"] is None)
-	overrides = sum(1 for r in data if r["origin"] == _("Override"))
+	overrides = sum(1 for r in data if r.get("origin_key") == "override")
 	return [
-		{"label": _("Recursos"), "value": total, "datatype": "Int"},
+		{"label": _("Resources"), "value": total, "datatype": "Int"},
 		{
-			"label": _("Sin capacidad configurada"),
+			"label": _("Without configured capacity"),
 			"value": missing,
 			"datatype": "Int",
 			"indicator": "Orange" if missing else "Green",
 		},
-		{"label": _("Con override individual"), "value": overrides, "datatype": "Int"},
+		{"label": _("With individual override"), "value": overrides, "datatype": "Int"},
 	]

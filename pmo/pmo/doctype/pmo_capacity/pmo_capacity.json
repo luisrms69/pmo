@@ -13,7 +13,7 @@
  ],
  "fields": [
   {
-   "description": "Vacío = capacidad global (baseline); informado = override individual para ese Employee.",
+   "description": "Empty = global capacity (baseline); set = individual override for that Employee.",
    "fieldname": "employee",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -30,7 +30,7 @@
    "reqd": 1
   },
   {
-   "description": "Horas laborables por día desde From Date. Debe ser mayor que 0.",
+   "description": "Working hours per day from From Date. Must be greater than 0.",
    "fieldname": "capacity_hours_per_day",
    "fieldtype": "Float",
    "in_list_view": 1,

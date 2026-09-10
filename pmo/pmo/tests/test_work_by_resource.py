@@ -167,7 +167,7 @@ class TestWorkByResource(IntegrationTestCase):
 		_assign(task, subj)
 		data = self._run(subj, from_date="2026-01-05", to_date="2026-01-05", employee=emp)
 		row = next(r for r in data if r.get("task_id") == task)
-		self.assertEqual(row["project"], "Confidencial")  # Project enmascarado
+		self.assertEqual(row["project"], "Confidential")  # Project enmascarado
 		self.assertNotIn("project_id", row)  # sin id del Project
 		self.assertEqual(row["planned_hours"], 4.0)
 
@@ -194,7 +194,7 @@ class TestWorkByResource(IntegrationTestCase):
 			for r in self._run(subj, from_date="2026-01-05", to_date="2026-01-05", employee=emp)
 			if r.get("task_id") == task
 		)
-		self.assertEqual(row["project"], "Sin proyecto")
+		self.assertEqual(row["project"], "No project")
 		self.assertNotIn("project_id", row)
 
 	# --- Task no visible -> agregado confidencial sin identidad --------------
@@ -210,7 +210,7 @@ class TestWorkByResource(IntegrationTestCase):
 		blob = frappe.as_json(data)
 		self.assertNotIn(task, blob)  # identidad de la Task nunca llega
 		self.assertNotIn("WBR-T-SECRET", blob)  # ni el subject
-		conf = [r for r in data if r["task"] == "Comprometido (confidencial)"]
+		conf = [r for r in data if r["task"] == "Committed (confidential)"]
 		self.assertEqual(len(conf), 1)
 		self.assertEqual(conf[0]["planned_hours"], 4.0)  # las horas se conservan
 		self.assertNotIn("task_id", conf[0])

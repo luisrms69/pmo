@@ -15,7 +15,7 @@ Baseline y vs compromiso. El forecast es el plan vivo de ERPNext, no una predicc
 """
 
 import frappe
-from frappe import _
+from frappe import N_, _
 from frappe.utils import flt, formatdate
 
 from pmo.status_date import build_status_report
@@ -25,7 +25,7 @@ def execute(filters=None):
 	filters = frappe._dict(filters or {})
 	project = filters.get("project")
 	if not project:
-		frappe.throw(_("Selecciona un Project."))
+		frappe.throw(_("Select a Project."))
 
 	# P4 + validación de la Status Date + composición: todo dentro de build_status_report (lanza si no).
 	report = build_status_report(project, filters.get("status_date"))
@@ -40,13 +40,13 @@ def _columns():
 		return c
 
 	return [
-		col("name", "Tarea", "Link", 180, options="Task"),
-		col("subject", "Descripción", "Data", 280),
-		col("baseline_exp_end_date", "Fin (Baseline)", "Date", 120),
-		col("current_exp_end_date", "Fin (Forecast)", "Date", 120),
-		col("slip_days", "Slip (días)", "Int", 100),
-		col("pmo_deadline", "Fecha comprometida", "Date", 140),
-		col("overdue", "Vencida al corte", "Data", 120),
+		col("name", N_("Task"), "Link", 180, options="Task"),
+		col("subject", N_("Description"), "Data", 280),
+		col("baseline_exp_end_date", N_("End (Baseline)"), "Date", 120),
+		col("current_exp_end_date", N_("End (Forecast)"), "Date", 120),
+		col("slip_days", N_("Slip (days)"), "Int", 100),
+		col("pmo_deadline", N_("Committed date"), "Date", 140),
+		col("overdue", N_("Overdue at cutoff"), "Data", 120),
 	]
 
 
@@ -63,7 +63,7 @@ def _rows(report):
 			"current_exp_end_date": r.get("current_exp_end_date"),
 			"slip_days": r.get("slip_days"),
 			"pmo_deadline": r.get("pmo_deadline"),
-			"overdue": _("Sí") if r.get("overdue_at_status_date") else "",
+			"overdue": _("Yes") if r.get("overdue_at_status_date") else "",
 		}
 		for r in rows
 	]
@@ -80,51 +80,51 @@ def _summary(report):
 	forecast_end = (report.get("current") or {}).get("expected_end_date")
 
 	summary = [
-		{"label": _("Fecha de corte"), "value": report["status_date"], "datatype": "Data"},
+		{"label": _("Cutoff date"), "value": report["status_date"], "datatype": "Data"},
 		{
-			"label": _("Línea base vigente"),
-			"value": baseline["name"] if baseline else _("— (sin baseline a la fecha)"),
+			"label": _("Effective baseline"),
+			"value": baseline["name"] if baseline else _("— (no baseline at date)"),
 			"datatype": "Data",
 			"indicator": "Blue" if baseline else "Gray",
 		},
 		# ADR-0009 D1: el forecast vigente es el plan vivo de ERPNext, no una predicción calculada por PMO.
 		{
-			"label": _("Forecast vigente (plan): fin"),
-			"value": forecast_end if forecast_end else _("N/D"),
+			"label": _("Current forecast (plan): end"),
+			"value": forecast_end if forecast_end else _("N/A"),
 			"datatype": "Data",
 			"indicator": "Blue",
 		},
 		{
-			"label": _("Deslizamiento vs Baseline (días)"),
-			"value": slip if slip is not None else _("N/D"),
+			"label": _("Slip vs Baseline (days)"),
+			"value": slip if slip is not None else _("N/A"),
 			"datatype": "Data",
 			"indicator": "Red" if (slip or 0) > 0 else "Green",
 		},
 		{
-			"label": _("Deslizamiento vs compromiso (días)"),
-			"value": slip_committed if slip_committed is not None else _("N/D"),
+			"label": _("Slip vs commitment (days)"),
+			"value": slip_committed if slip_committed is not None else _("N/A"),
 			"datatype": "Data",
 			"indicator": "Red" if (slip_committed or 0) > 0 else "Green",
 		},
 		{
-			"label": _("Tareas: forecast excede compromiso"),
+			"label": _("Tasks: forecast exceeds commitment"),
 			"value": exceeds,
 			"datatype": "Int",
 			"indicator": "Orange" if exceeds else "Green",
 		},
 		{
-			"label": _("Tareas vencidas no terminadas"),
+			"label": _("Overdue unfinished tasks"),
 			"value": overdue,
 			"datatype": "Int",
 			"indicator": "Orange" if overdue else "Green",
 		},
 		{
-			"label": _("Horas reales a la fecha"),
+			"label": _("Actual hours to date"),
 			"value": flt(ind["actual_hours_to_date"], 2),
 			"datatype": "Float",
 		},
 		{
-			"label": _("Completadas / previstas a la fecha"),
+			"label": _("Completed / due to date"),
 			"value": f"{counts['completed_by_cutoff']} / {counts['baseline_due_by_cutoff']}",
 			"datatype": "Data",
 		},
@@ -139,19 +139,17 @@ def _message(report):
 	# Aclaración conceptual (ADR-0006): Current NO reconstruye el plan histórico.
 	parts.append(
 		_(
-			"«Current» es el plan vigente hoy evaluado contra la fecha de corte, no una reconstrucción del "
-			"plan que existía en esa fecha. El Actual proviene de Timesheet fechado; la completitud usa "
-			"«completed_on» como proxy."
+			"«Current» is today's plan evaluated against the cutoff date, not a reconstruction of the plan that existed on that date. Actual comes from dated Timesheet; completeness uses «completed_on» as a proxy."
 		)
 	)
 	base = report.get("baseline")
 	if base and base.get("expected_end_date"):
 		parts.append(
-			_("Fin planeado (Baseline): {0} · Fin planeado (Current): {1}.").format(
+			_("Planned end (Baseline): {0} · Planned end (Current): {1}.").format(
 				formatdate(base["expected_end_date"]),
 				formatdate(report["current"]["expected_end_date"])
 				if report["current"].get("expected_end_date")
-				else _("N/D"),
+				else _("N/A"),
 			)
 		)
 	return "<br>".join(parts)
