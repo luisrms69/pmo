@@ -1,5 +1,27 @@
 # Changelog — pmo
 
+## [0.10.0] — 2026-09-09
+
+Forecast vigente y desviaciones (ADR-0009, Accepted): el forecast es el plan vivo de ERPNext
+(`expected_end_date`); PMO **no** crea un segundo motor predictivo, agrega señales de desviación al
+`PMO Status Report`.
+
+### Added
+- **`PMO Status Report` — desviaciones nuevas:** deslizamiento **vs fecha comprometida**
+  (`expected_end_date - pmo_committed_end_date`), conteo de **Tasks cuyo forecast excede la fecha
+  comprometida** (`exp_end_date > pmo_deadline`, distinto de "vencida"), y tarjeta **"Forecast vigente
+  (plan)"** con el `expected_end_date` como forecast del plan (no una segunda fecha calculada).
+- **Tabla única por Task** (con baseline): fin Baseline, fin Forecast, **slip (días)**, fecha comprometida y
+  marca de **vencida al corte**, ordenada por slip descendente. Subsume la antigua tabla de solo vencidas.
+- **Motor** (`pmo/status_date.py`): `compute_status`/`build_status_report` amplían de forma retrocompatible
+  con `slip_vs_committed_days`, `forecast_exceeds_commitment`, `tasks_vs_baseline` y `committed_end_date`.
+
+### Notes
+- `tasks_overdue_at_cutoff` (vencidas al Status Date) se mantiene como indicador diferenciado.
+- Sin DocTypes/Custom Fields/esquema (`snapshot_schema_version` = 1). `PMO Planned vs Actual` intacto.
+- Fuera de alcance: EAC/ETC, forecast por `progress`, EVM/CPI/SPI, CPM (#9), reservas (#10), constraints
+  tipados, segunda fecha final calculada.
+
 ## [0.9.0] — 2026-09-09
 
 Planificado vs Real (ADR-0008, Proposed): reporte de esfuerzo que responde "¿cuánto planificamos vs cuánto

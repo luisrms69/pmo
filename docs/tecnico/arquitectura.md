@@ -426,6 +426,25 @@ Access`, `System Manager` (abren el reporte; las filas las restringe `pqc`). **P
 - **Fuera (ADR-0006 D6):** EVM/forecast, CPM (#9), reservas de capacidad (#10), Planned-vs-Actual completo
   de horas, avance % histórico y fecha futura.
 
+### Forecast vigente y desviaciones (ADR-0009, amplía el Status Report)
+El **forecast vigente es el plan vivo de ERPNext** (`expected_end_date`/`exp_end_date`); PMO **no** crea un
+segundo motor predictivo, solo agrega señales de desviación. `compute_status`/`build_status_report` se amplían
+de forma **retrocompatible** (la firma de 5 args sigue válida):
+- `slip_vs_committed_days` — Project: `expected_end_date - pmo_committed_end_date` (positivo = el forecast
+  excede el compromiso; `None` sin compromiso).
+- `forecast_exceeds_commitment.count` — Tasks (no `is_group`) con `exp_end_date > pmo_deadline`. **Distinto de
+  "vencida"**: puede ser fecha futura con incumplimiento ya proyectado. Se mantiene separado de
+  `tasks_overdue_at_cutoff` (vencidas al corte).
+- `tasks_vs_baseline` — **tabla única por Task** (con baseline): `baseline_exp_end_date`,
+  `current_exp_end_date`, `slip_days`, `pmo_deadline`, `overdue_at_status_date`, `completed_at_status_date`.
+  Helper `_current_task_map` lee el plan vigente + deadline por Task.
+- `committed_end_date` en el retorno para la tarjeta "Forecast vigente (plan)".
+- **Presentación** (`PMO Status Report`): detalle = tabla única ordenada por slip desc; resumen = forecast
+  vigente + deslizamiento vs Baseline + deslizamiento vs compromiso + conteo forecast-excede-compromiso, junto
+  a los indicadores previos. **`PMO Planned vs Actual` intacto** (sin ETC/EAC ni forecast por `progress`).
+- **Sin** DocTypes/Custom Fields/esquema (`snapshot_schema_version` = 1). Tests: `test_forecast_deviations.py`
+  (motor) + `test_status_report.py` (presentación).
+
 ## Fecha comprometida de cronograma (ADR-0007)
 
 Distingue la fecha **planeada/calculada** (nativa: `Task.exp_end_date`, `Project.expected_end_date`, que se
