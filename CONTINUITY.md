@@ -38,13 +38,15 @@ Guardarraíles: P4; nativo primero; sin motores paralelos; sin tocar #9/#10/cons
   - `capacity-planning.md`: corregida nota stale (Actual SÍ se muestra en el reporte + Planned vs Actual).
   - `docs/roadmap.md`: consolidado (Entregado v0.7–v0.11; v0.12.0 marcada **En implementación, sin release**;
     Workspace landing = pendiente Commit #5). 7 pendientes preservados con tiers; #9/#10 referenciados.
-- **Commit #5 — pendiente.**
+- **Commit #5 — Workspace PMO unificado / landing. ✅ (commit en curso)**
+  - Workspace público `PMO` (seq 10, primero): shortcuts hero + cards agrupando 9 reportes + 3 DocTypes de
+    config. Sin charts/number_cards. `PMO Capacity`/`PMO Control` intactos (regression test). migrate OK.
+    Tests `test_pmo_workspace.py` (5). **Suite 260/260 (+1 skip PDF)**.
 
 ## Siguiente paso
-**Commit #5 — Workspace PMO unificado / landing:** punto de entrada único que enlace las capacidades ya
-implementadas (portafolio, status/planned-vs-actual/baseline/change register, capacity + resource capacity,
-y acceso al Print Format). Reusar patrón de shortcuts de los workspaces existentes; sin funcionalidad nueva.
-Tras el Commit #5: fin de la ronda → `/ship push` + `/ship pr` (v0.12.0). No push/PR/release aún.
+**Ronda de 5 commits COMPLETA.** Falta bump `__version__ → 0.12.0` (aún en 0.11.0) antes del PR, docs de
+release, y `/ship push` → `/ship pr` (base `version-16`). El bump lo aplico en el paso de PR-ready (un solo
+bump por PR). No push/PR/release aún.
 
 ## Cuidados / no repetir
 - La suite corre en dos lotes (integración + unitarios); no leer solo el último "Ran N".

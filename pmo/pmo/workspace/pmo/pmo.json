@@ -1,0 +1,246 @@
+{
+ "charts": [],
+ "content": "[{\"id\": \"pmohdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO \\u2014 Centro de control</b></span>\", \"col\": 12}}, {\"id\": \"scpf\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Portafolio (salud de proyectos)\", \"col\": 4}}, {\"id\": \"scst\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Estado a fecha de corte\", \"col\": 4}}, {\"id\": \"sccp\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Capacity Planning\", \"col\": 4}}, {\"id\": \"cardctl\", \"type\": \"card\", \"data\": {\"card_name\": \"Portafolio y control\", \"col\": 4}}, {\"id\": \"cardcap\", \"type\": \"card\", \"data\": {\"card_name\": \"Capacidad\", \"col\": 4}}, {\"id\": \"cardcfg\", \"type\": \"card\", \"data\": {\"card_name\": \"Configuraci\\u00f3n PMO\", \"col\": 4}}]",
+ "creation": "2026-09-10 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "project",
+ "idx": 0,
+ "label": "PMO",
+ "links": [
+  {
+   "type": "Card Break",
+   "label": "Portafolio y control",
+   "link_type": null,
+   "link_to": null,
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Portfolio",
+   "link_type": "Report",
+   "link_to": "PMO Portfolio",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Status Report",
+   "link_type": "Report",
+   "link_to": "PMO Status Report",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Planned vs Actual",
+   "link_type": "Report",
+   "link_to": "PMO Planned vs Actual",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Baseline Comparison",
+   "link_type": "Report",
+   "link_to": "PMO Baseline Comparison",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Change Register",
+   "link_type": "Report",
+   "link_to": "PMO Change Register",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Card Break",
+   "label": "Capacidad",
+   "link_type": null,
+   "link_to": null,
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Capacity Planning",
+   "link_type": "Report",
+   "link_to": "PMO Capacity Planning",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Resource Capacity",
+   "link_type": "Report",
+   "link_to": "PMO Resource Capacity",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Resource Usage by Project",
+   "link_type": "Report",
+   "link_to": "PMO Resource Usage by Project",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Work by Resource",
+   "link_type": "Report",
+   "link_to": "PMO Work by Resource",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Card Break",
+   "label": "Configuración PMO",
+   "link_type": null,
+   "link_to": null,
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Capacity",
+   "link_type": "DocType",
+   "link_to": "PMO Capacity",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Project Baseline",
+   "link_type": "DocType",
+   "link_to": "PMO Project Baseline",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Change Request",
+   "link_type": "DocType",
+   "link_to": "PMO Change Request",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": ""
+  }
+ ],
+ "modified": "2026-09-10 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "PMO",
+ "name": "PMO",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "Projects User"
+  },
+  {
+   "role": "Employee"
+  },
+  {
+   "role": "PMO Manager"
+  },
+  {
+   "role": "PMO Executive Access"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 10.0,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Portafolio (salud de proyectos)",
+   "link_to": "PMO Portfolio",
+   "type": "Report"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Estado a fecha de corte",
+   "link_to": "PMO Status Report",
+   "type": "Report"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Capacity Planning",
+   "link_to": "PMO Capacity Planning",
+   "type": "Report"
+  }
+ ],
+ "title": "PMO"
+}

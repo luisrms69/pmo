@@ -7,6 +7,9 @@ Es una **vista de consumo**: no calcula nada nuevo, resume por proyecto los indi
 `PMO Status Report` (control a fecha) y la comparación de esfuerzo (Planificado vs Real). Para el detalle de
 un proyecto, abre `PMO Status Report` o `PMO Planned vs Actual`.
 
+> **Punto de entrada:** el workspace **PMO** (menú lateral) es el centro de control: enlaza el Portafolio y
+> todos los reportes de control y capacidad, más la configuración (`PMO Capacity`, baselines, change requests).
+
 ## Qué muestra (una fila por proyecto)
 
 - **Project / Nombre / Estado.**

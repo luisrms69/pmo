@@ -532,6 +532,16 @@ Script Report P4-safe de **consumo**: una fila por Project visible al observador
   siempre y Completed salvo `include_completed`. Roles: Projects User / PMO Manager / PMO Executive Access /
   System Manager. Tests: `test_portfolio.py`. El detalle por proyecto sigue en Status Report / Planned vs Actual.
 
+## Workspace landing `PMO` (v0.12.0)
+Punto de entrada único (public, module PMO, `sequence_id` 10 → antes de `PMO Capacity`/`PMO Control`). Solo
+**navegación**: shortcuts hero (PMO Portfolio, PMO Status Report, PMO Capacity Planning) + **cards** que
+agrupan por área todos los reportes: *Portafolio y control* (Portfolio, Status Report, Planned vs Actual,
+Baseline Comparison, Change Register), *Capacidad* (Capacity Planning, Resource Capacity, Resource Usage by
+Project, Work by Resource) y *Configuración PMO* (DocTypes PMO Capacity, PMO Project Baseline, PMO Change
+Request). **Sin** charts/number_cards (no duplica métricas). **No modifica** `PMO Capacity` ni `PMO Control`
+(se conservan como agrupaciones detalladas). Roles: Projects User / Employee / PMO Manager / PMO Executive
+Access / System Manager. Tests: `test_pmo_workspace.py`.
+
 ## PMO Project Status — Print Format presentable (v0.12.0)
 Salida imprimible/PDF por Project para stakeholders. **Print Format estándar** Jinja `PMO Project Status`
 (`pmo/pmo/print_format/pmo_project_status/`, `doc_type` Project, `standard: Yes`, sync por migrate).
