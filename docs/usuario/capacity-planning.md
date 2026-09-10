@@ -118,9 +118,10 @@ Complementa el KPI *"Recursos sin capacidad vigente"* del reporte de planificaci
 
 ## Notas
 
-- **`Actual` (tiempo real) no se muestra en estas vistas.** Se reserva para una vista futura de análisis
-  histórico (*Planificado vs Real* / *Cumplimiento de planificación*), aún no disponible.
-
+- **`Actual` (tiempo real, de Timesheet) sí se muestra** en `PMO Capacity Planning`: columnas **Actual
+  visible / confidencial / total** y **Utilización real (%)**. Planned y Actual **nunca se suman** entre sí:
+  son dos utilizaciones separadas (planificada = Planned/Availability; real = Actual/Availability). El
+  detalle de esfuerzo **Planificado vs Real por tarea** está en el reporte `PMO Planned vs Actual`.
 - Solo cuentan como carga las Tasks **en curso** (Open, Working, Pending Review, Overdue). Las
   **Completadas** ya no son plan pendiente (su tiempo real se ve en *Actual*).
 - Una Task **sin fechas** no puede ubicarse en el calendario: sus horas se reportan como *sin fechas*.

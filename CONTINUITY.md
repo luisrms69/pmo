@@ -34,13 +34,17 @@ Guardarraíles: P4; nativo primero; sin motores paralelos; sin tocar #9/#10/cons
     locale). Agnóstico al generador PDF (wkhtmltopdf 1º; Gotenberg vía config del site). No toca el PF del
     cliente. migrate OK; render HTML ✔; PDF generado (18KB, quirk de exit de wkhtmltopdf en headless → test
     skip). Tests `test_print_status.py` (4). **Suite 255/255 (+1 skip)**.
-- **Commits #4–#5: pendientes** (en orden).
+- **Commit #4 — documental. ✅ (commit en curso)**
+  - `capacity-planning.md`: corregida nota stale (Actual SÍ se muestra en el reporte + Planned vs Actual).
+  - `docs/roadmap.md`: consolidado (Entregado v0.7–v0.11; v0.12.0 marcada **En implementación, sin release**;
+    Workspace landing = pendiente Commit #5). 7 pendientes preservados con tiers; #9/#10 referenciados.
+- **Commit #5 — pendiente.**
 
 ## Siguiente paso
-**Commit #4 — documental:** corregir `docs/usuario/capacity-planning.md` (texto stale "Actual no se muestra"
-que contradice el reporte) + actualizar `docs/roadmap.md` con el roadmap global consolidado (10 puntos, tiers
-alta/posterior/diferido), preservando TODOS los pendientes diferidos. Sin funcionalidad. Reportar antes del commit.
-No push/PR/release hasta terminar los 5 commits.
+**Commit #5 — Workspace PMO unificado / landing:** punto de entrada único que enlace las capacidades ya
+implementadas (portafolio, status/planned-vs-actual/baseline/change register, capacity + resource capacity,
+y acceso al Print Format). Reusar patrón de shortcuts de los workspaces existentes; sin funcionalidad nueva.
+Tras el Commit #5: fin de la ronda → `/ship push` + `/ship pr` (v0.12.0). No push/PR/release aún.
 
 ## Cuidados / no repetir
 - La suite corre en dos lotes (integración + unitarios); no leer solo el último "Ran N".
