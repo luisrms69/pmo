@@ -1,5 +1,26 @@
 # Changelog — pmo
 
+## [0.9.0] — 2026-09-09
+
+Planificado vs Real (ADR-0008, Proposed): reporte de esfuerzo que responde "¿cuánto planificamos vs cuánto
+hemos consumido?" por Project/Task. Es un **hueco de reporting** — los datos ya son nativos —, no una nueva
+capa de planificación.
+
+### Added
+- **Report `PMO Planned vs Actual`** (Script Report `is_standard`, `ref_doctype` Project) — Planned =
+  `Task.expected_time`; Actual = `Task.actual_time` (nativo) o Σ Timesheet submitted **as-of** `status_date`;
+  indicadores **Variance Hours** (`Actual - Planned`) y **% Consumed** (`Actual / Planned`, guarda /0). Detalle
+  por Task hoja + total de Project excluyendo `is_group` del rollup. P4 impuesto en `execute()`. Filtro
+  `status_date` (default `Project.pmo_status_date`). Requiere `bench migrate` (fixture `is_standard`).
+- **Helpers `as-of`** en `pmo/actual.py` (`get_actual_hours_asof`, `get_actual_hours_by_task_asof`) — corte
+  inclusivo hasta el fin del día de `status_date` (`date(from_time) <= status_date`), `docstatus = 1`, SQL
+  estática parametrizada. Único código nuevo de cálculo.
+
+### Notes
+- Sin motor nuevo, DocTypes, Custom Fields ni cambios a Baseline (`snapshot_schema_version` sigue en 1).
+- Fuera de alcance (ADR-0008): EVM, CPI/SPI, forecast (EAC/ETC), planned time-phased/BCWS, Baseline como
+  fuente del plan, Number Cards/charts.
+
 ## [0.8.0] — 2026-09-09
 
 Gobierno avanzado del cronograma, fase 1 — **fecha comprometida** (ADR-0007, Accepted): distingue la fecha
