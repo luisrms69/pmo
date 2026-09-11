@@ -31,6 +31,12 @@ correspondiente (respetando privacidad P4); el detalle tabular exportable sigue 
 4. **Change Control** — solicitudes de cambio del proyecto (`PMO Change Request`), con estado, fecha,
    prioridad e impacto; cada una abre su documento. Respeta la visibilidad del proyecto (P4). Si no hay
    solicitudes, se indica.
+5. **Schedule (Gantt)** — cronograma visual del proyecto usando el **Gantt nativo de Frappe**. Dibuja las
+   Tasks del proyecto con sus fechas reales de **Inicio/Fin esperado** (`exp_start_date`/`exp_end_date`),
+   progreso y dependencias; los hitos se marcan aparte. Vistas Día / Semana / Mes; al hacer clic en una
+   barra se abre la Task. Es **solo lectura**: no reprograma ni calcula fechas (sin CPM ni
+   auto-scheduling). Respeta P4 (solo se listan Tasks visibles). Si una Task no tiene ambas fechas, no se
+   dibuja; si ninguna las tiene, se indica cómo completarlas.
 
 ## Privacidad
 

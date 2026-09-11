@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PMO VERSION\n"
 "Report-Msgid-Bugs-To: it@buzola.mx\n"
-"POT-Creation-Date: 2026-09-11 14:45-0723\n"
-"PO-Revision-Date: 2026-09-11 14:45-0723\n"
+"POT-Creation-Date: 2026-09-11 14:52-0723\n"
+"PO-Revision-Date: 2026-09-11 14:52-0723\n"
 "Last-Translator: it@buzola.mx\n"
 "Language-Team: it@buzola.mx\n"
 "MIME-Version: 1.0\n"
@@ -122,7 +122,7 @@ msgstr ""
 
 #. Label of the baseline_after (Link) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:242
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:327
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.js:26
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:184
 msgid "After baseline"
@@ -287,7 +287,7 @@ msgstr ""
 msgid "Baseline Comparison"
 msgstr ""
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:232
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:317
 msgid "Baseline Comparison needs two submitted baselines of this Project. This Project does not have enough yet."
 msgstr ""
 
@@ -320,13 +320,13 @@ msgstr ""
 #. Label of the section_baselines (Section Break) field in DocType 'PMO Change
 #. Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:355
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:440
 msgid "Baselines"
 msgstr ""
 
 #. Label of the baseline_before (Link) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:240
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:325
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.js:15
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:183
 msgid "Before baseline"
@@ -369,7 +369,7 @@ msgstr ""
 msgid "Change Control"
 msgstr ""
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:350
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:435
 msgid "Change Request"
 msgstr ""
 
@@ -417,7 +417,7 @@ msgstr ""
 msgid "Committed/deadline date of the task (business or agreed commitment). Different from the Expected End Date, which is the calculated date. It does not shift automatically with rescheduling (can be changed manually). It does not move the task, block saving, or the actual log; if the planned end exceeds it, only a warning is shown. Empty = no commitment."
 msgstr ""
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:244
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:329
 msgid "Compare"
 msgstr ""
 
@@ -438,9 +438,13 @@ msgid "Confidential"
 msgstr ""
 
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:216
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:213
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:282
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:298
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:367
 msgid "Could not load the data."
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:265
+msgid "Could not load the schedule."
 msgstr ""
 
 #: pmo/pmo/page/tag_import/tag_import.js:44
@@ -467,8 +471,8 @@ msgstr ""
 msgid "Cutoff (Status Date)"
 msgstr ""
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:156
 #: pmo/pmo/page/pmo_project_control/pmo_project_control.js:157
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:158
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.py:83
 msgid "Cutoff date"
 msgstr ""
@@ -686,7 +690,7 @@ msgstr ""
 
 #. Label of the impact_summary (Data) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:354
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:439
 msgid "Impact summary"
 msgstr ""
 
@@ -767,7 +771,7 @@ msgstr ""
 msgid "No capacity configured (neither override nor global) for {0} on {1}."
 msgstr ""
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:395
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:480
 msgid "No data."
 msgstr ""
 
@@ -796,8 +800,12 @@ msgstr ""
 msgid "No projects require attention."
 msgstr ""
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:205
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:290
 msgid "No schedule rows at this cutoff date: this Project has no effective baseline. The summary above still applies."
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:232
+msgid "No tasks with both Expected Start and End dates to draw a schedule. Set those dates on the project tasks."
 msgstr ""
 
 #: pmo/print_status.py:56
@@ -855,7 +863,7 @@ msgstr ""
 msgid "Only baselines from the same Project can be compared."
 msgstr ""
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:161
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:162
 msgid "Open Project"
 msgstr ""
 
@@ -1210,7 +1218,7 @@ msgstr ""
 
 #. Label of the request_date (Date) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:352
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:437
 msgid "Request date"
 msgstr ""
 
@@ -1260,8 +1268,16 @@ msgstr ""
 msgid "Scale"
 msgstr ""
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:46
+msgid "Schedule (Gantt)"
+msgstr ""
+
 #: pmo/schedule_commit.py:40 pmo/schedule_commit.py:57
 msgid "Schedule commitment at risk"
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:242
+msgid "Schedule from task Expected Start/End (read-only)."
 msgstr ""
 
 #: pmo/public/js/pmo_change_request.js:130
@@ -1276,7 +1292,7 @@ msgstr ""
 msgid "Select a CSV file first."
 msgstr ""
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:174
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:175
 msgid "Select a Project to begin."
 msgstr ""
 
@@ -1295,7 +1311,7 @@ msgstr ""
 msgid "Select the before and after baselines."
 msgstr ""
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:259
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:344
 msgid "Select two different baselines."
 msgstr ""
 
@@ -1396,7 +1412,7 @@ msgstr ""
 msgid "Status / Schedule"
 msgstr ""
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:79
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:80
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.js:26
 msgid "Status Date"
 msgstr ""
@@ -1540,16 +1556,20 @@ msgstr ""
 msgid "This Change Request already has an addendum ({0})."
 msgstr ""
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:324
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:409
 msgid "This Project has no Change Requests."
 msgstr ""
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:208
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:293
 msgid "This Project has no tasks with effort to show."
 msgstr ""
 
 #: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:128
 msgid "This baseline cannot be cancelled: it has a successor ({0}). Cancel the head of the chain first."
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:235
+msgid "This project has no tasks yet."
 msgstr ""
 
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:645
@@ -1745,7 +1765,7 @@ msgstr ""
 msgid "the report compares baselines; it does not attribute the diff to a single Change Request"
 msgstr ""
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:157
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:158
 msgid "today"
 msgstr ""
 
