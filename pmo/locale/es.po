@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PMO VERSION\n"
 "Report-Msgid-Bugs-To: it@buzola.mx\n"
-"POT-Creation-Date: 2026-09-10 23:47-0923\n"
-"PO-Revision-Date: 2026-09-10 02:54-2123\n"
+"POT-Creation-Date: 2026-09-11 00:13-0923\n"
+"PO-Revision-Date: 2026-09-10 02:54-2323\n"
 "Last-Translator: it@buzola.mx\n"
 "Language: es\n"
 "Language-Team: it@buzola.mx\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:285
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:324
 #: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:95
 #: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:117
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:155
@@ -85,7 +85,7 @@ msgstr "Se creará una Cotización/Addenda comercial del contrato original. Requ
 msgid "A non-Original baseline must indicate which one it supersedes."
 msgstr "Una baseline que no es Original debe indicar cual sustituye."
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:284
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:323
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:154
 msgid "Actual (h)"
 msgstr "Real (h)"
@@ -249,8 +249,8 @@ msgstr "Asociaciones solicitadas"
 msgid "Associations that would be applied"
 msgstr "Asociaciones que se aplicarían"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:169
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:193
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:187
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:217
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:32
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:174
 msgid "At risk"
@@ -475,8 +475,8 @@ msgstr "Notas de decisión"
 msgid "Detail by document"
 msgstr "Detalle por documento"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:170
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:194
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:186
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:218
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:33
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:168
 msgid "Deviated"
@@ -530,6 +530,10 @@ msgstr "Horas efectivas"
 msgid "Effective-dated capacity: empty Employee = global baseline; with Employee = individual override. Applies from From Date until another row of the same type supersedes it. With no active row, the resource is shown as capacity missing (no value is assumed)."
 msgstr "Capacidad efectivo-datada: Employee vacío = baseline global; con Employee = override individual. Aplica desde From Date hasta que otra fila del mismo tipo la sustituya. Sin fila vigente, el recurso se muestra como capacidad faltante (no se asume ningún valor)."
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:311
+msgid "Effort"
+msgstr "Esfuerzo"
+
 #: pmo/print_status.py:39
 msgid "Effort (hours)"
 msgstr "Esfuerzo (horas)"
@@ -573,6 +577,10 @@ msgstr "Estimaciones (opcional)"
 msgid "Evaluation notes"
 msgstr "Notas de evaluación"
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:310
+msgid "Exceptions"
+msgstr "Excepciones"
+
 #: pmo/print_status.py:28
 msgid "Executive summary"
 msgstr "Resumen ejecutivo"
@@ -581,18 +589,18 @@ msgstr "Resumen ejecutivo"
 msgid "Expected Time"
 msgstr "Tiempo Esperado"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:221
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:282
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:245
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:321
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:152
 msgid "Forecast > commitment"
 msgstr "Pronóstico > compromiso"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:278
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:317
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:148
 msgid "Forecast end"
 msgstr "Fin pronosticado"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:173 pmo/print_status.py:38
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:193 pmo/print_status.py:38
 msgid "Forecast exceeds commitment"
 msgstr "Pronóstico excede compromiso"
 
@@ -613,7 +621,8 @@ msgstr "Global"
 msgid "Granularity"
 msgstr "Granularidad"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:277
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:213
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:316
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:147
 msgid "Health"
 msgstr "Salud"
@@ -664,7 +673,7 @@ msgstr "Importar Tags"
 msgid "In Review"
 msgstr "En revisión"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:61
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:64
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.js:16
 msgid "Include completed"
 msgstr "Incluir completados"
@@ -736,7 +745,7 @@ msgstr "Sin planificación para este empleado en el rango."
 msgid "No project"
 msgstr "Sin proyecto"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:206
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:229
 msgid "No projects require attention."
 msgstr "Ningún proyecto requiere atención."
 
@@ -748,7 +757,7 @@ msgstr "Sin tareas con desviación relevante a la fecha de corte."
 msgid "No valid Tags in the row (empty tags column)."
 msgstr "No hay Tags válidos en la fila (columna tags vacía)."
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:146
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:159
 msgid "No visible projects for the current filters."
 msgstr "No hay proyectos visibles para los filtros actuales."
 
@@ -778,8 +787,7 @@ msgstr "Documentos inexistentes"
 msgid "Nothing was applied. With {0} error(s), NO tag was written (all or nothing)."
 msgstr "No se aplicó nada. Con {0} error(es), no se escribió NINGÚN tag (todo o nada)."
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:168
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:192
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:216
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:31
 msgid "On track"
 msgstr "En plan"
@@ -905,7 +913,7 @@ msgstr "PMO Planificado vs Real"
 
 #. Name of a report
 #. Label of a Link in the PMO Workspace
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:17
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:21
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.json
 #: pmo/pmo/workspace/pmo/pmo.json
 msgid "PMO Portfolio"
@@ -970,7 +978,7 @@ msgstr "PMO — Fin comprometido"
 msgid "Parent task"
 msgstr "Tarea padre"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:283
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:322
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:153
 msgid "Planned (h)"
 msgstr "Planificado (h)"
@@ -1024,7 +1032,7 @@ msgstr "Planificado visible"
 msgid "Planned vs Actual"
 msgstr "Planificado vs Real"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:82
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:92
 msgid "Portfolio"
 msgstr "Portafolio"
 
@@ -1118,7 +1126,7 @@ msgstr "Solicitud"
 msgid "Request date"
 msgstr "Fecha de solicitud"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:80
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:88
 msgid "Requires attention"
 msgstr "Requiere atención"
 
@@ -1219,11 +1227,11 @@ msgstr "Desvío"
 msgid "Slip (days)"
 msgstr "Desvío (días)"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:224
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:248
 msgid "Slip vs Baseline"
 msgstr "Desvío vs Línea Base"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:279
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:318
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:149
 msgid "Slip vs Baseline (d)"
 msgstr "Desvío vs Línea Base (d)"
@@ -1236,11 +1244,11 @@ msgstr "Desvío vs Línea Base (días)"
 msgid "Slip vs Baseline:"
 msgstr "Desvío vs Línea Base:"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:215
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:239
 msgid "Slip vs commitment"
 msgstr "Desvío vs compromiso"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:280
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:319
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:150
 msgid "Slip vs commitment (d)"
 msgstr "Desvío vs compromiso (d)"
@@ -1499,11 +1507,11 @@ msgstr "Quién solicita/levanta el cambio."
 msgid "With individual override"
 msgstr "Con override individual"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:171
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:192
 msgid "With overdue tasks"
 msgstr "Con tareas vencidas"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:177
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:188
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:180
 msgid "Without baseline"
 msgstr "Sin línea base"
