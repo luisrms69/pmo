@@ -1,11 +1,23 @@
 # Portafolio (salud multi-proyecto)
 
 Responde: **"¿cómo va cada proyecto y cuáles debo vigilar?"** en una sola vista, sin abrir proyecto por
-proyecto. Menú **Reportes → PMO Portfolio**.
+proyecto. Acceso principal: **workspace PMO → atajo "Portfolio"**, que abre la **Page de gestión**
+`PMO Portfolio` (Desk). El **Script Report** `PMO Portfolio` (misma información en tabla) sigue disponible en
+la sección **Reports** para consulta tabular/exportación.
 
-Es una **vista de consumo**: no calcula nada nuevo, resume por proyecto los indicadores que ya producen
-`PMO Status Report` (control a fecha) y la comparación de esfuerzo (Planificado vs Real). Para el detalle de
-un proyecto, abre `PMO Status Report` o `PMO Planned vs Actual`.
+Es una **vista de consumo**: no calcula nada nuevo. La Page consume el mismo motor server-side del Script
+Report (que resume por proyecto los indicadores que ya producen `PMO Status Report` y la comparación de
+esfuerzo Planificado vs Real) y lo presenta en tres capas:
+
+1. **Resumen** — tarjetas de KPIs (Proyectos, En plan, En riesgo, Desviado, con tareas vencidas, forecast que
+   excede compromiso, sin línea base) y una barra de distribución de salud.
+2. **Requiere atención** — excepciones: proyectos Desviados / En riesgo / con vencidas / con forecast sobre el
+   compromiso, ordenados por severidad. Usa únicamente señales existentes (sin score nuevo).
+3. **Portafolio** — la tabla completa con todo el detalle (una fila por proyecto).
+
+Desde cualquier proyecto (en "Requiere atención" o en la tabla) se abre **`PMO Project Control`** de ese
+proyecto (que a su vez ofrece "Abrir Project" al documento nativo); el detalle a fecha sigue en
+`PMO Status Report` / `PMO Planned vs Actual`.
 
 > **Punto de entrada:** el workspace **PMO** (menú lateral) es el centro de control: enlaza el Portafolio y
 > todos los reportes de control y capacidad, más la configuración (`PMO Capacity`, baselines, change requests).

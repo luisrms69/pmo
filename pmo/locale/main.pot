@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PMO VERSION\n"
 "Report-Msgid-Bugs-To: it@buzola.mx\n"
-"POT-Creation-Date: 2026-09-10 03:11-0723\n"
-"PO-Revision-Date: 2026-09-10 03:11-0723\n"
+"POT-Creation-Date: 2026-09-11 00:44-0723\n"
+"PO-Revision-Date: 2026-09-11 00:44-0723\n"
 "Last-Translator: it@buzola.mx\n"
 "Language-Team: it@buzola.mx\n"
 "MIME-Version: 1.0\n"
@@ -16,6 +16,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:324
 #: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:95
 #: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:117
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:155
@@ -82,6 +83,7 @@ msgstr ""
 msgid "A non-Original baseline must indicate which one it supersedes."
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:323
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:154
 msgid "Actual (h)"
 msgstr ""
@@ -120,6 +122,7 @@ msgstr ""
 
 #. Label of the baseline_after (Link) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:242
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.js:26
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:184
 msgid "After baseline"
@@ -245,6 +248,8 @@ msgstr ""
 msgid "Associations that would be applied"
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:187
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:217
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:32
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:174
 msgid "At risk"
@@ -276,6 +281,14 @@ msgstr ""
 msgid "Baseline After cannot be the same as Baseline Before."
 msgstr ""
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:44
+msgid "Baseline Comparison"
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:232
+msgid "Baseline Comparison needs two submitted baselines of this Project. This Project does not have enough yet."
+msgstr ""
+
 #. Label of a shortcut in the PMO Control Workspace
 #: pmo/pmo/workspace/pmo_control/pmo_control.json
 msgid "Baseline comparison"
@@ -305,11 +318,13 @@ msgstr ""
 #. Label of the section_baselines (Section Break) field in DocType 'PMO Change
 #. Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:355
 msgid "Baselines"
 msgstr ""
 
 #. Label of the baseline_before (Link) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:240
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.js:15
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:183
 msgid "Before baseline"
@@ -346,6 +361,14 @@ msgstr ""
 
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:29
 msgid "Capacity heatmap"
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:45
+msgid "Change Control"
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:350
+msgid "Change Request"
 msgstr ""
 
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.js:38
@@ -387,6 +410,10 @@ msgstr ""
 msgid "Committed/deadline date of the task (business or agreed commitment). Different from the Expected End Date, which is the calculated date. It does not shift automatically with rescheduling (can be changed manually). It does not move the task, block saving, or the actual log; if the planned end exceeds it, only a warning is shown. Empty = no commitment."
 msgstr ""
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:244
+msgid "Compare"
+msgstr ""
+
 #: pmo/public/js/pmo_change_request.js:51
 msgid "Compare baselines"
 msgstr ""
@@ -404,6 +431,8 @@ msgid "Confidential"
 msgstr ""
 
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:216
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:213
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:282
 msgid "Could not load the data."
 msgstr ""
 
@@ -431,6 +460,8 @@ msgstr ""
 msgid "Cutoff (Status Date)"
 msgstr ""
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:156
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:157
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.py:83
 msgid "Cutoff date"
 msgstr ""
@@ -469,6 +500,8 @@ msgstr ""
 msgid "Detail by document"
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:186
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:218
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:33
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:168
 msgid "Deviated"
@@ -522,6 +555,10 @@ msgstr ""
 msgid "Effective-dated capacity: empty Employee = global baseline; with Employee = individual override. Applies from From Date until another row of the same type supersedes it. With no active row, the resource is shown as capacity missing (no value is assumed)."
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:311
+msgid "Effort"
+msgstr ""
+
 #: pmo/print_status.py:39
 msgid "Effort (hours)"
 msgstr ""
@@ -565,6 +602,10 @@ msgstr ""
 msgid "Evaluation notes"
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:310
+msgid "Exceptions"
+msgstr ""
+
 #: pmo/print_status.py:28
 msgid "Executive summary"
 msgstr ""
@@ -573,15 +614,18 @@ msgstr ""
 msgid "Expected Time"
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:245
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:321
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:152
 msgid "Forecast > commitment"
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:317
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:148
 msgid "Forecast end"
 msgstr ""
 
-#: pmo/print_status.py:38
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:193 pmo/print_status.py:38
 msgid "Forecast exceeds commitment"
 msgstr ""
 
@@ -602,6 +646,8 @@ msgstr ""
 msgid "Granularity"
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:213
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:316
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:147
 msgid "Health"
 msgstr ""
@@ -624,6 +670,7 @@ msgstr ""
 
 #. Label of the impact_summary (Data) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:354
 msgid "Impact summary"
 msgstr ""
 
@@ -652,6 +699,7 @@ msgstr ""
 msgid "In Review"
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:64
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.js:16
 msgid "Include completed"
 msgstr ""
@@ -702,6 +750,10 @@ msgstr ""
 msgid "No capacity configured (neither override nor global) for {0} on {1}."
 msgstr ""
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:395
+msgid "No data."
+msgstr ""
+
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:1011
 msgid "No dates"
 msgstr ""
@@ -723,12 +775,24 @@ msgstr ""
 msgid "No project"
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:229
+msgid "No projects require attention."
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:205
+msgid "No schedule rows at this cutoff date: this Project has no effective baseline. The summary above still applies."
+msgstr ""
+
 #: pmo/print_status.py:56
 msgid "No tasks with relevant deviation at the cutoff date."
 msgstr ""
 
 #: pmo/tag_import.py:146
 msgid "No valid Tags in the row (empty tags column)."
+msgstr ""
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:159
+msgid "No visible projects for the current filters."
 msgstr ""
 
 #: pmo/tag_import.py:164
@@ -757,6 +821,7 @@ msgstr ""
 msgid "Nothing was applied. With {0} error(s), NO tag was written (all or nothing)."
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:216
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:31
 msgid "On track"
 msgstr ""
@@ -771,6 +836,10 @@ msgstr ""
 
 #: pmo/compare.py:132
 msgid "Only baselines from the same Project can be compared."
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:161
+msgid "Open Project"
 msgstr ""
 
 #. Label of the origin (Select) field in DocType 'PMO Change Request'
@@ -882,6 +951,7 @@ msgstr ""
 
 #. Name of a report
 #. Label of a Link in the PMO Workspace
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:21
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.json
 #: pmo/pmo/workspace/pmo/pmo.json
 msgid "PMO Portfolio"
@@ -892,6 +962,10 @@ msgstr ""
 #: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
 #: pmo/pmo/workspace/pmo/pmo.json
 msgid "PMO Project Baseline"
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:25
+msgid "PMO Project Control"
 msgstr ""
 
 #. Name of a report
@@ -946,6 +1020,7 @@ msgstr ""
 msgid "Parent task"
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:322
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:153
 msgid "Planned (h)"
 msgstr ""
@@ -995,13 +1070,13 @@ msgid "Planned visible"
 msgstr ""
 
 #. Label of a shortcut in the PMO Control Workspace
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:43
 #: pmo/pmo/workspace/pmo_control/pmo_control.json
 msgid "Planned vs Actual"
 msgstr ""
 
-#. Label of a Card Break in the PMO Workspace
-#: pmo/pmo/workspace/pmo/pmo.json
-msgid "Portfolio & control"
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:92
+msgid "Portfolio"
 msgstr ""
 
 #. Label of a shortcut in the PMO Workspace
@@ -1025,6 +1100,11 @@ msgstr ""
 #: pmo/pmo/report/pmo_resource_usage_by_project/pmo_resource_usage_by_project.py:146
 #: pmo/pmo/report/pmo_resource_usage_by_project/pmo_resource_usage_by_project.py:177
 msgid "Project / bucket"
+msgstr ""
+
+#. Label of a shortcut in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "Project Control"
 msgstr ""
 
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:212
@@ -1091,7 +1171,12 @@ msgstr ""
 
 #. Label of the request_date (Date) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:352
 msgid "Request date"
+msgstr ""
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:88
+msgid "Requires attention"
 msgstr ""
 
 #. Label of a shortcut in the PMO Capacity Workspace
@@ -1152,6 +1237,10 @@ msgstr ""
 msgid "Select a CSV file first."
 msgstr ""
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:174
+msgid "Select a Project to begin."
+msgstr ""
+
 #: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:30
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.py:28
 msgid "Select a Project."
@@ -1165,6 +1254,10 @@ msgstr ""
 
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:39
 msgid "Select the before and after baselines."
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:259
+msgid "Select two different baselines."
 msgstr ""
 
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:44
@@ -1191,6 +1284,11 @@ msgstr ""
 msgid "Slip (days)"
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:248
+msgid "Slip vs Baseline"
+msgstr ""
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:318
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:149
 msgid "Slip vs Baseline (d)"
 msgstr ""
@@ -1203,6 +1301,11 @@ msgstr ""
 msgid "Slip vs Baseline:"
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:239
+msgid "Slip vs commitment"
+msgstr ""
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:319
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:150
 msgid "Slip vs commitment (d)"
 msgstr ""
@@ -1250,6 +1353,11 @@ msgstr ""
 msgid "Start (Project)"
 msgstr ""
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:42
+msgid "Status / Schedule"
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:79
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.js:26
 msgid "Status Date"
 msgstr ""
@@ -1398,6 +1506,14 @@ msgstr ""
 msgid "This Change Request already has an addendum ({0})."
 msgstr ""
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:324
+msgid "This Project has no Change Requests."
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:208
+msgid "This Project has no tasks with effort to show."
+msgstr ""
+
 #: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:128
 msgid "This baseline cannot be cancelled: it has a successor ({0}). Cancel the head of the chain first."
 msgstr ""
@@ -1461,6 +1577,11 @@ msgstr ""
 msgid "With individual override"
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:192
+msgid "With overdue tasks"
+msgstr ""
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:188
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:180
 msgid "Without baseline"
 msgstr ""
@@ -1582,6 +1703,10 @@ msgstr ""
 
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:192
 msgid "the report compares baselines; it does not attribute the diff to a single Change Request"
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:157
+msgid "today"
 msgstr ""
 
 #: pmo/pmo/page/tag_import/tag_import.js:86

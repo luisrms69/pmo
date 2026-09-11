@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\": \"pmohdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO \\u2014 Control center</b></span>\", \"col\": 12}}, {\"id\": \"scpf\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Portfolio (project health)\", \"col\": 4}}, {\"id\": \"scst\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Status as of cutoff date\", \"col\": 4}}, {\"id\": \"sccp\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Capacity Planning\", \"col\": 4}}, {\"id\": \"cardctl\", \"type\": \"card\", \"data\": {\"card_name\": \"Portfolio & control\", \"col\": 4}}, {\"id\": \"cardcap\", \"type\": \"card\", \"data\": {\"card_name\": \"Capacity\", \"col\": 4}}, {\"id\": \"cardcfg\", \"type\": \"card\", \"data\": {\"card_name\": \"Configuraci\\u00f3n PMO\", \"col\": 4}}]",
+ "content": "[{\"id\": \"pmohdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO \\u2014 Control center</b></span>\", \"col\": 12}}, {\"id\": \"scpf\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Portfolio (project health)\", \"col\": 4}}, {\"id\": \"scst\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Status as of cutoff date\", \"col\": 4}}, {\"id\": \"sccp\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Capacity Planning\", \"col\": 4}}, {\"id\": \"cardrep\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 6}}, {\"id\": \"cardcfg\", \"type\": \"card\", \"data\": {\"card_name\": \"PMO configuration\", \"col\": 6}}, {\"id\": \"scpc\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Project Control\", \"col\": 4}}]",
  "creation": "2026-09-10 00:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -12,7 +12,7 @@
  "links": [
   {
    "type": "Card Break",
-   "label": "Portfolio & control",
+   "label": "Reports",
    "link_type": null,
    "link_to": null,
    "onboard": 0,
@@ -30,7 +30,7 @@
    "onboard": 0,
    "dependencies": "",
    "hidden": 0,
-   "is_query_report": 0,
+   "is_query_report": 1,
    "link_count": 0,
    "only_for": ""
   },
@@ -42,7 +42,7 @@
    "onboard": 0,
    "dependencies": "",
    "hidden": 0,
-   "is_query_report": 0,
+   "is_query_report": 1,
    "link_count": 0,
    "only_for": ""
   },
@@ -54,7 +54,7 @@
    "onboard": 0,
    "dependencies": "",
    "hidden": 0,
-   "is_query_report": 0,
+   "is_query_report": 1,
    "link_count": 0,
    "only_for": ""
   },
@@ -66,7 +66,7 @@
    "onboard": 0,
    "dependencies": "",
    "hidden": 0,
-   "is_query_report": 0,
+   "is_query_report": 1,
    "link_count": 0,
    "only_for": ""
   },
@@ -83,18 +83,6 @@
    "only_for": ""
   },
   {
-   "type": "Card Break",
-   "label": "Capacity",
-   "link_type": null,
-   "link_to": null,
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "only_for": ""
-  },
-  {
    "type": "Link",
    "label": "PMO Capacity Planning",
    "link_type": "Report",
@@ -102,7 +90,7 @@
    "onboard": 0,
    "dependencies": "",
    "hidden": 0,
-   "is_query_report": 0,
+   "is_query_report": 1,
    "link_count": 0,
    "only_for": ""
   },
@@ -114,7 +102,7 @@
    "onboard": 0,
    "dependencies": "",
    "hidden": 0,
-   "is_query_report": 0,
+   "is_query_report": 1,
    "link_count": 0,
    "only_for": ""
   },
@@ -126,7 +114,7 @@
    "onboard": 0,
    "dependencies": "",
    "hidden": 0,
-   "is_query_report": 0,
+   "is_query_report": 1,
    "link_count": 0,
    "only_for": ""
   },
@@ -138,7 +126,7 @@
    "onboard": 0,
    "dependencies": "",
    "hidden": 0,
-   "is_query_report": 0,
+   "is_query_report": 1,
    "link_count": 0,
    "only_for": ""
   },
@@ -191,7 +179,7 @@
    "only_for": ""
   }
  ],
- "modified": "2026-09-10 18:00:00.000000",
+ "modified": "2026-09-11 11:00:00.000000",
  "modified_by": "Administrator",
  "module": "PMO",
  "name": "PMO",
@@ -224,8 +212,8 @@
    "color": "Blue",
    "doc_view": "",
    "label": "Portfolio (project health)",
-   "link_to": "PMO Portfolio",
-   "type": "Report"
+   "link_to": "pmo_portfolio",
+   "type": "Page"
   },
   {
    "color": "Green",
@@ -240,6 +228,13 @@
    "label": "Capacity Planning",
    "link_to": "PMO Capacity Planning",
    "type": "Report"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Project Control",
+   "link_to": "pmo_project_control",
+   "type": "Page"
   }
  ],
  "title": "PMO"
