@@ -34,10 +34,10 @@ def validate_task_deadline(doc, method=None):
 		# Fechas en ISO (str) — NO usar format_date: depende del locale y, con la sesión sin idioma
 		# (consola / jobs de fondo), lanzaría, convirtiendo este aviso suave en un bloqueo (viola D4).
 		frappe.msgprint(
-			_("El fin planeado ({0}) excede la fecha comprometida (PMO Deadline: {1}).").format(
+			_("The planned end ({0}) exceeds the committed date (PMO Deadline: {1}).").format(
 				getdate(planned_end), getdate(deadline)
 			),
-			title=_("Compromiso de cronograma en riesgo"),
+			title=_("Schedule commitment at risk"),
 			indicator="orange",
 		)
 
@@ -51,9 +51,9 @@ def validate_project_committed_end(doc, method=None):
 	if getdate(planned_end) > getdate(committed):
 		# Fechas en ISO (str) — NO usar format_date (dependiente de locale; ver validate_task_deadline).
 		frappe.msgprint(
-			_("El fin planeado del proyecto ({0}) excede la fecha comprometida ({1}).").format(
+			_("The project's planned end ({0}) exceeds the committed date ({1}).").format(
 				getdate(planned_end), getdate(committed)
 			),
-			title=_("Compromiso de cronograma en riesgo"),
+			title=_("Schedule commitment at risk"),
 			indicator="orange",
 		)

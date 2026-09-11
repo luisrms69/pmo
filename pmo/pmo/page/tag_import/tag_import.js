@@ -9,7 +9,7 @@
 frappe.pages["tag_import"].on_page_load = function (wrapper) {
 	const page = frappe.ui.make_app_page({
 		parent: wrapper,
-		title: __("Importar Tags"),
+		title: __("Import Tags"),
 		single_column: true,
 	});
 
@@ -17,8 +17,8 @@ frappe.pages["tag_import"].on_page_load = function (wrapper) {
 	$body.html(`
 		<div class="tag-import-tool" style="max-width: 720px;">
 			<p class="text-muted">
-				${__("Sube un CSV con columnas")} <code>doctype,document,tags</code>.
-				${__("Varios Tags por documento separados por comas.")}
+				${__("Upload a CSV with columns")} <code>doctype,document,tags</code>.
+				${__("Multiple Tags per document separated by commas.")}
 			</p>
 			<pre class="small text-muted" style="background:var(--control-bg);padding:8px;border-radius:6px;">doctype,document,tags
 Task,TASK-0001,"CIERRE,CLIENTE,GO-NO-GO"
@@ -36,12 +36,12 @@ Task,TASK-0002,"DATOS,COMPARTIDA"</pre>
 		return new Promise((resolve, reject) => {
 			const f = $file[0].files[0];
 			if (!f) {
-				reject(__("Selecciona primero un archivo CSV."));
+				reject(__("Select a CSV file first."));
 				return;
 			}
 			const reader = new FileReader();
 			reader.onload = (e) => resolve(e.target.result);
-			reader.onerror = () => reject(__("No se pudo leer el archivo."));
+			reader.onerror = () => reject(__("Could not read the file."));
 			reader.readAsText(f);
 		});
 	}
@@ -58,7 +58,7 @@ Task,TASK-0002,"DATOS,COMPARTIDA"</pre>
 			)
 			.then((r) => render_summary(r.message))
 			.catch((err) =>
-				frappe.msgprint({ title: __("Importar Tags"), message: err, indicator: "orange" })
+				frappe.msgprint({ title: __("Import Tags"), message: err, indicator: "orange" })
 			);
 	}
 
@@ -67,23 +67,23 @@ Task,TASK-0002,"DATOS,COMPARTIDA"</pre>
 			$summary.empty();
 			return;
 		}
-		const mode = s.mode === "apply" ? __("Aplicar") : __("Dry Run");
+		const mode = s.mode === "apply" ? __("Apply") : __("Dry Run");
 		const rows = [
-			[__("Documentos leídos"), s.documentos_leidos],
-			[__("Documentos válidos"), s.documentos_validos],
-			[__("Asociaciones solicitadas"), s.asociaciones_solicitadas],
+			[__("Documents read"), s.documentos_leidos],
+			[__("Valid documents"), s.documentos_validos],
+			[__("Associations requested"), s.asociaciones_solicitadas],
 			[
 				s.mode === "apply"
-					? __("Asociaciones aplicadas")
-					: __("Asociaciones que se aplicarían"),
+					? __("Associations applied")
+					: __("Associations that would be applied"),
 				s.asociaciones_aplicadas,
 			],
-			[__("Documentos inexistentes"), (s.documentos_inexistentes || []).length],
-			[__("Errores"), (s.errores || []).length],
+			[__("Nonexistent documents"), (s.documentos_inexistentes || []).length],
+			[__("Errors"), (s.errores || []).length],
 		];
 		const indicator = s.ok ? "green" : "red";
 		let html = `<h5>${mode} — <span class="indicator ${indicator}">${
-			s.ok ? __("válido") : __("con errores")
+			s.ok ? __("valid") : __("with errors")
 		}</span></h5><table class="table table-bordered small">`;
 		rows.forEach(([k, v]) => {
 			html += `<tr><td>${k}</td><td><b>${v}</b></td></tr>`;
@@ -96,11 +96,11 @@ Task,TASK-0002,"DATOS,COMPARTIDA"</pre>
 			const msg =
 				s.mode === "apply"
 					? __(
-							"No se aplicó nada. Con {0} error(es), no se escribió NINGÚN tag (todo o nada).",
+							"Nothing was applied. With {0} error(s), NO tag was written (all or nothing).",
 							[n]
 					  )
 					: __(
-							"Aplicar NO escribirá NINGÚN tag mientras haya errores ({0}). Es todo o nada: corrige el CSV y reintenta.",
+							"Apply will NOT write ANY tag while there are errors ({0}). It is all or nothing: fix the CSV and retry.",
 							[n]
 					  );
 			html += `<div class="alert alert-warning" style="margin-top:8px;"><b>⚠️ ${msg}</b></div>`;
@@ -111,13 +111,13 @@ Task,TASK-0002,"DATOS,COMPARTIDA"</pre>
 		const detalle = (s.detalle || []).slice().sort((a, b) => rank(a) - rank(b));
 		if (detalle.length) {
 			const applied = s.mode === "apply" && s.ok;
-			html += `<h6>${__("Detalle por documento")}</h6>`;
+			html += `<h6>${__("Detail by document")}</h6>`;
 			html += `<div style="max-height:360px;overflow:auto;border:1px solid var(--border-color);border-radius:6px;">`;
 			html += `<table class="table table-bordered small" style="margin:0;">
 				<thead><tr>
-					<th>${__("Tipo")}</th><th>${__("Documento")}</th>
-					<th>${applied ? __("Tags agregados") : __("Tags a agregar")}</th>
-					<th>${__("Estado")}</th>
+					<th>${__("Type")}</th><th>${__("Document")}</th>
+					<th>${applied ? __("Tags added") : __("Tags to add")}</th>
+					<th>${__("Status")}</th>
 				</tr></thead><tbody>`;
 			detalle.forEach((d) => {
 				html += `<tr>
@@ -155,21 +155,21 @@ Task,TASK-0002,"DATOS,COMPARTIDA"</pre>
 		// Si la importación está bloqueada por errores, esta fila válida NO se aplicará.
 		if (blocked) {
 			return `<span class="text-warning">${__(
-				"no se aplicará (hay errores en el CSV)"
+				"will not be applied (there are errors in the CSV)"
 			)}</span>`;
 		}
 		if (d.estado === "sin_cambios") {
-			return `<span class="text-muted">${__("sin cambios (ya tiene los tags)")}</span>`;
+			return `<span class="text-muted">${__("no changes (already has the tags)")}</span>`;
 		}
 		return `<span class="${applied ? "text-success" : ""}">${
-			applied ? __("agregados") : __("se agregarán")
+			applied ? __("added") : __("will be added")
 		}</span>`;
 	}
 
 	page.set_primary_action(
-		__("Aplicar"),
-		() => run("tag_import_apply", __("Aplicando Tags...")),
+		__("Apply"),
+		() => run("tag_import_apply", __("Applying Tags...")),
 		"play"
 	);
-	page.set_secondary_action(__("Dry Run"), () => run("tag_import_dry_run", __("Validando...")));
+	page.set_secondary_action(__("Dry Run"), () => run("tag_import_dry_run", __("Validating...")));
 };

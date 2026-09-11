@@ -78,24 +78,24 @@ class TestStatusReportPresentation(unittest.TestCase):
 		# ordenadas por slip descendente: T2 (41) antes que T1 (9)
 		self.assertEqual([r["name"] for r in rows], ["T2", "T1"])
 		self.assertEqual(rows[0]["slip_days"], 41)
-		self.assertEqual(rows[0]["overdue"], "Sí")  # T2 vencida al corte
+		self.assertEqual(rows[0]["overdue"], "Yes")  # T2 vencida al corte
 		self.assertEqual(rows[1]["overdue"], "")  # T1 no vencida (aunque tenga slip)
 		self.assertEqual(rows[1]["current_exp_end_date"], "2026-05-10")
 		self.assertEqual(rows[1]["pmo_deadline"], "2026-05-05")
 
 	def test_summary_cards(self):
 		cards = {c["label"]: c for c in _summary(_REPORT)}
-		self.assertEqual(cards["Forecast vigente (plan): fin"]["value"], "2026-07-11")
-		self.assertEqual(cards["Deslizamiento vs Baseline (días)"]["value"], 11)
-		self.assertEqual(cards["Deslizamiento vs Baseline (días)"]["indicator"], "Red")
-		self.assertEqual(cards["Deslizamiento vs compromiso (días)"]["value"], 21)
-		self.assertEqual(cards["Deslizamiento vs compromiso (días)"]["indicator"], "Red")
-		self.assertEqual(cards["Tareas: forecast excede compromiso"]["value"], 2)
-		self.assertEqual(cards["Tareas: forecast excede compromiso"]["indicator"], "Orange")
-		self.assertEqual(cards["Tareas vencidas no terminadas"]["value"], 1)
-		self.assertEqual(cards["Horas reales a la fecha"]["value"], 40.0)
-		self.assertEqual(cards["Completadas / previstas a la fecha"]["value"], "1 / 2")
-		self.assertEqual(cards["Línea base vigente"]["value"], "PMO-BL-X")
+		self.assertEqual(cards["Current forecast (plan): end"]["value"], "2026-07-11")
+		self.assertEqual(cards["Slip vs Baseline (days)"]["value"], 11)
+		self.assertEqual(cards["Slip vs Baseline (days)"]["indicator"], "Red")
+		self.assertEqual(cards["Slip vs commitment (days)"]["value"], 21)
+		self.assertEqual(cards["Slip vs commitment (days)"]["indicator"], "Red")
+		self.assertEqual(cards["Tasks: forecast exceeds commitment"]["value"], 2)
+		self.assertEqual(cards["Tasks: forecast exceeds commitment"]["indicator"], "Orange")
+		self.assertEqual(cards["Overdue unfinished tasks"]["value"], 1)
+		self.assertEqual(cards["Actual hours to date"]["value"], 40.0)
+		self.assertEqual(cards["Completed / due to date"]["value"], "1 / 2")
+		self.assertEqual(cards["Effective baseline"]["value"], "PMO-BL-X")
 
 	def test_summary_no_baseline_and_no_committed(self):
 		report = dict(_REPORT)
@@ -104,7 +104,7 @@ class TestStatusReportPresentation(unittest.TestCase):
 			_REPORT["indicators"], final_date_slip_days=None, slip_vs_committed_days=None
 		)
 		cards = {c["label"]: c for c in _summary(report)}
-		self.assertEqual(cards["Línea base vigente"]["indicator"], "Gray")
-		self.assertEqual(cards["Deslizamiento vs Baseline (días)"]["value"], "N/D")
-		self.assertEqual(cards["Deslizamiento vs compromiso (días)"]["value"], "N/D")
-		self.assertEqual(cards["Deslizamiento vs compromiso (días)"]["indicator"], "Green")
+		self.assertEqual(cards["Effective baseline"]["indicator"], "Gray")
+		self.assertEqual(cards["Slip vs Baseline (days)"]["value"], "N/A")
+		self.assertEqual(cards["Slip vs commitment (days)"]["value"], "N/A")
+		self.assertEqual(cards["Slip vs commitment (days)"]["indicator"], "Green")

@@ -27,13 +27,13 @@ def execute(filters=None):
 	filters = frappe._dict(filters or {})
 	project = filters.get("project")
 	if not project:
-		frappe.throw(_("Selecciona un Project."))
+		frappe.throw(_("Select a Project."))
 	if not frappe.db.exists("Project", project):
-		frappe.throw(_("El Project {0} no existe.").format(project))
+		frappe.throw(_("Project {0} does not exist.").format(project))
 
 	# P4: los Script Report no aplican pqc → exigir visibilidad del Project (owner/DocShare/executive).
 	if not is_project_visible(project, frappe.session.user):
-		raise frappe.PermissionError(_("No tienes acceso a este Project."))
+		raise frappe.PermissionError(_("You do not have access to this Project."))
 
 	status_date = filters.get("status_date")
 
@@ -87,8 +87,8 @@ def _pct(actual, planned):
 
 def _columns():
 	return [
-		{"fieldname": "task", "label": _("Tarea"), "fieldtype": "Link", "options": "Task", "width": 200},
-		{"fieldname": "subject", "label": _("Descripción"), "fieldtype": "Data", "width": 300},
+		{"fieldname": "task", "label": _("Task"), "fieldtype": "Link", "options": "Task", "width": 200},
+		{"fieldname": "subject", "label": _("Description"), "fieldtype": "Data", "width": 300},
 		{"fieldname": "planned_hours", "label": _("Planned Hours"), "fieldtype": "Float", "width": 130},
 		{"fieldname": "actual_hours", "label": _("Actual Hours"), "fieldtype": "Float", "width": 130},
 		{"fieldname": "variance_hours", "label": _("Variance Hours"), "fieldtype": "Float", "width": 130},
@@ -102,8 +102,8 @@ def _summary(project, status_date, planned, actual):
 	variance = flt(project_actual - planned, 2)
 	return [
 		{
-			"label": _("Corte (Status Date)"),
-			"value": str(status_date) if status_date else _("Total (nativo)"),
+			"label": _("Cutoff (Status Date)"),
+			"value": str(status_date) if status_date else _("Total (native)"),
 			"datatype": "Data",
 		},
 		{"label": _("Planned Hours (Project)"), "value": flt(planned, 2), "datatype": "Float"},

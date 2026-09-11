@@ -16,15 +16,22 @@ vs Actual`.
 """
 
 import frappe
-from frappe import _
+from frappe import N_, _
 from frappe.utils import flt, today
 
 from pmo.permissions import _is_global_reader, _member_projects_subquery
 from pmo.status_date import build_status_report
 
-HEALTH_ON_TRACK = "En plan"
-HEALTH_AT_RISK = "En riesgo"
-HEALTH_OFF_TRACK = "Desviado"
+# Valores internos ESTABLES (independientes del idioma). La lógica compara SIEMPRE estas claves; la
+# traducción (`_()`) es solo de presentación (ver HEALTH_LABELS).
+HEALTH_ON_TRACK = "on_track"
+HEALTH_AT_RISK = "at_risk"
+HEALTH_OFF_TRACK = "deviated"
+HEALTH_LABELS = {
+	HEALTH_ON_TRACK: N_("On track"),
+	HEALTH_AT_RISK: N_("At risk"),
+	HEALTH_OFF_TRACK: N_("Deviated"),
+}
 
 
 def execute(filters=None):
@@ -85,6 +92,7 @@ def _project_row(project):
 	overdue = ind["tasks_overdue_at_cutoff"]["count"]
 	exceeds = ind.get("forecast_exceeds_commitment", {}).get("count", 0)
 	has_baseline = bool(report.get("baseline"))
+	health_key = _health(slip_baseline, slip_committed, overdue, exceeds)
 
 	return {
 		"project": project,
@@ -98,7 +106,8 @@ def _project_row(project):
 		"planned_hours": planned,
 		"actual_hours": actual,
 		"pct_consumed": flt(actual / planned * 100, 1) if planned > 0 else None,
-		"health": _health(slip_baseline, slip_committed, overdue, exceeds),
+		"health_key": health_key,  # valor interno estable (lógica/resumen)
+		"health": _(HEALTH_LABELS[health_key]),  # presentación traducida
 		"has_baseline": has_baseline,  # para el resumen (sin columna propia)
 	}
 
@@ -132,43 +141,43 @@ def _columns():
 		return c
 
 	return [
-		col("project", "Project", "Link", 150, options="Project"),
-		col("project_name", "Nombre", "Data", 200),
-		col("status", "Estado", "Data", 90),
-		col("health", "Salud", "Data", 100),
-		col("forecast_end", "Fin (forecast)", "Date", 120),
-		col("slip_baseline", "Slip vs Baseline (d)", "Int", 140),
-		col("slip_committed", "Slip vs compromiso (d)", "Int", 150),
-		col("overdue", "Vencidas", "Int", 90),
-		col("forecast_exceeds", "Forecast > compromiso", "Int", 150),
-		col("planned_hours", "Planned (h)", "Float", 100),
-		col("actual_hours", "Actual (h)", "Float", 100),
-		col("pct_consumed", "% Consumido", "Float", 110),
+		col("project", N_("Project"), "Link", 150, options="Project"),
+		col("project_name", N_("Name"), "Data", 200),
+		col("status", N_("Status"), "Data", 90),
+		col("health", N_("Health"), "Data", 100),
+		col("forecast_end", N_("Forecast end"), "Date", 120),
+		col("slip_baseline", N_("Slip vs Baseline (d)"), "Int", 140),
+		col("slip_committed", N_("Slip vs commitment (d)"), "Int", 150),
+		col("overdue", N_("Overdue"), "Int", 90),
+		col("forecast_exceeds", N_("Forecast > commitment"), "Int", 150),
+		col("planned_hours", N_("Planned (h)"), "Float", 100),
+		col("actual_hours", N_("Actual (h)"), "Float", 100),
+		col("pct_consumed", N_("% Consumed"), "Float", 110),
 	]
 
 
 def _summary(data):
 	if not data:
 		return []
-	off = sum(1 for r in data if r["health"] == HEALTH_OFF_TRACK)
-	risk = sum(1 for r in data if r["health"] == HEALTH_AT_RISK)
+	off = sum(1 for r in data if r["health_key"] == HEALTH_OFF_TRACK)
+	risk = sum(1 for r in data if r["health_key"] == HEALTH_AT_RISK)
 	no_baseline = sum(1 for r in data if not r["has_baseline"])
 	return [
-		{"label": _("Proyectos"), "value": len(data), "datatype": "Int"},
+		{"label": _("Projects"), "value": len(data), "datatype": "Int"},
 		{
-			"label": _("Desviados"),
+			"label": _("Deviated"),
 			"value": off,
 			"datatype": "Int",
 			"indicator": "Red" if off else "Green",
 		},
 		{
-			"label": _("En riesgo"),
+			"label": _("At risk"),
 			"value": risk,
 			"datatype": "Int",
 			"indicator": "Orange" if risk else "Green",
 		},
 		{
-			"label": _("Sin línea base"),
+			"label": _("Without baseline"),
 			"value": no_baseline,
 			"datatype": "Int",
 			"indicator": "Orange" if no_baseline else "Green",

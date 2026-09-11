@@ -11,7 +11,7 @@ Report no aplican `permission_query_conditions`, así que la P4 se valida explí
 """
 
 import frappe
-from frappe import _
+from frappe import N_, _
 from frappe.utils import flt, formatdate, getdate
 
 from pmo.compare import compare_baselines
@@ -19,16 +19,16 @@ from pmo.compare import compare_baselines
 _DATE_FIELDS = {"exp_start_date", "exp_end_date", "expected_start_date", "expected_end_date"}
 _HOUR_FIELDS = {"expected_time", "override_hours", "effective_hours"}
 _FIELD_LABELS = {
-	"exp_start_date": "Inicio",
-	"exp_end_date": "Fin",
-	"expected_time": "Horas",
-	"status": "Estado",
-	"parent_task": "Tarea padre",
-	"wbs_order": "Orden WBS",
-	"expected_start_date": "Inicio (Proyecto)",
-	"expected_end_date": "Fin (Proyecto)",
-	"override_hours": "Horas override",
-	"effective_hours": "Horas efectivas",
+	"exp_start_date": N_("Start"),
+	"exp_end_date": N_("End"),
+	"expected_time": N_("Hours"),
+	"status": N_("Status"),
+	"parent_task": N_("Parent task"),
+	"wbs_order": N_("WBS order"),
+	"expected_start_date": N_("Start (Project)"),
+	"expected_end_date": N_("End (Project)"),
+	"override_hours": N_("Override hours"),
+	"effective_hours": N_("Effective hours"),
 }
 
 
@@ -36,7 +36,7 @@ def execute(filters=None):
 	filters = frappe._dict(filters or {})
 	before, after = filters.get("baseline_before"), filters.get("baseline_after")
 	if not (before and after):
-		frappe.throw(_("Selecciona la línea base previa y la posterior."))
+		frappe.throw(_("Select the before and after baselines."))
 
 	# P4 + mismo Project + carga de snapshots inmutables: todo dentro de compare_baselines (lanza si no).
 	diff = compare_baselines(before, after)
@@ -51,12 +51,12 @@ def _columns():
 		return {"fieldname": field, "label": _(label), "fieldtype": "Data", "width": width}
 
 	return [
-		col("change_type", "Tipo de cambio", 120),
-		col("task", "WBS / Tarea", 280),
-		col("field", "Campo", 150),
-		col("before", "Antes", 160),
-		col("after", "Después", 160),
-		col("variance", "Variación", 110),
+		col("change_type", N_("Change type"), 120),
+		col("task", N_("WBS / Task"), 280),
+		col("field", N_("Field"), 150),
+		col("before", N_("Before"), 160),
+		col("after", N_("After"), 160),
+		col("variance", N_("Variance"), 110),
 	]
 
 
@@ -87,7 +87,7 @@ def _hours(value):
 def _variance(field, before, after):
 	if field in _DATE_FIELDS and before and after:
 		d = (getdate(after) - getdate(before)).days
-		return f"{'+' if d >= 0 else ''}{d} días"
+		return f"{'+' if d >= 0 else ''}{d} days"
 	if field in _HOUR_FIELDS:
 		d = flt(flt(after) - flt(before), 2)
 		return f"{'+' if d >= 0 else ''}{d} h"
@@ -112,8 +112,8 @@ def _rows(diff):
 	for field, ch in (diff.get("project_changes") or {}).items():
 		rows.append(
 			_row(
-				_("Proyecto"),
-				_("(Proyecto)"),
+				_("Project"),
+				_("(Project)"),
 				_flabel(field),
 				_fmt(field, ch["from"]),
 				_fmt(field, ch["to"]),
@@ -123,9 +123,9 @@ def _rows(diff):
 
 	# Tasks añadidas / eliminadas
 	for t in diff.get("tasks_added") or []:
-		rows.append(_row(_("Añadida"), _tlabel(t), "—", "—", t.get("subject") or _("Nueva tarea"), "—"))
+		rows.append(_row(_("Added"), _tlabel(t), "—", "—", t.get("subject") or _("New task"), "—"))
 	for t in diff.get("tasks_removed") or []:
-		rows.append(_row(_("Eliminada"), _tlabel(t), "—", t.get("subject") or _("Tarea anterior"), "—", "—"))
+		rows.append(_row(_("Removed"), _tlabel(t), "—", t.get("subject") or _("Previous task"), "—", "—"))
 
 	# Tasks modificadas: una fila por campo + una fila por cambio de asignación
 	for t in diff.get("tasks_changed") or []:
@@ -133,7 +133,7 @@ def _rows(diff):
 		for field, ch in (t.get("fields") or {}).items():
 			rows.append(
 				_row(
-					_("Modificada"),
+					_("Modified"),
 					label,
 					_flabel(field),
 					_fmt(field, ch["from"]),
@@ -145,21 +145,23 @@ def _rows(diff):
 		for x in a.get("added") or []:
 			rows.append(
 				_row(
-					_("Asignación"),
+					_("Assignment"),
 					label,
-					f"{x['user']} ({_('alta')})",
+					f"{x['user']} ({_('added')})",
 					"—",
 					_hours(x.get("effective_hours")),
 					"—",
 				)
 			)
 		for x in a.get("removed") or []:
-			rows.append(_row(_("Asignación"), label, f"{x['user']} ({_('baja')})", _("asignado"), "—", "—"))
+			rows.append(
+				_row(_("Assignment"), label, f"{x['user']} ({_('removed')})", _("assigned"), "—", "—")
+			)
 		for x in a.get("changed") or []:
 			for field, ch in (x.get("changes") or {}).items():
 				rows.append(
 					_row(
-						_("Asignación"),
+						_("Assignment"),
 						label,
 						f"{x['user']} · {_flabel(field)}",
 						_hours(ch["from"]),
@@ -177,17 +179,17 @@ def _message(diff, filters):
 	meta = diff.get("meta") or {}
 	b, a = meta.get("before") or {}, meta.get("after") or {}
 	parts = [
-		f"<b>{_('Proyecto')}:</b> {frappe.utils.escape_html(meta.get('project') or '')}",
-		f"<b>{_('Línea base previa')}:</b> {frappe.utils.escape_html(b.get('revision') or b.get('name') or '')} ({b.get('effective_date') or ''})",
-		f"<b>{_('Línea base posterior')}:</b> {frappe.utils.escape_html(a.get('revision') or a.get('name') or '')} ({a.get('effective_date') or ''})",
+		f"<b>{_('Project')}:</b> {frappe.utils.escape_html(meta.get('project') or '')}",
+		f"<b>{_('Before baseline')}:</b> {frappe.utils.escape_html(b.get('revision') or b.get('name') or '')} ({b.get('effective_date') or ''})",
+		f"<b>{_('After baseline')}:</b> {frappe.utils.escape_html(a.get('revision') or a.get('name') or '')} ({a.get('effective_date') or ''})",
 	]
 	cr = filters.get("change_request")
 	if cr:
 		# El CR es SOLO contexto de apertura: varios CR pueden consolidarse en una misma línea base
 		# posterior. El reporte compara líneas base; no atribuye el diff a un único Change Request.
 		parts.append(
-			f"<b>{_('Contexto')}:</b> {_('abierto desde')} {frappe.utils.escape_html(cr)} — "
-			f"{_('el reporte compara líneas base; no atribuye el diff a un solo Change Request')}"
+			f"<b>{_('Context')}:</b> {_('opened from')} {frappe.utils.escape_html(cr)} — "
+			f"{_('the report compares baselines; it does not attribute the diff to a single Change Request')}"
 		)
 	return "<div>" + " &nbsp;·&nbsp; ".join(parts) + "</div>"
 
@@ -198,16 +200,16 @@ def _summary(diff):
 		a = t.get("assignments") or {}
 		n_assign += len(a.get("added") or []) + len(a.get("removed") or []) + len(a.get("changed") or [])
 	return [
-		{"label": _("Tareas añadidas"), "value": len(diff.get("tasks_added") or []), "indicator": "Green"},
-		{"label": _("Tareas eliminadas"), "value": len(diff.get("tasks_removed") or []), "indicator": "Red"},
+		{"label": _("Tasks added"), "value": len(diff.get("tasks_added") or []), "indicator": "Green"},
+		{"label": _("Tasks removed"), "value": len(diff.get("tasks_removed") or []), "indicator": "Red"},
 		{
-			"label": _("Tareas modificadas"),
+			"label": _("Tasks modified"),
 			"value": len(diff.get("tasks_changed") or []),
 			"indicator": "Orange",
 		},
-		{"label": _("Asignaciones modificadas"), "value": n_assign, "indicator": "Blue"},
+		{"label": _("Assignments modified"), "value": n_assign, "indicator": "Blue"},
 		{
-			"label": _("Cambios de Proyecto"),
+			"label": _("Project changes"),
 			"value": len(diff.get("project_changes") or {}),
 			"indicator": "Grey",
 		},

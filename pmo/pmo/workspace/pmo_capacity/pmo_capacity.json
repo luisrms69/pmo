@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>PMO Capacity</b></span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Centro de recursos / Capacity Planning\",\"col\":4}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Uso de recursos por proyecto\",\"col\":4}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Trabajo por recurso\",\"col\":4}}]",
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>PMO Capacity</b></span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Resource center / Capacity Planning\",\"col\":4}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Resource usage by project\",\"col\":4}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Work by resource\",\"col\":4}}]",
  "creation": "2026-09-04 00:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -10,7 +10,7 @@
  "idx": 0,
  "label": "PMO Capacity",
  "links": [],
- "modified": "2026-09-04 00:00:00.000000",
+ "modified": "2026-09-10 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "PMO",
  "name": "PMO Capacity",
@@ -21,31 +21,39 @@
  "quick_lists": [],
  "restrict_to_domain": "",
  "roles": [
-  {"role": "Employee"},
-  {"role": "PMO Manager"},
-  {"role": "PMO Executive Access"},
-  {"role": "System Manager"}
+  {
+   "role": "Employee"
+  },
+  {
+   "role": "PMO Manager"
+  },
+  {
+   "role": "PMO Executive Access"
+  },
+  {
+   "role": "System Manager"
+  }
  ],
  "sequence_id": 20.0,
  "shortcuts": [
   {
    "color": "Blue",
    "doc_view": "",
-   "label": "Centro de recursos / Capacity Planning",
+   "label": "Resource center / Capacity Planning",
    "link_to": "PMO Capacity Planning",
    "type": "Report"
   },
   {
    "color": "Blue",
    "doc_view": "",
-   "label": "Uso de recursos por proyecto",
+   "label": "Resource usage by project",
    "link_to": "PMO Resource Usage by Project",
    "type": "Report"
   },
   {
    "color": "Blue",
    "doc_view": "",
-   "label": "Trabajo por recurso",
+   "label": "Work by resource",
    "link_to": "PMO Work by Resource",
    "type": "Report"
   }

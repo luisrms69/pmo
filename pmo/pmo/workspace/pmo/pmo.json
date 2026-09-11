@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\": \"pmohdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO \\u2014 Centro de control</b></span>\", \"col\": 12}}, {\"id\": \"scpf\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Portafolio (salud de proyectos)\", \"col\": 4}}, {\"id\": \"scst\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Estado a fecha de corte\", \"col\": 4}}, {\"id\": \"sccp\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Capacity Planning\", \"col\": 4}}, {\"id\": \"cardctl\", \"type\": \"card\", \"data\": {\"card_name\": \"Portafolio y control\", \"col\": 4}}, {\"id\": \"cardcap\", \"type\": \"card\", \"data\": {\"card_name\": \"Capacidad\", \"col\": 4}}, {\"id\": \"cardcfg\", \"type\": \"card\", \"data\": {\"card_name\": \"Configuraci\\u00f3n PMO\", \"col\": 4}}]",
+ "content": "[{\"id\": \"pmohdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO \\u2014 Control center</b></span>\", \"col\": 12}}, {\"id\": \"scpf\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Portfolio (project health)\", \"col\": 4}}, {\"id\": \"scst\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Status as of cutoff date\", \"col\": 4}}, {\"id\": \"sccp\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Capacity Planning\", \"col\": 4}}, {\"id\": \"cardctl\", \"type\": \"card\", \"data\": {\"card_name\": \"Portfolio & control\", \"col\": 4}}, {\"id\": \"cardcap\", \"type\": \"card\", \"data\": {\"card_name\": \"Capacity\", \"col\": 4}}, {\"id\": \"cardcfg\", \"type\": \"card\", \"data\": {\"card_name\": \"Configuraci\\u00f3n PMO\", \"col\": 4}}]",
  "creation": "2026-09-10 00:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -12,7 +12,7 @@
  "links": [
   {
    "type": "Card Break",
-   "label": "Portafolio y control",
+   "label": "Portfolio & control",
    "link_type": null,
    "link_to": null,
    "onboard": 0,
@@ -84,7 +84,7 @@
   },
   {
    "type": "Card Break",
-   "label": "Capacidad",
+   "label": "Capacity",
    "link_type": null,
    "link_to": null,
    "onboard": 0,
@@ -144,7 +144,7 @@
   },
   {
    "type": "Card Break",
-   "label": "Configuración PMO",
+   "label": "PMO configuration",
    "link_type": null,
    "link_to": null,
    "onboard": 0,
@@ -191,7 +191,7 @@
    "only_for": ""
   }
  ],
- "modified": "2026-09-10 00:00:00.000000",
+ "modified": "2026-09-10 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "PMO",
  "name": "PMO",
@@ -223,14 +223,14 @@
   {
    "color": "Blue",
    "doc_view": "",
-   "label": "Portafolio (salud de proyectos)",
+   "label": "Portfolio (project health)",
    "link_to": "PMO Portfolio",
    "type": "Report"
   },
   {
    "color": "Green",
    "doc_view": "",
-   "label": "Estado a fecha de corte",
+   "label": "Status as of cutoff date",
    "link_to": "PMO Status Report",
    "type": "Report"
   },

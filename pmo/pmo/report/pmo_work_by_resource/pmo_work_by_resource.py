@@ -24,16 +24,16 @@ from pmo.permissions import is_project_visible, is_task_visible
 from pmo.planned_load import get_planned_load_by_task
 from pmo.pmo.report.pmo_capacity_planning.pmo_capacity_planning import _scope_employees
 
-CONFIDENTIAL_LABEL = "Comprometido (confidencial)"
-PROJECT_CONFIDENTIAL_LABEL = "Confidencial"
-NO_PROJECT_LABEL = "Sin proyecto"
+CONFIDENTIAL_LABEL = frappe.N_("Committed (confidential)")
+PROJECT_CONFIDENTIAL_LABEL = frappe.N_("Confidential")
+NO_PROJECT_LABEL = frappe.N_("No project")
 
 
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
 	from_date, to_date = getdate(filters.from_date), getdate(filters.to_date)
 	if to_date < from_date:
-		frappe.throw(frappe._("To Date no puede ser anterior a From Date."))
+		frappe.throw(frappe._("To Date cannot be earlier than From Date."))
 	observer = frappe.session.user
 
 	data = []
@@ -121,7 +121,7 @@ def _columns():
 		},
 		{
 			"fieldname": "planned_hours",
-			"label": frappe._("Planned (periodo)"),
+			"label": frappe._("Planned (period)"),
 			"fieldtype": "Float",
 			"width": 130,
 		},

@@ -32,9 +32,9 @@ def build_allocation_days(from_date, to_date, planned_hours, holiday_list) -> li
 
 	start, end = getdate(from_date), getdate(to_date)
 	if end < start:
-		frappe.throw(_("To Date no puede ser anterior a From Date."))
+		frappe.throw(_("To Date cannot be earlier than From Date."))
 	if not holiday_list:
-		frappe.throw(_("No hay Holiday List para resolver los días laborables."))
+		frappe.throw(_("There is no Holiday List to resolve working days."))
 
 	working_days = []
 	day = start
@@ -45,7 +45,7 @@ def build_allocation_days(from_date, to_date, planned_hours, holiday_list) -> li
 
 	if not working_days:
 		frappe.throw(
-			_("No hay días laborables entre {0} y {1} según la Holiday List {2}.").format(
+			_("There are no working days between {0} and {1} according to Holiday List {2}.").format(
 				start, end, holiday_list
 			)
 		)

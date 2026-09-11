@@ -115,9 +115,9 @@ class TestChangeRequest(IntegrationTestCase):
 		cr = _cr(p, impacts_scope=1, impacts_commercial=1)
 		self.assertTrue(cr.raised_by)
 		self.assertEqual(str(cr.request_date), today())
-		self.assertEqual(cr.priority, "Media")
-		self.assertEqual(cr.impact_summary, "Alcance, Comercial")
-		self.assertEqual(cr.workflow_state, "Borrador")  # estado inicial del Workflow
+		self.assertEqual(cr.priority, "Medium")
+		self.assertEqual(cr.impact_summary, "Scope, Commercial")
+		self.assertEqual(cr.workflow_state, "Draft")  # estado inicial del Workflow
 
 	def test_currency_default_from_company(self):
 		company = _company()
@@ -238,11 +238,11 @@ class TestChangeRequest(IntegrationTestCase):
 		p = _project("CR-WF1", owner=owner)
 		_baseline(p, "BL-001")
 		cr = _cr(p)
-		self._run(cr, "Enviar a Revision", owner)
-		self.assertEqual(cr.workflow_state, "En Revision")
+		self._run(cr, "Send for Review", owner)
+		self.assertEqual(cr.workflow_state, "In Review")
 		self.assertTrue(cr.baseline_before)  # congelada al formalizar
-		self._run(cr, "Aprobar", owner)
-		self.assertEqual(cr.workflow_state, "Aprobado")
+		self._run(cr, "Approve", owner)
+		self.assertEqual(cr.workflow_state, "Approved")
 		self.assertEqual(cr.docstatus, 1)
 		self.assertTrue(cr.approved_by)
 
@@ -251,7 +251,7 @@ class TestChangeRequest(IntegrationTestCase):
 		p = _project("CR-WF2", owner=owner)  # sin baseline
 		cr = _cr(p)
 		with self.assertRaises(ValidationError):
-			self._run(cr, "Enviar a Revision", owner)
+			self._run(cr, "Send for Review", owner)
 
 	def test_member_cannot_approve(self):
 		owner = _user("cr-wf3-o@example.com", ["Projects User"])
@@ -259,12 +259,12 @@ class TestChangeRequest(IntegrationTestCase):
 		p = _project("CR-WF3", owner=owner, members=[member])
 		_baseline(p, "BL-001")
 		cr = _cr(p)
-		self._run(cr, "Enviar a Revision", member)  # member SI puede formalizar
-		self.assertEqual(cr.workflow_state, "En Revision")
+		self._run(cr, "Send for Review", member)  # member SI puede formalizar
+		self.assertEqual(cr.workflow_state, "In Review")
 		frappe.set_user(member)
 		try:
 			with self.assertRaises(Exception):
-				apply_workflow(cr, "Aprobar")  # condicion owner-only -> no es accion valida para member
+				apply_workflow(cr, "Approve")  # condicion owner-only -> no es accion valida para member
 		finally:
 			frappe.set_user("Administrator")
 
@@ -285,17 +285,17 @@ class TestChangeRequest(IntegrationTestCase):
 		p = _project("CR-WF4", owner=owner)
 		b1 = _baseline(p, "BL-001", effective="2026-01-01")
 		cr = _cr(p, proposal_group="GRP-1")  # con proposal -> exige aplicar antes de implementar
-		self._run(cr, "Enviar a Revision", owner)
-		self._run(cr, "Aprobar", owner)
+		self._run(cr, "Send for Review", owner)
+		self._run(cr, "Approve", owner)
 		# Marcar implementado sin aplicar la Quotation -> bloqueado
-		self._assert_action_raises(cr, "Marcar Implementado", owner)
+		self._assert_action_raises(cr, "Mark Implemented", owner)
 		# simular aplicacion (la accion real se prueba aparte) y avanzar
 		frappe.db.set_value("PMO Change Request", cr.name, "applied_to_project", 1)
 		cr.reload()
-		self._run(cr, "Marcar Implementado", owner)
-		self.assertEqual(cr.workflow_state, "Implementado")
+		self._run(cr, "Mark Implemented", owner)
+		self.assertEqual(cr.workflow_state, "Implemented")
 		# Cerrar sin baseline_after -> bloqueado
-		self._assert_action_raises(cr, "Cerrar", owner)
+		self._assert_action_raises(cr, "Close", owner)
 		# ligar baseline_after (owner) y cerrar
 		b2 = _baseline(p, "BL-002", btype="Replan", supersedes=b1.name, effective="2026-02-01")
 		cr.reload()
@@ -303,30 +303,30 @@ class TestChangeRequest(IntegrationTestCase):
 		try:
 			cr.baseline_after = b2.name
 			cr.save()
-			apply_workflow(cr, "Cerrar")
+			apply_workflow(cr, "Close")
 		finally:
 			frappe.set_user("Administrator")
 		cr.reload()
-		self.assertEqual(cr.workflow_state, "Cerrado")
+		self.assertEqual(cr.workflow_state, "Closed")
 
 	def test_implemented_ok_without_proposal(self):
 		owner = _user("cr-wf5@example.com", ["Projects User"])
 		p = _project("CR-WF5", owner=owner)
 		_baseline(p, "BL-001")
 		cr = _cr(p)  # sin proposal_group -> solo-cronograma
-		self._run(cr, "Enviar a Revision", owner)
-		self._run(cr, "Aprobar", owner)
-		self._run(cr, "Marcar Implementado", owner)  # OK sin aplicar Quotation
-		self.assertEqual(cr.workflow_state, "Implementado")
+		self._run(cr, "Send for Review", owner)
+		self._run(cr, "Approve", owner)
+		self._run(cr, "Mark Implemented", owner)  # OK sin aplicar Quotation
+		self.assertEqual(cr.workflow_state, "Implemented")
 
 	def test_cancel_blocked_on_terminal_state(self):
 		owner = _user("cr-wf6@example.com", ["Projects User"])
 		p = _project("CR-WF6", owner=owner)
 		_baseline(p, "BL-001")
 		cr = _cr(p)
-		self._run(cr, "Enviar a Revision", owner)
-		self._run(cr, "Rechazar", owner)
-		self.assertEqual(cr.workflow_state, "Rechazado")
+		self._run(cr, "Send for Review", owner)
+		self._run(cr, "Reject", owner)
+		self.assertEqual(cr.workflow_state, "Rejected")
 		frappe.set_user(owner)
 		try:
 			with self.assertRaises(ValidationError):
@@ -395,8 +395,8 @@ class TestChangeRequest(IntegrationTestCase):
 		p = _project(name, owner=owner)
 		_baseline(p, "BL-001")
 		cr = _cr(p, proposal_group="GRP-X")
-		self._run(cr, "Enviar a Revision", owner)
-		self._run(cr, "Aprobar", owner)
+		self._run(cr, "Send for Review", owner)
+		self._run(cr, "Approve", owner)
 		return owner, p, cr
 
 	def test_apply_action_integration_unavailable(self):
@@ -430,7 +430,7 @@ class TestChangeRequest(IntegrationTestCase):
 		cr.reload()
 		self.assertTrue(cr.applied_to_project)
 		self.assertEqual(cr.applied_quotation, q)
-		self.assertEqual(cr.workflow_state, "Aprobado")  # la accion NO mueve el Workflow
+		self.assertEqual(cr.workflow_state, "Approved")  # la accion NO mueve el Workflow
 		self.assertEqual(res["tasks_created"], 3)
 
 	def _quotation(self):

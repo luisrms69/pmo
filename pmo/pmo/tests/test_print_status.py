@@ -82,7 +82,7 @@ class TestPrintStatusIntegration(IntegrationTestCase):
 		self.assertEqual(ctx["planned_hours"], 10.0)
 		self.assertEqual(ctx["actual_hours"], 4.0)
 		self.assertEqual(ctx["pct_consumed"], 40.0)
-		self.assertEqual(ctx["health"], "En plan")  # sin slips/vencidas
+		self.assertEqual(ctx["health"], "On track")  # sin slips/vencidas
 		self.assertEqual(ctx["counts"]["total"], 1)
 
 	def test_print_format_renders(self):
@@ -92,8 +92,8 @@ class TestPrintStatusIntegration(IntegrationTestCase):
 		p = _project("PS-RENDER")
 		_task("PS-RT1", p, expected=8)
 		html = frappe.get_print("Project", p, print_format="PMO Project Status")
-		self.assertIn("Resumen ejecutivo", html)
-		self.assertIn("Tareas a evaluar", html)
+		self.assertIn("Executive summary", html)
+		self.assertIn("Tasks to evaluate", html)
 
 	def test_print_format_pdf(self):
 		# Smoke de PDF (mismo Print Format vía wkhtmltopdf). Se omite si el backend PDF no está disponible.

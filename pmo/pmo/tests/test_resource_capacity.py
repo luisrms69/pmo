@@ -47,21 +47,21 @@ def _employee(name, user_id=None):
 
 class TestResourceCapacityPure(unittest.TestCase):
 	def test_origin_label(self):
-		self.assertEqual(_origin_label(None), "Faltante")
+		self.assertEqual(_origin_label(None), "Missing")
 		self.assertEqual(_origin_label({"origin": "override"}), "Override")
 		self.assertEqual(_origin_label({"origin": "global"}), "Global")
 
 	def test_summary_counts(self):
 		data = [
-			{"capacity_hours_per_day": None, "origin": "Faltante"},
-			{"capacity_hours_per_day": 8.0, "origin": "Override"},
-			{"capacity_hours_per_day": 8.0, "origin": "Global"},
+			{"capacity_hours_per_day": None, "origin_key": "missing"},
+			{"capacity_hours_per_day": 8.0, "origin_key": "override"},
+			{"capacity_hours_per_day": 8.0, "origin_key": "global"},
 		]
 		cards = {c["label"]: c for c in _summary(data)}
-		self.assertEqual(cards["Recursos"]["value"], 3)
-		self.assertEqual(cards["Sin capacidad configurada"]["value"], 1)
-		self.assertEqual(cards["Sin capacidad configurada"]["indicator"], "Orange")
-		self.assertEqual(cards["Con override individual"]["value"], 1)
+		self.assertEqual(cards["Resources"]["value"], 3)
+		self.assertEqual(cards["Without configured capacity"]["value"], 1)
+		self.assertEqual(cards["Without configured capacity"]["indicator"], "Orange")
+		self.assertEqual(cards["With individual override"]["value"], 1)
 
 
 class TestResourceCapacityResolver(IntegrationTestCase):
@@ -101,8 +101,8 @@ class TestResourceCapacityResolver(IntegrationTestCase):
 			frappe.set_user("Administrator")
 		row = next(r for r in data if r["employee"] == emp)
 		self.assertIsNone(row["capacity_hours_per_day"])
-		self.assertEqual(row["origin"], "Faltante")
-		miss = next(s for s in summary if s["label"] == "Sin capacidad configurada")
+		self.assertEqual(row["origin"], "Missing")
+		miss = next(s for s in summary if s["label"] == "Without configured capacity")
 		self.assertEqual(miss["value"], 1)
 
 	def test_normal_tier_sees_only_own(self):

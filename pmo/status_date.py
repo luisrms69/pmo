@@ -37,9 +37,9 @@ def validate_project_status_date(doc, method=None):
 	if getdate(status_date) > getdate(today()):
 		frappe.throw(
 			_(
-				"La Status Date ({0}) no puede ser una fecha futura: el control a fecha de corte solo admite hoy o una fecha pasada."
+				"The Status Date ({0}) cannot be a future date: cutoff-date control only allows today or a past date."
 			).format(frappe.format(getdate(status_date), {"fieldtype": "Date"})),
-			title=_("Status Date inválida"),
+			title=_("Invalid Status Date"),
 		)
 
 
@@ -52,13 +52,11 @@ def _resolve_status_date(project: str, status_date=None):
 		status_date = frappe.db.get_value("Project", project, "pmo_status_date")
 	if not status_date:
 		frappe.throw(
-			_(
-				"Indica una Status Date (o fija `PMO Status Date` en el Project) para el control a fecha de corte."
-			)
+			_("Provide a Status Date (or set `PMO Status Date` on the Project) for cutoff-date control.")
 		)
 	sd = getdate(status_date)
 	if sd > getdate(today()):
-		frappe.throw(_("La Status Date no puede ser una fecha futura (solo hoy o pasada)."))
+		frappe.throw(_("The Status Date cannot be a future date (only today or past)."))
 	return sd
 
 
@@ -218,7 +216,7 @@ def build_status_report(project: str, status_date: str | None = None) -> dict:
 	Compone Baseline (vigente a la fecha) + Current (plan de hoy) + Actual (Timesheet a la fecha) e indicadores
 	D5. Si no hay baseline efectiva a la fecha, `baseline` es None con `note`."""
 	if not frappe.db.exists("Project", project):
-		frappe.throw(_("El Project {0} no existe.").format(project))
+		frappe.throw(_("Project {0} does not exist.").format(project))
 	frappe.has_permission("Project", ptype="read", doc=project, throw=True)  # P4
 
 	sd = _resolve_status_date(project, status_date)
@@ -237,7 +235,7 @@ def build_status_report(project: str, status_date: str | None = None) -> dict:
 			else None,
 		}
 	else:
-		note = _("Sin línea base vigente a la fecha de corte: se muestran Current y Actual.")
+		note = _("No baseline in effect at the cutoff date: showing Current and Actual.")
 
 	current_snapshot = build_snapshot(project)
 	actual_hours = _actual_hours_to_date(project, sd)

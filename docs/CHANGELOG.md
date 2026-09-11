@@ -1,5 +1,26 @@
 # Changelog — pmo
 
+## [0.13.0] — 2026-09-10
+
+Ronda i18n: la app pasa a **inglés como fuente canónica** y trae su **propio catálogo español**
+(`pmo/pmo/locale/es.po`), quedando autónoma en `en`/`es` sin depender de `buzola_translations`.
+Sin cambios de esquema ni de lógica (la lógica compara claves internas estables; `_()`/`__()` solo
+en presentación). Detalle en `docs/tecnico/i18n.md`.
+
+### Changed
+- Todo el texto visible (Python/JS/Jinja/DocType JSON/reportes/workspaces/Print Format) normalizado a
+  **inglés como fuente**; el español lo aporta el catálogo propio.
+- **Workflow States/Actions** de `PMO Change Request` canónicos en inglés (Draft/In Review/Approved/
+  Rejected/Implemented/Closed; Send for Review/Return to Draft/Approve/Reject/Mark Implemented/Close):
+  masters ingleses creados vía fixtures **sin renombrar** los compartidos con `erpnext_proposals`.
+- Valores de Select propios (`priority`, `origin`) canónicos en inglés.
+
+### Added
+- Catálogo propio: `pmo/pmo/locale/main.pot` + `pmo/pmo/locale/es.po`.
+- `ignore_translatable_strings_from = ["frappe", "erpnext"]` (hereda base, no duplica; **no** `hrms`).
+- Marcadores `N_()` para strings que gettext no extrae solo (Workflow, Print Format, labels de reportes).
+- `docs/tecnico/i18n.md`.
+
 ## [0.12.0] — 2026-09-10
 
 Ronda "product-readiness": preparar PMO para uso/venta cerrando huecos de consumo (visión de portafolio,

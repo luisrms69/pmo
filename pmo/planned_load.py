@@ -99,7 +99,7 @@ def _compute(employee: str, from_date, to_date) -> dict:
 
 	start, end = getdate(from_date), getdate(to_date)
 	if end < start:
-		frappe.throw(frappe._("To Date no puede ser anterior a From Date."))
+		frappe.throw(frappe._("To Date cannot be earlier than From Date."))
 
 	# days_by_project: {project|None: {date: hours}}; days_by_task: {task: {date: hours}}; days (total)
 	# se deriva sumando. Todos restringidos al rango [from_date, to_date].

@@ -31,7 +31,7 @@ def execute(filters=None):
 	filters = frappe._dict(filters or {})
 	from_date, to_date = getdate(filters.from_date), getdate(filters.to_date)
 	if to_date < from_date:
-		frappe.throw(frappe._("To Date no puede ser anterior a From Date."))
+		frappe.throw(frappe._("To Date cannot be earlier than From Date."))
 	granularity = filters.get("granularity") or "Day"
 	observer = frappe.session.user
 
@@ -97,7 +97,7 @@ def _period_label(key, granularity):
 	if granularity == "Total":
 		return frappe._("Total")
 	if granularity == "Week":
-		return frappe._("Semana de {0}").format(formatdate(key))
+		return frappe._("Week of {0}").format(formatdate(key))
 	if granularity == "Month":
 		return key.strftime("%Y-%m")
 	return formatdate(key)
@@ -188,13 +188,13 @@ def _status(emp, to_date, planned):
 	"""Flags de integridad SIN identidad (P4-safe): solo presencia de categorías, no nombres ni conteos."""
 	flags = []
 	if get_capacity(emp, to_date) is None:
-		flags.append(frappe._("capacidad faltante"))
+		flags.append(frappe._("missing capacity"))
 	if planned["issues"]:
-		flags.append(frappe._("inconsistencias"))
+		flags.append(frappe._("inconsistencies"))
 	if planned["unscheduled"]:
-		flags.append(frappe._("sin fechas"))
+		flags.append(frappe._("no dates"))
 	if planned["unmapped"]:
-		flags.append(frappe._("mapeo"))
+		flags.append(frappe._("mapping"))
 	return " · ".join(flags)
 
 
@@ -209,23 +209,23 @@ def _columns():
 		return c
 
 	return [
-		col("employee", "Employee", "Link", 140, "Employee"),
-		col("designation", "Designation", "Link", 130, "Designation"),
-		col("department", "Department", "Link", 130, "Department"),
-		col("period", "Periodo", "Data", 130),
-		col("capacity", "Capacity"),
-		col("availability", "Availability"),
-		col("planned_visible", "Planned visible"),
-		col("confidential", "Comprometido (confidencial)", "Float", 180),
-		col("planned_total", "Planned total"),
-		col("actual_visible", "Actual visible"),
-		col("actual_confidential", "Actual confidencial", "Float", 150),
-		col("actual_total", "Actual total"),
-		col("free", "Libre"),
-		col("overallocation", "Sobreasignación", "Float", 130),
-		col("util_planned", "Util. planificada %", "Float", 140),
-		col("util_actual", "Util. real %", "Float", 120),
-		col("status", "Estado", "Data", 200),
+		col("employee", frappe.N_("Employee"), "Link", 140, "Employee"),
+		col("designation", frappe.N_("Designation"), "Link", 130, "Designation"),
+		col("department", frappe.N_("Department"), "Link", 130, "Department"),
+		col("period", frappe.N_("Period"), "Data", 130),
+		col("capacity", frappe.N_("Capacity")),
+		col("availability", frappe.N_("Availability")),
+		col("planned_visible", frappe.N_("Planned visible")),
+		col("confidential", frappe.N_("Committed (confidential)"), "Float", 180),
+		col("planned_total", frappe.N_("Planned total")),
+		col("actual_visible", frappe.N_("Actual visible")),
+		col("actual_confidential", frappe.N_("Actual confidential"), "Float", 150),
+		col("actual_total", frappe.N_("Actual total")),
+		col("free", frappe.N_("Free")),
+		col("overallocation", frappe.N_("Overallocation"), "Float", 130),
+		col("util_planned", frappe.N_("Planned util. %"), "Float", 140),
+		col("util_actual", frappe.N_("Actual util. %"), "Float", 120),
+		col("status", frappe.N_("Status"), "Data", 200),
 	]
 
 
@@ -293,18 +293,18 @@ def _build_summary(data):
 	utilization = flt(total_planned / total_availability * 100, 1) if total_availability > 0 else 0.0
 
 	return [
-		{"value": len(employees), "label": frappe._("Recursos"), "datatype": "Int"},
+		{"value": len(employees), "label": frappe._("Resources"), "datatype": "Int"},
 		{
 			"value": len(overallocated),
-			"label": frappe._("Sobreasignados"),
+			"label": frappe._("Overallocated"),
 			"datatype": "Int",
 			"indicator": "Red" if overallocated else "Green",
 		},
 		{
 			"value": len(without_capacity),
-			"label": frappe._("Recursos sin capacidad vigente"),
+			"label": frappe._("Resources without current capacity"),
 			"datatype": "Int",
 			"indicator": "Orange" if without_capacity else "Green",
 		},
-		{"value": utilization, "label": frappe._("Utilización planificada media"), "datatype": "Percent"},
+		{"value": utilization, "label": frappe._("Average planned utilization"), "datatype": "Percent"},
 	]

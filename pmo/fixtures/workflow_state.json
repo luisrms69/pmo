@@ -1,38 +1,38 @@
 [
  {
   "doctype": "Workflow State",
-  "name": "Borrador",
-  "workflow_state_name": "Borrador",
+  "name": "Draft",
+  "workflow_state_name": "Draft",
   "style": "Primary"
  },
  {
   "doctype": "Workflow State",
-  "name": "En Revision",
-  "workflow_state_name": "En Revision",
+  "name": "In Review",
+  "workflow_state_name": "In Review",
   "style": "Warning"
  },
  {
   "doctype": "Workflow State",
-  "name": "Aprobado",
-  "workflow_state_name": "Aprobado",
+  "name": "Approved",
+  "workflow_state_name": "Approved",
   "style": "Success"
  },
  {
   "doctype": "Workflow State",
-  "name": "Rechazado",
-  "workflow_state_name": "Rechazado",
+  "name": "Rejected",
+  "workflow_state_name": "Rejected",
   "style": "Danger"
  },
  {
   "doctype": "Workflow State",
-  "name": "Implementado",
-  "workflow_state_name": "Implementado",
+  "name": "Implemented",
+  "workflow_state_name": "Implemented",
   "style": "Info"
  },
  {
   "doctype": "Workflow State",
-  "name": "Cerrado",
-  "workflow_state_name": "Cerrado",
+  "name": "Closed",
+  "workflow_state_name": "Closed",
   "style": "Success"
  }
 ]

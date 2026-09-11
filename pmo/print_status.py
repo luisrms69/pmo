@@ -12,12 +12,50 @@ omiten, para no ocultar información.
 """
 
 import frappe
+from frappe import N_
 from frappe.utils import flt, getdate, today
 
-from pmo.pmo.report.pmo_portfolio.pmo_portfolio import _effort_totals, _health
+from pmo.pmo.report.pmo_portfolio.pmo_portfolio import HEALTH_LABELS, _effort_totals, _health
 from pmo.status_date import build_status_report
 
 _ACTIVE_STATUSES = ("Open", "Working", "Pending Review", "Overdue")
+
+# Strings visibles del Print Format `PMO Project Status`. El flujo gettext NO extrae plantillas de Print
+# Format (no hay extractor de print_format en babel_extractors.csv), así que se marcan aquí con N_() (no-op)
+# para que entren al POT; la plantilla las traduce en render con {{ _("...") }} usando el catálogo es.po.
+_PRINT_FORMAT_STRINGS = (
+	N_("Cutoff date (Status Date):"),
+	N_("Executive summary"),
+	N_("Progress"),
+	N_("Baseline"),
+	N_("no baseline"),
+	N_("Slip vs Baseline:"),
+	N_("Current forecast (plan)"),
+	N_("Project planned end (ERPNext)"),
+	N_("Committed date"),
+	N_("Slip vs commitment:"),
+	N_("Overdue tasks at cutoff"),
+	N_("Forecast exceeds commitment"),
+	N_("Effort (hours)"),
+	N_("% consumed:"),
+	N_("Tasks:"),
+	N_("completed"),
+	N_("active"),
+	N_("overdue at cutoff"),
+	N_("Milestones"),
+	N_("Milestone"),
+	N_("End (Baseline)"),
+	N_("End (Forecast)"),
+	N_("Slip"),
+	N_("Overdue at cutoff"),
+	N_("Yes"),
+	N_("Tasks to evaluate (with deviation)"),
+	N_("Task"),
+	N_("Commitment"),
+	N_("Overdue"),
+	N_("No tasks with relevant deviation at the cutoff date."),
+	N_("{0} task(s) with baseline but without relevant deviation are not listed (of {1} with baseline)."),
+)
 
 
 def pmo_project_status(project: str, status_date=None) -> dict:
@@ -32,6 +70,7 @@ def pmo_project_status(project: str, status_date=None) -> dict:
 	overdue = ind["tasks_overdue_at_cutoff"]["count"]
 	exceeds = ind.get("forecast_exceeds_commitment", {}).get("count", 0)
 
+	health_key = _health(slip_baseline, slip_committed, overdue, exceeds)
 	rows = _annotate(project, ind.get("tasks_vs_baseline", []))
 	relevant = _relevant(rows)
 	relevant.sort(key=lambda r: (r["slip_days"] is None, -(r["slip_days"] or 0)))
@@ -52,7 +91,8 @@ def pmo_project_status(project: str, status_date=None) -> dict:
 		"planned_hours": planned,
 		"actual_hours": actual,
 		"pct_consumed": flt(actual / planned * 100, 1) if planned > 0 else None,
-		"health": _health(slip_baseline, slip_committed, overdue, exceeds),
+		"health_key": health_key,  # valor interno estable (color/lógica)
+		"health": HEALTH_LABELS[health_key],  # etiqueta fuente (inglés); se traduce en el template con _()
 		"counts": counts,
 		"milestones": milestones,
 		"relevant_tasks": relevant,

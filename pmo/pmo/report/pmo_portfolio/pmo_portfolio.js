@@ -13,7 +13,7 @@ frappe.query_reports["PMO Portfolio"] = {
 		},
 		{
 			fieldname: "include_completed",
-			label: __("Incluir completados"),
+			label: __("Include completed"),
 			fieldtype: "Check",
 			default: 0,
 		},

@@ -49,7 +49,7 @@ def get_capacity_detail(employee: str | None, date=None, throw: bool = False) ->
 
 	if throw:
 		frappe.throw(
-			_("No hay capacidad configurada (ni override ni global) para {0} en {1}.").format(
+			_("No capacity configured (neither override nor global) for {0} on {1}.").format(
 				employee or _("global"), frappe.format(on_date, {"fieldtype": "Date"})
 			)
 		)

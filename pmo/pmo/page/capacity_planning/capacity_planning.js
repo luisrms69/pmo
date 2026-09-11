@@ -26,18 +26,18 @@ const REPORT_WORK = "PMO Work by Resource";
 
 // Vistas del selector (paridad con MS Project). Incremento 2: heatmap + Uso de recursos.
 const VIEWS = [
-	{ key: "heatmap", label: __("Mapa de calor de capacidad"), enabled: true },
-	{ key: "usage", label: __("Uso de recursos"), enabled: true },
-	{ key: "by_project", label: __("Uso de recursos por proyecto"), enabled: true },
-	{ key: "remaining", label: __("Disponibilidad restante"), enabled: true },
-	{ key: "work", label: __("Trabajo por recurso"), enabled: true },
+	{ key: "heatmap", label: __("Capacity heatmap"), enabled: true },
+	{ key: "usage", label: __("Resource usage"), enabled: true },
+	{ key: "by_project", label: __("Resource usage by project"), enabled: true },
+	{ key: "remaining", label: __("Remaining availability"), enabled: true },
+	{ key: "work", label: __("Work by resource"), enabled: true },
 ];
 
 // Escalas: etiqueta visible -> valor de granularidad del reporte.
 const SCALES = [
-	{ value: "Day", label: __("Día") },
-	{ value: "Week", label: __("Semana") },
-	{ value: "Month", label: __("Mes") },
+	{ value: "Day", label: __("Day") },
+	{ value: "Week", label: __("Week") },
+	{ value: "Month", label: __("Month") },
 ];
 
 class CapacityPlanning {
@@ -78,22 +78,22 @@ class CapacityPlanning {
 			<div class="pmo-cap">
 				<div class="pmo-cap-toolbar">
 					<div class="pmo-cap-field">
-						<label>${__("Desde")}</label>
+						<label>${__("From")}</label>
 						<input type="date" class="pmo-cap-from" value="${first}">
 					</div>
 					<div class="pmo-cap-field">
-						<label>${__("Hasta")}</label>
+						<label>${__("To")}</label>
 						<input type="date" class="pmo-cap-to" value="${last}">
 					</div>
 					<div class="pmo-cap-field">
-						<label>${__("Escala")}</label>
+						<label>${__("Scale")}</label>
 						<div class="pmo-cap-scale">${scale_btns}</div>
 					</div>
 					<div class="pmo-cap-field">
-						<label>${__("Unidad")}</label>
-						<span class="pmo-cap-unit">${__("Horas")}</span>
+						<label>${__("Unit")}</label>
+						<span class="pmo-cap-unit">${__("Hours")}</span>
 					</div>
-					<button class="btn btn-primary btn-sm pmo-cap-refresh">${__("Actualizar")}</button>
+					<button class="btn btn-primary btn-sm pmo-cap-refresh">${__("Refresh")}</button>
 				</div>
 
 				<div class="pmo-cap-views" role="tablist"></div>
@@ -101,23 +101,23 @@ class CapacityPlanning {
 				<div class="pmo-cap-grid">
 					<aside class="pmo-cap-side">
 						<div class="pmo-cap-side-head">
-							<span class="pmo-cap-side-title">${__("Empleados")}</span>
+							<span class="pmo-cap-side-title">${__("Employees")}</span>
 							<span class="pmo-cap-count text-muted"></span>
 						</div>
 						<input type="search" class="form-control input-xs pmo-cap-search"
-							placeholder="${__("Buscar empleado...")}">
+							placeholder="${__("Search employee...")}">
 						<div class="pmo-cap-side-actions">
-							<a class="pmo-cap-all">${__("Todos")}</a>
+							<a class="pmo-cap-all">${__("All")}</a>
 							<span class="pmo-cap-sep">&middot;</span>
-							<a class="pmo-cap-none">${__("Limpiar")}</a>
+							<a class="pmo-cap-none">${__("Clear")}</a>
 						</div>
 						<div class="pmo-cap-list"></div>
 					</aside>
 					<main class="pmo-cap-main">
 						<div class="pmo-cap-chart-card pmo-cap-card" hidden>
 							<div class="pmo-cap-card-head">
-								<span class="pmo-cap-chart-title">${__("Capacidad y carga agregadas")}</span>
-								<span class="text-muted pmo-cap-card-sub">${__("empleados seleccionados")}</span>
+								<span class="pmo-cap-chart-title">${__("Aggregated capacity and load")}</span>
+								<span class="text-muted pmo-cap-card-sub">${__("employees selected")}</span>
 							</div>
 							<div class="pmo-cap-chart"></div>
 						</div>
@@ -181,7 +181,7 @@ class CapacityPlanning {
 					${this.state.view === v.key ? "is-active" : ""}"
 					${v.enabled ? "" : "disabled"} type="button">
 					${frappe.utils.escape_html(v.label)}
-					${v.enabled ? "" : `<span class="pmo-cap-soon">${__("proximamente")}</span>`}
+					${v.enabled ? "" : `<span class="pmo-cap-soon">${__("coming soon")}</span>`}
 				</button>
 			`);
 			if (v.enabled) {
@@ -202,7 +202,7 @@ class CapacityPlanning {
 		if (!f.from_date || !f.to_date) {
 			return;
 		}
-		this.page.set_indicator(__("Cargando..."), "orange");
+		this.page.set_indicator(__("Loading..."), "orange");
 		Promise.all([this._load_resources(f), this._load_rows(f)])
 			.then(() => {
 				this.page.clear_indicator();
@@ -213,7 +213,7 @@ class CapacityPlanning {
 				this.page.set_indicator(__("Error"), "red");
 				frappe.msgprint({
 					title: __("Capacity Planning"),
-					message: (err && err.message) || __("No se pudieron cargar los datos."),
+					message: (err && err.message) || __("Could not load the data."),
 					indicator: "red",
 				});
 			});
@@ -292,7 +292,7 @@ class CapacityPlanning {
 
 		if (!visible.length) {
 			$list.html(
-				`<div class="pmo-cap-empty text-muted">${__("Sin empleados en el alcance.")}</div>`
+				`<div class="pmo-cap-empty text-muted">${__("No employees in scope.")}</div>`
 			);
 			return;
 		}
@@ -399,13 +399,13 @@ class CapacityPlanning {
 			<span class="pmo-cap-key"><i class="k-ok"></i>${__("&lt;80%")}</span>
 			<span class="pmo-cap-key"><i class="k-warn"></i>${__("80-100%")}</span>
 			<span class="pmo-cap-key"><i class="k-over"></i>${__("&gt;100%")}</span>
-			<span class="pmo-cap-key"><i class="k-off"></i>${__("sin disponibilidad")}</span>
+			<span class="pmo-cap-key"><i class="k-off"></i>${__("no availability")}</span>
 		`);
 
 		if (!employees.length || !periods.length) {
 			$view.html(
 				`<div class="pmo-cap-empty text-muted">${__(
-					"Selecciona al menos un empleado y un rango con datos."
+					"Select at least one employee and a range with data."
 				)}</div>`
 			);
 			return;
@@ -459,7 +459,7 @@ class CapacityPlanning {
 			<div class="pmo-cap-matrix-wrap">
 				<table class="pmo-cap-matrix">
 					<thead>
-						<tr><th class="pmo-cap-h-corner">${__("Empleado")}</th>${head}</tr>
+						<tr><th class="pmo-cap-h-corner">${__("Employee")}</th>${head}</tr>
 					</thead>
 					<tbody>${body}</tbody>
 				</table>
@@ -515,7 +515,7 @@ class CapacityPlanning {
 		if (!employees.length || !periods.length) {
 			$view.html(
 				`<div class="pmo-cap-empty text-muted">${__(
-					"Selecciona al menos un empleado y un rango con datos."
+					"Select at least one employee and a range with data."
 				)}</div>`
 			);
 			return;
@@ -575,7 +575,7 @@ class CapacityPlanning {
 			<div class="pmo-cap-matrix-wrap">
 				<table class="pmo-cap-matrix pmo-cap-usage">
 					<thead>
-						<tr><th class="pmo-cap-h-corner">${__("Empleado")}</th>${head}</tr>
+						<tr><th class="pmo-cap-h-corner">${__("Employee")}</th>${head}</tr>
 					</thead>
 					<tbody>${body}</tbody>
 				</table>
@@ -596,8 +596,8 @@ class CapacityPlanning {
 			return;
 		}
 		$card.removeAttr("hidden");
-		this.$body.find(".pmo-cap-chart-title").text(__("Capacidad y carga agregadas"));
-		this.$body.find(".pmo-cap-card-sub").text(__("empleados seleccionados"));
+		this.$body.find(".pmo-cap-chart-title").text(__("Aggregated capacity and load"));
+		this.$body.find(".pmo-cap-card-sub").text(__("employees selected"));
 
 		// agregar por periodo sobre los empleados seleccionados
 		const agg = {};
@@ -643,7 +643,7 @@ class CapacityPlanning {
 			$card.attr("hidden", true);
 			$view.html(
 				`<div class="pmo-cap-empty text-muted">${__(
-					"Esta vista trabaja con un empleado a la vez. Selecciona exactamente un empleado en el panel de la izquierda."
+					"This view works with one employee at a time. Select exactly one employee in the left panel."
 				)}</div>`
 			);
 			return;
@@ -651,7 +651,7 @@ class CapacityPlanning {
 
 		const emp = sel[0];
 		const f = this._get_filters();
-		$view.html(`<div class="pmo-cap-empty text-muted">${__("Cargando...")}</div>`);
+		$view.html(`<div class="pmo-cap-empty text-muted">${__("Loading...")}</div>`);
 
 		// El desglose por proyecto x periodo (con P4) lo produce el Script Report server-side.
 		frappe
@@ -682,7 +682,7 @@ class CapacityPlanning {
 			this.$body.find(".pmo-cap-chart-card").attr("hidden", true);
 			$view.html(
 				`<div class="pmo-cap-empty text-muted">${__(
-					"Sin planificación para este empleado en el rango."
+					"No planning for this employee in the range."
 				)}</div>`
 			);
 			return;
@@ -721,7 +721,7 @@ class CapacityPlanning {
 			.map((c) => `<td class="pmo-cap-u-cell">${fmt(parent && parent[c.fieldname])}</td>`)
 			.join("");
 		const foot = `<tr class="pmo-cap-u-footrow"><th class="pmo-cap-u-metric">${__(
-			"Total planificado"
+			"Planned total"
 		)}</th>${footcells}<td class="pmo-cap-u-cell pmo-cap-total">${fmt(
 			parent && parent.total
 		)}</td></tr>`;
@@ -730,7 +730,7 @@ class CapacityPlanning {
 			<div class="pmo-cap-matrix-wrap">
 				<table class="pmo-cap-matrix pmo-cap-usage">
 					<thead>
-						<tr><th class="pmo-cap-h-corner">${__("Proyecto")}</th>${head}</tr>
+						<tr><th class="pmo-cap-h-corner">${__("Project")}</th>${head}</tr>
 					</thead>
 					<tbody>${body}${foot}</tbody>
 				</table>
@@ -755,7 +755,7 @@ class CapacityPlanning {
 			return;
 		}
 		$card.removeAttr("hidden");
-		this.$body.find(".pmo-cap-chart-title").text(__("Planned por proyecto"));
+		this.$body.find(".pmo-cap-chart-title").text(__("Planned by project"));
 		this.$body.find(".pmo-cap-card-sub").text(emp.employee_name || emp.employee);
 
 		const labels = periodCols.map((c) => c.label);
@@ -792,16 +792,16 @@ class CapacityPlanning {
 		const periods = this.state.periods;
 
 		this.$body.find(".pmo-cap-legend").html(`
-			<span class="pmo-cap-key"><i class="k-ok"></i>${__("disponible (&gt;0)")}</span>
-			<span class="pmo-cap-key"><i class="k-warn"></i>${__("comprometido (0)")}</span>
-			<span class="pmo-cap-key"><i class="k-over"></i>${__("sobreasignado (&lt;0)")}</span>
-			<span class="pmo-cap-key"><i class="k-off"></i>${__("sin disponibilidad")}</span>
+			<span class="pmo-cap-key"><i class="k-ok"></i>${__("available (&gt;0)")}</span>
+			<span class="pmo-cap-key"><i class="k-warn"></i>${__("committed (0)")}</span>
+			<span class="pmo-cap-key"><i class="k-over"></i>${__("overallocated (&lt;0)")}</span>
+			<span class="pmo-cap-key"><i class="k-off"></i>${__("no availability")}</span>
 		`);
 
 		if (!employees.length || !periods.length) {
 			$view.html(
 				`<div class="pmo-cap-empty text-muted">${__(
-					"Selecciona al menos un empleado y un rango con datos."
+					"Select at least one employee and a range with data."
 				)}</div>`
 			);
 			return;
@@ -848,7 +848,7 @@ class CapacityPlanning {
 			<div class="pmo-cap-matrix-wrap">
 				<table class="pmo-cap-matrix">
 					<thead>
-						<tr><th class="pmo-cap-h-corner">${__("Empleado")}</th>${head}</tr>
+						<tr><th class="pmo-cap-h-corner">${__("Employee")}</th>${head}</tr>
 					</thead>
 					<tbody>${body}</tbody>
 				</table>
@@ -894,8 +894,8 @@ class CapacityPlanning {
 			return;
 		}
 		$card.removeAttr("hidden");
-		this.$body.find(".pmo-cap-chart-title").text(__("Disponibilidad agregada"));
-		this.$body.find(".pmo-cap-card-sub").text(__("empleados seleccionados"));
+		this.$body.find(".pmo-cap-chart-title").text(__("Aggregated availability"));
+		this.$body.find(".pmo-cap-card-sub").text(__("employees selected"));
 
 		const agg = {};
 		periods.forEach((p) => (agg[p] = { avail: 0, planned: 0, free: 0 }));
@@ -938,7 +938,7 @@ class CapacityPlanning {
 		if (sel.length !== 1) {
 			$view.html(
 				`<div class="pmo-cap-empty text-muted">${__(
-					"Esta vista trabaja con un empleado a la vez. Selecciona exactamente un empleado en el panel de la izquierda."
+					"This view works with one employee at a time. Select exactly one employee in the left panel."
 				)}</div>`
 			);
 			return;
@@ -946,7 +946,7 @@ class CapacityPlanning {
 
 		const emp = sel[0];
 		const f = this._get_filters();
-		$view.html(`<div class="pmo-cap-empty text-muted">${__("Cargando...")}</div>`);
+		$view.html(`<div class="pmo-cap-empty text-muted">${__("Loading...")}</div>`);
 
 		// El detalle Task/Project con P4 (doble boundary) lo produce el Script Report server-side.
 		frappe
@@ -974,7 +974,7 @@ class CapacityPlanning {
 		if (!taskRows.length && !hidden) {
 			$view.html(
 				`<div class="pmo-cap-empty text-muted">${__(
-					"Sin trabajo planificado para este empleado en el rango."
+					"No planned work for this employee in the range."
 				)}</div>`
 			);
 			return;
@@ -1008,7 +1008,7 @@ class CapacityPlanning {
 			const e = r.exp_end_date
 				? frappe.datetime.str_to_user(String(r.exp_end_date).slice(0, 10))
 				: null;
-			if (!s && !e) return `<span class="pmo-cap-nodate">${__("Sin fechas")}</span>`;
+			if (!s && !e) return `<span class="pmo-cap-nodate">${__("No dates")}</span>`;
 			if (s && e && s !== e) return `${s} &ndash; ${e}`;
 			return s || e;
 		};
@@ -1034,7 +1034,7 @@ class CapacityPlanning {
 						: "";
 					const exp =
 						r.expected_time != null
-							? `<span class="pmo-cap-wsub-item">${__("Estimado")}: ${format_number(
+							? `<span class="pmo-cap-wsub-item">${__("Estimated")}: ${format_number(
 									r.expected_time,
 									null,
 									2

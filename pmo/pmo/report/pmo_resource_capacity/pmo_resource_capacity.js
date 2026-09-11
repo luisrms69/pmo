@@ -7,7 +7,7 @@ frappe.query_reports["PMO Resource Capacity"] = {
 	filters: [
 		{
 			fieldname: "as_of",
-			label: __("A la fecha"),
+			label: __("As of date"),
 			fieldtype: "Date",
 			default: frappe.datetime.get_today(),
 		},
@@ -19,7 +19,7 @@ frappe.query_reports["PMO Resource Capacity"] = {
 		},
 		{
 			fieldname: "department",
-			label: __("Departamento"),
+			label: __("Department"),
 			fieldtype: "Link",
 			options: "Department",
 		},

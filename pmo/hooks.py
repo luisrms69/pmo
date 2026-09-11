@@ -210,7 +210,7 @@ fixtures = [
 			]
 		],
 	},
-	# ADR-0005 D3: Workflow del Change Request + sus Workflow State masters (custom, en español).
+	# ADR-0005 D3: Workflow del Change Request + sus Workflow State masters (custom, inglés canónico).
 	{"dt": "Workflow", "filters": [["name", "=", "PMO Change Request"]]},
 	{
 		"dt": "Workflow State",
@@ -218,7 +218,7 @@ fixtures = [
 			[
 				"workflow_state_name",
 				"in",
-				["Borrador", "En Revision", "Aprobado", "Rechazado", "Implementado", "Cerrado"],
+				["Draft", "In Review", "Approved", "Rejected", "Implemented", "Closed"],
 			]
 		],
 	},
@@ -352,5 +352,7 @@ override_whitelisted_methods = {
 
 # Translation
 # ------------
-# List of apps whose translatable strings should be excluded from this app's translations.
-# ignore_translatable_strings_from = []
+# Excluye del POT/PO propio de pmo los strings ya presentes en frappe/erpnext (se heredan en runtime
+# vía el diccionario fusionado por idioma). Coincide con la cadena de dependencias (pmo → erpnext).
+# NO incluir hrms: pmo no depende de hrms y podría dejar sin traducir strings propios en sitios sin hrms.
+ignore_translatable_strings_from = ["frappe", "erpnext"]

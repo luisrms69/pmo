@@ -53,7 +53,7 @@ class TestPMOWorkspace(IntegrationTestCase):
 			self.assertTrue(frappe.db.exists("Report", r), f"Report inexistente: {r}")
 		# card breaks presentes
 		cards = {link.label for link in ws.links if link.type == "Card Break"}
-		self.assertEqual(cards, {"Portafolio y control", "Capacidad", "Configuración PMO"})
+		self.assertEqual(cards, {"Portfolio & control", "Capacity", "PMO configuration"})
 
 	def test_no_cached_metrics(self):
 		ws = frappe.get_doc("Workspace", "PMO")

@@ -34,8 +34,7 @@ def _resolve(path, contrato):
 	except Exception:
 		frappe.throw(
 			_(
-				"La integración con erpnext_proposals no está disponible: falta el contrato {0}. "
-				"Requiere erpnext_proposals >= 0.22.0 instalado en el sitio."
+				"The erpnext_proposals integration is not available: contract {0} is missing. Requires erpnext_proposals >= 0.22.0 installed on the site."
 			).format(contrato)
 		)
 

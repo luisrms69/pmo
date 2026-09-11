@@ -208,7 +208,7 @@ class TestResourceUsage(IntegrationTestCase):
 	def test_confidential_single_row_without_identifier(self):
 		subj, emp, _po, p_conf = self._scenario()
 		data = self._run(subj, from_date="2026-01-05", to_date="2026-01-05", employee=emp)
-		conf = [r for r in data if r["project"] == "Comprometido (confidencial)"]
+		conf = [r for r in data if r["project"] == "Committed (confidential)"]
 		self.assertEqual(len(conf), 1)  # una sola fila
 		self.assertEqual(conf[0]["planned"], 4.0)  # confidencial cuenta en el total
 		self.assertNotIn("project_id", conf[0])  # sin identificador auxiliar
@@ -224,7 +224,7 @@ class TestResourceUsage(IntegrationTestCase):
 	def test_sin_proyecto_bucket_separate(self):
 		subj, emp, _po, _pc = self._scenario()
 		data = self._run(subj, from_date="2026-01-05", to_date="2026-01-05", employee=emp)
-		np = [r for r in data if r["project"] == "Sin proyecto"]
+		np = [r for r in data if r["project"] == "No project"]
 		self.assertEqual(len(np), 1)
 		self.assertEqual(np[0]["planned"], 6.0)
 		self.assertNotIn("project_id", np[0])  # no revela identidad (no existe)
@@ -236,7 +236,7 @@ class TestResourceUsage(IntegrationTestCase):
 		blob = frappe.as_json(data)
 		self.assertNotIn(p_open, blob)
 		self.assertNotIn(p_conf, blob)
-		conf = [r for r in data if r["project"] == "Comprometido (confidencial)"]
+		conf = [r for r in data if r["project"] == "Committed (confidential)"]
 		self.assertEqual(conf[0]["planned"], 8.0)  # 4 + 4 consolidados, cuentan en el total
 
 	def test_normal_sees_only_own_subtree(self):

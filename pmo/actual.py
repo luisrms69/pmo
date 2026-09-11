@@ -41,7 +41,7 @@ def get_actual_range(employee: str, from_date, to_date) -> dict:
 	"""{date: horas trabajadas} por cada día de [from_date, to_date] (inclusive). Interna, no whitelisted."""
 	start, end = getdate(from_date), getdate(to_date)
 	if end < start:
-		frappe.throw(_("To Date no puede ser anterior a From Date."))
+		frappe.throw(_("To Date cannot be earlier than From Date."))
 
 	result = {}
 	day = start
@@ -60,7 +60,7 @@ def get_actual_by_project(employee: str, from_date, to_date) -> dict:
 	"""
 	start, end = getdate(from_date), getdate(to_date)
 	if end < start:
-		frappe.throw(_("To Date no puede ser anterior a From Date."))
+		frappe.throw(_("To Date cannot be earlier than From Date."))
 
 	rows = frappe.db.sql(
 		"""select td.project, date(td.from_time) as d, sum(td.hours) as hours

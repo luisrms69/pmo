@@ -18,10 +18,10 @@ frappe.ui.form.on("PMO Change Request", {
 			!frm.doc.proposal_group &&
 			frm.doc.project
 		) {
-			frm.add_custom_button(__("Crear addenda comercial"), () => {
+			frm.add_custom_button(__("Create commercial addendum"), () => {
 				frappe.confirm(
 					__(
-						"Se creará una Cotización/Addenda comercial del contrato original. Requiere autoría comercial (Proposals Manager). ¿Continuar?"
+						"A commercial Quotation/Addendum will be created from the original contract. Requires commercial authorship (Proposals Manager). Continue?"
 					),
 					() => {
 						frappe
@@ -29,13 +29,13 @@ frappe.ui.form.on("PMO Change Request", {
 								method: "pmo.pmo.doctype.pmo_change_request.pmo_change_request.crear_addenda",
 								args: { change_request: frm.doc.name },
 								freeze: true,
-								freeze_message: __("Creando addenda…"),
+								freeze_message: __("Creating addendum…"),
 							})
 							.then((r) => {
 								if (r.exc || !r.message) return;
 								frm.reload_doc();
 								frappe.show_alert({
-									message: __("Addenda creada: {0}", [r.message]),
+									message: __("Addendum created: {0}", [r.message]),
 									indicator: "green",
 								});
 								frappe.set_route("Form", "Quotation", r.message);
@@ -48,7 +48,7 @@ frappe.ui.form.on("PMO Change Request", {
 		// ADR-0005 D11: abrir el reporte PMO Baseline Comparison ya parametrizado (before → after). El CR
 		// va como contexto de apertura, no como atribución del diff (varios CR pueden compartir after).
 		if (frm.doc.baseline_before && frm.doc.baseline_after) {
-			frm.add_custom_button(__("Comparar líneas base"), () => {
+			frm.add_custom_button(__("Compare baselines"), () => {
 				frappe.set_route("query-report", "PMO Baseline Comparison", {
 					project: frm.doc.project,
 					baseline_before: frm.doc.baseline_before,
@@ -62,9 +62,9 @@ frappe.ui.form.on("PMO Change Request", {
 		if (
 			frm.doc.docstatus === 1 &&
 			!frm.doc.baseline_after &&
-			["Aprobado", "Implementado"].includes(frm.doc.workflow_state)
+			["Approved", "Implemented"].includes(frm.doc.workflow_state)
 		) {
-			frm.add_custom_button(__("Usar línea base vigente"), () => {
+			frm.add_custom_button(__("Use current baseline"), () => {
 				frappe
 					.call({
 						method: "pmo.pmo.doctype.pmo_change_request.pmo_change_request.get_current_baseline",
@@ -76,12 +76,12 @@ frappe.ui.form.on("PMO Change Request", {
 							frm.set_value("baseline_after", r.message);
 							frappe.show_alert({
 								message: __(
-									"Prellenada con la línea base vigente. Revisa y guarda."
+									"Prefilled with the current baseline. Review and save."
 								),
 								indicator: "blue",
 							});
 						} else {
-							frappe.msgprint(__("El Proyecto no tiene una línea base vigente."));
+							frappe.msgprint(__("The Project has no current baseline."));
 						}
 					});
 			});
@@ -91,18 +91,18 @@ frappe.ui.form.on("PMO Change Request", {
 		// contrato de erpnext_proposals (server-side); el cliente no escribe proposal_project.
 		if (
 			frm.doc.docstatus === 1 &&
-			frm.doc.workflow_state === "Aprobado" &&
+			frm.doc.workflow_state === "Approved" &&
 			!frm.doc.applied_to_project
 		) {
-			frm.add_custom_button(__("Aplicar Cotización al Project"), () => {
+			frm.add_custom_button(__("Apply Quotation to Project"), () => {
 				const d = new frappe.ui.Dialog({
-					title: __("Aplicar Cotización al Project"),
+					title: __("Apply Quotation to Project"),
 					fields: [
 						{
 							fieldname: "quotation",
 							fieldtype: "Link",
 							options: "Quotation",
-							label: __("Cotización (Ganada)"),
+							label: __("Quotation (Won)"),
 							reqd: 1,
 							get_query: () =>
 								frm.doc.proposal_group
@@ -110,7 +110,7 @@ frappe.ui.form.on("PMO Change Request", {
 									: {},
 						},
 					],
-					primary_action_label: __("Aplicar"),
+					primary_action_label: __("Apply"),
 					primary_action(values) {
 						frappe
 							.call({
@@ -120,14 +120,14 @@ frappe.ui.form.on("PMO Change Request", {
 									quotation: values.quotation,
 								},
 								freeze: true,
-								freeze_message: __("Aplicando alcance al Project…"),
+								freeze_message: __("Applying scope to Project…"),
 							})
 							.then((r) => {
 								if (r.exc) return;
 								d.hide();
 								frm.reload_doc();
 								frappe.show_alert({
-									message: __("Alcance aplicado al Project."),
+									message: __("Scope applied to Project."),
 									indicator: "green",
 								});
 							});

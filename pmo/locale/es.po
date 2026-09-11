@@ -1,0 +1,1620 @@
+# Spanish translations for PMO.
+# Copyright (C) 2026 Consultoria en Negocios y Aplicaciones
+# This file is distributed under the same license as the PMO project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PMO VERSION\n"
+"Report-Msgid-Bugs-To: it@buzola.mx\n"
+"POT-Creation-Date: 2026-09-10 03:11-0923\n"
+"PO-Revision-Date: 2026-09-10 02:54-1723\n"
+"Last-Translator: it@buzola.mx\n"
+"Language: es\n"
+"Language-Team: it@buzola.mx\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:95
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:117
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:155
+msgid "% Consumed"
+msgstr "% Consumido"
+
+#: pmo/print_status.py:40
+#, python-format
+msgid "% consumed:"
+msgstr "% consumido:"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:401
+msgid "&gt;100%"
+msgstr "&gt;100%"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:399
+msgid "&lt;80%"
+msgstr "&lt;80%"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:116
+msgid "(Project)"
+msgstr "(Proyecto)"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:400
+msgid "80-100%"
+msgstr "80-100%"
+
+#. Header text in the PMO Capacity Workspace
+#: pmo/pmo/workspace/pmo_capacity/pmo_capacity.json
+msgid "<span class=\"h4\"><b>PMO Capacity</b></span>"
+msgstr "<span class=\"h4\"><b>PMO Capacidad</b></span>"
+
+#. Header text in the PMO Control Workspace
+#: pmo/pmo/workspace/pmo_control/pmo_control.json
+msgid "<span class=\"h4\"><b>PMO Control</b></span>"
+msgstr "<span class=\"h4\"><b>PMO Control</b></span>"
+
+#. Header text in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "<span class=\"h4\"><b>PMO — Control center</b></span>"
+msgstr "<span class=\"h4\"><b>PMO — Centro de control</b></span>"
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:221
+msgid "A Quotation can only be applied from a Change Request in the 'Approved' state."
+msgstr "Solo se puede aplicar una Cotización desde un Change Request en estado 'Aprobado'."
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:69
+msgid "A baseline cannot supersede itself."
+msgstr "Una baseline no puede sustituirse a si misma."
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:44
+msgid "A baseline with revision {0} already exists in this Project."
+msgstr "Ya existe una baseline con revision {0} en este Project."
+
+#: pmo/pmo/doctype/pmo_capacity/pmo_capacity.py:44
+msgid "A capacity already exists for scope {0} from {1} ({2})."
+msgstr "Ya existe una capacidad para el scope {0} desde {1} ({2})."
+
+#: pmo/public/js/pmo_change_request.js:23
+msgid "A commercial Quotation/Addendum will be created from the original contract. Requires commercial authorship (Proposals Manager). Continue?"
+msgstr "Se creará una Cotización/Addenda comercial del contrato original. Requiere autoría comercial (Proposals Manager). ¿Continuar?"
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:67
+msgid "A non-Original baseline must indicate which one it supersedes."
+msgstr "Una baseline que no es Original debe indicar cual sustituye."
+
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:154
+msgid "Actual (h)"
+msgstr "Real (h)"
+
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:93
+msgid "Actual Hours"
+msgstr "Horas Reales"
+
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:110
+msgid "Actual Hours (Project)"
+msgstr "Horas Reales (Proyecto)"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:222
+msgid "Actual confidential"
+msgstr "Real confidencial"
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:122
+msgid "Actual hours to date"
+msgstr "Horas reales a la fecha"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:223
+msgid "Actual total"
+msgstr "Real total"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:227
+msgid "Actual util. %"
+msgstr "Util. real %"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:221
+msgid "Actual visible"
+msgstr "Real visible"
+
+#: pmo/public/js/pmo_change_request.js:38
+msgid "Addendum created: {0}"
+msgstr "Addenda creada: {0}"
+
+#. Label of the baseline_after (Link) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.js:26
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:184
+msgid "After baseline"
+msgstr "Línea base posterior"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:897
+msgid "Aggregated availability"
+msgstr "Disponibilidad agregada"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:119
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:599
+msgid "Aggregated capacity and load"
+msgstr "Capacidad y carga agregadas"
+
+#. Label of the amended_from (Link) field in DocType 'PMO Change Request'
+#. Label of the amended_from (Link) field in DocType 'PMO Project Baseline'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Amended from"
+msgstr "Enmendado desde"
+
+#. Label of the impact_amount (Currency) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Amount (impact)"
+msgstr "Monto (impacto)"
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:62
+msgid "An Original baseline already exists for this Project."
+msgstr "Ya existe una baseline Original para este Project."
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:51
+msgid "An Original baseline must not supersede another."
+msgstr "Una baseline Original no debe sustituir a otra."
+
+#. Label of the applied_at (Datetime) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Applied at"
+msgstr "Aplicado el"
+
+#. Label of the applied_quotation (Link) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Applied quotation"
+msgstr "Cotización aplicada"
+
+#. Label of the applied_to_project (Check) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Applied to Project"
+msgstr "Aplicado al Proyecto"
+
+#: pmo/public/js/pmo_change_request.js:97
+#: pmo/public/js/pmo_change_request.js:99
+msgid "Apply Quotation to Project"
+msgstr "Aplicar Cotización al Project"
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:144
+msgid "Apply the Quotation to the Project (the Scope Items) before marking the change as implemented."
+msgstr "Aplica la Cotización al Project (los Scope Items) antes de marcar el cambio como implementado."
+
+#: pmo/pmo/page/tag_import/tag_import.js:102
+msgid "Apply will NOT write ANY tag while there are errors ({0}). It is all or nothing: fix the CSV and retry."
+msgstr "Aplicar NO escribirá NINGÚN tag mientras haya errores ({0}). Es todo o nada: corrige el CSV y reintenta."
+
+#: pmo/pmo/page/tag_import/tag_import.js:171
+msgid "Applying Tags..."
+msgstr "Aplicando Tags..."
+
+#: pmo/public/js/pmo_change_request.js:123
+msgid "Applying scope to Project…"
+msgstr "Aplicando alcance al Project…"
+
+#. Label of the approval_section (Section Break) field in DocType 'PMO Project
+#. Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Approval"
+msgstr "Aprobación"
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:46
+msgid "Approve"
+msgstr "Aprobar"
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:35
+msgid "Approved"
+msgstr "Aprobado"
+
+#. Option for the 'Baseline type' (Select) field in DocType 'PMO Project
+#. Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Approved Change"
+msgstr "Cambio Aprobado"
+
+#. Label of the approved_at (Datetime) field in DocType 'PMO Change Request'
+#. Label of the approved_at (Datetime) field in DocType 'PMO Project Baseline'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Approved at"
+msgstr "Aprobado el"
+
+#. Label of the approved_by (Link) field in DocType 'PMO Change Request'
+#. Label of the approved_by (Link) field in DocType 'PMO Project Baseline'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Approved by"
+msgstr "Aprobado por"
+
+#: pmo/pmo/report/pmo_resource_capacity/pmo_resource_capacity.js:10
+msgid "As of date"
+msgstr "A la fecha"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:210
+msgid "Assignments modified"
+msgstr "Asignaciones modificadas"
+
+#: pmo/pmo/page/tag_import/tag_import.js:77
+msgid "Associations applied"
+msgstr "Asociaciones aplicadas"
+
+#: pmo/pmo/page/tag_import/tag_import.js:74
+msgid "Associations requested"
+msgstr "Asociaciones solicitadas"
+
+#: pmo/pmo/page/tag_import/tag_import.js:78
+msgid "Associations that would be applied"
+msgstr "Asociaciones que se aplicarían"
+
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:32
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:174
+msgid "At risk"
+msgstr "En riesgo"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:491
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:531
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:625
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:875
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:920
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:217
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:263
+msgid "Availability"
+msgstr "Disponibilidad"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:309
+msgid "Average planned utilization"
+msgstr "Utilización planificada media"
+
+#: pmo/print_status.py:30
+msgid "Baseline"
+msgstr "Línea base"
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:122
+msgid "Baseline After cannot be effective earlier than Baseline Before ({0})."
+msgstr "Baseline After no puede ser efectiva antes que Baseline Before ({0})."
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:117
+msgid "Baseline After cannot be the same as Baseline Before."
+msgstr "Baseline After no puede ser igual a Baseline Before."
+
+#. Label of a shortcut in the PMO Control Workspace
+#: pmo/pmo/workspace/pmo_control/pmo_control.json
+msgid "Baseline comparison"
+msgstr "Comparación de línea base"
+
+#. Description of the 'Before baseline' (Link) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Baseline in effect when the change is formalized (frozen when the change is sent to review)."
+msgstr "Línea base vigente al formalizar el cambio (congelada al enviar a revisión)."
+
+#. Description of the 'After baseline' (Link) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Baseline that incorporates the change. Linked by the owner (explicit selection) before closing."
+msgstr "Línea base que incorpora el cambio. La liga el owner (selección explícita) antes de cerrar."
+
+#. Label of the baseline_type (Select) field in DocType 'PMO Project Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Baseline type"
+msgstr "Tipo de línea base"
+
+#: pmo/compare.py:117
+msgid "Baseline {0} has no snapshot (it is not frozen/Submitted)."
+msgstr "La baseline {0} no tiene snapshot (no está congelada/Submitted)."
+
+#. Label of the section_baselines (Section Break) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Baselines"
+msgstr "Líneas base"
+
+#. Label of the baseline_before (Link) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.js:15
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:183
+msgid "Before baseline"
+msgstr "Línea base previa"
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:202
+msgid "Cannot cancel a Change Request in a terminal state ({0}). Record a new Change Request."
+msgstr "No se puede cancelar un Change Request en estado terminal ({0}). Registra un Change Request nuevo."
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:198
+msgid "Cannot cancel: the Change Request was already closed with a new baseline."
+msgstr "No se puede cancelar: el Change Request ya se cerró con una nueva baseline."
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:192
+msgid "Cannot cancel: the change was already applied to the Project. Record a new Change Request to revert it."
+msgstr "No se puede cancelar: el cambio ya fue aplicado al Project. Registra un Change Request nuevo para revertirlo."
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:150
+msgid "Cannot freeze: {0}"
+msgstr "No se puede congelar: {0}"
+
+#. Label of the capacity_hours_per_day (Float) field in DocType 'PMO Capacity'
+#: pmo/pmo/doctype/pmo_capacity/pmo_capacity.json
+msgid "Capacity Hours Per Day"
+msgstr "Capacidad Horas por Día"
+
+#: pmo/pmo/doctype/pmo_capacity/pmo_capacity.py:22
+msgid "Capacity Hours Per Day must be greater than 0."
+msgstr "Capacity Hours Per Day debe ser mayor que 0."
+
+#: pmo/pmo/report/pmo_resource_capacity/pmo_resource_capacity.py:98
+msgid "Capacity h/day"
+msgstr "Capacidad h/día"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:29
+msgid "Capacity heatmap"
+msgstr "Mapa de calor de capacidad"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.js:38
+msgid "Change Request (context)"
+msgstr "Change Request (contexto)"
+
+#. Label of a shortcut in the PMO Control Workspace
+#: pmo/pmo/workspace/pmo_control/pmo_control.json
+msgid "Change register"
+msgstr "Registro de cambios"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:54
+msgid "Change type"
+msgstr "Tipo de cambio"
+
+#: pmo/print_status.py:54
+msgid "Commitment"
+msgstr "Compromiso"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:219
+#: pmo/pmo/report/pmo_resource_usage_by_project/pmo_resource_usage_by_project.py:34
+#: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.py:27
+msgid "Committed (confidential)"
+msgstr "Comprometido (confidencial)"
+
+#. Description of the 'PMO — Committed end' (Date) field in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Committed completion date of the project (business or agreed commitment). Different from the Expected End Date, which is the calculated date. It does not shift automatically with the schedule (can be changed manually). It does not block saving; if the calculated end exceeds it, only a warning is shown. Empty = no commitment."
+msgstr "Fecha comprometida de terminación del proyecto (compromiso de negocio o acordado). Distinta del Expected End Date, que es la fecha calculada. No se desplaza automáticamente con el cronograma (puede cambiarse manualmente). No bloquea el guardado; si el fin calculado la supera, solo se muestra un aviso. Vacío = sin compromiso."
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:48
+#: pmo/print_status.py:35
+msgid "Committed date"
+msgstr "Fecha comprometida"
+
+#. Description of the 'PMO — Committed date (deadline)' (Date) field in DocType
+#. 'Task'
+#: pmo/fixtures/custom_field.json
+msgid "Committed/deadline date of the task (business or agreed commitment). Different from the Expected End Date, which is the calculated date. It does not shift automatically with rescheduling (can be changed manually). It does not move the task, block saving, or the actual log; if the planned end exceeds it, only a warning is shown. Empty = no commitment."
+msgstr "Fecha comprometida/límite de la tarea (compromiso de negocio o acordado). Distinta del Expected End Date, que es la fecha calculada. No se desplaza automáticamente con la reprogramación (puede cambiarse manualmente). No mueve la tarea ni bloquea el guardado ni el registro real; si el fin planeado la supera, solo se muestra un aviso. Vacío = sin compromiso."
+
+#: pmo/public/js/pmo_change_request.js:51
+msgid "Compare baselines"
+msgstr "Comparar líneas base"
+
+#: pmo/public/js/pmo_project_baseline.js:8
+msgid "Compare with previous baseline"
+msgstr "Comparar con línea base anterior"
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:127
+msgid "Completed / due to date"
+msgstr "Completadas / debidas a la fecha"
+
+#: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.py:28
+msgid "Confidential"
+msgstr "Confidencial"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:216
+msgid "Could not load the data."
+msgstr "No se pudieron cargar los datos."
+
+#: pmo/pmo/page/tag_import/tag_import.js:44
+msgid "Could not read the file."
+msgstr "No se pudo leer el archivo."
+
+#: pmo/public/js/pmo_change_request.js:21
+msgid "Create commercial addendum"
+msgstr "Crear addenda comercial"
+
+#: pmo/public/js/pmo_change_request.js:32
+msgid "Creating addendum…"
+msgstr "Creando addenda…"
+
+#: pmo/print_status.py:33
+msgid "Current forecast (plan)"
+msgstr "Pronóstico vigente (plan)"
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:92
+msgid "Current forecast (plan): end"
+msgstr "Pronóstico vigente (plan): fin"
+
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:105
+msgid "Cutoff (Status Date)"
+msgstr "Corte (Status Date)"
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:83
+msgid "Cutoff date"
+msgstr "Fecha de corte"
+
+#. Description of the 'PMO Status Date' (Date) field in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Cutoff date (Data Date) of the Project's as-of control (ADR-0006). Only today or past; no future date allowed. It is the default value of the cutoff-date status report."
+msgstr "Fecha de corte (Data Date) del control a fecha del Project (ADR-0006). Solo hoy o pasada; no admite fecha futura. Es el valor por defecto del reporte de status a fecha de corte."
+
+#: pmo/print_status.py:27
+msgid "Cutoff date (Status Date):"
+msgstr "Fecha de corte (Status Date):"
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:137
+msgid "Cycle detected in the supersession chain."
+msgstr "Ciclo detectado en la cadena de supersession."
+
+#. Label of the impact_days (Int) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Days (impact)"
+msgstr "Días (impacto)"
+
+#. Label of the section_decision (Section Break) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Decision"
+msgstr "Decisión"
+
+#. Label of the decision_notes (Small Text) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Decision notes"
+msgstr "Notas de decisión"
+
+#: pmo/pmo/page/tag_import/tag_import.js:114
+msgid "Detail by document"
+msgstr "Detalle por documento"
+
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:33
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:168
+msgid "Deviated"
+msgstr "Desviado"
+
+#: pmo/pmo/page/tag_import/tag_import.js:72
+msgid "Documents read"
+msgstr "Documentos leídos"
+
+#: pmo/pmo/page/tag_import/tag_import.js:70
+#: pmo/pmo/page/tag_import/tag_import.js:174
+msgid "Dry Run"
+msgstr "Dry Run"
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:92
+msgid "Effective Date cannot be earlier than that of the superseded baseline ({0})."
+msgstr "Effective Date no puede ser anterior a la de la baseline que sustituye ({0})."
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:30
+msgid "Effective Date cannot be in the future (v0.5.0 does not support scheduled baselines)."
+msgstr "Effective Date no puede ser futura (v0.5.0 no soporta baselines programadas)."
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:166
+msgid "Effective Date cannot be later than the approval date."
+msgstr "Effective Date no puede ser posterior a la fecha de aprobacion."
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:85
+msgid "Effective baseline"
+msgstr "Línea base vigente"
+
+#. Label of the effective_date (Date) field in DocType 'PMO Project Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Effective date"
+msgstr "Fecha de vigencia"
+
+#. Description of the 'Effective date' (Date) field in DocType 'PMO Project
+#. Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Effective date (not in the future in v0.5.0)."
+msgstr "Fecha de vigencia (no futura en v0.5.0)."
+
+#: pmo/pmo/report/pmo_resource_capacity/pmo_resource_capacity.py:103
+msgid "Effective from"
+msgstr "Vigente desde"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:31
+msgid "Effective hours"
+msgstr "Horas efectivas"
+
+#: pmo/pmo/doctype/pmo_capacity/pmo_capacity.js:15
+msgid "Effective-dated capacity: empty Employee = global baseline; with Employee = individual override. Applies from From Date until another row of the same type supersedes it. With no active row, the resource is shown as capacity missing (no value is assumed)."
+msgstr "Capacidad efectivo-datada: Employee vacío = baseline global; con Employee = override individual. Aplica desde From Date hasta que otra fila del mismo tipo la sustituya. Sin fila vigente, el recurso se muestra como capacidad faltante (no se asume ningún valor)."
+
+#: pmo/print_status.py:39
+msgid "Effort (hours)"
+msgstr "Esfuerzo (horas)"
+
+#. Label of the impacts_effort (Check) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Effort / Resources"
+msgstr "Esfuerzo / Recursos"
+
+#. Description of the 'Employee' (Link) field in DocType 'PMO Capacity'
+#: pmo/pmo/doctype/pmo_capacity/pmo_capacity.json
+msgid "Empty = global capacity (baseline); set = individual override for that Employee."
+msgstr "Vacío = capacidad global (baseline); informado = override individual para ese Employee."
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:45
+#: pmo/print_status.py:47
+msgid "End (Baseline)"
+msgstr "Fin (Línea Base)"
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:46
+#: pmo/print_status.py:48
+msgid "End (Forecast)"
+msgstr "Fin (Pronóstico)"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:29
+msgid "End (Project)"
+msgstr "Fin (Proyecto)"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:1037
+msgid "Estimated"
+msgstr "Estimado"
+
+#. Label of the section_impact_qty (Section Break) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Estimates (optional)"
+msgstr "Estimaciones (opcional)"
+
+#. Label of the evaluation_notes (Text) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Evaluation notes"
+msgstr "Notas de evaluación"
+
+#: pmo/print_status.py:28
+msgid "Executive summary"
+msgstr "Resumen ejecutivo"
+
+#: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.py:118
+msgid "Expected Time"
+msgstr "Tiempo Esperado"
+
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:152
+msgid "Forecast > commitment"
+msgstr "Pronóstico > compromiso"
+
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:148
+msgid "Forecast end"
+msgstr "Fin pronosticado"
+
+#: pmo/print_status.py:38
+msgid "Forecast exceeds commitment"
+msgstr "Pronóstico excede compromiso"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:493
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:533
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:627
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:877
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:922
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:224
+msgid "Free"
+msgstr "Libre"
+
+#: pmo/pmo/report/pmo_resource_capacity/pmo_resource_capacity.py:77
+msgid "Global"
+msgstr "Global"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.js:28
+msgid "Granularity"
+msgstr "Granularidad"
+
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:147
+msgid "Health"
+msgstr "Salud"
+
+#. Label of the impact_hours (Float) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Hours (impact)"
+msgstr "Horas (impacto)"
+
+#. Label of the section_impact (Section Break) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Impact"
+msgstr "Impacto"
+
+#. Label of the impact_notes (Small Text) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Impact notes"
+msgstr "Notas de impacto"
+
+#. Label of the impact_summary (Data) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Impact summary"
+msgstr "Resumen de impacto"
+
+#. Label of the section_implementation (Section Break) field in DocType 'PMO
+#. Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Implementation"
+msgstr "Implementación"
+
+#. Label of the implementation_notes (Small Text) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Implementation notes"
+msgstr "Notas de implementación"
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:37
+msgid "Implemented"
+msgstr "Implementado"
+
+#: pmo/pmo/page/tag_import/tag_import.js:12
+#: pmo/pmo/page/tag_import/tag_import.js:61
+msgid "Import Tags"
+msgstr "Importar Tags"
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:34
+msgid "In Review"
+msgstr "En revisión"
+
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.js:16
+msgid "Include completed"
+msgstr "Incluir completados"
+
+#: pmo/status_date.py:42
+msgid "Invalid Status Date"
+msgstr "Status Date inválida"
+
+#: pmo/tag_import.py:63
+msgid "Invalid header. Expected: {0}"
+msgstr "Encabezado inválido. Se esperaba: {0}"
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:151
+msgid "Link the new baseline (Baseline After) before closing the Change Request."
+msgstr "Liga la nueva baseline (Baseline After) antes de cerrar el Change Request."
+
+#. Description of the 'Proposal group' (Data) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Logical thread (Proposal Group) of the Quotation-addendum. Preserves the version history."
+msgstr "Hilo lógico (Proposal Group) de la Cotización-addendum. Preserva el historial de versiones."
+
+#: pmo/tag_import.py:136
+msgid "Malformed row: doctype, document, tags columns are required."
+msgstr "Fila mal formada: se requieren columnas doctype, document, tags."
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:48
+msgid "Mark Implemented"
+msgstr "Marcar Implementado"
+
+#: pmo/print_status.py:45
+msgid "Milestones"
+msgstr "Hitos"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:136
+msgid "Modified"
+msgstr "Modificada"
+
+#: pmo/pmo/page/tag_import/tag_import.js:21
+msgid "Multiple Tags per document separated by commas."
+msgstr "Varios Tags por documento separados por comas."
+
+#: pmo/status_date.py:238
+msgid "No baseline in effect at the cutoff date: showing Current and Actual."
+msgstr "Sin línea base vigente a la fecha de corte: se muestran Current y Actual."
+
+#: pmo/capacity.py:52
+msgid "No capacity configured (neither override nor global) for {0} on {1}."
+msgstr "No hay capacidad configurada (ni override ni global) para {0} en {1}."
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:1011
+msgid "No dates"
+msgstr "Sin fechas"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:295
+msgid "No employees in scope."
+msgstr "Sin empleados en el alcance."
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:976
+msgid "No planned work for this employee in the range."
+msgstr "Sin trabajo planificado para este empleado en el rango."
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:684
+msgid "No planning for this employee in the range."
+msgstr "Sin planificación para este empleado en el rango."
+
+#: pmo/pmo/report/pmo_resource_usage_by_project/pmo_resource_usage_by_project.py:35
+#: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.py:29
+msgid "No project"
+msgstr "Sin proyecto"
+
+#: pmo/print_status.py:56
+msgid "No tasks with relevant deviation at the cutoff date."
+msgstr "Sin tareas con desviación relevante a la fecha de corte."
+
+#: pmo/tag_import.py:146
+msgid "No valid Tags in the row (empty tags column)."
+msgstr "No hay Tags válidos en la fila (columna tags vacía)."
+
+#: pmo/tag_import.py:164
+msgid "No write permission on {0} {1}"
+msgstr "Sin permiso de escritura sobre {0} {1}"
+
+#. Description of the 'Hours (impact)' (Float) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Non-binding estimate. The authoritative valuation lives in the Quotation."
+msgstr "Estimación no vinculante. La valuación autoritativa vive en la Cotización."
+
+#: pmo/tag_import.py:153
+msgid "Nonexistent DocType: {0}"
+msgstr "DocType inexistente: {0}"
+
+#: pmo/tag_import.py:159
+msgid "Nonexistent document: {0} {1}"
+msgstr "Documento inexistente: {0} {1}"
+
+#: pmo/pmo/page/tag_import/tag_import.js:81
+msgid "Nonexistent documents"
+msgstr "Documentos inexistentes"
+
+#: pmo/pmo/page/tag_import/tag_import.js:98
+msgid "Nothing was applied. With {0} error(s), NO tag was written (all or nothing)."
+msgstr "No se aplicó nada. Con {0} error(es), no se escribió NINGÚN tag (todo o nada)."
+
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:31
+msgid "On track"
+msgstr "En plan"
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:82
+msgid "Only a Submitted, non-Cancelled baseline can be superseded."
+msgstr "Solo se puede sustituir una baseline Submitted y no Cancelada."
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:80
+msgid "Only a baseline from the same Project can be superseded."
+msgstr "Solo se puede sustituir una baseline del mismo Project."
+
+#: pmo/compare.py:132
+msgid "Only baselines from the same Project can be compared."
+msgstr "Solo se pueden comparar baselines del mismo Project."
+
+#. Label of the origin (Select) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+#: pmo/pmo/report/pmo_resource_capacity/pmo_resource_capacity.py:102
+msgid "Origin"
+msgstr "Origen"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:299
+msgid "Overallocated"
+msgstr "Sobreasignados"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:878
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:225
+msgid "Overallocation"
+msgstr "Sobreasignación"
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:49
+#: pmo/print_status.py:50
+msgid "Overdue at cutoff"
+msgstr "Vencida al corte"
+
+#: pmo/print_status.py:37
+msgid "Overdue tasks at cutoff"
+msgstr "Tareas vencidas al corte"
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:116
+msgid "Overdue unfinished tasks"
+msgstr "Tareas vencidas sin terminar"
+
+#: pmo/pmo/report/pmo_resource_capacity/pmo_resource_capacity.py:77
+msgid "Override"
+msgstr "Override"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:30
+msgid "Override hours"
+msgstr "Horas override"
+
+#. Name of a Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO"
+msgstr ""
+
+#. Name of a report
+#. Label of a Link in the PMO Workspace
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.json
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO Baseline Comparison"
+msgstr "PMO Comparación de Líneas Base"
+
+#. Name of a DocType
+#. Label of a Link in the PMO Workspace
+#. Name of a Workspace
+#: pmo/pmo/doctype/pmo_capacity/pmo_capacity.json
+#: pmo/pmo/workspace/pmo/pmo.json
+#: pmo/pmo/workspace/pmo_capacity/pmo_capacity.json
+msgid "PMO Capacity"
+msgstr "PMO Capacidad"
+
+#. Name of a report
+#. Label of a Link in the PMO Workspace
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.json
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO Capacity Planning"
+msgstr "PMO Planeación de Capacidad"
+
+#. Name of a report
+#. Label of a Link in the PMO Workspace
+#: pmo/pmo/report/pmo_change_register/pmo_change_register.json
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO Change Register"
+msgstr "PMO Registro de Cambios"
+
+#. Name of a DocType
+#. Label of a Link in the PMO Workspace
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO Change Request"
+msgstr "PMO Solicitud de Cambio"
+
+#. Name of a Workspace
+#: pmo/pmo/workspace/pmo_control/pmo_control.json
+msgid "PMO Control"
+msgstr "PMO Control"
+
+#. Name of a role
+#: pmo/pmo/doctype/pmo_capacity/pmo_capacity.json
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "PMO Executive Access"
+msgstr ""
+
+#. Name of a role
+#: pmo/pmo/doctype/pmo_capacity/pmo_capacity.json
+msgid "PMO Manager"
+msgstr ""
+
+#. Label of the pmo_planned_hours (Float) field in DocType 'ToDo'
+#: pmo/fixtures/custom_field.json
+msgid "PMO Planned Hours"
+msgstr "PMO Horas Planificadas"
+
+#. Name of a report
+#. Label of a Link in the PMO Workspace
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.json
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO Planned vs Actual"
+msgstr "PMO Planificado vs Real"
+
+#. Name of a report
+#. Label of a Link in the PMO Workspace
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.json
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO Portfolio"
+msgstr "PMO Portafolio"
+
+#. Name of a DocType
+#. Label of a Link in the PMO Workspace
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO Project Baseline"
+msgstr "PMO Línea Base de Proyecto"
+
+#. Name of a report
+#. Label of a Link in the PMO Workspace
+#: pmo/pmo/report/pmo_resource_capacity/pmo_resource_capacity.json
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO Resource Capacity"
+msgstr "PMO Capacidad de Recursos"
+
+#. Name of a report
+#. Label of a Link in the PMO Workspace
+#: pmo/pmo/report/pmo_resource_usage_by_project/pmo_resource_usage_by_project.json
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO Resource Usage by Project"
+msgstr "PMO Uso de Recursos por Proyecto"
+
+#. Label of the pmo_status_date (Date) field in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "PMO Status Date"
+msgstr "PMO Fecha de Corte"
+
+#. Name of a report
+#. Label of a Link in the PMO Workspace
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.json
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO Status Report"
+msgstr "PMO Reporte de Estado"
+
+#. Name of a report
+#. Label of a Link in the PMO Workspace
+#: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.json
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO Work by Resource"
+msgstr "PMO Trabajo por Recurso"
+
+#. Label of a Card Break in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO configuration"
+msgstr "Configuración PMO"
+
+#. Label of the pmo_deadline (Date) field in DocType 'Task'
+#: pmo/fixtures/custom_field.json
+msgid "PMO — Committed date (deadline)"
+msgstr "PMO — Fecha comprometida (deadline)"
+
+#. Label of the pmo_committed_end_date (Date) field in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "PMO — Committed end"
+msgstr "PMO — Fin comprometido"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:26
+msgid "Parent task"
+msgstr "Tarea padre"
+
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:153
+msgid "Planned (h)"
+msgstr "Planificado (h)"
+
+#: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.py:124
+msgid "Planned (period)"
+msgstr "Planificado (periodo)"
+
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:92
+msgid "Planned Hours"
+msgstr "Horas Planificadas"
+
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:109
+msgid "Planned Hours (Project)"
+msgstr "Horas Planificadas (Proyecto)"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:494
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:534
+msgid "Planned Utilization"
+msgstr "Utilización Planificada"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:758
+msgid "Planned by project"
+msgstr "Planned por proyecto"
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:148
+msgid "Planned end (Baseline): {0} · Planned end (Current): {1}."
+msgstr "Fin planeado (Línea Base): {0} · Fin planeado (Actual): {1}."
+
+#. Description of the 'PMO Planned Hours' (Float) field in DocType 'ToDo'
+#: pmo/fixtures/custom_field.json
+msgid "Planned hours of this assignee for the Task (Capacity Planning). Empty = uniform split of Task.expected_time among assignees."
+msgstr "Horas planificadas de este asignado para la Task (Capacity Planning). Vacío = reparto uniforme de Task.expected_time entre los asignados."
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:723
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:220
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:264
+msgid "Planned total"
+msgstr "Total planificado"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:226
+msgid "Planned util. %"
+msgstr "Util. planificada %"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:218
+msgid "Planned visible"
+msgstr "Planificado visible"
+
+#. Label of a shortcut in the PMO Control Workspace
+#: pmo/pmo/workspace/pmo_control/pmo_control.json
+msgid "Planned vs Actual"
+msgstr "Planificado vs Real"
+
+#. Label of a Card Break in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "Portfolio & control"
+msgstr "Portafolio y control"
+
+#. Label of a shortcut in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "Portfolio (project health)"
+msgstr "Portafolio (salud de proyectos)"
+
+#: pmo/public/js/pmo_change_request.js:78
+msgid "Prefilled with the current baseline. Review and save."
+msgstr "Prellenada con la línea base vigente. Revisa y guarda."
+
+#. Label of the preflight_result (Code) field in DocType 'PMO Project Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Preflight result (JSON)"
+msgstr "Resultado de preflight (JSON)"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:128
+msgid "Previous task"
+msgstr "Tarea anterior"
+
+#: pmo/pmo/report/pmo_resource_usage_by_project/pmo_resource_usage_by_project.py:146
+#: pmo/pmo/report/pmo_resource_usage_by_project/pmo_resource_usage_by_project.py:177
+msgid "Project / bucket"
+msgstr "Proyecto / grupo"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:212
+msgid "Project changes"
+msgstr "Cambios de Proyecto"
+
+#: pmo/print_status.py:34
+msgid "Project planned end (ERPNext)"
+msgstr "Fin planeado del proyecto (ERPNext)"
+
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:32
+#: pmo/status_date.py:219
+msgid "Project {0} does not exist."
+msgstr "El Project {0} no existe."
+
+#. Label of the section_proposal (Section Break) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Proposal (Quotation)"
+msgstr "Propuesta (Cotización)"
+
+#. Label of the proposal_group (Data) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Proposal group"
+msgstr "Grupo de propuesta"
+
+#: pmo/status_date.py:55
+msgid "Provide a Status Date (or set `PMO Status Date` on the Project) for cutoff-date control."
+msgstr "Indica una Status Date (o fija `PMO Status Date` en el Project) para el control a fecha de corte."
+
+#: pmo/public/js/pmo_change_request.js:105
+msgid "Quotation (Won)"
+msgstr "Cotización (Ganada)"
+
+#. Label of the raised_by (Link) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Raised by"
+msgstr "Solicitado por"
+
+#. Option for the 'Origin' (Select) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Regulatory"
+msgstr "Regulatorio"
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:47
+msgid "Reject"
+msgstr "Rechazar"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:32
+msgid "Remaining availability"
+msgstr "Disponibilidad restante"
+
+#. Option for the 'Baseline type' (Select) field in DocType 'PMO Project
+#. Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Replan"
+msgstr "Replaneación"
+
+#. Label of the section_detail (Section Break) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Request"
+msgstr "Solicitud"
+
+#. Label of the request_date (Date) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Request date"
+msgstr "Fecha de solicitud"
+
+#. Label of a shortcut in the PMO Capacity Workspace
+#: pmo/pmo/workspace/pmo_capacity/pmo_capacity.json
+msgid "Resource center / Capacity Planning"
+msgstr "Centro de recursos / Planeación de capacidad"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:30
+msgid "Resource usage"
+msgstr "Uso de recursos"
+
+#. Label of a shortcut in the PMO Capacity Workspace
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:31
+#: pmo/pmo/workspace/pmo_capacity/pmo_capacity.json
+msgid "Resource usage by project"
+msgstr "Uso de recursos por proyecto"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:296
+#: pmo/pmo/report/pmo_resource_capacity/pmo_resource_capacity.py:114
+msgid "Resources"
+msgstr "Recursos"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:305
+msgid "Resources without current capacity"
+msgstr "Recursos sin capacidad vigente"
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:45
+msgid "Return to Draft"
+msgstr "Devolver a Borrador"
+
+#. Label of the revision (Data) field in DocType 'PMO Project Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Revision"
+msgstr "Revisión"
+
+#. Label of the impacts_risk (Check) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Risk"
+msgstr "Riesgo"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:89
+msgid "Scale"
+msgstr "Escala"
+
+#: pmo/schedule_commit.py:40 pmo/schedule_commit.py:57
+msgid "Schedule commitment at risk"
+msgstr "Compromiso de cronograma en riesgo"
+
+#: pmo/public/js/pmo_change_request.js:130
+msgid "Scope applied to Project."
+msgstr "Alcance aplicado al Project."
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:108
+msgid "Search employee..."
+msgstr "Buscar empleado..."
+
+#: pmo/pmo/page/tag_import/tag_import.js:39
+msgid "Select a CSV file first."
+msgstr "Selecciona primero un archivo CSV."
+
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:30
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:28
+msgid "Select a Project."
+msgstr "Selecciona un Project."
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:407
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:517
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:803
+msgid "Select at least one employee and a range with data."
+msgstr "Selecciona al menos un empleado y un rango con datos."
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:39
+msgid "Select the before and after baselines."
+msgstr "Selecciona la línea base previa y la posterior."
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:44
+msgid "Send for Review"
+msgstr "Enviar a revisión"
+
+#. Description of the 'Approved by' (Link) field in DocType 'PMO Project
+#. Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Set automatically on Submit."
+msgstr "Fijado automáticamente al Submit."
+
+#. Description of the 'Approved by' (Link) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Set automatically on approval (Submit)."
+msgstr "Fijado automáticamente al aprobar (Submit)."
+
+#: pmo/print_status.py:49
+msgid "Slip"
+msgstr "Desvío"
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:47
+msgid "Slip (days)"
+msgstr "Desvío (días)"
+
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:149
+msgid "Slip vs Baseline (d)"
+msgstr "Desvío vs Línea Base (d)"
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:98
+msgid "Slip vs Baseline (days)"
+msgstr "Desvío vs Línea Base (días)"
+
+#: pmo/print_status.py:32
+msgid "Slip vs Baseline:"
+msgstr "Desvío vs Línea Base:"
+
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:150
+msgid "Slip vs commitment (d)"
+msgstr "Desvío vs compromiso (d)"
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:104
+msgid "Slip vs commitment (days)"
+msgstr "Desvío vs compromiso (días)"
+
+#: pmo/print_status.py:36
+msgid "Slip vs commitment:"
+msgstr "Desvío vs compromiso:"
+
+#. Label of the snapshot_section (Section Break) field in DocType 'PMO Project
+#. Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Snapshot"
+msgstr "Instantánea"
+
+#. Label of the snapshot (Code) field in DocType 'PMO Project Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Snapshot (JSON)"
+msgstr "Instantánea (JSON)"
+
+#. Label of the snapshot_at (Datetime) field in DocType 'PMO Project Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Snapshot at"
+msgstr "Captura el"
+
+#. Label of the snapshot_hash (Data) field in DocType 'PMO Project Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Snapshot hash"
+msgstr "Hash de instantánea"
+
+#. Label of the snapshot_schema_version (Int) field in DocType 'PMO Project
+#. Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Snapshot schema version"
+msgstr "Versión de esquema de instantánea"
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:226
+msgid "Specify the (Won) Quotation to apply."
+msgstr "Indica la Cotización (Ganada) a aplicar."
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:28
+msgid "Start (Project)"
+msgstr "Inicio (Proyecto)"
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.js:26
+msgid "Status Date"
+msgstr "Fecha de corte"
+
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.js:26
+msgid "Status Date (cutoff, optional)"
+msgstr "Status Date (corte, opcional)"
+
+#. Label of a shortcut in the PMO Control Workspace
+#: pmo/pmo/workspace/pmo_control/pmo_control.json
+msgid "Status Report (as-of control)"
+msgstr "Reporte de Estado (control a fecha)"
+
+#. Label of a shortcut in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "Status as of cutoff date"
+msgstr "Estado a fecha de corte"
+
+#. Description of the 'Impact summary' (Data) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Summary of the marked impact types (for the Change Register)."
+msgstr "Resumen de los tipos de impacto marcados (para el Registro de cambios)."
+
+#. Label of the supersedes_baseline (Link) field in DocType 'PMO Project
+#. Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Supersedes baseline"
+msgstr "Sustituye a línea base"
+
+#: pmo/pmo/page/tag_import/tag_import.js:119
+msgid "Tags added"
+msgstr "Tags agregados"
+
+#: pmo/pmo/page/tag_import/tag_import.js:119
+msgid "Tags to add"
+msgstr "Tags a agregar"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:203
+msgid "Tasks added"
+msgstr "Tareas añadidas"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:206
+msgid "Tasks modified"
+msgstr "Tareas modificadas"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:204
+msgid "Tasks removed"
+msgstr "Tareas eliminadas"
+
+#: pmo/print_status.py:52
+msgid "Tasks to evaluate (with deviation)"
+msgstr "Tareas a evaluar (con desviación)"
+
+#: pmo/print_status.py:41
+msgid "Tasks:"
+msgstr "Tareas:"
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:110
+msgid "Tasks: forecast exceeds commitment"
+msgstr "Tareas: el pronóstico excede el compromiso"
+
+#. Description of the 'Snapshot at' (Datetime) field in DocType 'PMO Project
+#. Baseline'
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
+msgid "Technical timestamp of the snapshot capture."
+msgstr "Timestamp técnico de captura del snapshot."
+
+#. Description of the 'Evaluation notes' (Text) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Technical/PM evaluation of the change. Multi-party discussion uses native Comments."
+msgstr "Evaluación técnica/PM del cambio. La discusión multi-actor usa Comentarios nativos."
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:107
+msgid "That baseline was already superseded; you must supersede the current head of the chain."
+msgstr "Esa baseline ya fue sustituida; debe sustituir la cabeza vigente de la cadena."
+
+#: pmo/tag_import.py:122
+msgid "The CSV contains no data rows."
+msgstr "El CSV no contiene filas de datos."
+
+#: pmo/tag_import.py:53 pmo/tag_import.py:59
+msgid "The CSV is empty."
+msgstr "El CSV está vacío."
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:164
+msgid "The Change Request cannot be formalized/approved: the Project has no baseline in effect. Create and approve a PMO Project Baseline before sending it for review."
+msgstr "No se puede formalizar/aprobar el Change Request: el Project no tiene una baseline vigente. Crea y aprueba una PMO Project Baseline antes de enviar a revisión."
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:267
+msgid "The Project does not come from a proposal (no Quotation with proposal_project); an addendum cannot be created."
+msgstr "El Project no proviene de una propuesta (sin Cotización con proposal_project); no se puede crear una addenda."
+
+#: pmo/public/js/pmo_change_request.js:84
+msgid "The Project has no current baseline."
+msgstr "El Proyecto no tiene una línea base vigente."
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:224
+msgid "The Quotation was already applied to this Change Request."
+msgstr "La Cotización ya fue aplicada a este Change Request."
+
+#. Description of the 'Applied to Project' (Check) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "The Quotation's Scope Items were materialized as Tasks. Does not imply the Implemented state."
+msgstr "Los Scope Items de la Cotización quedaron materializados como Tasks. No implica el estado Implemented."
+
+#: pmo/status_date.py:39
+msgid "The Status Date ({0}) cannot be a future date: cutoff-date control only allows today or a past date."
+msgstr "La Status Date ({0}) no puede ser una fecha futura: el control a fecha de corte solo admite hoy o una fecha pasada."
+
+#: pmo/status_date.py:59
+msgid "The Status Date cannot be a future date (only today or past)."
+msgstr "La Status Date no puede ser una fecha futura (solo hoy o pasada)."
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:254
+msgid "The addendum is created while the Change Request is editable (Draft / In Review)."
+msgstr "La addenda se crea mientras el Change Request es editable (Draft / In Review)."
+
+#: pmo/change_control.py:36
+msgid "The erpnext_proposals integration is not available: contract {0} is missing. Requires erpnext_proposals >= 0.22.0 installed on the site."
+msgstr "La integración con erpnext_proposals no está disponible: falta el contrato {0}. Requiere erpnext_proposals >= 0.22.0 instalado en el sitio."
+
+#: pmo/schedule_commit.py:37
+msgid "The planned end ({0}) exceeds the committed date (PMO Deadline: {1})."
+msgstr "El fin planeado ({0}) excede la fecha comprometida (PMO Deadline: {1})."
+
+#: pmo/schedule_commit.py:54
+msgid "The project's planned end ({0}) exceeds the committed date ({1})."
+msgstr "El fin planeado del proyecto ({0}) excede la fecha comprometida ({1})."
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:78
+msgid "The superseded baseline does not exist."
+msgstr "La baseline que se sustituye no existe."
+
+#: pmo/allocation.py:48
+msgid "There are no working days between {0} and {1} according to Holiday List {2}."
+msgstr "No hay días laborables entre {0} y {1} según la Holiday List {2}."
+
+#: pmo/allocation.py:37
+msgid "There is no Holiday List to resolve working days."
+msgstr "No hay Holiday List para resolver los días laborables."
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:258
+msgid "This Change Request already has an addendum ({0})."
+msgstr "Este Change Request ya tiene una addenda ({0})."
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:128
+msgid "This baseline cannot be cancelled: it has a successor ({0}). Cancel the head of the chain first."
+msgstr "No se puede cancelar esta baseline: tiene un sucesor ({0}). Cancela primero la cabeza de la cadena."
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:645
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:940
+msgid "This view works with one employee at a time. Select exactly one employee in the left panel."
+msgstr "Esta vista trabaja con un empleado a la vez. Selecciona exactamente un empleado en el panel de la izquierda."
+
+#: pmo/actual.py:44 pmo/actual.py:63 pmo/allocation.py:35
+#: pmo/availability.py:53 pmo/planned_load.py:102
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:34
+#: pmo/pmo/report/pmo_resource_usage_by_project/pmo_resource_usage_by_project.py:42
+#: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.py:36
+msgid "To Date cannot be earlier than From Date."
+msgstr "To Date no puede ser anterior a From Date."
+
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:106
+msgid "Total (native)"
+msgstr "Total (nativo)"
+
+#: pmo/pmo/page/tag_import/tag_import.js:20
+msgid "Upload a CSV with columns"
+msgstr "Sube un CSV con columnas"
+
+#: pmo/public/js/pmo_change_request.js:67
+msgid "Use current baseline"
+msgstr "Usar línea base vigente"
+
+#: pmo/pmo/page/tag_import/tag_import.js:73
+msgid "Valid documents"
+msgstr "Documentos válidos"
+
+#: pmo/pmo/page/tag_import/tag_import.js:174
+msgid "Validating..."
+msgstr "Validando..."
+
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:94
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:112
+msgid "Variance Hours"
+msgstr "Horas de Variación"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:55
+msgid "WBS / Task"
+msgstr "WBS / Tarea"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:27
+msgid "WBS order"
+msgstr "Orden WBS"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:100
+msgid "Week of {0}"
+msgstr "Semana de {0}"
+
+#. Description of the 'Raised by' (Link) field in DocType 'PMO Change Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Who requests/raises the change."
+msgstr "Quién solicita/levanta el cambio."
+
+#: pmo/pmo/report/pmo_resource_capacity/pmo_resource_capacity.py:121
+msgid "With individual override"
+msgstr "Con override individual"
+
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:180
+msgid "Without baseline"
+msgstr "Sin línea base"
+
+#: pmo/pmo/report/pmo_resource_capacity/pmo_resource_capacity.py:116
+msgid "Without configured capacity"
+msgstr "Sin capacidad configurada"
+
+#. Description of the 'Applied quotation' (Link) field in DocType 'PMO Change
+#. Request'
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
+msgid "Won version actually applied to the Project. Set on apply."
+msgstr "Versión Ganada efectivamente aplicada al Proyecto. Se fija al aplicar."
+
+#. Label of a shortcut in the PMO Capacity Workspace
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:33
+#: pmo/pmo/workspace/pmo_capacity/pmo_capacity.json
+msgid "Work by resource"
+msgstr "Trabajo por recurso"
+
+#. Description of the 'Capacity Hours Per Day' (Float) field in DocType 'PMO
+#. Capacity'
+#: pmo/pmo/doctype/pmo_capacity/pmo_capacity.json
+msgid "Working hours per day from From Date. Must be greater than 0."
+msgstr "Horas laborables por día desde From Date. Debe ser mayor que 0."
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:335
+#: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:36
+msgid "You do not have access to this Project."
+msgstr "No tienes acceso a este Project."
+
+#: pmo/print_status.py:43
+msgid "active"
+msgstr "activas"
+
+#: pmo/pmo/page/tag_import/tag_import.js:165
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:150
+msgid "added"
+msgstr "agregados"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:158
+msgid "assigned"
+msgstr "asignado"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:795
+msgid "available (&gt;0)"
+msgstr "disponible (&gt;0)"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:184
+msgid "coming soon"
+msgstr "próximamente"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:796
+msgid "committed (0)"
+msgstr "comprometido (0)"
+
+#: pmo/tag_import.py:142
+msgid "doctype and document are required."
+msgstr "doctype y document son obligatorios."
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:120
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:600
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:898
+msgid "employees selected"
+msgstr "empleados seleccionados"
+
+#: pmo/pmo/page/tag_import/tag_import.js:152
+msgid "error"
+msgstr "error"
+
+#: pmo/capacity.py:53 pmo/pmo/doctype/pmo_capacity/pmo_capacity.py:42
+msgid "global"
+msgstr "global"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:193
+msgid "inconsistencies"
+msgstr "inconsistencias"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:197
+msgid "mapping"
+msgstr "mapeo"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:191
+msgid "missing capacity"
+msgstr "capacidad faltante"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:402
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:798
+msgid "no availability"
+msgstr "sin disponibilidad"
+
+#: pmo/print_status.py:31
+msgid "no baseline"
+msgstr "sin baseline"
+
+#: pmo/pmo/page/tag_import/tag_import.js:162
+msgid "no changes (already has the tags)"
+msgstr "sin cambios (ya tiene los tags)"
+
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:195
+msgid "no dates"
+msgstr "sin fechas"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:191
+msgid "opened from"
+msgstr "abierto desde"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js:797
+msgid "overallocated (&lt;0)"
+msgstr "sobreasignado (&lt;0)"
+
+#: pmo/print_status.py:44
+msgid "overdue at cutoff"
+msgstr "vencidas al corte"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:158
+msgid "removed"
+msgstr "eliminado"
+
+#: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:192
+msgid "the report compares baselines; it does not attribute the diff to a single Change Request"
+msgstr "el reporte compara líneas base; no atribuye el diff a un solo Change Request"
+
+#: pmo/pmo/page/tag_import/tag_import.js:86
+msgid "valid"
+msgstr "válido"
+
+#: pmo/pmo/page/tag_import/tag_import.js:165
+msgid "will be added"
+msgstr "se agregarán"
+
+#: pmo/pmo/page/tag_import/tag_import.js:157
+msgid "will not be applied (there are errors in the CSV)"
+msgstr "no se aplicará (hay errores en el CSV)"
+
+#: pmo/pmo/page/tag_import/tag_import.js:86
+msgid "with errors"
+msgstr "con errores"
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:110
+msgid "{0} must belong to the same Project as the Change Request."
+msgstr "{0} debe pertenecer al mismo Project del Change Request."
+
+#: pmo/print_status.py:57
+msgid "{0} task(s) with baseline but without relevant deviation are not listed (of {1} with baseline)."
+msgstr "{0} tarea(s) con línea base pero sin desviación relevante no se listan (de {1} con baseline)."
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:141
+msgid "«Current» is today's plan evaluated against the cutoff date, not a reconstruction of the plan that existed on that date. Actual comes from dated Timesheet; completeness uses «completed_on» as a proxy."
+msgstr "«Current» es el plan de hoy evaluado contra la fecha de corte, no una reconstrucción del plan que existía en esa fecha. Real proviene de Timesheet fechado; la completitud usa «completed_on» como proxy."
+
+#: pmo/pmo/report/pmo_status_report/pmo_status_report.py:86
+msgid "— (no baseline at date)"
+msgstr "— (sin línea base a la fecha)"
+
