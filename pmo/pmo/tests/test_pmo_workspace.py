@@ -10,7 +10,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 HERO_REPORT_SHORTCUTS = {"PMO Status Report", "PMO Capacity Planning"}
-HERO_PAGE_SHORTCUTS = {"pmo_portfolio"}  # Portfolio abre la Page, no el Script Report
+HERO_PAGE_SHORTCUTS = {"pmo_portfolio", "pmo_project_control"}  # Pages de gestión (no Script Reports)
 REPORT_LINKS = {
 	"PMO Portfolio",
 	"PMO Status Report",

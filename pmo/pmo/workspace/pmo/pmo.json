@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\": \"pmohdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO \\u2014 Control center</b></span>\", \"col\": 12}}, {\"id\": \"scpf\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Portfolio (project health)\", \"col\": 4}}, {\"id\": \"scst\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Status as of cutoff date\", \"col\": 4}}, {\"id\": \"sccp\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Capacity Planning\", \"col\": 4}}, {\"id\": \"cardrep\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 6}}, {\"id\": \"cardcfg\", \"type\": \"card\", \"data\": {\"card_name\": \"PMO configuration\", \"col\": 6}}]",
+ "content": "[{\"id\": \"pmohdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO \\u2014 Control center</b></span>\", \"col\": 12}}, {\"id\": \"scpf\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Portfolio (project health)\", \"col\": 4}}, {\"id\": \"scst\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Status as of cutoff date\", \"col\": 4}}, {\"id\": \"sccp\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Capacity Planning\", \"col\": 4}}, {\"id\": \"cardrep\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 6}}, {\"id\": \"cardcfg\", \"type\": \"card\", \"data\": {\"card_name\": \"PMO configuration\", \"col\": 6}}, {\"id\": \"scpc\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Project Control\", \"col\": 4}}]",
  "creation": "2026-09-10 00:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -179,7 +179,7 @@
    "only_for": ""
   }
  ],
- "modified": "2026-09-11 10:00:00.000000",
+ "modified": "2026-09-11 11:00:00.000000",
  "modified_by": "Administrator",
  "module": "PMO",
  "name": "PMO",
@@ -228,6 +228,13 @@
    "label": "Capacity Planning",
    "link_to": "PMO Capacity Planning",
    "type": "Report"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Project Control",
+   "link_to": "pmo_project_control",
+   "type": "Page"
   }
  ],
  "title": "PMO"
