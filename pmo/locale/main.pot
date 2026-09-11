@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PMO VERSION\n"
 "Report-Msgid-Bugs-To: it@buzola.mx\n"
-"POT-Creation-Date: 2026-09-10 03:11-0723\n"
-"PO-Revision-Date: 2026-09-10 03:11-0723\n"
+"POT-Creation-Date: 2026-09-10 23:26-0723\n"
+"PO-Revision-Date: 2026-09-10 23:26-0723\n"
 "Last-Translator: it@buzola.mx\n"
 "Language-Team: it@buzola.mx\n"
 "MIME-Version: 1.0\n"
@@ -997,11 +997,6 @@ msgstr ""
 #. Label of a shortcut in the PMO Control Workspace
 #: pmo/pmo/workspace/pmo_control/pmo_control.json
 msgid "Planned vs Actual"
-msgstr ""
-
-#. Label of a Card Break in the PMO Workspace
-#: pmo/pmo/workspace/pmo/pmo.json
-msgid "Portfolio & control"
 msgstr ""
 
 #. Label of a shortcut in the PMO Workspace
