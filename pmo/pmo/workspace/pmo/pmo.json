@@ -179,7 +179,7 @@
    "only_for": ""
   }
  ],
- "modified": "2026-09-11 09:00:00.000000",
+ "modified": "2026-09-11 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "PMO",
  "name": "PMO",
@@ -212,8 +212,8 @@
    "color": "Blue",
    "doc_view": "",
    "label": "Portfolio (project health)",
-   "link_to": "PMO Portfolio",
-   "type": "Report"
+   "link_to": "pmo_portfolio",
+   "type": "Page"
   },
   {
    "color": "Green",

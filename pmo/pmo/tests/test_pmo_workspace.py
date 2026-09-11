@@ -9,7 +9,8 @@ métricas (sin charts/number_cards), y **no altera** los workspaces `PMO Capacit
 import frappe
 from frappe.tests import IntegrationTestCase
 
-HERO_SHORTCUTS = {"PMO Portfolio", "PMO Status Report", "PMO Capacity Planning"}
+HERO_REPORT_SHORTCUTS = {"PMO Status Report", "PMO Capacity Planning"}
+HERO_PAGE_SHORTCUTS = {"pmo_portfolio"}  # Portfolio abre la Page, no el Script Report
 REPORT_LINKS = {
 	"PMO Portfolio",
 	"PMO Status Report",
@@ -35,8 +36,11 @@ class TestPMOWorkspace(IntegrationTestCase):
 
 	def test_hero_shortcuts_open_reports(self):
 		ws = frappe.get_doc("Workspace", "PMO")
-		got = {s.link_to for s in ws.shortcuts if s.type == "Report"}
-		self.assertEqual(got, HERO_SHORTCUTS)
+		got_report = {s.link_to for s in ws.shortcuts if s.type == "Report"}
+		self.assertEqual(got_report, HERO_REPORT_SHORTCUTS)
+		# Portfolio abre la Page nueva; el Script Report sigue disponible en la card Reports.
+		got_page = {s.link_to for s in ws.shortcuts if s.type == "Page"}
+		self.assertEqual(got_page, HERO_PAGE_SHORTCUTS)
 
 	def test_links_group_all_reports_and_config(self):
 		ws = frappe.get_doc("Workspace", "PMO")
