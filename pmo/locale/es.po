@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PMO VERSION\n"
 "Report-Msgid-Bugs-To: it@buzola.mx\n"
-"POT-Creation-Date: 2026-09-11 00:44-0923\n"
-"PO-Revision-Date: 2026-09-10 02:54-2723\n"
+"POT-Creation-Date: 2026-09-11 14:45-0837\n"
+"PO-Revision-Date: 2026-09-10 02:54-2837\n"
 "Last-Translator: it@buzola.mx\n"
 "Language: es\n"
 "Language-Team: it@buzola.mx\n"
@@ -58,8 +58,8 @@ msgstr "<span class=\"h4\"><b>PMO Control</b></span>"
 
 #. Header text in the PMO Workspace
 #: pmo/pmo/workspace/pmo/pmo.json
-msgid "<span class=\"h4\"><b>PMO — Control center</b></span>"
-msgstr "<span class=\"h4\"><b>PMO — Centro de control</b></span>"
+msgid "<span class=\"h4\"><b>PMO — Portfolio control center</b></span>"
+msgstr "<span class=\"h4\"><b>PMO — Centro de control del portafolio</b></span>"
 
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:221
 msgid "A Quotation can only be applied from a Change Request in the 'Approved' state."
@@ -250,10 +250,12 @@ msgstr "Asociaciones solicitadas"
 msgid "Associations that would be applied"
 msgstr "Asociaciones que se aplicarían"
 
+#. Label of a number card in the PMO Workspace
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:187
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:217
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:32
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:174
+#: pmo/pmo/workspace/pmo/pmo.json
 msgid "At risk"
 msgstr "En riesgo"
 
@@ -382,6 +384,11 @@ msgstr "Change Request (contexto)"
 msgid "Change register"
 msgstr "Registro de cambios"
 
+#. Label of a chart in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "Change requests by state"
+msgstr "Solicitudes de cambio por estado"
+
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:54
 msgid "Change type"
 msgstr "Tipo de cambio"
@@ -498,14 +505,21 @@ msgstr "Decisión"
 msgid "Decision notes"
 msgstr "Notas de decisión"
 
+#. Paragraph text in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "Deep dive"
+msgstr "Profundizar"
+
 #: pmo/pmo/page/tag_import/tag_import.js:114
 msgid "Detail by document"
 msgstr "Detalle por documento"
 
+#. Label of a number card in the PMO Workspace
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:186
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:218
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:33
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:168
+#: pmo/pmo/workspace/pmo/pmo.json
 msgid "Deviated"
 msgstr "Desviado"
 
@@ -616,9 +630,11 @@ msgstr "Resumen ejecutivo"
 msgid "Expected Time"
 msgstr "Tiempo Esperado"
 
+#. Label of a number card in the PMO Workspace
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:245
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:321
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:152
+#: pmo/pmo/workspace/pmo/pmo.json
 msgid "Forecast > commitment"
 msgstr "Pronóstico > compromiso"
 
@@ -692,8 +708,9 @@ msgstr "Notas de implementación"
 msgid "Implemented"
 msgstr "Implementado"
 
+#. Label of a Link in the PMO Workspace
 #: pmo/pmo/page/tag_import/tag_import.js:12
-#: pmo/pmo/page/tag_import/tag_import.js:61
+#: pmo/pmo/page/tag_import/tag_import.js:61 pmo/pmo/workspace/pmo/pmo.json
 msgid "Import Tags"
 msgstr "Importar Tags"
 
@@ -844,6 +861,12 @@ msgstr "Solo se pueden comparar baselines del mismo Project."
 msgid "Open Project"
 msgstr "Abrir Project"
 
+#. Label of a number card in the PMO Workspace
+#. Label of a quick_list in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "Open change requests"
+msgstr "Solicitudes de cambio abiertas"
+
 #. Label of the origin (Select) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
 #: pmo/pmo/report/pmo_resource_capacity/pmo_resource_capacity.py:102
@@ -864,6 +887,11 @@ msgstr "Sobreasignación"
 msgid "Overdue at cutoff"
 msgstr "Vencida al corte"
 
+#. Label of a number card in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "Overdue tasks"
+msgstr "Tareas vencidas"
+
 #: pmo/print_status.py:37
 msgid "Overdue tasks at cutoff"
 msgstr "Tareas vencidas al corte"
@@ -881,7 +909,10 @@ msgid "Override hours"
 msgstr "Horas override"
 
 #. Name of a Workspace
-#: pmo/pmo/workspace/pmo/pmo.json
+#. Title of a Workspace Sidebar
+#. Label of a Workspace Sidebar Item
+#: pmo/pmo/workspace/pmo/pmo.json pmo/public/js/project_pmo.js:15
+#: pmo/workspace_sidebar/pmo.json
 msgid "PMO"
 msgstr ""
 
@@ -967,6 +998,7 @@ msgid "PMO Project Baseline"
 msgstr "PMO Línea Base de Proyecto"
 
 #: pmo/pmo/page/pmo_project_control/pmo_project_control.js:25
+#: pmo/public/js/project_pmo.js:13
 msgid "PMO Project Control"
 msgstr "PMO Control de Proyecto"
 
@@ -1077,14 +1109,16 @@ msgstr "Planificado visible"
 msgid "Planned vs Actual"
 msgstr "Planificado vs Real"
 
+#. Label of a shortcut in the PMO Workspace
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:92
+#: pmo/pmo/workspace/pmo/pmo.json
 msgid "Portfolio"
 msgstr "Portafolio"
 
-#. Label of a shortcut in the PMO Workspace
+#. Paragraph text in the PMO Workspace
 #: pmo/pmo/workspace/pmo/pmo.json
-msgid "Portfolio (project health)"
-msgstr "Portafolio (salud de proyectos)"
+msgid "Portfolio health"
+msgstr "Salud del portafolio"
 
 #: pmo/public/js/pmo_change_request.js:78
 msgid "Prefilled with the current baseline. Review and save."
@@ -1121,6 +1155,11 @@ msgstr "Fin planeado del proyecto (ERPNext)"
 #: pmo/status_date.py:219
 msgid "Project {0} does not exist."
 msgstr "El Project {0} no existe."
+
+#. Label of a chart in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "Projects by status"
+msgstr "Proyectos por estado"
 
 #. Label of the section_proposal (Section Break) field in DocType 'PMO Change
 #. Request'
@@ -1373,11 +1412,6 @@ msgstr "Status Date (corte, opcional)"
 msgid "Status Report (as-of control)"
 msgstr "Reporte de Estado (control a fecha)"
 
-#. Label of a shortcut in the PMO Workspace
-#: pmo/pmo/workspace/pmo/pmo.json
-msgid "Status as of cutoff date"
-msgstr "Estado a fecha de corte"
-
 #. Description of the 'Impact summary' (Data) field in DocType 'PMO Change
 #. Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
@@ -1537,6 +1571,10 @@ msgstr "To Date no puede ser anterior a From Date."
 msgid "Total (native)"
 msgstr "Total (nativo)"
 
+#: pmo/dashboard.py:39
+msgid "Unknown PMO KPI metric: {0}"
+msgstr "Métrica KPI de PMO desconocida: {0}"
+
 #: pmo/pmo/page/tag_import/tag_import.js:20
 msgid "Upload a CSV with columns"
 msgstr "Sube un CSV con columnas"
@@ -1583,8 +1621,10 @@ msgstr "Con override individual"
 msgid "With overdue tasks"
 msgstr "Con tareas vencidas"
 
+#. Label of a number card in the PMO Workspace
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:188
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:180
+#: pmo/pmo/workspace/pmo/pmo.json
 msgid "Without baseline"
 msgstr "Sin línea base"
 

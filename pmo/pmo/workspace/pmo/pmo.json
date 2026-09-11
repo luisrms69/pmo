@@ -1,6 +1,15 @@
 {
- "charts": [],
- "content": "[{\"id\": \"pmohdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO \\u2014 Control center</b></span>\", \"col\": 12}}, {\"id\": \"scpf\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Portfolio (project health)\", \"col\": 4}}, {\"id\": \"scst\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Status as of cutoff date\", \"col\": 4}}, {\"id\": \"sccp\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Capacity Planning\", \"col\": 4}}, {\"id\": \"cardrep\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 6}}, {\"id\": \"cardcfg\", \"type\": \"card\", \"data\": {\"card_name\": \"PMO configuration\", \"col\": 6}}, {\"id\": \"scpc\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Project Control\", \"col\": 4}}]",
+ "charts": [
+  {
+   "chart_name": "PMO Projects by Status",
+   "label": "Projects by status"
+  },
+  {
+   "chart_name": "PMO Change Requests by State",
+   "label": "Change requests by state"
+  }
+ ],
+ "content": "[{\"id\": \"fce5c6f615\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO \\u2014 Portfolio control center</b></span>\", \"col\": 12}}, {\"id\": \"8347463d16\", \"type\": \"paragraph\", \"data\": {\"text\": \"Portfolio health\", \"col\": 12}}, {\"id\": \"6122d92ed3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO Projects\", \"col\": 3}}, {\"id\": \"36e9d03b43\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO Deviated Projects\", \"col\": 3}}, {\"id\": \"26b15b64b2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO At Risk Projects\", \"col\": 3}}, {\"id\": \"1418d3366b\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO Projects Without Baseline\", \"col\": 3}}, {\"id\": \"751eecafd0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO Overdue Tasks\", \"col\": 3}}, {\"id\": \"c54c2eee5f\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO Forecast Exceeds Commitment\", \"col\": 3}}, {\"id\": \"45477c2689\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO Open Change Requests\", \"col\": 3}}, {\"id\": \"3224bf33fd\", \"type\": \"chart\", \"data\": {\"chart_name\": \"PMO Projects by Status\", \"col\": 6}}, {\"id\": \"b62b3296df\", \"type\": \"chart\", \"data\": {\"chart_name\": \"PMO Change Requests by State\", \"col\": 6}}, {\"id\": \"335261df24\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Open change requests\", \"col\": 4}}, {\"id\": \"e8ab20acda\", \"type\": \"paragraph\", \"data\": {\"text\": \"Deep dive\", \"col\": 12}}, {\"id\": \"d53d6e6f87\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Portfolio\", \"col\": 4}}, {\"id\": \"88e5b7b843\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Project Control\", \"col\": 4}}, {\"id\": \"35c3c2e45f\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Capacity Planning\", \"col\": 4}}, {\"id\": \"fe06256f84\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 6}}, {\"id\": \"6c049ceae8\", \"type\": \"card\", \"data\": {\"card_name\": \"PMO configuration\", \"col\": 6}}]",
  "creation": "2026-09-10 00:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -20,7 +29,8 @@
    "hidden": 0,
    "is_query_report": 0,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
   },
   {
    "type": "Link",
@@ -32,7 +42,8 @@
    "hidden": 0,
    "is_query_report": 1,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
   },
   {
    "type": "Link",
@@ -44,7 +55,8 @@
    "hidden": 0,
    "is_query_report": 1,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
   },
   {
    "type": "Link",
@@ -56,7 +68,8 @@
    "hidden": 0,
    "is_query_report": 1,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
   },
   {
    "type": "Link",
@@ -68,7 +81,8 @@
    "hidden": 0,
    "is_query_report": 1,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
   },
   {
    "type": "Link",
@@ -80,7 +94,8 @@
    "hidden": 0,
    "is_query_report": 0,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
   },
   {
    "type": "Link",
@@ -92,7 +107,8 @@
    "hidden": 0,
    "is_query_report": 1,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
   },
   {
    "type": "Link",
@@ -104,7 +120,8 @@
    "hidden": 0,
    "is_query_report": 1,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
   },
   {
    "type": "Link",
@@ -116,7 +133,8 @@
    "hidden": 0,
    "is_query_report": 1,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
   },
   {
    "type": "Link",
@@ -128,7 +146,8 @@
    "hidden": 0,
    "is_query_report": 1,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
   },
   {
    "type": "Card Break",
@@ -140,7 +159,8 @@
    "hidden": 0,
    "is_query_report": 0,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
   },
   {
    "type": "Link",
@@ -152,7 +172,8 @@
    "hidden": 0,
    "is_query_report": 0,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
   },
   {
    "type": "Link",
@@ -164,7 +185,8 @@
    "hidden": 0,
    "is_query_report": 0,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
   },
   {
    "type": "Link",
@@ -176,18 +198,67 @@
    "hidden": 0,
    "is_query_report": 0,
    "link_count": 0,
-   "only_for": ""
+   "only_for": "",
+   "description": ""
+  },
+  {
+   "type": "Link",
+   "label": "Import Tags",
+   "link_type": "Page",
+   "link_to": "tag_import",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": "",
+   "description": ""
   }
  ],
- "modified": "2026-09-11 11:00:00.000000",
+ "modified": "2026-09-11 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "PMO",
  "name": "PMO",
- "number_cards": [],
+ "number_cards": [
+  {
+   "number_card_name": "PMO Projects",
+   "label": "Projects"
+  },
+  {
+   "number_card_name": "PMO Deviated Projects",
+   "label": "Deviated"
+  },
+  {
+   "number_card_name": "PMO At Risk Projects",
+   "label": "At risk"
+  },
+  {
+   "number_card_name": "PMO Projects Without Baseline",
+   "label": "Without baseline"
+  },
+  {
+   "number_card_name": "PMO Overdue Tasks",
+   "label": "Overdue tasks"
+  },
+  {
+   "number_card_name": "PMO Forecast Exceeds Commitment",
+   "label": "Forecast > commitment"
+  },
+  {
+   "number_card_name": "PMO Open Change Requests",
+   "label": "Open change requests"
+  }
+ ],
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,
- "quick_lists": [],
+ "quick_lists": [
+  {
+   "document_type": "PMO Change Request",
+   "label": "Open change requests",
+   "quick_list_filter": "[[\"PMO Change Request\", \"workflow_state\", \"in\", [\"Draft\", \"In Review\"]]]"
+  }
+ ],
  "restrict_to_domain": "",
  "roles": [
   {
@@ -209,32 +280,31 @@
  "sequence_id": 10.0,
  "shortcuts": [
   {
-   "color": "Blue",
-   "doc_view": "",
-   "label": "Portfolio (project health)",
+   "type": "Page",
+   "label": "Portfolio",
    "link_to": "pmo_portfolio",
-   "type": "Page"
-  },
-  {
-   "color": "Green",
-   "doc_view": "",
-   "label": "Status as of cutoff date",
-   "link_to": "PMO Status Report",
-   "type": "Report"
-  },
-  {
-   "color": "Green",
-   "doc_view": "",
-   "label": "Capacity Planning",
-   "link_to": "PMO Capacity Planning",
-   "type": "Report"
-  },
-  {
    "color": "Blue",
    "doc_view": "",
+   "stats_filter": "",
+   "format": ""
+  },
+  {
+   "type": "Page",
    "label": "Project Control",
    "link_to": "pmo_project_control",
-   "type": "Page"
+   "color": "Green",
+   "doc_view": "",
+   "stats_filter": "",
+   "format": ""
+  },
+  {
+   "type": "Page",
+   "label": "Capacity Planning",
+   "link_to": "capacity_planning",
+   "color": "Green",
+   "doc_view": "",
+   "stats_filter": "",
+   "format": ""
   }
  ],
  "title": "PMO"
