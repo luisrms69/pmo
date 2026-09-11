@@ -336,10 +336,10 @@ class PMOPortfolio {
 		)}</span>`;
 	}
 
-	// --- drill-down: hoy abre el Project nativo; preparado para sustituir por Project Control ---
+	// --- drill-down: Portfolio -> Project Control (que a su vez ofrece "Abrir Project" al DocType nativo) ---
 	_open_project(project) {
-		// Punto único de navegación: cuando exista Project Control, se cambia SOLO aquí.
-		frappe.set_route("Form", "Project", project);
+		// Punto único de navegación. Project Control lee el Project de frappe.get_route()[1] (mecanismo nativo).
+		frappe.set_route("pmo_project_control", project);
 	}
 
 	_inject_styles() {

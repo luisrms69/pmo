@@ -1,8 +1,9 @@
 # Project Control (gestión de un proyecto)
 
 Responde: **"¿cómo va este proyecto y qué necesito revisar?"** para **un Project** concreto, reuniendo en
-una sola pantalla lo que antes estaba disperso en varios reportes. Acceso principal: **workspace PMO →
-atajo "Project Control"** (Page de Desk). También puede abrirse ya posicionado en un Project.
+una sola pantalla lo que antes estaba disperso en varios reportes. Se abre desde: **workspace PMO → atajo
+"Project Control"**; el **drill de `PMO Portfolio`** (clic en un proyecto); o el botón **PMO → PMO Project
+Control** en el formulario nativo del Project (ya posicionado en ese Project).
 
 Es una **vista de consumo**: no calcula nada nuevo. Cada pestaña consume el motor server-side del reporte
 correspondiente (respetando privacidad P4); el detalle tabular exportable sigue disponible en **Reports**.

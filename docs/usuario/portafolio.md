@@ -15,8 +15,9 @@ esfuerzo Planificado vs Real) y lo presenta en tres capas:
    compromiso, ordenados por severidad. Usa únicamente señales existentes (sin score nuevo).
 3. **Portafolio** — la tabla completa con todo el detalle (una fila por proyecto).
 
-Desde cualquier proyecto (en "Requiere atención" o en la tabla) se **abre el Project** para su detalle; el
-detalle a fecha sigue en `PMO Status Report` / `PMO Planned vs Actual`.
+Desde cualquier proyecto (en "Requiere atención" o en la tabla) se abre **`PMO Project Control`** de ese
+proyecto (que a su vez ofrece "Abrir Project" al documento nativo); el detalle a fecha sigue en
+`PMO Status Report` / `PMO Planned vs Actual`.
 
 > **Punto de entrada:** el workspace **PMO** (menú lateral) es el centro de control: enlaza el Portafolio y
 > todos los reportes de control y capacidad, más la configuración (`PMO Capacity`, baselines, change requests).
