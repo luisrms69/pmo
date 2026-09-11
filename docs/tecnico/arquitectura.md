@@ -297,7 +297,7 @@ DocType **submittable** (`is_submittable`, autoname `PMO-CR-.#####`) que **gobie
 aprobado; `PMO Project Baseline` congela el before/after; `Timesheet` registra el Actual.
 
 > **Estado (v0.6.0 en construcción):** entregados el DocType + P4 + invariantes base, el **Workflow +
-> acción "Aplicar Quotation al Project" + semántica Aplicado/Implementado**, el **comparator
+> acción "Aplicar Quotation al Project" + semántica Aplicado/Implemented**, el **comparator
 > Baseline↔Baseline** y el **Change Register**. Pendiente: cierre + bump 0.6.0 y la validación comercial
 > end-to-end (dependencia de `erpnext_proposals`).
 
@@ -326,22 +326,23 @@ aprobado; `PMO Project Baseline` congela el before/after; `Timesheet` registra e
 
 ### Workflow `PMO Change Request` (fixture) y gates
 
-`Borrador(0) → En Revision(0) → Aprobado(1) / Rechazado(1) → Implementado(1) → Cerrado(1)`. Fixtures:
-`workflow.json` (+ `workflow_state.json` con los 6 estados en español; el Custom Field `workflow_state`
+`Draft(0) → In Review(0) → Approved(1) / Rejected(1) → Implemented(1) → Closed(1)`. Estados/acciones
+**canónicos en inglés**; el español sale del catálogo (ver [`i18n.md`](i18n.md)). Fixtures:
+`workflow.json` (+ `workflow_state.json` con los 6 estados; el Custom Field `workflow_state`
 lo crea el propio Workflow). El framework auto-selecciona el primer estado con `doc_status=1` en un submit
 directo, por lo que el gate de baseline se ancla también en `before_submit` (red de seguridad).
 
-- **Autoridad owner-only** en `Aprobar`/`Rechazar`/`Marcar Implementado`/`Cerrar`: **doble capa** —
+- **Autoridad owner-only** en `Approve`/`Reject`/`Mark Implemented`/`Close`: **doble capa** —
   `condition` de transición `frappe.db.get_value("Project", doc.project, "owner") == frappe.session.user`
-  (la UI no ofrece la acción a quien no es owner) **y** el gate P4 sobre `submit`/`write`. `Enviar a
-  Revision` y `Devolver a Borrador` no llevan condición (los miembros participan). `allow_self_approval=1`
+  (la UI no ofrece la acción a quien no es owner) **y** el gate P4 sobre `submit`/`write`. `Send for
+  Review` y `Return to Draft` no llevan condición (los miembros participan). `allow_self_approval=1`
   (se acepta autoaprobación del owner).
-- **Gates por transición** (`_apply_workflow_gates`): al entrar a `En Revision`, exige baseline vigente
-  (`get_effective_baseline`) y **congela `baseline_before`**; a `Implementado`, si hay `proposal_group`
-  exige `applied_to_project`; a `Cerrado`, exige `baseline_after`. Como Frappe ejecuta **solo**
+- **Gates por transición** (`_apply_workflow_gates`): al entrar a `In Review`, exige baseline vigente
+  (`get_effective_baseline`) y **congela `baseline_before`**; a `Implemented`, si hay `proposal_group`
+  exige `applied_to_project`; a `Closed`, exige `baseline_after`. Como Frappe ejecuta **solo**
   `before_update_after_submit` (no `validate`) en transiciones submitted→submitted, los gates y la
   integridad de baselines se re-aplican también en ese hook.
-- **`before_cancel`** añade el bloqueo de estados terminales (`Rechazado`/`Cerrado`) además de
+- **`before_cancel`** añade el bloqueo de estados terminales (`Rejected`/`Closed`) además de
   `applied_to_project`/`baseline_after`.
 
 ### Integración con `erpnext_proposals` — contrato publicado (>= 0.22.0)
@@ -358,7 +359,7 @@ interpreta `<ROOT>-ADD-<NN>`, no calcula secuencia, no crea `proposal_group`, no
   (crea la addenda `ROOT-ADD-NN`, delta comercial, atómica). Persiste la identidad en el campo existente
   `proposal_group`. **Autoridad (sin elevación):** exige `write` P4 sobre el CR **y** autoría comercial
   (`assert_can_manage_proposals` la impone `erpnext_proposals`; si falta → `PermissionError`).
-- **Aplicar** — `aplicar_quotation_al_project(change_request, quotation)` (botón, owner sobre CR `Aprobado`
+- **Aplicar** — `aplicar_quotation_al_project(change_request, quotation)` (botón, owner sobre CR `Approved`
   no aplicado). Delega en `change_control.apply_addendum_to_project` →
   `erpnext_proposals.utils.project.apply_addendum_to_project`; si completa, fija
   `applied_to_project`/`applied_at`/`applied_quotation` (`allow_on_submit`). **`Ganada` ≠ `Aplicada`**: la
@@ -406,10 +407,12 @@ picker se filtra con `baseline_after_query` (baselines Submitted del mismo Proje
 vigente"* (`get_current_baseline`, P4) la **prellena** como conveniencia sin impedir escoger otra. El gate
 de Cerrar sigue exigiendo `baseline_after`.
 
-**i18n:** las etiquetas visibles de `PMO Change Request` y `PMO Project Baseline` están en **español** en el
-JSON (convención del ecosistema; el sitio corre en `en`). Se mantienen en inglés los identificadores
-técnicos: fieldnames, valores de Select usados por el código (p. ej. `baseline_type`
-Original/Approved Change/Replan), y nombres de DocType/Report.
+**i18n:** las etiquetas visibles de `PMO Change Request` y `PMO Project Baseline` están en **inglés como
+fuente canónica**; el español lo aporta el catálogo propio `pmo/pmo/locale/es.po`. Los Workflow
+States/Actions y los valores de Select propios también son canónicos en inglés y se traducen solo en
+presentación. Se mantienen sin traducir los identificadores técnicos (fieldnames, rutas, nombres de
+DocType/Report) y, deliberadamente, el acrónimo `PMO` y los roles. Detalle completo en
+[`docs/tecnico/i18n.md`](i18n.md).
 
 ### Change Register (D12)
 
