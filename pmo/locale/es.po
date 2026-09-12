@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PMO VERSION\n"
 "Report-Msgid-Bugs-To: it@buzola.mx\n"
-"POT-Creation-Date: 2026-09-11 00:44-0923\n"
-"PO-Revision-Date: 2026-09-10 02:54-2723\n"
+"POT-Creation-Date: 2026-09-11 19:09-0837\n"
+"PO-Revision-Date: 2026-09-10 02:54-3437\n"
 "Last-Translator: it@buzola.mx\n"
 "Language: es\n"
 "Language-Team: it@buzola.mx\n"
@@ -58,8 +58,43 @@ msgstr "<span class=\"h4\"><b>PMO Control</b></span>"
 
 #. Header text in the PMO Workspace
 #: pmo/pmo/workspace/pmo/pmo.json
-msgid "<span class=\"h4\"><b>PMO — Control center</b></span>"
-msgstr "<span class=\"h4\"><b>PMO — Centro de control</b></span>"
+msgid "<span class=\"h4\"><b>PMO — Project office</b></span>"
+msgstr "<span class=\"h4\"><b>PMO — Oficina de proyectos</b></span>"
+
+#. Header text in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "<span class=\"h5\"><b>Explore</b></span>"
+msgstr "<span class=\"h5\"><b>Explorar</b></span>"
+
+#. Header text in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "<span class=\"h5\"><b>Health &amp; capacity</b></span>"
+msgstr "<span class=\"h5\"><b>Salud y capacidad</b></span>"
+
+#. Header text in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "<span class=\"h5\"><b>PMO at a glance</b></span>"
+msgstr "<span class=\"h5\"><b>PMO en un vistazo</b></span>"
+
+#. Header text in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "<span class=\"h5\"><b>PMO governance</b></span>"
+msgstr "<span class=\"h5\"><b>Gobierno PMO</b></span>"
+
+#. Header text in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "<span class=\"h5\"><b>Portfolio</b></span>"
+msgstr "<span class=\"h5\"><b>Cartera</b></span>"
+
+#. Header text in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "<span class=\"h5\"><b>Requires attention</b></span>"
+msgstr "<span class=\"h5\"><b>Atención requerida</b></span>"
+
+#. Header text in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "<span class=\"h5\"><b>Top projects by effort</b></span>"
+msgstr "<span class=\"h5\"><b>Proyectos por esfuerzo</b></span>"
 
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:221
 msgid "A Quotation can only be applied from a Change Request in the 'Approved' state."
@@ -84,6 +119,21 @@ msgstr "Se creará una Cotización/Addenda comercial del contrato original. Requ
 #: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:67
 msgid "A non-Original baseline must indicate which one it supersedes."
 msgstr "Una baseline que no es Original debe indicar cual sustituye."
+
+#. Label of a number card in the PMO Workspace
+#: pmo/dashboard.py:38 pmo/pmo/workspace/pmo/pmo.json
+msgid "Active clients"
+msgstr "Clientes activos"
+
+#. Label of a number card in the PMO Workspace
+#: pmo/dashboard.py:32 pmo/pmo/workspace/pmo/pmo.json
+msgid "Active projects"
+msgstr "Proyectos activos"
+
+#. Label of a number card in the PMO Workspace
+#: pmo/dashboard.py:33 pmo/pmo/workspace/pmo/pmo.json
+msgid "Active tasks"
+msgstr "Tareas activas"
 
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:323
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:154
@@ -253,9 +303,13 @@ msgstr "Asociaciones que se aplicarían"
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:187
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:217
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:32
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:174
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:203
 msgid "At risk"
 msgstr "En riesgo"
+
+#: pmo/dashboard.py:63
+msgid "At risk / deviated"
+msgstr "En riesgo / desviados"
 
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:491
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:531
@@ -365,6 +419,11 @@ msgstr "Capacidad h/día"
 msgid "Capacity heatmap"
 msgstr "Mapa de calor de capacidad"
 
+#. Label of a chart in the PMO Workspace
+#: pmo/dashboard.py:40 pmo/pmo/workspace/pmo/pmo.json
+msgid "Capacity — current month"
+msgstr "Capacidad — mes actual"
+
 #: pmo/pmo/page/pmo_project_control/pmo_project_control.js:45
 msgid "Change Control"
 msgstr "Control de cambios"
@@ -438,6 +497,10 @@ msgstr "Confidencial"
 msgid "Could not load the data."
 msgstr "No se pudieron cargar los datos."
 
+#: pmo/dashboard.py:65
+msgid "Could not load this PMO panel."
+msgstr "No se pudo cargar este panel PMO."
+
 #: pmo/pmo/page/tag_import/tag_import.js:44
 msgid "Could not read the file."
 msgstr "No se pudo leer el archivo."
@@ -498,6 +561,10 @@ msgstr "Decisión"
 msgid "Decision notes"
 msgstr "Notas de decisión"
 
+#: pmo/dashboard.py:58
+msgid "Delay (d)"
+msgstr "Atraso (d)"
+
 #: pmo/pmo/page/tag_import/tag_import.js:114
 msgid "Detail by document"
 msgstr "Detalle por documento"
@@ -505,7 +572,7 @@ msgstr "Detalle por documento"
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:186
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:218
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:33
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:168
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:197
 msgid "Deviated"
 msgstr "Desviado"
 
@@ -616,13 +683,17 @@ msgstr "Resumen ejecutivo"
 msgid "Expected Time"
 msgstr "Tiempo Esperado"
 
+#: pmo/dashboard.py:56
+msgid "Expected end"
+msgstr "Fin esperado"
+
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:245
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:321
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:152
 msgid "Forecast > commitment"
 msgstr "Pronóstico > compromiso"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:317
+#: pmo/dashboard.py:46 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:317
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:148
 msgid "Forecast end"
 msgstr "Fin pronosticado"
@@ -637,6 +708,7 @@ msgstr "Pronóstico excede compromiso"
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:877
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:922
 #: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:224
+#: pmo/pmo/report/pmo_capacity_snapshot/pmo_capacity_snapshot.py:33
 msgid "Free"
 msgstr "Libre"
 
@@ -648,7 +720,7 @@ msgstr "Global"
 msgid "Granularity"
 msgstr "Granularidad"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:213
+#: pmo/dashboard.py:45 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:213
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:316
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:147
 msgid "Health"
@@ -692,8 +764,9 @@ msgstr "Notas de implementación"
 msgid "Implemented"
 msgstr "Implementado"
 
+#. Label of a Link in the PMO Workspace
 #: pmo/pmo/page/tag_import/tag_import.js:12
-#: pmo/pmo/page/tag_import/tag_import.js:61
+#: pmo/pmo/page/tag_import/tag_import.js:61 pmo/pmo/workspace/pmo/pmo.json
 msgid "Import Tags"
 msgstr "Importar Tags"
 
@@ -732,6 +805,10 @@ msgstr "Fila mal formada: se requieren columnas doctype, document, tags."
 msgid "Mark Implemented"
 msgstr "Marcar Implementado"
 
+#: pmo/pmo/report/pmo_capacity_snapshot/pmo_capacity_snapshot.py:40
+msgid "Metric"
+msgstr "Métrica"
+
 #: pmo/print_status.py:45
 msgid "Milestones"
 msgstr "Hitos"
@@ -739,6 +816,10 @@ msgstr "Hitos"
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:136
 msgid "Modified"
 msgstr "Modificada"
+
+#: pmo/dashboard.py:53
+msgid "Most delayed tasks"
+msgstr "Tareas más atrasadas"
 
 #: pmo/pmo/page/tag_import/tag_import.js:21
 msgid "Multiple Tags per document separated by commas."
@@ -752,13 +833,25 @@ msgstr "Sin línea base vigente a la fecha de corte: se muestran Current y Actua
 msgid "No capacity configured (neither override nor global) for {0} on {1}."
 msgstr "No hay capacidad configurada (ni override ni global) para {0} en {1}."
 
+#: pmo/dashboard.py:64
+msgid "No customer-linked projects."
+msgstr "No hay proyectos con cliente asignado."
+
 #: pmo/pmo/page/pmo_project_control/pmo_project_control.js:395
 msgid "No data."
 msgstr "Sin datos."
 
+#: pmo/print_status.py:59
+msgid "No dated tasks to draw a schedule."
+msgstr "No hay tareas con fechas para dibujar el cronograma."
+
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:1011
 msgid "No dates"
 msgstr "Sin fechas"
+
+#: pmo/dashboard.py:60
+msgid "No delayed tasks among your projects."
+msgstr "No hay tareas atrasadas en tus proyectos."
 
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:295
 msgid "No employees in scope."
@@ -776,6 +869,10 @@ msgstr "Sin planificación para este empleado en el rango."
 #: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.py:29
 msgid "No project"
 msgstr "Sin proyecto"
+
+#: pmo/dashboard.py:52
+msgid "No projects require attention right now."
+msgstr "Ningún proyecto requiere atención en este momento."
 
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:229
 msgid "No projects require attention."
@@ -844,6 +941,11 @@ msgstr "Solo se pueden comparar baselines del mismo Project."
 msgid "Open Project"
 msgstr "Abrir Project"
 
+#. Label of a quick_list in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "Open change requests"
+msgstr "Solicitudes de cambio abiertas"
+
 #. Label of the origin (Select) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
 #: pmo/pmo/report/pmo_resource_capacity/pmo_resource_capacity.py:102
@@ -864,6 +966,11 @@ msgstr "Sobreasignación"
 msgid "Overdue at cutoff"
 msgstr "Vencida al corte"
 
+#. Label of a number card in the PMO Workspace
+#: pmo/dashboard.py:36 pmo/pmo/workspace/pmo/pmo.json
+msgid "Overdue tasks"
+msgstr "Tareas vencidas"
+
 #: pmo/print_status.py:37
 msgid "Overdue tasks at cutoff"
 msgstr "Tareas vencidas al corte"
@@ -881,7 +988,10 @@ msgid "Override hours"
 msgstr "Horas override"
 
 #. Name of a Workspace
-#: pmo/pmo/workspace/pmo/pmo.json
+#. Title of a Workspace Sidebar
+#. Label of a Workspace Sidebar Item
+#: pmo/pmo/workspace/pmo/pmo.json pmo/public/js/project_pmo.js:15
+#: pmo/workspace_sidebar/pmo.json
 msgid "PMO"
 msgstr ""
 
@@ -909,6 +1019,11 @@ msgid "PMO Capacity Planning"
 msgstr "PMO Planeación de Capacidad"
 
 #. Name of a report
+#: pmo/pmo/report/pmo_capacity_snapshot/pmo_capacity_snapshot.json
+msgid "PMO Capacity Snapshot"
+msgstr "PMO Instantánea de capacidad"
+
+#. Name of a report
 #. Label of a Link in the PMO Workspace
 #: pmo/pmo/report/pmo_change_register/pmo_change_register.json
 #: pmo/pmo/workspace/pmo/pmo.json
@@ -933,6 +1048,11 @@ msgstr "PMO Control"
 #: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
 msgid "PMO Executive Access"
 msgstr ""
+
+#. Label of a Card Break in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "PMO Governance"
+msgstr "Gobernanza PMO"
 
 #. Name of a role
 #: pmo/pmo/doctype/pmo_capacity/pmo_capacity.json
@@ -967,6 +1087,7 @@ msgid "PMO Project Baseline"
 msgstr "PMO Línea Base de Proyecto"
 
 #: pmo/pmo/page/pmo_project_control/pmo_project_control.js:25
+#: pmo/public/js/project_pmo.js:13
 msgid "PMO Project Control"
 msgstr "PMO Control de Proyecto"
 
@@ -997,16 +1118,16 @@ msgid "PMO Status Report"
 msgstr "PMO Reporte de Estado"
 
 #. Name of a report
+#: pmo/pmo/report/pmo_top_projects_by_effort/pmo_top_projects_by_effort.json
+msgid "PMO Top Projects by Effort"
+msgstr "PMO Top de proyectos por esfuerzo"
+
+#. Name of a report
 #. Label of a Link in the PMO Workspace
 #: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.json
 #: pmo/pmo/workspace/pmo/pmo.json
 msgid "PMO Work by Resource"
 msgstr "PMO Trabajo por Recurso"
-
-#. Label of a Card Break in the PMO Workspace
-#: pmo/pmo/workspace/pmo/pmo.json
-msgid "PMO configuration"
-msgstr "Configuración PMO"
 
 #. Label of the pmo_deadline (Date) field in DocType 'Task'
 #: pmo/fixtures/custom_field.json
@@ -1021,6 +1142,11 @@ msgstr "PMO — Fin comprometido"
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:26
 msgid "Parent task"
 msgstr "Tarea padre"
+
+#. Label of a number card in the PMO Workspace
+#: pmo/dashboard.py:34 pmo/pmo/workspace/pmo/pmo.json
+msgid "People involved"
+msgstr "Personas participando"
 
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:322
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:153
@@ -1052,6 +1178,10 @@ msgstr "Planned por proyecto"
 msgid "Planned end (Baseline): {0} · Planned end (Current): {1}."
 msgstr "Fin planeado (Línea Base): {0} · Fin planeado (Actual): {1}."
 
+#: pmo/pmo/report/pmo_top_projects_by_effort/pmo_top_projects_by_effort.py:38
+msgid "Planned hours"
+msgstr "Horas planificadas"
+
 #. Description of the 'PMO Planned Hours' (Float) field in DocType 'ToDo'
 #: pmo/fixtures/custom_field.json
 msgid "Planned hours of this assignee for the Task (Capacity Planning). Empty = uniform split of Task.expected_time among assignees."
@@ -1077,14 +1207,25 @@ msgstr "Planificado visible"
 msgid "Planned vs Actual"
 msgstr "Planificado vs Real"
 
+#: pmo/dashboard.py:50
+msgid "Planned/Actual (h)"
+msgstr "Plan/Real (h)"
+
+#. Label of a shortcut in the PMO Workspace
+#. Label of a Workspace Sidebar Item
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:92
+#: pmo/pmo/workspace/pmo/pmo.json pmo/workspace_sidebar/pmo.json
 msgid "Portfolio"
 msgstr "Portafolio"
 
-#. Label of a shortcut in the PMO Workspace
-#: pmo/pmo/workspace/pmo/pmo.json
-msgid "Portfolio (project health)"
-msgstr "Portafolio (salud de proyectos)"
+#: pmo/dashboard.py:61
+msgid "Portfolio by customer"
+msgstr "Cartera por cliente"
+
+#. Label of a chart in the PMO Workspace
+#: pmo/dashboard.py:39 pmo/pmo/workspace/pmo/pmo.json
+msgid "Portfolio health"
+msgstr "Salud del portafolio"
 
 #: pmo/public/js/pmo_change_request.js:78
 msgid "Prefilled with the current baseline. Review and save."
@@ -1105,7 +1246,8 @@ msgid "Project / bucket"
 msgstr "Proyecto / grupo"
 
 #. Label of a shortcut in the PMO Workspace
-#: pmo/pmo/workspace/pmo/pmo.json
+#. Label of a Workspace Sidebar Item
+#: pmo/pmo/workspace/pmo/pmo.json pmo/workspace_sidebar/pmo.json
 msgid "Project Control"
 msgstr "Control de Proyecto"
 
@@ -1121,6 +1263,16 @@ msgstr "Fin planeado del proyecto (ERPNext)"
 #: pmo/status_date.py:219
 msgid "Project {0} does not exist."
 msgstr "El Project {0} no existe."
+
+#. Label of a number card in the PMO Workspace
+#: pmo/dashboard.py:35 pmo/dashboard.py:43 pmo/pmo/workspace/pmo/pmo.json
+msgid "Projects requiring attention"
+msgstr "Proyectos que requieren atención"
+
+#. Label of a number card in the PMO Workspace
+#: pmo/dashboard.py:37 pmo/pmo/workspace/pmo/pmo.json
+msgid "Projects without baseline"
+msgstr "Proyectos sin baseline"
 
 #. Label of the section_proposal (Section Break) field in DocType 'PMO Change
 #. Request'
@@ -1223,6 +1375,10 @@ msgstr "Riesgo"
 msgid "Scale"
 msgstr "Escala"
 
+#: pmo/print_status.py:58
+msgid "Schedule (Gantt)"
+msgstr "Cronograma (Gantt)"
+
 #: pmo/schedule_commit.py:40 pmo/schedule_commit.py:57
 msgid "Schedule commitment at risk"
 msgstr "Compromiso de cronograma en riesgo"
@@ -1286,6 +1442,10 @@ msgstr "Desvío"
 msgid "Slip (days)"
 msgstr "Desvío (días)"
 
+#: pmo/dashboard.py:47
+msgid "Slip vs BL"
+msgstr "Desvío vs BL"
+
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:248
 msgid "Slip vs Baseline"
 msgstr "Desvío vs Línea Base"
@@ -1302,6 +1462,10 @@ msgstr "Desvío vs Línea Base (días)"
 #: pmo/print_status.py:32
 msgid "Slip vs Baseline:"
 msgstr "Desvío vs Línea Base:"
+
+#: pmo/dashboard.py:48
+msgid "Slip vs commit"
+msgstr "Desvío vs compromiso"
 
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:239
 msgid "Slip vs commitment"
@@ -1372,11 +1536,6 @@ msgstr "Status Date (corte, opcional)"
 #: pmo/pmo/workspace/pmo_control/pmo_control.json
 msgid "Status Report (as-of control)"
 msgstr "Reporte de Estado (control a fecha)"
-
-#. Label of a shortcut in the PMO Workspace
-#: pmo/pmo/workspace/pmo/pmo.json
-msgid "Status as of cutoff date"
-msgstr "Estado a fecha de corte"
 
 #. Description of the 'Impact summary' (Data) field in DocType 'PMO Change
 #. Request'
@@ -1533,9 +1692,22 @@ msgstr "Esta vista trabaja con un empleado a la vez. Selecciona exactamente un e
 msgid "To Date cannot be earlier than From Date."
 msgstr "To Date no puede ser anterior a From Date."
 
+#. Label of a chart in the PMO Workspace
+#: pmo/dashboard.py:41 pmo/pmo/workspace/pmo/pmo.json
+msgid "Top 5 by planned hours"
+msgstr "Top 5 por horas planificadas"
+
 #: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:106
 msgid "Total (native)"
 msgstr "Total (nativo)"
+
+#: pmo/dashboard.py:80
+msgid "Unknown PMO KPI metric: {0}"
+msgstr "Métrica KPI de PMO desconocida: {0}"
+
+#: pmo/dashboard.py:89
+msgid "Unknown PMO resource metric: {0}"
+msgstr "Métrica de recursos de PMO desconocida: {0}"
 
 #: pmo/pmo/page/tag_import/tag_import.js:20
 msgid "Upload a CSV with columns"
@@ -1584,7 +1756,7 @@ msgid "With overdue tasks"
 msgstr "Con tareas vencidas"
 
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:188
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:180
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:209
 msgid "Without baseline"
 msgstr "Sin línea base"
 
@@ -1654,6 +1826,10 @@ msgstr "empleados seleccionados"
 msgid "error"
 msgstr "error"
 
+#: pmo/dashboard.py:231
+msgid "forecast beyond commitment (+{0}d)"
+msgstr "forecast supera el compromiso (+{0}d)"
+
 #: pmo/capacity.py:53 pmo/pmo/doctype/pmo_capacity/pmo_capacity.py:42
 msgid "global"
 msgstr "global"
@@ -1669,6 +1845,10 @@ msgstr "mapeo"
 #: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:191
 msgid "missing capacity"
 msgstr "capacidad faltante"
+
+#: pmo/dashboard.py:238
+msgid "needs review"
+msgstr "requiere revisión"
 
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:402
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:798
@@ -1703,6 +1883,10 @@ msgstr "vencidas al corte"
 msgid "removed"
 msgstr "eliminado"
 
+#: pmo/dashboard.py:237
+msgid "slipped vs baseline (+{0}d)"
+msgstr "desvío respecto de la línea base (+{0}d)"
+
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:192
 msgid "the report compares baselines; it does not attribute the diff to a single Change Request"
 msgstr "el reporte compara líneas base; no atribuye el diff a un solo Change Request"
@@ -1730,6 +1914,14 @@ msgstr "con errores"
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:110
 msgid "{0} must belong to the same Project as the Change Request."
 msgstr "{0} debe pertenecer al mismo Project del Change Request."
+
+#: pmo/dashboard.py:233
+msgid "{0} overdue task(s)"
+msgstr "{0} tarea(s) vencida(s)"
+
+#: pmo/dashboard.py:235
+msgid "{0} task(s) forecast past deadline"
+msgstr "{0} tarea(s) con forecast más allá del compromiso"
 
 #: pmo/print_status.py:57
 msgid "{0} task(s) with baseline but without relevant deviation are not listed (of {1} with baseline)."

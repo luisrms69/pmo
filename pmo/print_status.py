@@ -55,6 +55,9 @@ _PRINT_FORMAT_STRINGS = (
 	N_("Overdue"),
 	N_("No tasks with relevant deviation at the cutoff date."),
 	N_("{0} task(s) with baseline but without relevant deviation are not listed (of {1} with baseline)."),
+	N_("Schedule (Gantt)"),
+	N_("No dated tasks to draw a schedule."),
+	N_("Milestone"),
 )
 
 
@@ -98,7 +101,67 @@ def pmo_project_status(project: str, status_date=None) -> dict:
 		"relevant_tasks": relevant,
 		"omitted_tasks": len(rows) - len(relevant),  # con baseline pero sin desviación → no listadas
 		"total_baseline_tasks": len(rows),
+		"gantt": _gantt(project),  # cronograma estático para el Print Format (barras en Jinja)
 	}
+
+
+def _gantt(project: str) -> dict:
+	"""Cronograma del proyecto para el Gantt estático del Print Format. Reutiliza las Tasks reales
+	(orden WBS por `lft`), sin motor nuevo. P4: el READ del Project ya lo impuso `build_status_report`;
+	se listan las Tasks del proyecto con `frappe.get_list` (respeta la pqc de Task, sin `get_all`).
+	Precomputa offset/ancho en % relativo al rango [min_start, max_end] para dibujar barras en HTML/CSS
+	compatible con wkhtmltopdf (sin JS)."""
+	tasks = frappe.get_list(
+		"Task",
+		filters={"project": project},
+		fields=[
+			"name",
+			"subject",
+			"exp_start_date",
+			"exp_end_date",
+			"progress",
+			"is_group",
+			"is_milestone",
+			"lft",
+			"parent_task",
+		],
+		order_by="lft asc",
+		limit=0,
+	)
+	# profundidad WBS por cadena de parent_task (para indentación)
+	parent = {t.name: t.parent_task for t in tasks}
+
+	def depth(name, _guard=0):
+		p = parent.get(name)
+		return 0 if not p or _guard > 50 else 1 + depth(p, _guard + 1)
+
+	starts = [getdate(t.exp_start_date) for t in tasks if t.exp_start_date]
+	ends = [getdate(t.exp_end_date) for t in tasks if t.exp_end_date]
+	if not starts or not ends:
+		return {"tasks": [], "min_start": None, "max_end": None}
+	min_start, max_end = min(starts), max(ends)
+	span = max((max_end - min_start).days, 1)
+
+	out = []
+	for t in tasks:
+		row = {
+			"name": t.name,
+			"subject": t.subject or t.name,
+			"depth": depth(t.name),
+			"is_group": int(t.is_group or 0),
+			"is_milestone": int(t.is_milestone or 0),
+			"progress": int(flt(t.progress)),
+			"start": str(t.exp_start_date)[:10] if t.exp_start_date else None,
+			"end": str(t.exp_end_date)[:10] if t.exp_end_date else None,
+			"offset_pct": None,
+			"width_pct": None,
+		}
+		if t.exp_start_date and t.exp_end_date:
+			s, e = getdate(t.exp_start_date), getdate(t.exp_end_date)
+			row["offset_pct"] = round((s - min_start).days / span * 100, 2)
+			row["width_pct"] = round(max(((e - s).days + 1) / span * 100, 1.5), 2)
+		out.append(row)
+	return {"tasks": out, "min_start": str(min_start), "max_end": str(max_end)}
 
 
 def _resolve_status_date(project: str) -> str:

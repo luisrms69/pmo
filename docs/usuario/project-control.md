@@ -32,6 +32,9 @@ correspondiente (respetando privacidad P4); el detalle tabular exportable sigue 
    prioridad e impacto; cada una abre su documento. Respeta la visibilidad del proyecto (P4). Si no hay
    solicitudes, se indica.
 
+> El cronograma **Gantt** del proyecto se presenta en el **reporte imprimible** *PMO Project Status*
+> (resumen ejecutivo + avance + Gantt en un solo documento), no como pestaña interactiva aquí.
+
 ## Privacidad
 
 Solo ves los datos que ya te autoriza el servidor: proyectos, tareas, líneas base y solicitudes de cambio
