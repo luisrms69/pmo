@@ -43,7 +43,6 @@ const VIEWS = [
 	{ key: "pva", label: __("Planned vs Actual") },
 	{ key: "baseline", label: __("Baseline Comparison") },
 	{ key: "change", label: __("Change Control") },
-	{ key: "gantt", label: __("Schedule (Gantt)") },
 ];
 
 const WF_COLOR = {
@@ -182,90 +181,6 @@ class PMOProjectControl {
 			return this._view_report($v, REP_PVA, this._status_filters(), false);
 		if (this.state.view === "baseline") return this._view_baseline($v);
 		if (this.state.view === "change") return this._view_change($v);
-		if (this.state.view === "gantt") return this._view_gantt($v);
-	}
-
-	// --- Vista Gantt: cronograma real de Tasks (frappe-gantt nativo). Read-only; P4 en get_list. ---
-	// No recalcula fechas ni programa: dibuja Expected Start/End reales de las Tasks del Project.
-	_view_gantt($v) {
-		const project = this.state.project;
-		frappe
-			.require([
-				"assets/frappe/node_modules/frappe-gantt/dist/frappe-gantt.css",
-				"assets/frappe/node_modules/frappe-gantt/dist/frappe-gantt.min.js",
-			])
-			.then(() =>
-				frappe.db.get_list("Task", {
-					filters: { project },
-					fields: [
-						"name",
-						"subject",
-						"exp_start_date",
-						"exp_end_date",
-						"progress",
-						"depends_on_tasks",
-						"is_milestone",
-						"is_group",
-					],
-					order_by: "lft asc",
-					limit: 0,
-				})
-			)
-			.then((tasks) => {
-				if (this.state.project !== project) return; // cambió de proyecto mientras cargaba
-				const to_day = (dt) => (dt ? String(dt).slice(0, 10) : null);
-				const data = (tasks || [])
-					.filter((t) => t.exp_start_date && t.exp_end_date && !t.is_group)
-					.map((t) => ({
-						id: t.name,
-						name: t.subject || t.name,
-						start: to_day(t.exp_start_date),
-						end: to_day(t.exp_end_date),
-						progress: Math.round(t.progress || 0),
-						dependencies: t.depends_on_tasks || "",
-						custom_class: t.is_milestone ? "bar-milestone" : "",
-					}));
-				if (!data.length) {
-					$v.html(
-						`<div class="pmo-pc-empty note">${
-							(tasks || []).length
-								? __(
-										"No tasks with both Expected Start and End dates to draw a schedule. Set those dates on the project tasks."
-								  )
-								: __("This project has no tasks yet.")
-						}</div>`
-					);
-					return;
-				}
-				$v.html(`
-					<div class="pmo-gantt-bar">
-						<span class="pmo-gantt-hint">${__("Schedule from task Expected Start/End (read-only).")}</span>
-						<span class="pmo-gantt-modes">
-							<button class="btn btn-xs btn-default" data-mode="Day">${__("Day")}</button>
-							<button class="btn btn-xs btn-default" data-mode="Week">${__("Week")}</button>
-							<button class="btn btn-xs btn-default" data-mode="Month">${__("Month")}</button>
-						</span>
-					</div>
-					<div class="pmo-gantt-wrap"><svg class="pmo-gantt"></svg></div>
-				`);
-				/* global Gantt */
-				this._gantt = new Gantt($v.find("svg.pmo-gantt")[0], data, {
-					view_mode: "Week",
-					date_format: "YYYY-MM-DD",
-					bar_height: 18,
-					padding: 14,
-					on_click: (task) => frappe.set_route("Form", "Task", task.id),
-				});
-				$v.off("click.gantt").on("click.gantt", "[data-mode]", (e) => {
-					this._gantt.change_view_mode($(e.currentTarget).attr("data-mode"));
-				});
-			})
-			.catch((e) => {
-				$v.html(
-					`<div class="pmo-pc-empty note">${__("Could not load the schedule.")}</div>`
-				);
-				console.error("PMO Gantt", e); // eslint-disable-line no-console
-			});
 	}
 
 	_status_filters() {
@@ -582,11 +497,6 @@ class PMOProjectControl {
 .pmo-pc-pct span{display:block;height:100%}
 .pmo-pc-pct span.ok{background:var(--green-500)}.pmo-pc-pct span.warn{background:var(--orange-500)}.pmo-pc-pct span.bad{background:var(--red-500)}
 .pmo-pc-table .pct-t{font-size:11px;color:var(--text-muted)}
-.pmo-gantt-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap}
-.pmo-gantt-hint{font-size:11px;color:var(--text-muted)}
-.pmo-gantt-modes{display:flex;gap:4px}
-.pmo-gantt-wrap{overflow:auto;border:1px solid var(--border-color);border-radius:8px;max-height:70vh}
-.pmo-gantt-wrap .gantt .bar-milestone .bar{fill:var(--purple-500,#8b5cf6)}
 `;
 		const style = document.createElement("style");
 		style.id = "pmo-pc-styles";
