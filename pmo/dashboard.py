@@ -73,7 +73,7 @@ _RESOURCE_METRICS = ("people_involved",)
 # Number Cards nativas (type=Custom) — reciben {"metric": ...} en filters_json
 # ---------------------------------------------------------------------------
 @frappe.whitelist()
-def portfolio_kpi(filters=None):
+def portfolio_kpi(filters: str | dict | None = None):
 	"""KPI de tamaño/volumen (Number Card Custom). Derivado del motor PMO Portfolio (P4)."""
 	metric = _metric(filters)
 	if metric not in _KPI_METRICS:
@@ -82,7 +82,7 @@ def portfolio_kpi(filters=None):
 
 
 @frappe.whitelist()
-def resource_kpi(filters=None):
+def resource_kpi(filters: str | dict | None = None):
 	"""Señal de recursos (Number Card Custom). Reusa el resumen de PMO Capacity Planning (P4)."""
 	metric = _metric(filters)
 	if metric not in _RESOURCE_METRICS:
