@@ -28,10 +28,21 @@ from pmo.status_date import build_status_report
 SECTION_PROJECT = "project"
 SECTION_EXECUTIVE = "executive"
 SECTION_SCHEDULE = "schedule"
+SECTION_PLANNING = "planning"
 SECTION_SCOPE_CHANGES = "scope_changes"
-DEFAULT_SECTIONS = (SECTION_PROJECT, SECTION_EXECUTIVE, SECTION_SCHEDULE, SECTION_SCOPE_CHANGES)
+DEFAULT_SECTIONS = (
+	SECTION_PROJECT,
+	SECTION_EXECUTIVE,
+	SECTION_SCHEDULE,
+	SECTION_PLANNING,
+	SECTION_SCOPE_CHANGES,
+)
 
 _ACTIVE_STATUSES = ("Open", "Working", "Pending Review", "Overdue")
+# "Sin responsable" se evalúa sobre tareas activas: hoja y no terminadas/canceladas (una Completed sin
+# asignación NO es un problema de asignación actual). Responsable vigente = ToDo abierto (Frappe: Open =
+# asignación vigente; Closed = completada; Cancelled = desasignada). Ver _assigned_task_names.
+_INACTIVE_STATUSES = ("Completed", "Cancelled")
 
 # Strings visibles del template `executive.html`. El flujo gettext puede no extraer de todos los
 # templates de app; se marcan aquí con N_() (no-op) para garantizar su entrada al POT. La plantilla
@@ -71,6 +82,16 @@ _TEMPLATE_STRINGS = (
 	N_("Overdue"),
 	N_("No tasks with relevant deviation at the cutoff date."),
 	N_("{0} task(s) with baseline but without relevant deviation are not listed (of {1} with baseline)."),
+	N_("Planning quality"),
+	N_("Planning Maturity"),
+	N_("With owner"),
+	N_("With start date"),
+	N_("With end date"),
+	N_("With estimate"),
+	N_("In current baseline"),
+	N_("Unassigned active tasks"),
+	N_("Not evaluable (no baseline in effect)"),
+	N_("{0} active task(s) without owner"),
 	N_("Change Requests"),
 	N_("No Change Requests for this Project."),
 	N_("Request"),
@@ -104,6 +125,8 @@ def build_project_control(project: str, cutoff=None, sections=None, audience: st
 		ctx[SECTION_EXECUTIVE] = _executive_section(project, sr, ind)
 	if SECTION_SCHEDULE in wanted:
 		ctx[SECTION_SCHEDULE] = _schedule_section(project, ind)
+	if SECTION_PLANNING in wanted:
+		ctx[SECTION_PLANNING] = _planning_section(project, sr)
 	if SECTION_SCOPE_CHANGES in wanted:
 		ctx[SECTION_SCOPE_CHANGES] = _scope_changes_section(project, audience)
 	# Devolver frappe._dict en profundidad: garantiza acceso por atributo en cualquier entorno Jinja
@@ -241,6 +264,90 @@ def _scope_changes_section(project: str, audience: str) -> dict:
 	if audience == "portal":
 		crs = [c for c in crs if (c.get("workflow_state") or "") != "Draft"]
 	return {"change_requests": crs}
+
+
+def _assigned_task_names(names: list) -> set:
+	"""Conjunto de Tasks (de `names`) CON responsable **vigente** = ToDo **abierto** (`status == "Open"`).
+
+	Semántica nativa de asignación de Frappe: al asignar se crea un ToDo Open; al completar la asignación
+	pasa a Closed; al desasignar, a Cancelled. Para "¿quién es responsable AHORA?" solo cuenta la asignación
+	**abierta**. (Deliberadamente **más estricto** que el canónico de *visibilidad* `_has_active_todo`
+	—`status != Cancelled`, que incluye Closed para conservar el acceso de lectura—: aquí no es acceso, es
+	responsabilidad vigente.) No se inventa campo `responsible`. Una sola consulta para todo el proyecto."""
+	if not names:
+		return set()
+	todos = frappe.get_all(
+		"ToDo",
+		filters={"reference_type": "Task", "reference_name": ("in", names), "status": "Open"},
+		fields=["reference_name"],
+		limit=0,
+	)
+	return {t.reference_name for t in todos}
+
+
+def _planning_section(project: str, sr: dict) -> dict:
+	"""Calidad de Planeación (ADR-0011 v1): Planning Maturity (5 componentes) + tareas activas sin
+	responsable. Todo sobre tareas HOJA (is_group=0). Ausencia de dato → None (no cero engañoso).
+
+	Denominadores (explícitos):
+	- Componentes 1-4 (responsable / inicio / fin / estimacion): TODAS las tareas hoja (incluye Completed;
+	  miden completitud del plan completo). None si no hay tareas hoja.
+	- Componente 5 (en baseline): tareas hoja actuales; numerador = las presentes en la baseline vigente al
+	  corte. **None si no hay baseline vigente.** Las tareas creadas DESPUÉS de la baseline no están en su
+	  snapshot → cuentan en el denominador pero no en el numerador (bajan la cobertura: señal de drift).
+	Planning Maturity = promedio simple de los componentes **evaluables** (no None); None si ninguno lo es.
+	Alerta "sin responsable": tareas hoja **activas** (status ∉ {Completed, Cancelled}) sin ToDo activo."""
+	leaves = frappe.get_list(
+		"Task",
+		filters={"project": project, "is_group": 0},
+		fields=["name", "subject", "status", "exp_start_date", "exp_end_date", "expected_time"],
+		limit=0,
+	)
+	total = len(leaves)
+	empty_components = {
+		"with_responsible_pct": None,
+		"with_start_pct": None,
+		"with_end_pct": None,
+		"with_estimate_pct": None,
+		"in_baseline_pct": None,
+	}
+	if not total:
+		return {"maturity_pct": None, "components": empty_components, "unassigned": {"count": 0, "tasks": []}}
+
+	assigned = _assigned_task_names([t.name for t in leaves])
+
+	def pct(n):
+		return round(n / total * 100)
+
+	# Componente 5: cobertura de baseline vigente al corte (None si no hay baseline).
+	in_baseline_pct = None
+	if sr.get("baseline"):
+		snap = frappe.parse_json(
+			frappe.db.get_value("PMO Project Baseline", sr["baseline"]["name"], "snapshot") or "{}"
+		)
+		bl_names = {t.get("name") for t in (snap.get("tasks") or [])}
+		in_baseline_pct = pct(sum(1 for t in leaves if t.name in bl_names))
+
+	components = {
+		"with_responsible_pct": pct(sum(1 for t in leaves if t.name in assigned)),
+		"with_start_pct": pct(sum(1 for t in leaves if t.exp_start_date)),
+		"with_end_pct": pct(sum(1 for t in leaves if t.exp_end_date)),
+		"with_estimate_pct": pct(sum(1 for t in leaves if flt(t.expected_time) > 0)),
+		"in_baseline_pct": in_baseline_pct,
+	}
+	evaluable = [v for v in components.values() if v is not None]
+	maturity = round(sum(evaluable) / len(evaluable)) if evaluable else None
+
+	unassigned = [
+		{"name": t.name, "subject": t.subject}
+		for t in leaves
+		if t.status not in _INACTIVE_STATUSES and t.name not in assigned
+	]
+	return {
+		"maturity_pct": maturity,
+		"components": components,
+		"unassigned": {"count": len(unassigned), "tasks": unassigned},
+	}
 
 
 # ---------------------------------------------------------------------------

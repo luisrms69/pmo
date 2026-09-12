@@ -6,6 +6,7 @@
 Builder `build_project_control` + secciones + endpoint + template. Composición sobre motores existentes
 (build_status_report, pmo.health), sin recalcular; P4 en el chokepoint; ausencia de dato → None."""
 
+import json
 from unittest.mock import patch
 
 import frappe
@@ -14,7 +15,9 @@ from frappe.tests import IntegrationTestCase
 from pmo.health import HEALTH_AT_RISK, HEALTH_DEVIATED, HEALTH_ON_TRACK, _health
 from pmo.pmo.report.pmo_portfolio.pmo_portfolio import _health as portfolio_health
 from pmo.project_control import (
+	_assigned_task_names,
 	_executive_section,
+	_planning_section,
 	_scope_changes_section,
 	build_project_control,
 	get_executive_html,
@@ -161,6 +164,128 @@ class TestScopeChanges(IntegrationTestCase):
 		self.assertEqual(len(out["change_requests"]), 2)  # Approved + Rejected (Rejected SÍ es historial)
 
 
+class TestPlanningSection(IntegrationTestCase):
+	"""Planning Maturity (5 componentes, promedio de evaluables) + tareas activas sin responsable."""
+
+	def _leaves(self):
+		# T1/T2 con responsable; T3 activa sin responsable; T4 Completed sin responsable (no es alerta).
+		return [
+			frappe._dict(
+				name="T1",
+				subject="T1",
+				status="Open",
+				exp_start_date="2026-09-01",
+				exp_end_date="2026-09-05",
+				expected_time=5,
+			),
+			frappe._dict(
+				name="T2",
+				subject="T2",
+				status="Working",
+				exp_start_date="2026-09-02",
+				exp_end_date="2026-09-06",
+				expected_time=0,
+			),
+			frappe._dict(
+				name="T3",
+				subject="T3",
+				status="Open",
+				exp_start_date="2026-09-03",
+				exp_end_date=None,
+				expected_time=0,
+			),
+			frappe._dict(
+				name="T4",
+				subject="T4",
+				status="Completed",
+				exp_start_date=None,
+				exp_end_date=None,
+				expected_time=0,
+			),
+		]
+
+	def _mocks(self, leaves, assigned, baseline_names=None):
+		real_gl, real_ga, real_gv = frappe.get_list, frappe.get_all, frappe.db.get_value
+
+		def gl(*a, **k):
+			return leaves if k.get("doctype", a[0] if a else None) == "Task" else real_gl(*a, **k)
+
+		def ga(*a, **k):
+			if k.get("doctype", a[0] if a else None) == "ToDo":
+				return [frappe._dict(reference_name=n) for n in assigned]
+			return real_ga(*a, **k)
+
+		def gv(*a, **k):
+			if baseline_names is not None:
+				return json.dumps({"tasks": [{"name": n} for n in baseline_names]})
+			return real_gv(*a, **k)
+
+		return gl, ga, gv
+
+	def test_components_and_maturity(self):
+		gl, ga, gv = self._mocks(self._leaves(), assigned=["T1", "T2"], baseline_names=["T1", "T2", "T3"])
+		with (
+			patch("pmo.project_control.frappe.get_list", side_effect=gl),
+			patch("pmo.project_control.frappe.get_all", side_effect=ga),
+			patch("pmo.project_control.frappe.db.get_value", side_effect=gv),
+		):
+			pl = _planning_section("X", {"baseline": {"name": "BL"}})
+		c = pl["components"]
+		self.assertEqual(c["with_responsible_pct"], 50)  # T1,T2 / 4
+		self.assertEqual(c["with_start_pct"], 75)  # T1,T2,T3 / 4
+		self.assertEqual(c["with_end_pct"], 50)  # T1,T2 / 4
+		self.assertEqual(c["with_estimate_pct"], 25)  # T1 / 4
+		self.assertEqual(c["in_baseline_pct"], 75)  # T1,T2,T3 / 4 (T4 nueva, no en baseline)
+		self.assertEqual(pl["maturity_pct"], round((50 + 75 + 50 + 25 + 75) / 5))  # 55
+
+	def test_unassigned_excludes_completed(self):
+		gl, ga, gv = self._mocks(self._leaves(), assigned=["T1", "T2"], baseline_names=["T1"])
+		with (
+			patch("pmo.project_control.frappe.get_list", side_effect=gl),
+			patch("pmo.project_control.frappe.get_all", side_effect=ga),
+			patch("pmo.project_control.frappe.db.get_value", side_effect=gv),
+		):
+			pl = _planning_section("X", {"baseline": {"name": "BL"}})
+		# T3 (Open, sin responsable) es alerta; T4 (Completed, sin responsable) NO.
+		self.assertEqual(pl["unassigned"]["count"], 1)
+		self.assertEqual([t["name"] for t in pl["unassigned"]["tasks"]], ["T3"])
+
+	def test_no_baseline_component_none(self):
+		gl, ga, gv = self._mocks(self._leaves(), assigned=["T1", "T2"], baseline_names=None)
+		with (
+			patch("pmo.project_control.frappe.get_list", side_effect=gl),
+			patch("pmo.project_control.frappe.get_all", side_effect=ga),
+			patch("pmo.project_control.frappe.db.get_value", side_effect=gv),
+		):
+			pl = _planning_section("X", {"baseline": None})
+		self.assertIsNone(pl["components"]["in_baseline_pct"])  # None, no cero
+		self.assertEqual(pl["maturity_pct"], round((50 + 75 + 50 + 25) / 4))  # promedio de 4 evaluables
+
+	def test_responsible_uses_open_todo_only(self):
+		# Guard de semántica: "responsable" = ToDo Open (no != Cancelled, que incluiría Closed).
+		captured = {}
+
+		def ga(*a, **k):
+			captured.update(k.get("filters") or {})
+			return []
+
+		with patch("pmo.project_control.frappe.get_all", side_effect=ga):
+			_assigned_task_names(["T1"])
+		self.assertEqual(captured.get("status"), "Open")
+
+	def test_no_tasks_all_none(self):
+		gl, ga, gv = self._mocks([], assigned=[], baseline_names=None)
+		with (
+			patch("pmo.project_control.frappe.get_list", side_effect=gl),
+			patch("pmo.project_control.frappe.get_all", side_effect=ga),
+			patch("pmo.project_control.frappe.db.get_value", side_effect=gv),
+		):
+			pl = _planning_section("X", {"baseline": None})
+		self.assertIsNone(pl["maturity_pct"])
+		self.assertTrue(all(v is None for v in pl["components"].values()))
+		self.assertEqual(pl["unassigned"]["count"], 0)
+
+
 class TestBuilderStructureAndP4(IntegrationTestCase):
 	def _routers(self):
 		real_gl, real_ga = frappe.get_list, frappe.get_all
@@ -197,7 +322,7 @@ class TestBuilderStructureAndP4(IntegrationTestCase):
 			subset = build_project_control("X", cutoff="2026-09-11", sections=["project", "executive"])
 		self.assertEqual(
 			set(full.keys()),
-			{"audience", "cutoff", "note", "project", "executive", "schedule", "scope_changes"},
+			{"audience", "cutoff", "note", "project", "executive", "schedule", "planning", "scope_changes"},
 		)
 		self.assertEqual(set(subset.keys()), {"audience", "cutoff", "note", "project", "executive"})
 		self.assertEqual(full["cutoff"], "2026-09-11")
@@ -266,6 +391,17 @@ class TestRenderer(IntegrationTestCase):
 				"gantt": {"tasks": [], "min_start": None, "max_end": None},
 			},
 			"scope_changes": {"change_requests": []},
+			"planning": {
+				"maturity_pct": 55 if has_baseline else 50,
+				"components": {
+					"with_responsible_pct": 50,
+					"with_start_pct": 75,
+					"with_end_pct": 50,
+					"with_estimate_pct": 25,
+					"in_baseline_pct": 75 if has_baseline else None,
+				},
+				"unassigned": {"count": 1, "tasks": [{"name": "T3", "subject": "T3"}]},
+			},
 		}
 
 	def _render(self, pc):
@@ -280,6 +416,14 @@ class TestRenderer(IntegrationTestCase):
 	def test_renders_without_baseline_none_as_dash(self):
 		html = self._render(self._pc(has_baseline=False))
 		self.assertIn("no baseline", html)
-		# KPIs de baseline None → "—" (ausencia), NUNCA "0%"
-		self.assertNotIn("0%", html.replace("100%", "").replace("40%", "").replace("200%", ""))
+		# KPIs de baseline None → ausencia: la tarjeta muestra "—" y el componente de baseline "Not evaluable"
 		self.assertIn("—", html)
+		self.assertIn("Not evaluable", html)
+		# Y NO debe pintar esas ausencias como "0%": las tarjetas de tasks_due/compliance rinden "—".
+		self.assertIn('<div class="val">—</div>', html)
+
+	def test_planning_section_renders(self):
+		html = self._render(self._pc(has_baseline=True))
+		self.assertIn("Planning quality", html)
+		self.assertIn("Planning Maturity", html)
+		self.assertIn("active task(s) without owner", html)  # excepción visible (unassigned.count=1)

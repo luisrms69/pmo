@@ -23,9 +23,14 @@ correspondiente (respetando privacidad P4); el detalle tabular exportable sigue 
    comprometida con su desvío, **tareas previstas al corte** (cuántas tareas del plan debían estar
    terminadas — no es "avance"), cumplimiento, tareas vencidas, esfuerzo (horas reales a la fecha de corte
    vs planificadas y % consumido), **cronograma Gantt**, hitos, tabla de tareas con desviación y el
-   **historial de solicitudes de cambio** (todas las formalizadas). Es exactamente el mismo contenido del
-   reporte imprimible **PMO Project Status** (misma fuente), embebido aquí para revisarlo sin cambiar de
-   pantalla. No recalcula nada: el servidor compone el contexto y lo renderiza (respeta P4).
+   **historial de solicitudes de cambio** (todas las formalizadas). Incluye además **Calidad de
+   Planeación**: un indicador de **Madurez de planeación** (promedio de 5 componentes — % de tareas hoja
+   con responsable / con fecha inicio / con fecha fin / con estimación / incorporadas a la línea base
+   vigente) con su desglose siempre visible, y el listado de **tareas activas sin responsable** (una tarea
+   completada no cuenta como problema de asignación). Cuando un componente no es evaluable (p. ej. sin
+   línea base) se muestra "No evaluable", nunca cero. Es exactamente el mismo contenido del reporte
+   imprimible **PMO Project Status** (misma fuente), embebido aquí para revisarlo sin cambiar de pantalla.
+   No recalcula nada: el servidor compone el contexto y lo renderiza (respeta P4).
 2. **Status / Schedule** — control a la fecha de corte (`PMO Status Report`): resumen (línea base vigente,
    forecast, fechas comprometidas, desvíos, vencidas, horas) y tabla por Task (fin baseline vs forecast,
    slip, compromiso, vencida al corte). Si el proyecto **no tiene línea base vigente** a la fecha, la tabla

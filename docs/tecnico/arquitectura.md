@@ -567,14 +567,28 @@ cutoff=None, sections=None, audience="internal")`. **Compone** motores existente
 D2). Devuelve `frappe._dict` en profundidad (dot-access en cualquier entorno Jinja: `render_template` y
 Print Format/printview).
 - **Secciones (v1 del Reporte Ejecutivo):** `project` (identidad/fechas), `executive` (KPIs), `schedule`
-  (Gantt estático orden `lft` + hitos + tareas relevantes + counts), `scope_changes` (Change Requests).
-  `sections=None` → todas las soportadas; lista → subconjunto. El resto del contrato (resources, hours,
-  costs, freshness, updates…) se añade cuando su vista lo requiera (D7). **Project Updates: diferido**.
+  (Gantt estático orden `lft` + hitos + tareas relevantes + counts), `planning` (Calidad de Planeación),
+  `scope_changes` (Change Requests). `sections=None` → todas las soportadas; lista → subconjunto. El resto
+  del contrato (resources, hours, costs, freshness, updates…) se añade cuando su vista lo requiera (D7).
+  **Project Updates: diferido**.
+- **`planning` (Calidad de Planeación):** `maturity_pct` = promedio simple de los componentes **evaluables**
+  (None → excluido; ninguno evaluable → None) de 5 métricas sobre tareas **hoja**: % con responsable / con
+  `exp_start_date` / con `exp_end_date` / con `expected_time>0` / **en la baseline vigente al corte**.
+  Denominadores explícitos: comp. 1-4 = todas las hojas (incluye Completed; miden el plan completo);
+  comp. 5 = hojas actuales, numerador = presentes en el snapshot de la baseline vigente (**None sin
+  baseline**; las tareas creadas después bajan la cobertura = drift). **Responsable vigente = ToDo abierto**
+  (`status == "Open"`, semántica nativa de asignación de Frappe; **más estricto** que el canónico de
+  *visibilidad* `_has_active_todo` = `!= Cancelled`, que incluye Closed para conservar lectura — aquí es
+  responsabilidad, no acceso; no un campo nuevo). `unassigned` = tareas hoja **activas** (status ∉
+  {Completed, Cancelled}) sin ToDo abierto (count + lista); se muestra como excepción si `count>0`.
 - **Fuentes por dominio:** estado/cronograma/forecast/**horas a la fecha de corte** =
   `build_status_report` (P4); salud = `pmo.health` (única); horas planificadas = Σ `Task.expected_time`
   hojas; Change Requests = `PMO Change Request` (su pqc impone P4). **Corrección ADR-0011:** las horas
   reales del reporte usan `indicators.actual_hours_to_date` (Timesheet ≤ corte), no el acumulado actual
   (`_effort_totals`/`Project.actual_time`) — corrige la inconsistencia previa del Print Format.
+  *Cleanup futuro (no bloqueante):* la fórmula de **horas planificadas** (Σ `Task.expected_time` hojas)
+  vive hoy en `_executive_section` y en `pmo_portfolio._effort_totals` (idénticas, sin divergencia);
+  consolidar en un helper `planned_hours(project)` cuando exista una razón para tocar `pmo_portfolio`.
 - **KPIs:** salud, avance real, **`tasks_due_by_cutoff_pct`** ("Tareas previstas al corte" — cuenta tareas,
   NO "avance esperado"; `overdue` queda para las realmente incumplidas), cumplimiento, slip vs baseline/
   compromiso, vencidas, forecast>compromiso, planned/actual/%. Ausencia de dato → `None` (no cero).
