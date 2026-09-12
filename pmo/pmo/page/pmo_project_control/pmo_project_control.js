@@ -39,6 +39,7 @@ const CR_DOCTYPE = "PMO Change Request";
 const BASELINE_DT = "PMO Project Baseline";
 
 const VIEWS = [
+	{ key: "executive", label: __("Executive report") },
 	{ key: "status", label: __("Status / Schedule") },
 	{ key: "pva", label: __("Planned vs Actual") },
 	{ key: "baseline", label: __("Baseline Comparison") },
@@ -57,7 +58,7 @@ const WF_COLOR = {
 class PMOProjectControl {
 	constructor(page) {
 		this.page = page;
-		this.state = { project: null, status_date: null, view: "status", baselines: null };
+		this.state = { project: null, status_date: null, view: "executive", baselines: null };
 
 		this._inject_styles();
 		this._build_filters(); // Project + Status Date en .page-form (hijo de page.body)
@@ -80,7 +81,7 @@ class PMOProjectControl {
 			fieldtype: "Date",
 			change: () => {
 				this.state.status_date = this.status_date_field.get_value() || null;
-				if (this.state.view === "status" || this.state.view === "pva") this._render_view();
+				if (["executive", "status", "pva"].includes(this.state.view)) this._render_view();
 			},
 		});
 		this.page.set_primary_action(__("Refresh"), () => this._render_view(), "refresh");
@@ -175,6 +176,7 @@ class PMOProjectControl {
 			return;
 		}
 		$v.html(`<div class="pmo-pc-loading">${__("Loading...")}</div>`);
+		if (this.state.view === "executive") return this._view_executive($v);
 		if (this.state.view === "status")
 			return this._view_report($v, REP_STATUS, this._status_filters(), true);
 		if (this.state.view === "pva")
@@ -189,6 +191,21 @@ class PMOProjectControl {
 			project: this.state.project,
 			status_date: this.state.status_date || frappe.datetime.get_today(),
 		};
+	}
+
+	// --- Vista Reporte Ejecutivo: HTML renderizado server-side (ADR-0011). La Page solo inyecta. ---
+	// Contexto y KPIs los compone build_project_control() y los renderiza el template canónico
+	// executive.html; el cliente NO recalcula nada. P4 la impone el builder (build_status_report).
+	_view_executive($v) {
+		frappe
+			.xcall("pmo.project_control.get_executive_html", {
+				project: this.state.project,
+				cutoff: this.state.status_date || frappe.datetime.get_today(),
+			})
+			.then((html) => $v.html(html))
+			.catch(() => {
+				$v.html(`<div class="pmo-pc-empty">${__("Could not load the data.")}</div>`);
+			});
 	}
 
 	// --- Vistas 1 y 2: Script Report vía query_report.run (P4 en el motor) ---

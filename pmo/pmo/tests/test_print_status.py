@@ -11,7 +11,8 @@ import unittest
 import frappe
 from frappe.tests import IntegrationTestCase
 
-from pmo.print_status import _relevant, pmo_project_status
+from pmo.print_status import pmo_project_status
+from pmo.project_control import _relevant  # la composición vive ahora en el builder canónico (ADR-0011)
 
 
 class TestPrintStatusPure(unittest.TestCase):
@@ -74,16 +75,19 @@ class TestPrintStatusIntegration(IntegrationTestCase):
 
 	def test_context_without_baseline(self):
 		p = _project("PS-NOBASE")
-		_task("PS-T1", p, expected=10, actual=4)
-		ctx = pmo_project_status(p)
-		self.assertIsNone(ctx["baseline"])  # sin baseline vigente
-		self.assertEqual(ctx["relevant_tasks"], [])  # sin baseline → sin tabla de desviación
-		self.assertEqual(ctx["omitted_tasks"], 0)
-		self.assertEqual(ctx["planned_hours"], 10.0)
-		self.assertEqual(ctx["actual_hours"], 4.0)
-		self.assertEqual(ctx["pct_consumed"], 40.0)
-		self.assertEqual(ctx["health"], "On track")  # sin slips/vencidas
-		self.assertEqual(ctx["counts"]["total"], 1)
+		_task("PS-T1", p, expected=10, actual=4)  # actual_time nativo: ya NO es la fuente del reporte
+		ctx = pmo_project_status(p)  # ahora devuelve el contexto canónico estructurado (pc)
+		self.assertFalse(ctx["project"]["has_baseline"])  # sin baseline vigente
+		self.assertEqual(ctx["schedule"]["relevant_tasks"], [])  # sin baseline → sin tabla de desviación
+		self.assertEqual(ctx["schedule"]["omitted_tasks"], 0)
+		kp = ctx["executive"]["kpis"]
+		self.assertEqual(kp["planned_hours"], 10.0)
+		# Corrección ADR-0011: horas reales = actual_hours_to_date (Timesheet ≤ corte). Sin Timesheet → 0
+		# (NO toma Task.actual_time). Esto corrige la inconsistencia previa del Print Format.
+		self.assertEqual(kp["actual_hours"], 0.0)
+		self.assertEqual(kp["hours_consumed_pct"], 0)
+		self.assertEqual(kp["health"], "on_track")  # clave interna estable (label = "On track")
+		self.assertEqual(ctx["schedule"]["counts"]["total"], 1)
 
 	def test_print_format_renders(self):
 		# Render real del Print Format (valida el método Jinja + plantilla). Requiere el PF sincronizado.

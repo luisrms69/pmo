@@ -1,0 +1,188 @@
+{#-
+  Reporte Ejecutivo de Proyecto — template canónico (ADR-0011 D5).
+  Representa el contexto `pc` de pmo.project_control.build_project_control(). NO calcula KPIs, NO consulta
+  BD, NO contiene lógica de negocio, NO usa JavaScript. Consumidores: Page `PMO Control de Proyecto`
+  (pestaña Reporte Ejecutivo) y el Print Format `PMO Project Status` (PDF). Fechas en ISO directo.
+-#}
+{%- set pr = pc.project -%}
+{%- set kp = pc.executive.kpis -%}
+{%- set sc = pc.schedule -%}
+{%- macro d(x) -%}{% if x %}{{ x }}{% else %}—{% endif %}{%- endmacro -%}
+{%- macro slip(x) -%}{% if x is none %}—{% else %}{{ x }} d{% endif %}{%- endmacro -%}
+{%- set health_color = {'on_track':'#1f9d55','at_risk':'#d97706','deviated':'#c02b2b'} -%}
+<div class="pmo-ps">
+<style>
+.pmo-ps{font-family:'Helvetica Neue',Arial,sans-serif;color:#222;font-size:12px}
+.pmo-ps h1{font-size:20px;margin:0 0 2px}
+.pmo-ps .muted{color:#666}
+.pmo-ps .band{border-top:3px solid #2b3a67;padding-top:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-start}
+.pmo-ps .health{font-weight:bold;padding:3px 10px;border-radius:12px;color:#fff;font-size:12px}
+.pmo-ps .cards{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.pmo-ps .card{border:1px solid #e2e2e2;border-radius:6px;padding:8px 10px;min-width:150px;flex:1}
+.pmo-ps .card .lbl{color:#666;font-size:10px;text-transform:uppercase;letter-spacing:.03em}
+.pmo-ps .card .val{font-size:15px;font-weight:bold;margin-top:2px}
+.pmo-ps .bad{color:#c02b2b}.pmo-ps .ok{color:#1f9d55}
+.pmo-ps .bar{background:#eee;border-radius:5px;height:10px;overflow:hidden;margin-top:4px}
+.pmo-ps .bar > span{display:block;height:100%;background:#2b3a67}
+.pmo-ps h2{font-size:13px;border-bottom:1px solid #ddd;padding-bottom:3px;margin:16px 0 6px}
+.pmo-ps table{width:100%;border-collapse:collapse;font-size:11px}
+.pmo-ps th,.pmo-ps td{border-bottom:1px solid #eee;padding:5px 6px;text-align:left}
+.pmo-ps th{background:#f4f5f8;color:#333}
+.pmo-ps td.num{text-align:right}
+.pmo-ps .counts{margin:6px 0;color:#444}
+.pmo-ps .note{color:#666;font-style:italic;margin-top:6px;font-size:10px}
+
+.pmo-ps .grange{color:#666;font-size:10px;margin:2px 0 4px}
+.pmo-ps table.gantt{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px}
+.pmo-ps table.gantt td{border-bottom:1px solid #f2f2f2;padding:3px 6px;vertical-align:middle}
+.pmo-ps table.gantt td.gname{width:34%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmo-ps table.gantt td.glane{width:66%}
+.pmo-ps .gtrack{position:relative;height:13px;background:#f4f5f8;border-radius:2px}
+.pmo-ps .gbar{position:absolute;top:2px;height:9px;background:#2b3a67;border-radius:2px}
+.pmo-ps .gbar.grp{background:#8a93ad;height:5px;top:4px}
+.pmo-ps .gfill{height:100%;background:#1f9d55;border-radius:2px}
+.pmo-ps .gms{position:absolute;top:2px;width:9px;height:9px;background:#c02b2b;transform:rotate(45deg)}
+.pmo-ps .badge{display:inline-block;padding:1px 7px;border-radius:9px;font-size:10px;background:#eef;color:#334}
+</style>
+
+<div class="band">
+  <div>
+    <h1>{{ pr.project_name or pr.name }}</h1>
+    <div class="muted">
+      {{ d(pr.status) }}
+      {%- if pr.company %} · {{ pr.company }}{% endif %}
+      {%- if pr.customer_name %} · {{ pr.customer_name }}{% endif %}
+    </div>
+    <div class="muted">{{ _("Cutoff date (Status Date):") }} <b>{{ d(pc.cutoff) }}</b></div>
+  </div>
+  <div class="health" style="background:{{ health_color.get(kp.health, '#666') }}">{{ _(kp.health_label) }}</div>
+</div>
+
+<h2>{{ _("Executive summary") }}</h2>
+<div class="cards">
+  <div class="card">
+    <div class="lbl">{{ _("Progress") }}</div>
+    <div class="val">{{ kp.percent_complete }}%</div>
+    <div class="bar"><span style="width:{{ kp.percent_complete }}%"></span></div>
+  </div>
+  <div class="card">
+    <div class="lbl">{{ _("Baseline") }}</div>
+    <div class="val">{% if pr.has_baseline %}{{ d(pr.baseline_end) }}{% else %}— {{ _("no baseline") }}{% endif %}</div>
+    <div class="muted">{{ _("Slip vs Baseline:") }} {{ slip(kp.slip_baseline_days) }}</div>
+  </div>
+  <div class="card">
+    <div class="lbl">{{ _("Current forecast (plan)") }}</div>
+    <div class="val">{{ d(pr.forecast_end) }}</div>
+    <div class="muted">{{ _("Project planned end (ERPNext)") }}</div>
+  </div>
+  <div class="card">
+    <div class="lbl">{{ _("Committed date") }}</div>
+    <div class="val">{{ d(pr.committed_end) }}</div>
+    <div class="muted {% if (kp.slip_committed_days or 0) > 0 %}bad{% endif %}">{{ _("Slip vs commitment:") }} {{ slip(kp.slip_committed_days) }}</div>
+  </div>
+</div>
+<div class="cards">
+  <div class="card">
+    <div class="lbl">{{ _("Tasks expected complete by cutoff") }}</div>
+    <div class="val">{% if kp.tasks_due_by_cutoff_pct is none %}—{% else %}{{ kp.tasks_due_by_cutoff_pct }}%{% endif %}</div>
+  </div>
+  <div class="card">
+    <div class="lbl">{{ _("Task compliance") }}</div>
+    <div class="val">{% if kp.compliance_pct is none %}—{% else %}{{ kp.compliance_pct }}%{% endif %}</div>
+  </div>
+  <div class="card"><div class="lbl">{{ _("Overdue tasks at cutoff") }}</div><div class="val {% if kp.overdue_tasks %}bad{% endif %}">{% if kp.overdue_tasks is none %}—{% else %}{{ kp.overdue_tasks }}{% endif %}</div></div>
+  <div class="card"><div class="lbl">{{ _("Forecast exceeds commitment") }}</div><div class="val {% if kp.forecast_exceeds %}bad{% endif %}">{{ kp.forecast_exceeds }}</div></div>
+</div>
+<div class="cards">
+  <div class="card">
+    <div class="lbl">{{ _("Effort (hours)") }}</div>
+    <div class="val">{{ kp.actual_hours }} / {{ kp.planned_hours }}</div>
+    <div class="muted">{{ _("% consumed:") }} {% if kp.hours_consumed_pct is none %}—{% else %}{{ kp.hours_consumed_pct }}%{% endif %}</div>
+  </div>
+</div>
+<div class="counts">{{ _("Tasks:") }} <b>{{ sc.counts.total }}</b> · {{ _("completed") }} {{ sc.counts.completed }} · {{ _("active") }} {{ sc.counts.active }} · {{ _("overdue at cutoff") }} {{ d(sc.counts.overdue_at_cutoff) }}</div>
+
+{% if sc.gantt.tasks %}
+<h2>{{ _("Schedule (Gantt)") }}</h2>
+<div style="page-break-inside:avoid">
+<p class="grange">{{ d(sc.gantt.min_start) }} &rarr; {{ d(sc.gantt.max_end) }}</p>
+<table class="gantt">
+{% for t in sc.gantt.tasks %}
+<tr>
+<td class="gname" style="padding-left:{{ 6 + t.depth * 12 }}px">{% if t.is_milestone %}&#9670; {% endif %}{% if t.is_group %}<b>{{ t.subject }}</b>{% else %}{{ t.subject }}{% endif %}</td>
+<td class="glane"><div class="gtrack">{% if t.offset_pct is not none %}{% if t.is_milestone %}<div class="gms" style="left:{{ t.offset_pct }}%"></div>{% else %}<div class="gbar {% if t.is_group %}grp{% endif %}" style="left:{{ t.offset_pct }}%;width:{{ t.width_pct }}%">{% if not t.is_group %}<div class="gfill" style="width:{{ t.progress }}%"></div>{% endif %}</div>{% endif %}{% endif %}</div></td>
+</tr>
+{% endfor %}
+</table>
+</div>
+{% endif %}
+
+{% if sc.milestones %}
+<h2>{{ _("Milestones") }}</h2>
+<table>
+  <thead><tr><th>{{ _("Milestone") }}</th><th>{{ _("End (Baseline)") }}</th><th>{{ _("End (Forecast)") }}</th><th class="num">{{ _("Slip") }}</th><th>{{ _("Overdue at cutoff") }}</th></tr></thead>
+  <tbody>
+  {% for m in sc.milestones %}
+    <tr>
+      <td>{{ m.subject }}</td><td>{{ d(m.baseline_exp_end_date) }}</td><td>{{ d(m.current_exp_end_date) }}</td>
+      <td class="num">{{ slip(m.slip_days) }}</td><td>{% if m.overdue_at_status_date %}{{ _("Yes") }}{% else %}—{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h2>{{ _("Tasks to evaluate (with deviation)") }}</h2>
+{% if sc.relevant_tasks %}
+<table>
+  <thead><tr><th>{{ _("Task") }}</th><th>{{ _("End (Baseline)") }}</th><th>{{ _("End (Forecast)") }}</th><th class="num">{{ _("Slip") }}</th><th>{{ _("Commitment") }}</th><th>{{ _("Overdue") }}</th></tr></thead>
+  <tbody>
+  {% for t in sc.relevant_tasks %}
+    <tr>
+      <td>{% if t.is_milestone %}★ {% endif %}{{ t.subject }}</td>
+      <td>{{ d(t.baseline_exp_end_date) }}</td>
+      <td>{{ d(t.current_exp_end_date) }}</td>
+      <td class="num {% if (t.slip_days or 0) > 0 %}bad{% endif %}">{{ slip(t.slip_days) }}</td>
+      <td class="{% if t.exceeds_deadline %}bad{% endif %}">{{ d(t.pmo_deadline) }}</td>
+      <td>{% if t.overdue_at_status_date %}{{ _("Yes") }}{% else %}—{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="muted">{{ _("No tasks with relevant deviation at the cutoff date.") }}</div>
+{% endif %}
+{% if sc.omitted_tasks %}
+<div class="note">{{ _("{0} task(s) with baseline but without relevant deviation are not listed (of {1} with baseline).").format(sc.omitted_tasks, sc.total_baseline_tasks) }}</div>
+{% endif %}
+
+<h2>{{ _("Change Requests") }}</h2>
+{% if pc.scope_changes.change_requests %}
+<table>
+  <thead><tr>
+    <th>{{ _("Request") }}</th><th>{{ _("Date") }}</th><th>{{ _("State") }}</th>
+    <th>{{ _("Impact") }}</th><th>{{ _("Baselines") }}</th>
+  </tr></thead>
+  <tbody>
+  {% for c in pc.scope_changes.change_requests %}
+    <tr>
+      <td>{{ c.title or c.name }}</td>
+      <td>{{ d(c.request_date) }}</td>
+      <td>{% if c.workflow_state %}<span class="badge">{{ _(c.workflow_state) }}</span>{% else %}—{% endif %}</td>
+      <td>
+        {{ d(c.impact_summary) }}
+        {%- set bits = [] -%}
+        {%- if c.impact_hours %}{% set _ = bits.append((c.impact_hours ~ ' ' ~ _("Hours"))) %}{% endif -%}
+        {%- if c.impact_days %}{% set _ = bits.append((c.impact_days ~ ' ' ~ _("Days"))) %}{% endif -%}
+        {%- if c.impact_amount %}{% set _ = bits.append((_("Amount") ~ ' ' ~ c.impact_amount)) %}{% endif -%}
+        {%- if bits %}<div class="muted">{{ bits | join(' · ') }}</div>{% endif -%}
+      </td>
+      <td>{{ d(c.baseline_before) }} &rarr; {{ d(c.baseline_after) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="muted">{{ _("No Change Requests for this Project.") }}</div>
+{% endif %}
+</div>

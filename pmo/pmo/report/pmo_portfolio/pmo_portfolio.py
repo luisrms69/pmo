@@ -19,19 +19,17 @@ import frappe
 from frappe import N_, _
 from frappe.utils import flt, today
 
+# Salud: única fuente de verdad en pmo.health (claves + algoritmo, ADR-0011 D2). Se re-exporta aquí para
+# los consumidores que ya importan estos símbolos desde este módulo (print_status, dashboard).
+from pmo.health import (  # re-export estable para print_status/dashboard
+	HEALTH_AT_RISK,
+	HEALTH_LABELS,
+	HEALTH_OFF_TRACK,
+	HEALTH_ON_TRACK,
+	_health,
+)
 from pmo.permissions import _is_global_reader, _member_projects_subquery
 from pmo.status_date import build_status_report
-
-# Valores internos ESTABLES (independientes del idioma). La lógica compara SIEMPRE estas claves; la
-# traducción (`_()`) es solo de presentación (ver HEALTH_LABELS).
-HEALTH_ON_TRACK = "on_track"
-HEALTH_AT_RISK = "at_risk"
-HEALTH_OFF_TRACK = "deviated"
-HEALTH_LABELS = {
-	HEALTH_ON_TRACK: N_("On track"),
-	HEALTH_AT_RISK: N_("At risk"),
-	HEALTH_OFF_TRACK: N_("Deviated"),
-}
 
 
 def execute(filters=None):
@@ -122,15 +120,6 @@ def _effort_totals(project):
 	planned = flt(sum(flt(t.expected_time) for t in tasks), 2)
 	actual = flt(sum(flt(t.actual_time) for t in tasks), 2)
 	return planned, actual
-
-
-def _health(slip_baseline, slip_committed, overdue, exceeds):
-	"""Semáforo derivado de las mismas señales del Status Report. Positivo = peor."""
-	if (slip_committed or 0) > 0 or overdue > 0 or exceeds > 0:
-		return HEALTH_OFF_TRACK
-	if (slip_baseline or 0) > 0:
-		return HEALTH_AT_RISK
-	return HEALTH_ON_TRACK
 
 
 def _columns():

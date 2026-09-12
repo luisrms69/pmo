@@ -561,6 +561,35 @@ Salida imprimible/PDF por Project para stakeholders. **Print Format estándar** 
   Format del cliente. Tests: `test_print_status.py` (relevante puro + contexto + render HTML + smoke PDF
   guardado). Sin ADR (reutiliza decisiones vigentes; sin modelo/decisión nuevos).
 
+## Contexto canónico de Project Control (ADR-0011)
+Fuente única del contexto integral de un Project: `pmo.project_control.build_project_control(project,
+cutoff=None, sections=None, audience="internal")`. **Compone** motores existentes; no recalcula (ADR-0011
+D2). Devuelve `frappe._dict` en profundidad (dot-access en cualquier entorno Jinja: `render_template` y
+Print Format/printview).
+- **Secciones (v1 del Reporte Ejecutivo):** `project` (identidad/fechas), `executive` (KPIs), `schedule`
+  (Gantt estático orden `lft` + hitos + tareas relevantes + counts), `scope_changes` (Change Requests).
+  `sections=None` → todas las soportadas; lista → subconjunto. El resto del contrato (resources, hours,
+  costs, freshness, updates…) se añade cuando su vista lo requiera (D7). **Project Updates: diferido**.
+- **Fuentes por dominio:** estado/cronograma/forecast/**horas a la fecha de corte** =
+  `build_status_report` (P4); salud = `pmo.health` (única); horas planificadas = Σ `Task.expected_time`
+  hojas; Change Requests = `PMO Change Request` (su pqc impone P4). **Corrección ADR-0011:** las horas
+  reales del reporte usan `indicators.actual_hours_to_date` (Timesheet ≤ corte), no el acumulado actual
+  (`_effort_totals`/`Project.actual_time`) — corrige la inconsistencia previa del Print Format.
+- **KPIs:** salud, avance real, **`tasks_due_by_cutoff_pct`** ("Tareas previstas al corte" — cuenta tareas,
+  NO "avance esperado"; `overdue` queda para las realmente incumplidas), cumplimiento, slip vs baseline/
+  compromiso, vencidas, forecast>compromiso, planned/actual/%. Ausencia de dato → `None` (no cero).
+- **`audience`** ∈ {internal, portal}: controla exposición/composición, NUNCA permisos (D3). `portal`
+  oculta Change Requests en `Draft`; `internal` los incluye. P4 la impone siempre el motor de dominio.
+- **Template canónico** (D5): `pmo/templates/project_control/executive.html` — solo representa `pc`, sin
+  cálculo/DB/JS. Consumidores: la Page `pmo_project_control` (pestaña **Reporte Ejecutivo** vía endpoint
+  whitelisted `get_executive_html`, que solo inyecta HTML) y el Print Format `PMO Project Status`
+  (`{% set pc = pmo_project_status(doc.name) %}{% include … %}`). `pmo_project_status()` pasa a **wrapper
+  delgado** de `build_project_control` (D4/D7): una sola fuente, sin fórmulas duplicadas.
+- **Salud (fuente única):** `pmo/health.py` (`_health` + constantes + `HEALTH_LABELS`); `pmo_portfolio`
+  la re-exporta (print_status/dashboard sin cambios). Tests: `test_project_control.py` (builder/secciones/
+  P4/None≠0/sin división por cero/horas=actual_hours_to_date/CR por audience/renderer) + regresión
+  `test_print_status.py`.
+
 ## Fuera de alcance
 Planificado vs Real (ADR-0008): sin EVM (EV/PV/AC), CPI/SPI, forecast (EAC/ETC), planned time-phased/BCWS,
 ni Baseline como fuente del plan; el Workspace de control no añade Number Cards ni charts.
