@@ -390,7 +390,24 @@ class TestRenderer(IntegrationTestCase):
 				"total_baseline_tasks": 8 if has_baseline else 0,
 				"gantt": {"tasks": [], "min_start": None, "max_end": None},
 			},
-			"scope_changes": {"change_requests": []},
+			# CR con los TRES impactos: recorre la rama de bits que causó la regresión de shadowing de `_`.
+			"scope_changes": {
+				"change_requests": [
+					{
+						"name": "CR-9",
+						"title": "Cambio con impactos",
+						"workflow_state": "Approved",
+						"request_date": "2026-09-01",
+						"impact_summary": "Alcance ampliado",
+						"impact_hours": 12,
+						"impact_days": 5,
+						"impact_amount": 10000,
+						"currency": "MXN",
+						"baseline_before": "BL0",
+						"baseline_after": "BL1",
+					}
+				]
+			},
 			"planning": {
 				"maturity_pct": 55 if has_baseline else 50,
 				"components": {
@@ -427,3 +444,15 @@ class TestRenderer(IntegrationTestCase):
 		self.assertIn("Planning quality", html)
 		self.assertIn("Planning Maturity", html)
 		self.assertIn("active task(s) without owner", html)  # excepción visible (unassigned.count=1)
+
+	def test_change_request_with_impacts_renders_and_translation_survives(self):
+		# Regresión: un CR con impact_hours/days/amount recorre la rama que shadoweaba `_` (traducción).
+		# El template completo debe renderizar sin excepción, mostrar los impactos y seguir traduciendo
+		# etiquetas POSTERIORES (prueba de que `_` no quedó sobrescrito por el append de bits).
+		html = self._render(self._pc(has_baseline=True))
+		self.assertIn("Cambio con impactos", html)  # fila del CR (rama ejecutada)
+		for token in ("12", "5", "10000"):  # impact_hours / impact_days / impact_amount
+			self.assertIn(token, html)
+		# `_()` sigue viva tras construir los bits: se renderizan encabezados traducibles posteriores.
+		self.assertIn("Change Requests", html)
+		self.assertIn("Planning quality", html)

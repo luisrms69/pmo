@@ -210,9 +210,9 @@
       <td>
         {{ d(c.impact_summary) }}
         {%- set bits = [] -%}
-        {%- if c.impact_hours %}{% set _ = bits.append((c.impact_hours ~ ' ' ~ _("Hours"))) %}{% endif -%}
-        {%- if c.impact_days %}{% set _ = bits.append((c.impact_days ~ ' ' ~ _("Days"))) %}{% endif -%}
-        {%- if c.impact_amount %}{% set _ = bits.append((_("Amount") ~ ' ' ~ c.impact_amount)) %}{% endif -%}
+        {%- if c.impact_hours %}{% set _b = bits.append((c.impact_hours ~ ' ' ~ _("Hours"))) %}{% endif -%}
+        {%- if c.impact_days %}{% set _b = bits.append((c.impact_days ~ ' ' ~ _("Days"))) %}{% endif -%}
+        {%- if c.impact_amount %}{% set _b = bits.append((_("Amount") ~ ' ' ~ c.impact_amount)) %}{% endif -%}
         {%- if bits %}<div class="muted">{{ bits | join(' · ') }}</div>{% endif -%}
       </td>
       <td>{{ d(c.baseline_before) }} &rarr; {{ d(c.baseline_after) }}</td>

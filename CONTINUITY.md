@@ -1,8 +1,12 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-09-11
-**Rama activa:** `feat/pmo-reporting-architecture` (base `version-16` @ v0.15.0; ADR-0011 en `ba1070f`, Reporte Ejecutivo v1 en `bf57b19`)
-**Tarea actual:** Planning Maturity + tareas sin responsable (sobre `build_project_control`) — recién commiteado.
+**Fecha:** 2026-09-12
+**Rama activa:** `feat/pmo-reporting-architecture` (base `version-16` @ v0.15.0; ADR-0011 `ba1070f`, Reporte Ejecutivo v1 `bf57b19`, Calidad de Planeación `a10d387`)
+**Tarea actual:** Fix regresión Jinja (shadowing de `_`) commiteado; siguiente = investigación i18n + auditoría Costos/Margen.
+
+## Regla asentada
+- **Nunca usar `_` como variable temporal en Jinja/Frappe** (sombrea la función de traducción `_()`).
+  Usar un nombre neutro (`_b`, etc.). Guard cubierto por test de render de un CR con impact_hours/days/amount.
 
 ---
 
