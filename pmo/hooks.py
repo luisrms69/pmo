@@ -224,6 +224,10 @@ fixtures = [
 			]
 		],
 	},
+	# Custom HTML Blocks del Workspace PMO (native-first: solo lo derivado sin equivalente nativo).
+	# No se sincronizan por migrate como doc estándar → se envían por fixture. Datos server-side
+	# P4-safe (pmo.dashboard.attention_block / customers_block); caché por-usuario, nunca global.
+	{"dt": "Custom HTML Block", "filters": [["name", "in", ["PMO Attention", "PMO Customers"]]]},
 ]
 
 # Document Events

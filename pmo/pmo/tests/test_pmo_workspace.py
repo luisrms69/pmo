@@ -1,27 +1,27 @@
 # Copyright (c) 2026, Consultoria en Negocios y Aplicaciones and contributors
 # For license information, please see license.txt
 
-"""Tests — Workspace landing "PMO" (dashboard informativo).
+"""Tests — Workspace landing "PMO" (arquitectura híbrida native-first).
 
-Verifica que el landing existe, presenta métricas nativas (Number Cards + Dashboard Charts + Quick
-List) además de los accesos (shortcuts a las 3 experiencias) y las cards de Informes/Configuración,
-no rompe enlaces, y **no altera** los workspaces `PMO Capacity` / `PMO Control`."""
+Nativo por defecto: Number Cards (KPIs + recursos), un Dashboard Chart **Report-type** (seguro para
+P4, sin cache_source global), Quick List de cambios, Shortcuts y Cards (Governance/Reports). Custom
+Blocks solo para lo derivado sin equivalente nativo: "PMO Attention" y "PMO Customers"."""
 
 import frappe
 from frappe.tests import IntegrationTestCase
 
-# Zona superior = 3 experiencias (Pages); el dashboard informa antes de permitir profundizar.
 HERO_PAGE_SHORTCUTS = {"pmo_portfolio", "pmo_project_control", "capacity_planning"}
 NUMBER_CARDS = {
-	"PMO Projects",
-	"PMO Deviated Projects",
-	"PMO At Risk Projects",
-	"PMO Projects Without Baseline",
+	"PMO Active Projects",
+	"PMO Active Tasks",
+	"PMO People Involved",
+	"PMO Requiring Attention",
 	"PMO Overdue Tasks",
-	"PMO Forecast Exceeds Commitment",
-	"PMO Open Change Requests",
+	"PMO Active Clients",
+	"PMO Projects Without Baseline",
 }
-CHARTS = {"PMO Projects by Status", "PMO Change Requests by State"}
+CHARTS = {"PMO Portfolio Health", "PMO Capacity Snapshot", "PMO Top Projects by Effort"}
+CUSTOM_BLOCKS = {"PMO Attention", "PMO Customers"}
 REPORT_LINKS = {
 	"PMO Portfolio",
 	"PMO Status Report",
@@ -33,7 +33,7 @@ REPORT_LINKS = {
 	"PMO Resource Usage by Project",
 	"PMO Work by Resource",
 }
-CONFIG_LINKS = {"PMO Capacity", "PMO Project Baseline", "PMO Change Request"}
+GOVERNANCE_LINKS = {"PMO Project Baseline", "PMO Change Request", "PMO Capacity"}
 ROLES = {"Projects User", "Employee", "PMO Manager", "PMO Executive Access", "System Manager"}
 
 
@@ -43,59 +43,61 @@ class TestPMOWorkspace(IntegrationTestCase):
 		ws = frappe.get_doc("Workspace", "PMO")
 		self.assertEqual(ws.public, 1)
 		self.assertEqual({r.role for r in ws.roles}, ROLES)
-		self.assertLess(ws.sequence_id, 20)  # aparece antes que PMO Capacity(20)/PMO Control(30)
+		self.assertLess(ws.sequence_id, 20)
 
 	def test_hero_shortcuts_are_the_three_experiences(self):
 		ws = frappe.get_doc("Workspace", "PMO")
-		# Solo Pages (no shortcuts de Script Report); los reportes viven en la card Reports.
 		self.assertEqual({s.link_to for s in ws.shortcuts if s.type == "Report"}, set())
 		self.assertEqual({s.link_to for s in ws.shortcuts if s.type == "Page"}, HERO_PAGE_SHORTCUTS)
 
-	def test_dashboard_has_native_metrics(self):
+	def test_native_number_cards(self):
 		ws = frappe.get_doc("Workspace", "PMO")
-		got_cards = {c.number_card_name for c in ws.number_cards}
-		got_charts = {c.chart_name for c in ws.charts}
-		self.assertEqual(got_cards, NUMBER_CARDS)
-		self.assertEqual(got_charts, CHARTS)
-		# los docs referenciados existen (sin widgets rotos)
-		for nc in NUMBER_CARDS:
-			self.assertTrue(frappe.db.exists("Number Card", nc), f"Number Card inexistente: {nc}")
-		for ch in CHARTS:
-			self.assertTrue(frappe.db.exists("Dashboard Chart", ch), f"Dashboard Chart inexistente: {ch}")
-		# quick list actionable de cambios abiertos
-		self.assertIn("PMO Change Request", {q.document_type for q in ws.quick_lists})
-
-	def test_number_cards_are_p4_safe(self):
-		# Los cards derivados reutilizan el motor PMO Portfolio (P4 dentro); el card nativo apunta a
-		# un DocType con permission_query_conditions. Ninguno usa ignore_permissions.
+		self.assertEqual({c.number_card_name for c in ws.number_cards}, NUMBER_CARDS)
 		pqc = frappe.get_hooks("permission_query_conditions") or {}
 		for nc in NUMBER_CARDS:
+			self.assertTrue(frappe.db.exists("Number Card", nc), f"Number Card inexistente: {nc}")
 			doc = frappe.get_doc("Number Card", nc)
 			if doc.type == "Custom":
-				self.assertEqual(doc.method, "pmo.dashboard.portfolio_kpi")
-			elif doc.type == "Document Type":
-				self.assertIn(doc.document_type, pqc, f"{nc}: DocType sin P4 (pqc)")
+				# KPI derivado via método server-side P4 (nunca get_all/ignore_permissions).
+				self.assertIn(doc.method, ("pmo.dashboard.portfolio_kpi", "pmo.dashboard.resource_kpi"))
+				# document_type declarado (legible por roles PMO) para pasar el pqc del widget.
+				self.assertIn(doc.document_type, pqc, f"{nc}: Custom sin document_type con P4")
+			else:
+				# Document Type nativo → cuenta directa con permission_query_conditions.
+				self.assertEqual(doc.type, "Document Type")
+				self.assertIn(doc.document_type, pqc, f"{nc}: DocType sin P4")
 
-	def test_links_group_all_reports_and_config(self):
+	def test_charts_are_report_type_p4_safe(self):
+		# Todos los charts son Report-type (query_report.run, sin cache_source global). No Group By/Count.
 		ws = frappe.get_doc("Workspace", "PMO")
-		report_links = {
-			link.link_to for link in ws.links if link.type == "Link" and link.link_type == "Report"
-		}
-		doctype_links = {
-			link.link_to for link in ws.links if link.type == "Link" and link.link_type == "DocType"
-		}
+		self.assertEqual({c.chart_name for c in ws.charts}, CHARTS)
+		for name in CHARTS:
+			chart = frappe.get_doc("Dashboard Chart", name)
+			self.assertEqual(chart.chart_type, "Report", f"{name} no es Report-type")
+			self.assertTrue(frappe.db.exists("Report", chart.report_name), f"{name}: report inexistente")
+
+	def test_custom_blocks_are_the_two_justified(self):
+		ws = frappe.get_doc("Workspace", "PMO")
+		self.assertEqual({c.custom_block_name for c in ws.custom_blocks}, CUSTOM_BLOCKS)
+		for cb in CUSTOM_BLOCKS:
+			self.assertTrue(frappe.db.exists("Custom HTML Block", cb))
+
+	def test_open_changes_is_native_quick_list(self):
+		ws = frappe.get_doc("Workspace", "PMO")
+		self.assertIn("PMO Change Request", {q.document_type for q in ws.quick_lists})
+
+	def test_links_group_reports_and_governance(self):
+		ws = frappe.get_doc("Workspace", "PMO")
+		report_links = {li.link_to for li in ws.links if li.type == "Link" and li.link_type == "Report"}
+		doctype_links = {li.link_to for li in ws.links if li.type == "Link" and li.link_type == "DocType"}
 		self.assertEqual(report_links, REPORT_LINKS)
-		self.assertEqual(doctype_links, CONFIG_LINKS)
-		for r in REPORT_LINKS:
-			self.assertTrue(frappe.db.exists("Report", r), f"Report inexistente: {r}")
-		# Import Tags como utilidad administrativa (Page) dentro de configuración
-		page_links = {link.link_to for link in ws.links if link.type == "Link" and link.link_type == "Page"}
+		self.assertEqual(doctype_links, GOVERNANCE_LINKS)
+		page_links = {li.link_to for li in ws.links if li.type == "Link" and li.link_type == "Page"}
 		self.assertIn("tag_import", page_links)
-		cards = {link.label for link in ws.links if link.type == "Card Break"}
-		self.assertEqual(cards, {"Reports", "PMO configuration"})
+		cards = {li.label for li in ws.links if li.type == "Card Break"}
+		self.assertEqual(cards, {"PMO Governance", "Reports"})
 
 	def test_existing_workspaces_untouched(self):
-		# PMO Capacity mantiene sus 3 shortcuts; PMO Control sus 4. El landing no los modifica.
 		cap = {s.link_to for s in frappe.get_doc("Workspace", "PMO Capacity").shortcuts if s.type == "Report"}
 		self.assertEqual(
 			cap, {"PMO Capacity Planning", "PMO Resource Usage by Project", "PMO Work by Resource"}

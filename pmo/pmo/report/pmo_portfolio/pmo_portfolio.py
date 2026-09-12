@@ -44,7 +44,7 @@ def execute(filters=None):
 			# P4 autoritativa: build_status_report exige READ; un proyecto no legible se omite (no rompe
 			# el dashboard). El pre-filtro ya limita el alcance; esto es defensa en profundidad.
 			continue
-	return _columns(), data, None, None, _summary(data)
+	return _columns(), data, None, _health_chart(data), _summary(data)
 
 
 def _visible_projects(user, filters):
@@ -154,6 +154,35 @@ def _columns():
 		col("actual_hours", N_("Actual (h)"), "Float", 100),
 		col("pct_consumed", N_("% Consumed"), "Float", 110),
 	]
+
+
+def _health_chart(data):
+	"""Donut de distribución de salud para el Dashboard Chart Report-type del Workspace PMO.
+	Reutiliza `health_key` ya calculado (sin métrica nueva). P4: opera sobre `data` ya filtrado."""
+	counts = {HEALTH_ON_TRACK: 0, HEALTH_AT_RISK: 0, HEALTH_OFF_TRACK: 0}
+	for r in data:
+		if r.get("health_key") in counts:
+			counts[r["health_key"]] += 1
+	return {
+		"data": {
+			"labels": [
+				_(HEALTH_LABELS[HEALTH_ON_TRACK]),
+				_(HEALTH_LABELS[HEALTH_AT_RISK]),
+				_(HEALTH_LABELS[HEALTH_OFF_TRACK]),
+			],
+			"datasets": [
+				{
+					"values": [
+						counts[HEALTH_ON_TRACK],
+						counts[HEALTH_AT_RISK],
+						counts[HEALTH_OFF_TRACK],
+					]
+				}
+			],
+		},
+		"type": "donut",
+		"colors": ["#2ECC71", "#F8814F", "#E24C4C"],
+	}
 
 
 def _summary(data):

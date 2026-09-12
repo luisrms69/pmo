@@ -1,15 +1,19 @@
 {
  "charts": [
   {
-   "chart_name": "PMO Projects by Status",
-   "label": "Projects by status"
+   "chart_name": "PMO Portfolio Health",
+   "label": "Portfolio health"
   },
   {
-   "chart_name": "PMO Change Requests by State",
-   "label": "Change requests by state"
+   "chart_name": "PMO Capacity Snapshot",
+   "label": "Capacity — current month"
+  },
+  {
+   "chart_name": "PMO Top Projects by Effort",
+   "label": "Top 5 by planned hours"
   }
  ],
- "content": "[{\"id\": \"fce5c6f615\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO \\u2014 Portfolio control center</b></span>\", \"col\": 12}}, {\"id\": \"8347463d16\", \"type\": \"paragraph\", \"data\": {\"text\": \"Portfolio health\", \"col\": 12}}, {\"id\": \"6122d92ed3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO Projects\", \"col\": 3}}, {\"id\": \"36e9d03b43\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO Deviated Projects\", \"col\": 3}}, {\"id\": \"26b15b64b2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO At Risk Projects\", \"col\": 3}}, {\"id\": \"1418d3366b\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO Projects Without Baseline\", \"col\": 3}}, {\"id\": \"751eecafd0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO Overdue Tasks\", \"col\": 3}}, {\"id\": \"c54c2eee5f\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO Forecast Exceeds Commitment\", \"col\": 3}}, {\"id\": \"45477c2689\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"PMO Open Change Requests\", \"col\": 3}}, {\"id\": \"3224bf33fd\", \"type\": \"chart\", \"data\": {\"chart_name\": \"PMO Projects by Status\", \"col\": 6}}, {\"id\": \"b62b3296df\", \"type\": \"chart\", \"data\": {\"chart_name\": \"PMO Change Requests by State\", \"col\": 6}}, {\"id\": \"335261df24\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Open change requests\", \"col\": 4}}, {\"id\": \"e8ab20acda\", \"type\": \"paragraph\", \"data\": {\"text\": \"Deep dive\", \"col\": 12}}, {\"id\": \"d53d6e6f87\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Portfolio\", \"col\": 4}}, {\"id\": \"88e5b7b843\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Project Control\", \"col\": 4}}, {\"id\": \"35c3c2e45f\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Capacity Planning\", \"col\": 4}}, {\"id\": \"fe06256f84\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 6}}, {\"id\": \"6c049ceae8\", \"type\": \"card\", \"data\": {\"card_name\": \"PMO configuration\", \"col\": 6}}]",
+ "content": "[{\"id\": \"b8a12b04b9\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO \\u2014 Project office</b></span>\", \"col\": 12}}, {\"id\": \"c2cbc2021d\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>PMO at a glance</b></span>\", \"col\": 12}}, {\"id\": \"85d11479e5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active projects\", \"col\": 3}}, {\"id\": \"b33e474b69\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active tasks\", \"col\": 3}}, {\"id\": \"dc9d557bb3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"People involved\", \"col\": 3}}, {\"id\": \"298491a8ec\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Projects requiring attention\", \"col\": 3}}, {\"id\": \"1eb7fb4218\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Overdue tasks\", \"col\": 3}}, {\"id\": \"dd6a3b07a6\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Health &amp; capacity</b></span>\", \"col\": 12}}, {\"id\": \"de2b17be6f\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Portfolio health\", \"col\": 4}}, {\"id\": \"cab2899f5d\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Capacity \\u2014 current month\", \"col\": 8}}, {\"id\": \"430bf9e594\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Top projects by effort</b></span>\", \"col\": 12}}, {\"id\": \"62c66eafdf\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Top 5 by planned hours\", \"col\": 8}}, {\"id\": \"e140747d4a\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Requires attention</b></span>\", \"col\": 12}}, {\"id\": \"7605b4dd56\", \"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"PMO Attention\", \"col\": 12}}, {\"id\": \"d987dfc2f0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Portfolio</b></span>\", \"col\": 12}}, {\"id\": \"ef159fae48\", \"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"PMO Customers\", \"col\": 8}}, {\"id\": \"182da8bd78\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active clients\", \"col\": 4}}, {\"id\": \"92640c434e\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>PMO governance</b></span>\", \"col\": 12}}, {\"id\": \"51e74aa970\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Projects without baseline\", \"col\": 3}}, {\"id\": \"dc51778bcf\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Open change requests\", \"col\": 5}}, {\"id\": \"4a11266f21\", \"type\": \"card\", \"data\": {\"card_name\": \"PMO Governance\", \"col\": 4}}, {\"id\": \"80b339ed39\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Explore</b></span>\", \"col\": 12}}, {\"id\": \"dad4713059\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Portfolio\", \"col\": 4}}, {\"id\": \"7370f3bc6e\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Project Control\", \"col\": 4}}, {\"id\": \"7049b4a30f\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Capacity Planning\", \"col\": 4}}, {\"id\": \"6daa725a5c\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 12}}]",
  "creation": "2026-09-10 00:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -19,6 +23,71 @@
  "idx": 0,
  "label": "PMO",
  "links": [
+  {
+   "type": "Card Break",
+   "label": "PMO Governance",
+   "link_type": null,
+   "link_to": null,
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": "",
+   "description": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Project Baseline",
+   "link_type": "DocType",
+   "link_to": "PMO Project Baseline",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": "",
+   "description": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Change Request",
+   "link_type": "DocType",
+   "link_to": "PMO Change Request",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": "",
+   "description": ""
+  },
+  {
+   "type": "Link",
+   "label": "PMO Capacity",
+   "link_type": "DocType",
+   "link_to": "PMO Capacity",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": "",
+   "description": ""
+  },
+  {
+   "type": "Link",
+   "label": "Import Tags",
+   "link_type": "Page",
+   "link_to": "tag_import",
+   "onboard": 0,
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "only_for": "",
+   "description": ""
+  },
   {
    "type": "Card Break",
    "label": "Reports",
@@ -148,105 +217,40 @@
    "link_count": 0,
    "only_for": "",
    "description": ""
-  },
-  {
-   "type": "Card Break",
-   "label": "PMO configuration",
-   "link_type": null,
-   "link_to": null,
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Capacity",
-   "link_type": "DocType",
-   "link_to": "PMO Capacity",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Project Baseline",
-   "link_type": "DocType",
-   "link_to": "PMO Project Baseline",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Change Request",
-   "link_type": "DocType",
-   "link_to": "PMO Change Request",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "Import Tags",
-   "link_type": "Page",
-   "link_to": "tag_import",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
   }
  ],
- "modified": "2026-09-11 20:00:00.000000",
+ "modified": "2026-09-12 02:00:00.000000",
  "modified_by": "Administrator",
  "module": "PMO",
  "name": "PMO",
  "number_cards": [
   {
-   "number_card_name": "PMO Projects",
-   "label": "Projects"
+   "number_card_name": "PMO Active Projects",
+   "label": "Active projects"
   },
   {
-   "number_card_name": "PMO Deviated Projects",
-   "label": "Deviated"
+   "number_card_name": "PMO Active Tasks",
+   "label": "Active tasks"
   },
   {
-   "number_card_name": "PMO At Risk Projects",
-   "label": "At risk"
+   "number_card_name": "PMO People Involved",
+   "label": "People involved"
   },
   {
-   "number_card_name": "PMO Projects Without Baseline",
-   "label": "Without baseline"
+   "number_card_name": "PMO Requiring Attention",
+   "label": "Projects requiring attention"
   },
   {
    "number_card_name": "PMO Overdue Tasks",
    "label": "Overdue tasks"
   },
   {
-   "number_card_name": "PMO Forecast Exceeds Commitment",
-   "label": "Forecast > commitment"
+   "number_card_name": "PMO Active Clients",
+   "label": "Active clients"
   },
   {
-   "number_card_name": "PMO Open Change Requests",
-   "label": "Open change requests"
+   "number_card_name": "PMO Projects Without Baseline",
+   "label": "Projects without baseline"
   }
  ],
  "owner": "Administrator",
@@ -307,5 +311,15 @@
    "format": ""
   }
  ],
- "title": "PMO"
+ "title": "PMO",
+ "custom_blocks": [
+  {
+   "custom_block_name": "PMO Attention",
+   "label": "PMO Attention"
+  },
+  {
+   "custom_block_name": "PMO Customers",
+   "label": "PMO Customers"
+  }
+ ]
 }

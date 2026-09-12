@@ -17,9 +17,45 @@
    "link_type": "Workspace",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 0,
+   "icon": "dashboard",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Portfolio",
+   "link_to": "pmo_portfolio",
+   "link_type": "Page",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 0,
+   "icon": "tool",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Project Control",
+   "link_to": "pmo_project_control",
+   "link_type": "Page",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 0,
+   "icon": "grid",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Capacity Planning",
+   "link_to": "capacity_planning",
+   "link_type": "Page",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-09-11 12:00:00.000000",
+ "modified": "2026-09-11 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "PMO",
  "name": "PMO",

@@ -1,57 +1,35 @@
 # Panel PMO (workspace de entrada)
 
-El workspace **PMO** (menú lateral → único acceso **PMO**) es el **centro de control**: al entrar
-responde de inmediato *"¿qué está pasando en mi portafolio y dónde debo poner atención?"* antes de
-permitir profundizar. No es un índice de enlaces: es un tablero informativo construido con
-componentes nativos de Frappe (Number Cards, Dashboard Charts, Quick List), más los accesos a las
-experiencias y las secciones de Informes/Configuración.
+Tablero operativo de la oficina de proyectos, con política **native-first**
+(`docs/tecnico/native-first-ui.md`). Primero dimensiona la PMO, luego lleva a los problemas.
 
-## Qué muestra al entrar
+## Secciones
 
-### Salud del portafolio (indicadores)
+1. **PMO at a glance** — Number Cards nativas de tamaño/estado: Active projects · Active tasks ·
+   People involved · **Requiring attention** (proyectos At risk/Deviated) · **Overdue tasks**.
+   (No se muestran horas sin periodo aquí.)
+2. **Health & capacity** — Dashboard Charts nativos Report-type: donut **Portfolio health** +
+   **Capacity — current month** (Capacity / Available / Planned / Actual / Free del **mes actual**,
+   agregado del reporte PMO Capacity Planning).
+3. **Top projects by effort** — chart Report-type **Top 5 by planned hours** (reutiliza PMO Portfolio).
+4. **Requires attention** — bloque PMO (jerárquico): por proyecto, cabecera (Project · Health ·
+   Customer) + chips (forecast, slip BL, slip commit, overdue, plan/real) + **motivo** legible;
+   clic → Project Control. Debajo, **Most overdue tasks** (clic → Task).
+5. **Portfolio** — bloque PMO **Portfolio by customer** (Customer · Active projects · At risk/Deviated ·
+   Planned/Actual) + Number Card **Active clients**.
+6. **PMO governance** — Number Card **Projects without baseline** (señal accionable) + Quick List de
+   **Open change requests** + card de links (PMO Project Baseline · PMO Change Request · PMO Capacity ·
+   Import Tags).
+7. **Explore** — Shortcuts (Portfolio · Project Control · Capacity Planning) + card **Reports** (9).
 
-Tarjetas numéricas (Number Cards) que reutilizan el motor de **PMO Portfolio** (respetan tu
-visibilidad P4 — solo cuentan proyectos que puedes ver):
+## KPIs — definición y periodo
+- **Active projects / Active tasks / People involved / Requiring attention / Overdue tasks / Projects
+  without baseline / Active clients:** derivados de PMO Portfolio (proyecto/tarea, sin periodo — son
+  conteos de estado) y del motor de capacidad (People involved = recursos con capacidad o actividad en
+  el **mes actual**).
+- **Capacity chart:** **mes actual** (título explícito). **Top 5:** horas planificadas totales del
+  proyecto (esfuerzo, no periodo).
 
-- **Projects** — proyectos activos en tu alcance.
-- **Deviated** — proyectos desviados (forecast supera el compromiso, o tareas vencidas, o forecast de
-  tareas más allá de su fecha comprometida).
-- **At risk** — proyectos en riesgo (forecast corrido respecto de la línea base, sin incumplir aún).
-- **Without baseline** — proyectos sin línea base vigente.
-- **Overdue tasks** — total de tareas vencidas en el portafolio.
-- **Forecast > commitment** — total de tareas cuyo forecast excede su fecha comprometida.
-- **Open change requests** — solicitudes de cambio abiertas (Draft / In Review).
-
-### Gráficos
-
-- **Projects by status** — distribución de proyectos por estado.
-- **Change requests by state** — solicitudes de cambio por estado del workflow.
-
-### Quick list
-
-- **Open change requests** — lista accionable de solicitudes de cambio abiertas (abre cada una).
-
-> Todos los indicadores y listas respetan la privacidad **P4**: cada usuario ve únicamente lo que ya
-> puede leer (proyectos propios, compartidos, o todos con acceso ejecutivo). No se recalcula nada nuevo
-> ni se ejecuta lógica de análisis en el navegador: los conteos reutilizan los motores existentes.
-
-## Profundizar (accesos)
-
-Tres accesos directos a las experiencias completas:
-
-- **Portfolio** — salud multi-proyecto ([portafolio](portafolio.md)).
-- **Project Control** — control de un proyecto ([project-control](project-control.md)).
-- **Capacity Planning** — capacidad y sobrecarga ([capacity-planning](capacity-planning.md)).
-
-## Informes y configuración
-
-- **Reports** — listado compacto de los 9 reportes (siguen disponibles y ejecutables; no son
-  protagonistas del panel).
-- **PMO configuration** — PMO Capacity, PMO Project Baseline, PMO Change Request y la utilidad
-  administrativa **Import Tags**.
-
-## Navegación (barra lateral)
-
-La barra lateral de `/desk/pmo` presenta **un único acceso: PMO**. Los reportes individuales, el grupo
-Pages y los DocTypes sueltos ya **no** aparecen sueltos en la barra (se llega a ellos desde el panel).
-Nada se eliminó: todo sigue existiendo y con ruta propia.
+## Privacidad (P4)
+Todo server-side (PMO Portfolio, get_list con pqc, Capacity Planning con enmascarado). Charts
+Report-type (sin caché global). Number Cards Custom con caché **por-usuario**. Sin `get_all`.
