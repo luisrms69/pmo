@@ -1,0 +1,250 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "PMO-CHT-.#####",
+ "creation": "2026-09-13 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "is_submittable": 1,
+ "field_order": [
+  "project",
+  "title",
+  "column_break_hdr",
+  "charter_date",
+  "project_manager",
+  "sponsor",
+  "section_scope",
+  "objective",
+  "scope_summary",
+  "deliverables",
+  "section_assumptions",
+  "assumptions",
+  "constraints",
+  "section_snapshot",
+  "customer",
+  "company",
+  "committed_end_date",
+  "proposal_reference",
+  "column_break_snap",
+  "issued_by",
+  "issued_at",
+  "snapshot_schema_version",
+  "snapshot_hash",
+  "section_snapshot_data",
+  "snapshot",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Project",
+   "options": "Project",
+   "reqd": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
+  },
+  {
+   "fieldname": "column_break_hdr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "charter_date",
+   "fieldtype": "Date",
+   "label": "Charter date"
+  },
+  {
+   "description": "Internal project manager accountable for delivery.",
+   "fieldname": "project_manager",
+   "fieldtype": "Link",
+   "label": "Project Manager",
+   "options": "User"
+  },
+  {
+   "description": "Sponsor / authorizing party (name or role).",
+   "fieldname": "sponsor",
+   "fieldtype": "Data",
+   "label": "Sponsor"
+  },
+  {
+   "fieldname": "section_scope",
+   "fieldtype": "Section Break",
+   "label": "Scope"
+  },
+  {
+   "fieldname": "objective",
+   "fieldtype": "Small Text",
+   "label": "Objective",
+   "reqd": 1
+  },
+  {
+   "fieldname": "scope_summary",
+   "fieldtype": "Text",
+   "label": "Scope summary"
+  },
+  {
+   "fieldname": "deliverables",
+   "fieldtype": "Small Text",
+   "label": "Main deliverables"
+  },
+  {
+   "fieldname": "section_assumptions",
+   "fieldtype": "Section Break",
+   "label": "Assumptions & constraints"
+  },
+  {
+   "fieldname": "assumptions",
+   "fieldtype": "Small Text",
+   "label": "Assumptions"
+  },
+  {
+   "fieldname": "constraints",
+   "fieldtype": "Small Text",
+   "label": "Constraints"
+  },
+  {
+   "collapsible": 1,
+   "description": "Canonical data referenced from the Project at issue. Frozen on submit; not captured by hand.",
+   "fieldname": "section_snapshot",
+   "fieldtype": "Section Break",
+   "label": "Authorization snapshot (frozen on submit)"
+  },
+  {
+   "fetch_from": "project.customer",
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "project.company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "committed_end_date",
+   "fieldtype": "Date",
+   "label": "Committed end date",
+   "read_only": 1
+  },
+  {
+   "description": "Won Quotation linked to the Project (proposal_project), if any.",
+   "fieldname": "proposal_reference",
+   "fieldtype": "Link",
+   "label": "Proposal (Quotation)",
+   "options": "Quotation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_snap",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "issued_by",
+   "fieldtype": "Link",
+   "label": "Issued by",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issued_at",
+   "fieldtype": "Datetime",
+   "label": "Issued at",
+   "read_only": 1
+  },
+  {
+   "fieldname": "snapshot_schema_version",
+   "fieldtype": "Int",
+   "label": "Snapshot schema version",
+   "read_only": 1
+  },
+  {
+   "fieldname": "snapshot_hash",
+   "fieldtype": "Data",
+   "label": "Snapshot hash",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_snapshot_data",
+   "fieldtype": "Section Break",
+   "label": "Frozen snapshot (JSON)"
+  },
+  {
+   "description": "Immutable canonical snapshot at issue (same form that is hashed).",
+   "fieldname": "snapshot",
+   "fieldtype": "Code",
+   "label": "Snapshot",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PMO Project Charter",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "module": "PMO",
+ "name": "PMO Project Charter",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PMO Executive Access"
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

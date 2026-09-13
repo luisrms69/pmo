@@ -240,3 +240,30 @@ def has_permission_change_request(doc, ptype=None, user=None):
 			return _is_project_writer(project, user)  # owner o DocShare(write) del Project
 		return False
 	return is_project_visible(project, user)  # read
+
+
+# --- PMO Project Charter (ADR-0014 D3/D10): P4 heredado del Project ---------------
+
+
+def get_permission_query_conditions_charter(user=None):
+	"""Listados: solo Charters cuyo Project es visible (owner/DocShare-read). Executive/Admin: sin condición."""
+	user = user or frappe.session.user
+	if _is_global_reader(user):
+		return ""
+	return f"`tabPMO Project Charter`.project in ({_member_projects_subquery(user)})"
+
+
+def has_permission_charter(doc, ptype=None, user=None):
+	"""READ = visibilidad del Project. WRITE/CREATE/SUBMIT/CANCEL/AMEND = solo el owner del Project
+	(documento de gobierno). Executive read-only; SHARE denegado. Siempre True/False."""
+	user = user or frappe.session.user
+	if user == "Administrator":
+		return True
+	project = doc.get("project") if hasattr(doc, "get") else getattr(doc, "project", None)
+	if not project:
+		return False  # fail-closed
+	if ptype == "share":
+		return False
+	if ptype in _WRITE_PTYPES or ptype in ("submit", "cancel", "amend"):
+		return frappe.db.get_value("Project", project, "owner") == user
+	return is_project_visible(project, user)  # read
