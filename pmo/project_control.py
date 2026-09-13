@@ -590,6 +590,7 @@ def get_executive_html(project: str, cutoff: str | None = None, audience: str = 
 	ctx = build_project_control(
 		project, cutoff=cutoff, audience=audience, sections=[*DEFAULT_SECTIONS, SECTION_COSTS]
 	)
+	# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti -- ruta de plantilla literal propia (no input de usuario)
 	return frappe.render_template("pmo/templates/project_control/executive.html", {"pc": ctx})
 
 
@@ -603,4 +604,5 @@ def get_financial_html(project: str, cutoff: str | None = None) -> str:
 	ctx = build_project_control(
 		project, cutoff=cutoff, audience="internal", sections=[SECTION_PROJECT, SECTION_COSTS]
 	)
+	# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti -- ruta de plantilla literal propia (no input de usuario)
 	return frappe.render_template("pmo/templates/project_control/financial.html", {"pc": ctx})
