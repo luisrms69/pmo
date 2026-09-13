@@ -90,16 +90,30 @@ class TestProjectCharter(IntegrationTestCase):
 		self.assertEqual(str(doc.committed_end_date), "2026-03-31")
 		self.assertEqual(snap["project"]["committed_end_date"], "2026-03-31")
 
-	def test_snapshot_hash_reproducible(self):
-		from pmo.pmo.doctype.pmo_project_charter.pmo_project_charter import (
-			snapshot_hash as _sh,
-		)
+	def test_hash_matches_frozen_json_not_live(self):
+		import hashlib
 
-		p = _project("CHT Hash")
+		p = _project("CHT Hash", committed="2026-03-31")
 		doc = _charter(p)
 		doc.submit()
-		# recomputar el hash sobre el snapshot canonico reproduce el valor congelado
-		self.assertEqual(doc.snapshot_hash, _sh(build_charter_snapshot(p)))
+		# Integridad contra la EVIDENCIA CONGELADA: el hash es exactamente el del JSON almacenado en `snapshot`.
+		self.assertEqual(doc.snapshot_hash, hashlib.sha256(doc.snapshot.encode("utf-8")).hexdigest())
+		frozen = doc.snapshot
+		frozen_hash = doc.snapshot_hash
+		# Cambiar el Project DESPUÉS del submit NO altera el snapshot ni el hash (evidencia histórica, no vivo).
+		frappe.db.set_value("Project", p, "pmo_committed_end_date", "2027-12-31", update_modified=False)
+		doc.reload()
+		self.assertEqual(doc.snapshot, frozen)
+		self.assertEqual(doc.snapshot_hash, frozen_hash)
+		self.assertEqual(json.loads(doc.snapshot)["project"]["committed_end_date"], "2026-03-31")
+
+	def test_team_derived_from_p4_sources(self):
+		# El equipo del snapshot se deriva de las fuentes P4 (owner + DocShare + ToDo), no de Project User.
+		owner = _user("cht_team_owner@example.com")
+		p = _project("CHT Team", owner=owner)
+		snap = build_charter_snapshot(p)
+		team_users = {m["user"] for m in snap["team"]}
+		self.assertIn(owner, team_users)  # el owner es miembro derivado
 
 	def test_no_risk_structure_in_snapshot(self):
 		# Autosuficiencia (ADR-0014 D3/D6): el snapshot NO contiene estructura de riesgo.

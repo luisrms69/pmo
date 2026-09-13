@@ -18,6 +18,7 @@ from frappe.model.document import Document
 from frappe.utils import now_datetime
 
 from pmo.baseline import canonical_json, snapshot_hash
+from pmo.permissions import get_project_team
 from pmo.project_economics import get_authorized_economics
 
 CHARTER_SNAPSHOT_SCHEMA_VERSION = 1
@@ -85,12 +86,9 @@ def build_charter_snapshot(project: str) -> dict:
 			order_by="exp_end_date asc",
 		)
 	]
-	team = [
-		{"user": u.user}
-		for u in frappe.get_all(
-			"Project User", filters={"parent": project, "parenttype": "Project"}, fields=["user"]
-		)
-	]
+	# Equipo inicial DERIVADO de las fuentes P4 canónicas (owner + DocShare + ToDo activo), no de
+	# `Project User` (la membresía no se persiste; ADR-0002). Congelado en el snapshot al submit.
+	team = [{"user": u} for u in get_project_team(project)]
 
 	return {
 		"snapshot_schema_version": CHARTER_SNAPSHOT_SCHEMA_VERSION,

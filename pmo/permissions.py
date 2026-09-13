@@ -267,3 +267,36 @@ def has_permission_charter(doc, ptype=None, user=None):
 	if ptype in _WRITE_PTYPES or ptype in ("submit", "cancel", "amend"):
 		return frappe.db.get_value("Project", project, "owner") == user
 	return is_project_visible(project, user)  # read
+
+
+# --- Equipo derivado del Project (fuentes P4 canónicas; ADR-0002/ADR-0014 D3) ----
+
+
+def get_project_team(project):
+	"""Equipo/participación del Project **derivado** de las fuentes P4 canónicas (no persistido):
+	owner + DocShare(Project, read) de usuarios + ToDo activo sobre Tasks del Project. Devuelve una lista de
+	usuarios **ordenada y deduplicada** (determinista, apta para snapshots/hash). NO introduce otro modelo de
+	membresía; reutiliza exactamente las fuentes de la política P4 vigente."""
+	if not project:
+		return []
+	members = set()
+	owner = frappe.db.get_value("Project", project, "owner")
+	if owner:
+		members.add(owner)
+	for ds in frappe.get_all(
+		"DocShare",
+		filters={"share_doctype": "Project", "share_name": project, "read": 1},
+		fields=["user"],
+	):
+		if ds.get("user"):
+			members.add(ds["user"])
+	rows = frappe.db.sql(
+		"""select distinct td.allocated_to
+			from `tabToDo` td
+			inner join `tabTask` t on td.reference_type = 'Task' and td.reference_name = t.name
+			where t.project = %(project)s and td.status != 'Cancelled'
+				and td.allocated_to is not null and td.allocated_to != ''""",
+		{"project": project},
+	)
+	members.update(r[0] for r in rows if r[0])
+	return sorted(members)
