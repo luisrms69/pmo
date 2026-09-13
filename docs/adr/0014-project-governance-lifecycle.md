@@ -1,25 +1,27 @@
-# ADR-0014: Project Governance & Lifecycle Documentation (con capa ligera de Risk)
+# ADR-0014: Project Governance & Lifecycle Documentation
 
 **App:** pmo · **Rama protegida:** version-16 · **Estado:** Proposed · **Depende de:** ADR-0002 (P4),
 ADR-0004 (Baseline), ADR-0005 (Change Control), ADR-0011 (Project Control canónico) · **No toca:** PHI
 (ADR-0013, bloqueado).
 
+> **Alcance:** **Risk Analysis queda FUERA del alcance de esta implementación** y se abordará
+> **posteriormente**, como iniciativa adicional, una vez terminado Project Governance & Lifecycle
+> Documentation (ver D6). Ningún artefacto de este ADR depende de Risk ni lo condiciona.
+
 ## Contexto
 `pmo` cubre planeación, capacidad, baselines, control, cambios, economía y reporting, pero **falta el gobierno
-documental del ciclo de vida**: autorización de arranque (Charter), cierre formal (Closure), evaluación
-posterior (Post-Project Review) y una **capa mínima de análisis de riesgos**. La auditoría confirma que
-Baseline (`PMO Project Baseline`, submittable + snapshot + hash + lineage) y Change Control
-(`PMO Change Request`, workflow + aprobación + baseline_before/after) resuelven sus dominios, y que **no
-existe** nada de riesgo reutilizable en pmo ni en ERPNext. Objetivo: **completar el ciclo reutilizando lo
-existente**, sin sistemas paralelos.
+documental del ciclo de vida**: autorización de arranque (Charter), cierre formal (Closure) y evaluación
+posterior (Post-Project Review). La auditoría confirma que Baseline (`PMO Project Baseline`, submittable +
+snapshot + hash + lineage) y Change Control (`PMO Change Request`, workflow + aprobación +
+baseline_before/after) resuelven sus dominios. Objetivo: **completar el ciclo reutilizando lo existente**, sin
+sistemas paralelos.
 
 Ciclo objetivo: `Proposal ganada → Charter → Baseline → Status/Control → Change Control → Closure →
 Post-Project Review → Lessons Learned`.
 
 ## Problema
-El arranque y el cierre no dejan evidencia congelada; no hay disciplina de riesgos; el expediente del Project
-está disperso. El peligro es de **implementación** (motores/aprobaciones/baselines/status paralelos, un Risk
-Management pesado, workflows nuevos), no de concepto.
+El arranque y el cierre no dejan evidencia congelada; el expediente del Project está disperso. El peligro es de
+**implementación** (motores/aprobaciones/baselines/status paralelos, workflows nuevos), no de concepto.
 
 ## Decisiones
 
@@ -27,18 +29,17 @@ Management pesado, workflows nuevos), no de concepto.
 Todos los artefactos enlazan al `Project` de ERPNext. Prohibido duplicar customer/company/fechas/Tasks/WBS/
 costos/ventas/horas/datos de Proposal: se **referencian** canónicamente.
 
-### D2 — Cuatro artefactos persistentes principales; el resto se deriva/genera
-Artefactos de gobierno: **Charter**, **Closure**, **Post-Project Review** (submittable) y **Risk** (no
-submittable). **No** se fija un conteo total de DocTypes: los **child DocTypes de soporte** (p. ej.
-`PMO Lessons Learned`, o un child para el snapshot de riesgos del Charter/Closure si no se guarda como JSON)
-son **detalle de implementación, no una restricción arquitectónica**. Derivado/generado (sin artefacto
-propio): estado de ciclo de vida, índice de expediente, cuerpo del Closure (Print Format), señales de
-dashboard.
+### D2 — Tres artefactos persistentes principales; el resto se deriva/genera
+Artefactos de gobierno (todos submittable, evidencia congelada al emitir): **Charter**, **Closure**,
+**Post-Project Review**. **No** se fija un conteo total de DocTypes: los **child DocTypes de soporte** (p. ej.
+`PMO Lessons Learned`, o un child para el snapshot de un Charter/Closure si no se guarda como JSON) son
+**detalle de implementación, no una restricción arquitectónica**. Derivado/generado (sin artefacto propio):
+estado de ciclo de vida, índice de expediente, cuerpo del Closure (Print Format), señales de dashboard.
 
-### D3 — Charter mínimo (capturado vs derivado-y-congelado)
+### D3 — Charter mínimo (capturado vs derivado-y-congelado); **autosuficiente**
+El Charter **no contiene estructura de Risk Analysis** y no depende de ningún registro de riesgos.
 - **Capturado:** `sponsor`, `project_manager`, `objective`, `scope_summary`, `deliverables`, `assumptions`,
   `constraints`.
-- **Riesgos iniciales:** referencia a `PMO Project Risk` (D6) + **snapshot del set inicial** al emitir.
 - **Derivado + snapshot al submit** (patrón `snapshot`+`snapshot_hash` del Baseline): customer/company,
   `pmo_committed_end_date`, economía autorizada (contrato erpnext_proposals), referencia a Proposal/Quotation,
   hitos/equipo iniciales.
@@ -59,36 +60,19 @@ dashboard.
 ### D5 — Post-Project Review mínimo (ISO 21513; proporcional)
 Distinto del Closure (Closure = *cómo terminó*, factual; Review = *qué aprendimos*, posterior). Capturado:
 `objectives_achieved`, `what_worked`, `what_didnt`, `causes`, `recommendations` + **child `PMO Lessons
-Learned`** (`area` ∈ {planning, execution, change_control, resources, cost, governance, risk}, `lesson`,
+Learned`** (`area` ∈ {planning, execution, change_control, resources, cost, governance}, `lesson`,
 `recommended_action`). Solo la child se estructura (reporting futuro). Puede consultar información viva/
 histórica **mientras se prepara**; **al submit queda congelado** (D11). Sin cuestionario extenso.
 
-### D6 — Risk Analysis: capa transversal, artefacto vivo único, sin subsistema
-`PMO Project Risk` (no submittable, `track_changes`, link a Project):
-`title · description · probability (Low/Med/High) · impact (Low/Med/High) · exposure · owner · response ·
-status · change_request (Link opcional) · category (opcional)`.
-- **`exposure`** = clasificación cualitativa `Low/Medium/High` **derivada de la matriz 3×3** (probability ×
-  impact). **No** se persiste un número ni se trata como score.
-- **`status`** = `Open / Mitigating / Closed / Materialized / Transferred` (incluye `Transferred` para alinear
-  con la disposición que revisa el Closure).
-
-Integración transversal (gobernada por ESTE ADR):
-- **Charter:** los "initial risks" **son** estos registros; el Charter los referencia y **snapshotea** el set
-  inicial al emitir. **Una sola captura de riesgo.**
-- **Ejecución:** los registros son el **register vivo** persistente (por eso no submittable).
-- **Status/Control:** sección `risks` en `build_project_control` con abiertos de exposición alta (compone, no
-  reporta aparte). Es **vista viva**, no evidencia congelada.
-- **Closure:** los riesgos relevantes (abiertos/materializados/transferidos/cerrados con su disposición) se
-  **congelan dentro del snapshot del Closure al submit**; tras el submit el Closure **no** vuelve a consultar
-  el register vivo. Flujo: `Risk Register vivo → snapshot de riesgos al submit del Closure → Closure
-  inmutable`.
-- **Post-Project Review:** consulta riesgos vivos/históricos durante el borrador; **al submit congela** lo
-  evaluado (ocurridos/no anticipados, efectividad de respuestas, causas).
-- **Change Control:** un riesgo **no** es CR; si la respuesta modifica alcance/fecha/baseline/economía/
-  compromiso → se crea un `PMO Change Request` (existente) y el riesgo lo enlaza. **Sin nuevo mecanismo de
-  aprobación.**
-- **Límites:** sin Monte Carlo, ERM, risk appetite, scores numéricos, workflow, ni baseline/status/
-  change-control paralelos.
+### D6 — Risk Analysis: capacidad **futura diferida** (fuera de alcance de esta implementación)
+Se retomará **después** de terminar Governance, como iniciativa adicional con su propio ADR. En ese momento se
+decidirá cómo se integra con Charter/Status/Change Control/Closure/Review (p. ej. capa cualitativa ligera
+conforme a ISO 31000 / PMBOK, registro vivo, respuestas que tocan condiciones controladas enrutadas por
+`PMO Change Request`). **En esta implementación NO se crea ningún artefacto de riesgo** (ni `PMO Project Risk`,
+ni child de riesgos iniciales en el Charter), ni se añaden referencias de riesgo a Closure/Review/Dashboard/
+Project Control. Nota: existe código inicial de un `PMO Project Risk` **parqueado** en la rama
+`feat/pmo-project-risk-deferred` (no activo, no migrado); su diseño definitivo se decidirá al retomar la
+iniciativa, sin que condicione los bloques actuales.
 
 ### D7 — Estado de ciclo de vida derivado, no workflow
 Función pura (`pmo/governance.py`, patrón `health.py`) que deriva un estado documental desde hechos
@@ -97,13 +81,14 @@ Execution/Control · Closing · Closed · Post-project reviewed`. **No** hay wor
 Project.
 
 ### D8 — Integración en Project Control: índice de expediente
-Sección en `build_project_control`: Charter · Baseline vigente · Status/Control · Risks · Change Requests ·
-Closure · Post-Project Review, con **enlaces + existencia + fechas**, sin duplicar contenido de otras vistas.
+Sección en `build_project_control`: Charter · Baseline vigente · Status/Control · Change Requests · Closure ·
+Post-Project Review, con **enlaces + existencia + fechas**, sin duplicar contenido de otras vistas. (La entrada
+de Risks se añadirá cuando se implemente la capacidad de Risk, D6.)
 
 ### D9 — Dashboard PMO (sin nuevo dashboard, sin maturity score)
 Extender las filas de portafolio existentes (ya con `has_baseline`) con `has_charter`, `needs_closure`
-(Completed sin Closure), `needs_review` (cerrado sin Review), `open_high_risks`, `open_change_requests`; una
-sección "Project Governance" reusando `_build`.
+(Completed sin Closure), `needs_review` (cerrado sin Review) y `open_change_requests`; una sección "Project
+Governance" reusando `_build`. (Señales de riesgo se añadirán con la capacidad de Risk, D6.)
 
 ### D10 — P4 reutilizado (sin segunda política)
 Los artefactos heredan la visibilidad del Project vía `pmo.permissions` (`permission_query_conditions` +
@@ -113,59 +98,54 @@ por DocType se fija en su bloque.
 
 ### D11 — Evidencia e historial
 Charter/Closure/Review: **submittable** + `track_changes` + **snapshot con hash** (patrón Baseline) +
-**referencias canónicas**. **Toda** su evidencia (incluidos los riesgos relevantes del Closure) se congela al
-submit; ninguno se reconstruye desde datos vivos posteriormente. No se copian bloques grandes de datos
-referenciables.
+**referencias canónicas**. **Toda** su evidencia se congela al submit; ninguno se reconstruye desde datos
+vivos posteriormente. No se copian bloques grandes de datos referenciables.
 
 ### D12 — Desacople del PHI
-Governance/Risk exponen señales **canónicas y consultables**, pero **no** se crean hooks del PHI ahora. El PHI
-sigue **bloqueado** (ADR-0013); estas señales alimentarán su **auditoría final de señales** en su momento. Los
-"initial risks" del Charter se resuelven como referencia/snapshot del `PMO Project Risk`, **no** como
-dependencia del PHI ni captura independiente.
+Governance expone señales **canónicas y consultables**, pero **no** se crean hooks del PHI ahora. El PHI sigue
+**bloqueado** (ADR-0013); estas señales alimentarán su **auditoría final de señales** en su momento.
 
 ### D13 — Listo para reporting, sin KPIs ahora
 El modelo debe **permitir** después (% con Charter, sin baseline, Completed sin Closure, tiempo de cierre, sin
-Review, categorías de lessons, causas recurrentes, riesgos abiertos/recurrentes/materializados, efectividad)
-**sin implementar** esos KPIs en esta capacidad; solo no impedirlos.
+Review, categorías de lessons, causas recurrentes) **sin implementar** esos KPIs en esta capacidad; solo no
+impedirlos.
 
 ## Fuera de alcance
-`PMO Project`; segundo change-control/baseline/status-reporting; workflow de ciclo de vida; Risk Management
-pesado (Monte Carlo/ERM/risk appetite/predictivo/scores numéricos); masters de categorías; review-template
+**Risk Analysis (toda la capa: `PMO Project Risk`, riesgos iniciales del Charter, señales de riesgo en
+Closure/Review/Dashboard/Project Control) — diferido a una iniciativa posterior (D6).** `PMO Project`; segundo
+change-control/baseline/status-reporting; workflow de ciclo de vida; masters de categorías; review-template
 engine; KPIs de reporting; cualquier cambio al PHI.
 
 ## Consecuencias
-- Ciclo de gobierno completo reutilizando Baseline/Change Control/Project Control/economía/P4.
-- Evidencia **congelada e íntegra** de arranque y cierre (Closure inmune a cambios posteriores del Project, y
-  con snapshot de riesgos); disciplina mínima de riesgos; expediente indexado.
-- Cuatro artefactos persistentes + child de soporte + funciones derivadas: superficie proporcional, sin
-  subsistemas.
+- Ciclo de gobierno documental completo (Charter → Closure → Review) reutilizando Baseline/Change Control/
+  Project Control/economía/P4.
+- Evidencia **congelada e íntegra** de arranque y cierre (Closure inmune a cambios posteriores del Project);
+  expediente indexado.
+- Tres artefactos persistentes + child de soporte + funciones derivadas: superficie proporcional, sin
+  subsistemas. Risk se incorpora limpiamente después sin haber condicionado estos bloques.
 
 ## Alternativas descartadas
 - **Métricas propias/editables en Closure** → duplicación/drift; se rechaza (D4 snapshot-only).
 - **Print Format del Closure desde datos vivos** → alteraría retrospectivamente el cierre; se rechaza (D4).
-- **Closure/Review consultando el register vivo tras el submit** → contradice la evidencia congelada; se
-  rechaza (D6/D11: los riesgos relevantes se snapshotean al submit).
-- **Risk submittable o como módulo** → no mantiene riesgos vivos; monstruo; se rechaza (D6).
-- **Doble captura de riesgo (Charter vs register)** → se rechaza (D6 registros únicos).
-- **`exposure` numérico persistido** → deriva en score sofisticado; se rechaza (D6 clasificación cualitativa).
+- **Implementar Risk primero / Charter dependiente de un registro de riesgos** → invierte la prioridad de la
+  iniciativa y obliga a construir un sistema de riesgos antes del arranque; se rechaza. Risk queda diferido
+  (D6) y el Charter es autosuficiente (D3).
 - **Workflow de ciclo de vida en Project** → status paralelo; se rechaza (D7 derivado).
-- **ADR separado para Risk** → fragmenta la arquitectura; Risk es transversal a este ciclo; se integra aquí
-  (se creará un ADR aparte solo si surge una decisión arquitectónica realmente independiente).
 
 ## Criterios de aceptación
-- Existen **4 artefactos persistentes principales** (Charter/Closure/Review submittable + Risk no-submittable);
-  los child DocTypes de soporte no cuentan como restricción; el resto es derivado/snapshot/Print Format/sección.
-- Charter, **Closure (incluidos sus riesgos relevantes)** y Review congelan **toda** su evidencia por
-  snapshot+hash al submit; el Print Format del Closure se reconstruye **solo** desde su snapshot, nunca desde
-  datos vivos.
-- Risk es no-submittable, ~9 campos, `exposure` cualitativo derivado de matriz 3×3, `status` incluye
-  `Transferred`; los initial risks del Charter son registros Risk.
-- Toda respuesta de riesgo que toque condiciones controladas pasa por `PMO Change Request`.
+- Existen **3 artefactos persistentes principales** (Charter/Closure/Review submittable); los child DocTypes de
+  soporte no cuentan como restricción; el resto es derivado/snapshot/Print Format/sección.
+- **Ningún artefacto ni referencia de riesgo** se implementa en esta capacidad (D6/Fuera de alcance).
+- El Charter es **autosuficiente** (no depende de riesgos ni de otro artefacto para emitirse).
+- Charter, Closure y Review congelan **toda** su evidencia por snapshot+hash al submit; el Print Format del
+  Closure se reconstruye **solo** desde su snapshot, nunca desde datos vivos.
 - Estado de ciclo de vida es función derivada; no hay workflow nuevo en Project.
 - P4 heredado vía `pmo.permissions`; sin segunda política.
 - El PHI no se toca; las señales quedan consultables para su auditoría posterior.
 
 ## Secuencia de implementación (bloques posteriores)
-BLOQUE 2 **Risk** (base de los initial risks) → BLOQUE 3 **Charter** → BLOQUE 4 **estado derivado + índice de
-expediente** → BLOQUE 5 **Closure** → BLOQUE 6 **Post-Project Review** → BLOQUE 7 **Dashboard Governance**.
-Cada bloque: diseño → implementar → validar → presentar → esperar autorización de commit.
+BLOQUE 2 **Project Charter** (autosuficiente) → BLOQUE 3 **estado de ciclo de vida derivado + índice de
+expediente** → BLOQUE 4 **Closure** (snapshot-only + Print Format) → BLOQUE 5 **Post-Project Review** +
+Lessons Learned → BLOQUE 6 **Dashboard Governance**. Cada bloque: diseño → implementar → validar → presentar →
+esperar autorización de commit. **Risk Analysis** se aborda como iniciativa posterior (D6), fuera de esta
+secuencia.
