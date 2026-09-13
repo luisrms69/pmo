@@ -49,20 +49,26 @@ Ninguna métrica aparece en dos dimensiones. Regla:
 "Vencidas" pertenece a **Execution**, no a Schedule. Cada check se asigna a exactamente una dimensión y así se
 documenta en el catálogo (ADR-0013a).
 
-### D5 — No evaluable renormaliza, nunca es 0; y el PHI mismo puede ser N/E por cobertura insuficiente
-Una dimensión sin insumos (p. ej. Schedule sin baseline vigente) se marca **N/E** y **se excluye del promedio
-renormalizando los pesos** sobre las dimensiones evaluables (mismo patrón que Planning Maturity). N/E ≠ 0.
+### D5 — Evaluabilidad por check; cuatro estados; cobertura separada del score
+La evaluabilidad es **por check**, no por dimensión. Cada check está en uno de cuatro estados:
+- **EVALUABLE** — aplica y hay evidencia confiable (aporta `s_c`);
+- **N/E** — *debería* poder medirse pero falta referencia/evidencia confiable (fuera del score; **reduce
+  Evidence Coverage**);
+- **N/A** — legítimamente **no aplica** en ese contexto/momento (fuera del score y **fuera** del universo
+  aplicable; **reduce Model Scope**, no la evidencia);
+- **INCONSISTENT** — condición evaluable **negativa**/control roto (participa `s=0`; no se convierte en N/E).
 
-La renormalización **no implica que siempre exista un PHI**. Si demasiadas dimensiones son N/E, un promedio
-sobre las pocas evaluables produciría un número engañosamente válido (p. ej. `92/100` con Schedule y Resources
-N/E), ocultando que la **cobertura** del proyecto es insuficiente. Por tanto:
-- Las dimensiones N/E se excluyen y sus pesos se renormalizan sobre las evaluables.
-- **Pero el PHI completo también puede ser N/E** cuando la **cobertura evaluable sea insuficiente**.
-- **ADR-0013a** definirá el **mínimo de cobertura** necesario para emitir un score (p. ej. número mínimo de
-  dimensiones evaluables y/o porcentaje mínimo del peso original evaluable). **Este ADR no fija el umbral
-  concreto**: corresponde a ADR-0013a.
-- Si no se alcanza esa cobertura, **no se publica un número 0–100 ni una banda**: se muestra **PHI N/E con la
-  causa** (cobertura insuficiente).
+La ausencia o cobertura insuficiente de baseline vuelve **N/E/N/A** únicamente a los **checks
+baseline-dependent**, no a toda una dimensión (p. ej. Schedule sigue evaluable vía la desviación
+vs compromiso, que no depende de baseline). Los pesos se renormalizan **a nivel de check** (por su peso
+original `P_c`), de modo que un check N/E/N/A **no** devuelve peso completo a su dimensión.
+
+El PHI **no siempre existe**. Se separan tres medidas (definiciones exactas en ADR-0013a):
+`PHI` (desempeño de lo efectivamente medido) · `Evidence Coverage` (evidencia presente / peso aplicable) ·
+`Model Scope` (peso aplicable / peso activo de la calibración). Cuando no hay base suficiente, **no se
+publica número ni banda**: se muestra **Diagnostic only** con dimensiones/estados, ambas coberturas y las
+condiciones críticas. **ADR-0013a** fija el **piso estructural** (incluida baseline vigente) y los mínimos
+de cobertura; este ADR no fija umbrales concretos.
 
 ### D6 — Critical checks / caps (solo clasificación categórica)
 Un subconjunto de checks se declara **crítico**. Si un check crítico está en **rojo**, la **clasificación
@@ -75,17 +81,20 @@ de v1:
 Ejemplo:
 
 ```text
-PHI 86 / 100
-DEVIATED
-Critical cap: Forecast exceeds committed deadline
+PHI 92 / 100
+AT RISK
+Critical cap: Authorized economic reference inconsistent
 ```
 
-El `86` sigue siendo el resultado ponderado (trazabilidad del cálculo intacta); `DEVIATED` expresa que existe
+El `92` sigue siendo el resultado ponderado (trazabilidad del cálculo intacta); `AT RISK` expresa que existe
 una condición que impide considerarlo sano. **No se manipula el número.** Reglas del mecanismo:
 - un check crítico en **N/E no capea** (no se capa sobre lo desconocido);
+- **`critical condition detected` ≠ `critical cap applied`**: la condición se reporta **siempre** (aun en
+  Diagnostic only, cuando no hay banda que capar); el cap solo si existe banda;
 - varios críticos → gana el techo de banda más bajo;
-- **la ausencia de baseline vigente NO es un critical check de Schedule** (Schedule sería N/E, D5): si se
-  decide que carecer de baseline debe capear, ese critical check pertenece a **Governance**.
+- **la ausencia de baseline vigente NO es un critical cap**: es una **condición estructural** que fuerza
+  **Diagnostic only** (no hay banda) — la mide GOV-1, que es **control estructural fuera del scoring**, no un
+  check de Schedule.
 
 La *lista* concreta de checks críticos se fija en ADR-0013a. El **mecanismo** queda fijado aquí.
 
@@ -132,7 +141,8 @@ para usuarios sin acceso económico; ponderación por tipo de proyecto; y el **c
   pesos sirven; se declaran hipótesis inicial (D3).
 - **PHI recortado por usuario** → mismo proyecto con dos números; se rechaza (D2).
 - **Cap que modifica el número** → pierde trazabilidad del cálculo; el cap es solo categórico (D6).
-- **Ausencia de baseline como critical de Schedule** → contradice N/E; pertenece a Governance (D6).
+- **Ausencia de baseline como critical/penalización de Schedule** → es una **condición estructural** que
+  fuerza Diagnostic only (la mide GOV-1, control fuera del scoring), no un check ni un cap de Schedule (D5/D6).
 - **Garantía temporal global ("todo al corte salvo Financial")** → asume temporalidad no verificada de
   Resources/Governance; cada dimensión la declara (D7).
 - **Promedio puro sin caps** → diluye eventos críticos; se rechaza (D6).
@@ -140,10 +150,11 @@ para usuarios sin acceso económico; ponderación por tipo de proyecto; y el **c
 ## Criterios de aceptación
 - PHI se computa en `health.py` componiendo señales existentes; el health actual queda intacto.
 - Se muestra solo con acceso económico y no varía por usuario.
-- Pesos como constantes versionadas declaradas como hipótesis inicial; N/E renormaliza; caps por check crítico
-  que afectan **solo la banda**, con motivo visible y número preservado.
-- El **PHI completo puede ser N/E** cuando la cobertura evaluable sea insuficiente: en ese caso no se publica
-  número 0–100 ni banda, se muestra PHI N/E con causa. El **umbral de cobertura** se fija en ADR-0013a.
+- Pesos como constantes versionadas declaradas como hipótesis inicial; evaluabilidad por check (EVALUABLE/
+  N/E/N/A/INCONSISTENT) renormalizando por `P_c`; caps por check crítico que afectan **solo la banda**, con
+  motivo visible y número preservado.
+- Cuando no hay base suficiente (piso estructural o mínimos de cobertura), el resultado es **Diagnostic only**
+  (sin número ni banda), no un score fabricado. Piso estructural y umbrales se fijan en ADR-0013a.
 - Sin doble conteo Schedule/Execution (cada check en una sola dimensión).
 - Cada dimensión declara su referencia temporal; portafolio por summaries.
 - El catálogo de 8–12 checks, umbrales y críticos se cierra en **ADR-0013a antes** de implementar el scoring.
