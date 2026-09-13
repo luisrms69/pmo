@@ -604,6 +604,32 @@ Print Format/printview).
   P4/None≠0/sin división por cero/horas=actual_hours_to_date/CR por audience/renderer) + regresión
   `test_print_status.py`.
 
+### Sección económica `costs` (integración con `erpnext_proposals`)
+Economía **interna** del Project, en el mismo builder (sección `costs`, **fuera de `DEFAULT_SECTIONS`**), sin
+motores nuevos ni fórmulas económicas en pmo. Estado **actual** (`as_of="current"`), separado del cutoff
+(los totales nativos no tienen snapshot histórico).
+- **Frontera opcional** `pmo/project_economics.py`: `get_authorized_economics(project)` consume el contrato
+  canónico `erpnext_proposals…project_economics.get_project_authorized_economics` (import **lazy**;
+  `required_apps` sigue `["erpnext"]`). Tres estados diferenciados (no se degrada una inconsistencia a
+  ausencia): `app_absent` · `no_proposal` (ninguna Quotation con `proposal_project==project`) · `inconsistent`
+  (hay propuesta pero el contrato falla → mensaje estable, detalle solo en `logger`) · ok. **No** reimplementa
+  `hours×rate`, costo externo, FX ni addendas; **no** usa `impact_amount` ni `estimated_costing` como fuente.
+- **Gate único server-side** `can_see_project_economics(project)`: rol económico ∈ {PMO Manager, PMO Executive
+  Access, System Manager} **AND** READ del Project. Se evalúa **antes** de componer `costs` (si no pasa, la
+  sección no existe en el payload → nunca llega a template/JS/PDF). DocShare/Task/Portal no reciben economía.
+- **Payload `pc.costs`:** `authorized` = passthrough del contrato (original/applied/authorized × revenue/cost/
+  margin/labor/external + `authorized_margin_pct` + `pending_changes` [nombres] ) o `None` (nunca 0);
+  `commercial` (`total_sales_amount`, `total_billed_amount`); `real_cost` = **`comparable_cost` = costing+
+  purchase** (comparable vs autorizado) y **`gross_margin_cost_basis` = costing+purchase+material** (base del
+  `gross_margin` nativo, sin contaminar el comparable); `native_margin` (`gross_margin`/`per_gross_margin`, sin
+  renombrar); `changes` (conteos aplicadas/pendientes); `currency`/`base_currency`.
+- **Superficies:** bloque compacto en `executive.html` (solo Page — el Print Format usa `DEFAULT_SECTIONS`, **sin
+  economía**) y **pestaña Financiera** (`financial.html`) vía endpoint `get_financial_html` (mismo builder +
+  gate; no es endpoint JSON genérico). `Project.estimated_costing` es espejo del autorizado (lo sincroniza
+  `erpnext_proposals`), nunca SSOT ni fallback. Moneda v1: `authorized` y nativos comparables solo si base
+  única (el contrato es fail-closed ante moneda incompatible). Tests: `test_project_economics.py` (frontera/
+  gate/estados) + `test_project_control.py` (costs: comparable≠basis, gate, portal, no-DEFAULT, seguridad).
+
 ## Fuera de alcance
 Planificado vs Real (ADR-0008): sin EVM (EV/PV/AC), CPI/SPI, forecast (EAC/ETC), planned time-phased/BCWS,
 ni Baseline como fuente del plan; el Workspace de control no añade Number Cards ni charts.

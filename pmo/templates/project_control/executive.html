@@ -110,6 +110,39 @@
 <div class="exc">&#9888; {{ _("{0} active task(s) without owner").format(pc.planning.unassigned.count) }}</div>
 {% endif %}
 
+{% if pc.costs %}
+{%- set ec = pc.costs -%}
+{%- set az = ec.authorized -%}
+{%- set cur = ec.base_currency or ec.currency or "" -%}
+{%- macro m(v) -%}{% if v is none %}—{% else %}{{ cur }} {{ "{:,.0f}".format(v) }}{% endif %}{%- endmacro -%}
+{%- macro pctv(v) -%}{% if v is none %}—{% else %}{{ "%.0f"|format(v) }}%{% endif %}{%- endmacro -%}
+<h2>{{ _("Project economics (current)") }}</h2>
+{% if not ec.authorized_available %}
+<div class="muted note">
+{%- if ec.authorized_reason == "inconsistent" -%}&#9888; {{ ec.authorized_message }}
+{%- elif ec.authorized_reason == "app_absent" -%}{{ _("Authorized reference unavailable.") }}
+{%- else -%}{{ _("No authorized reference (project without linked proposal).") }}
+{%- endif -%}
+</div>
+{% endif %}
+<div class="cards">
+  <div class="card"><div class="lbl">{{ _("Revenue — authorized") }}</div><div class="val">{{ m(az.authorized_revenue if az else None) }}</div></div>
+  <div class="card"><div class="lbl">{{ _("Revenue — ordered") }}</div><div class="val">{{ m(ec.commercial.total_sales_amount) }}</div></div>
+  <div class="card"><div class="lbl">{{ _("Revenue — billed") }}</div><div class="val">{{ m(ec.commercial.total_billed_amount) }}</div></div>
+</div>
+<div class="cards">
+  <div class="card"><div class="lbl">{{ _("Cost — authorized") }}</div><div class="val">{{ m(az.authorized_cost if az else None) }}</div></div>
+  <div class="card">
+    <div class="lbl">{{ _("Cost — registered") }}</div>
+    <div class="val">{{ m(ec.real_cost.comparable_cost) }}</div>
+    {% if ec.real_cost.material %}<div class="muted">+ {{ _("material") }} {{ m(ec.real_cost.material) }} ({{ _("gross margin basis") }})</div>{% endif %}
+  </div>
+  <div class="card"><div class="lbl">{{ _("Margin — authorized") }}</div><div class="val">{{ m(az.authorized_margin if az else None) }}</div><div class="muted">{{ pctv(az.authorized_margin_pct if az else None) }}</div></div>
+  <div class="card"><div class="lbl">{{ _("Gross margin — registered") }}</div><div class="val">{{ m(ec.native_margin.gross_margin) }}</div><div class="muted">{{ pctv(ec.native_margin.per_gross_margin) }}</div></div>
+</div>
+<div class="counts">{{ _("Changes:") }} {{ _("applied") }} <b>{{ ec.changes.applied_count }}</b> · {{ _("pending") }} {{ ec.changes.pending_count }}</div>
+{% endif %}
+
 {% if sc.gantt.tasks %}
 <h2>{{ _("Schedule (Gantt)") }}</h2>
 <div style="page-break-inside:avoid">

@@ -179,6 +179,7 @@
    "label": "Hours (impact)"
   },
   {
+   "description": "Non-binding estimate. The authoritative valuation lives in the Quotation.",
    "fieldname": "impact_days",
    "fieldtype": "Int",
    "label": "Days (impact)"
@@ -194,6 +195,7 @@
    "options": "Currency"
   },
   {
+   "description": "Non-binding estimate. The authoritative valuation lives in the Quotation.",
    "fieldname": "impact_amount",
    "fieldtype": "Currency",
    "label": "Amount (impact)",

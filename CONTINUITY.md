@@ -1,84 +1,84 @@
 # CONTINUITY.md — pmo
 
 **Fecha:** 2026-09-12
-**Rama activa:** `feat/pmo-reporting-architecture` (base `version-16` @ v0.15.0; ADR-0011 `ba1070f`, Reporte Ejecutivo v1 `bf57b19`, Calidad de Planeación `a10d387`)
-**Tarea actual:** Fix regresión Jinja (shadowing de `_`) commiteado; siguiente = investigación i18n + auditoría Costos/Margen.
-
-## Regla asentada
-- **Nunca usar `_` como variable temporal en Jinja/Frappe** (sombrea la función de traducción `_()`).
-  Usar un nombre neutro (`_b`, etc.). Guard cubierto por test de render de un CR con impact_hours/days/amount.
+**Rama activa:** `feat/pmo-reporting-architecture` (base `version-16` @ v0.15.0 → objetivo PR **v0.16.0**)
+**Tarea actual:** Bloque económico del Reporte Ejecutivo (ADR-0012) commiteado; preparando bump 0.16.0 + CHANGELOG y PR contra `version-16`.
 
 ---
 
 ## Recuperación rápida
 
 Estoy trabajando en:
-La **arquitectura de reporting canónica de Project Control** (ADR-0011). El Reporte Ejecutivo vive en la
-Page `PMO Control de Proyecto` (pestaña) con **un builder único** (`build_project_control`) y **un template
-único** (`executive.html`) compartido con el Print Format. Este bloque añadió la sección `planning`.
+El **PR de arquitectura de reporting canónica** de Project Control. La rama reúne (un solo PR):
+ADR-0011 (contexto canónico) + Reporte Ejecutivo v1 + Calidad de Planeación + **bloque económico
+(ADR-0012)**. El bloque económico añade la sección `costs` a `build_project_control` consumiendo el
+contrato de `erpnext_proposals` (`get_project_authorized_economics`), sin recalcular economía.
 
 Plan que estoy siguiendo:
-ADR-0011 + matriz de secciones acordada con el usuario. Bloques por dominio, uno a la vez, con gate de
-no-duplicación antes de cada commit.
+ADR-0011 + ADR-0012 + spec económica del usuario (BLOQUE 0–5, MVP aceptado). Flujo `/ship pr` autorizado
+de corrido: commit → bump/CHANGELOG → gates → push → PR. DETENERSE antes de merge/tag/release.
 
 Objetivo inmediato:
-Bloque de Planning Maturity commiteado. Nos **detenemos**; el siguiente bloque requiere autorización.
+Crear/actualizar el PR contra `version-16` con bump **0.16.0** (MINOR) y verificar CI.
 
 Criterio de avance:
-Commit con código+tests+i18n+docs+CONTINUITY; `one_offs/` (seed DEMO) fuera de git; working tree limpio.
+PR abierto contra `version-16`, working tree limpio, CI verde (o solo fallos ajenos al cambio).
 
 ---
 
 ## Estado actual
 
 ### Ya cerrado
-- ADR-0011 (`ba1070f`); Reporte Ejecutivo v1 (`bf57b19`).
-- **Planning Maturity + tareas sin responsable** (este bloque): sección `planning` en
-  `build_project_control` + template + excepción visible; responsable = **ToDo Open** (no `!= Cancelled`).
-- Dataset DEMO en `pmo-v16.dev`: **PROJ-0008 "DEMO-UI Control Center"** (imperfecto a propósito), sembrado
-  por `one_offs/seed_demo_control.py` (idempotente con teardown, **gitignored**, dev-only).
-- Auditoría de no-duplicación: sin duplicación material; único candidato futuro = `planned_hours`.
-- Tests: `test_project_control` 18/18; suite completa 246+41 OK.
+- ADR-0011 (`ba1070f`); Reporte Ejecutivo v1 (`bf57b19`); Calidad de Planeación (`a10d387`); fix shadowing `_` (`8650276`).
+- **Bloque económico (ADR-0012)**: frontera `pmo/project_economics.py` (contrato lazy, 3 estados + ok,
+  gate económico), sección `costs` en `build_project_control` (comparable_cost vs gross_margin_cost_basis),
+  bloque compacto en `executive.html` (solo Page), pestaña **Financiera** (`financial.html` +
+  `get_financial_html`), `impact_amount`/`impact_days` marcados no vinculantes. Docs: ADR-0012 +
+  arquitectura.md + project-control.md. Tests: `test_project_economics.py` + ampliación de
+  `test_project_control.py`.
+- Validación real end-to-end en `pmo-v16.dev` (cadena PROJ-0009: root + addenda aplicada + addenda pendiente).
+- Tests: suite completa **267 + 41 OK**. Linters (ruff check/format, prettier@2.7.1) limpios.
 
 ### Pendiente inmediato
-1. Validación visual del Reporte Ejecutivo en PROJ-0008 (Page, `pmo-v16.dev` 8412) — la hace el usuario.
-2. `/ship push` + `/ship pr` (bump SemVer vs `upstream/version-16`; el conjunto de la rama añade
-   funcionalidad → **MINOR**, objetivo tentativo `0.16.0`; recalcular al momento del PR).
-3. Siguiente bloque **solo con autorización** (interno: Capacity/RRHH/costos; luego HTML/PDF export; Portal).
+1. Bump `__version__` 0.15.0 → **0.16.0** + entrada CHANGELOG 0.16.0 (una versión por PR).
+2. `/ship pr`: push + crear PR contra `version-16`; verificar CI.
+3. **DETENERSE antes de merge/tag/release** y presentar checkpoint.
 
 ### No repetir / no ampliar
-- No extraer `planned_hours` ahora (cleanup futuro, solo si se toca `pmo_portfolio`).
-- No segunda fuente de verdad; todo entra por `build_project_control` (ADR-0011).
-- No incluir Project Updates (diferido: DocType nativo débil).
+- No ampliar más la UI económica ni sembrar más datos (MVP aceptado por el usuario).
+- No segunda fuente de verdad económica; todo autorizado entra por el contrato (ADR-0012 D1).
+- Economía **nunca** en Print Format/PDF (ADR-0012 D6, decisión estructural).
+- No degradar estado `inconsistent` a ausencia (ADR-0012 D3).
 
 ---
 
 ## Decisiones vigentes
-- **Responsable vigente = ToDo `Open`** (semántica nativa; más estricto que `_has_active_todo`=`!=Cancelled`,
-  que es para visibilidad). Un ToDo Closed no cuenta como responsable; una tarea Completed no es alerta.
-- **Planning Maturity** = promedio simple de los componentes **evaluables** (None excluido; ninguno → None)
-  de 5 métricas sobre hojas (responsable/inicio/fin/estimación/en baseline vigente). Denominadores
-  explícitos; comp. baseline = None sin baseline; tareas creadas tras la baseline bajan la cobertura (drift).
-- **Horas reales del reporte** = `indicators.actual_hours_to_date` (Timesheet ≤ corte). `planned_hours` =
-  Σ `Task.expected_time` hojas (repetida en `_effort_totals`; consolidación futura, no bloqueante).
-- `audience` (internal/portal) filtra exposición server-side, nunca permisos (P4 por el motor).
+- **SSOT económico = Quotation congelada** vía `get_project_authorized_economics`; pmo compone, no recalcula.
+- **Gate económico único server-side**: rol {PMO Manager, PMO Executive Access, System Manager} **AND**
+  Project READ, evaluado antes de componer `costs`; si no pasa, `pc.costs` no existe en el payload.
+- **`comparable_cost`** = costing+purchase (vs autorizado); **`gross_margin_cost_basis`** = +material
+  (base del `gross_margin` nativo). Material no contamina el comparable.
+- `frappe.logger("pmo").warning` (no `frappe.log_error`) en el estado `inconsistent` — evita ensuciar el suite.
+- Moneda v1: comparación solo con base única; el contrato es fail-closed ante moneda incompatible.
 
 ---
 
 ## Archivos relevantes ahora
 ### Leer primero
-- `pmo/project_control.py` — builder canónico (secciones project/executive/schedule/planning/scope_changes).
-- `pmo/templates/project_control/executive.html` — template único.
-- `pmo/health.py` — salud canónica.
+- `pmo/project_control.py` — builder canónico + sección `costs` + `get_financial_html`.
+- `pmo/project_economics.py` — frontera/gate hacia `erpnext_proposals`.
+- `pmo/templates/project_control/{executive,financial}.html`.
+- `docs/adr/0012-project-economics-integration.md`.
 ### Fuera de git (no commitear)
-- `one_offs/seed_demo_control.py` — seed DEMO dev-only (reproducible con teardown).
+- `one_offs/seed_finance.py` — seed económico dev-only (cadena real PROJ-0009, gitignored).
 
 ---
 
 ## Riesgos / cuidados
 - La suite corre en dos lotes (integración + unitarios); no leer solo el último "Ran N".
 - Tras i18n/build → `clear-cache` para que el servidor tome traducciones nuevas.
-- El seed de PROJ-0008 hace teardown de sus dependientes (solo de ese proyecto) antes de reconstruir.
+- CI usa `ruff check` + `prettier@2.7.1` exactos; linters solo sobre `.py`/`.js`, nunca `.json`.
+- `pyproject.toml` deriva la versión vía flit (`dynamic`); tocar solo `pmo/__init__.py::__version__`.
 
 ## Información faltante
-- Ninguna para continuar; el siguiente bloque depende de la autorización del usuario.
+- Ninguna para continuar; el PR se crea contra `version-16` y se detiene antes de merge/tag/release.

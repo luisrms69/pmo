@@ -23,6 +23,7 @@ from frappe import N_
 from frappe.utils import flt, getdate, today
 
 from pmo.health import HEALTH_LABELS, _health
+from pmo.project_economics import can_see_project_economics, get_authorized_economics
 from pmo.status_date import build_status_report
 
 SECTION_PROJECT = "project"
@@ -30,6 +31,10 @@ SECTION_EXECUTIVE = "executive"
 SECTION_SCHEDULE = "schedule"
 SECTION_PLANNING = "planning"
 SECTION_SCOPE_CHANGES = "scope_changes"
+# Económica: NO forma parte de DEFAULT_SECTIONS. Solo la solicita la Page (get_executive_html), nunca el
+# Print Format/PDF (Q2: la economía no viaja en un documento potencialmente compartible). Además el gate
+# económico se aplica antes de componerla.
+SECTION_COSTS = "costs"
 DEFAULT_SECTIONS = (
 	SECTION_PROJECT,
 	SECTION_EXECUTIVE,
@@ -102,6 +107,63 @@ _TEMPLATE_STRINGS = (
 	N_("Hours"),
 	N_("Days"),
 	N_("Amount"),
+	# Bloque económico (BLOQUE 3). El mensaje de inconsistencia se traduce en runtime en project_economics.
+	N_("Project economics (current)"),
+	N_("No authorized reference (project without linked proposal)."),
+	N_("Revenue — authorized"),
+	N_("Revenue — ordered"),
+	N_("Revenue — billed"),
+	N_("Cost — authorized"),
+	N_("Cost — registered"),
+	N_("material"),
+	N_("gross margin basis"),
+	N_("Margin — authorized"),
+	N_("Gross margin — registered"),
+	N_("Changes:"),
+	N_("applied"),
+	N_("pending"),
+	N_("Authorized economics unavailable: the linked proposal data is inconsistent."),
+	N_("Authorized reference unavailable."),
+	# Vista financiera de detalle (BLOQUE 4).
+	N_("Financial"),
+	N_("You do not have economic access to this project."),
+	N_("Economic state:"),
+	N_("current"),
+	N_("Contract"),
+	N_("Original"),
+	N_("Applied changes"),
+	N_("Authorized (current)"),
+	N_("Contract revenue"),  # pmo-propio: evita heredar "Revenue"→"Ganancia" (utilidad) de erpnext
+	N_("Cost"),
+	N_("Labor"),
+	N_("External"),
+	N_("Margin"),
+	N_("Margin %"),
+	N_("Revenues"),
+	N_("Authorized"),
+	N_("Ordered (Sales Orders)"),  # pmo-propio: evita "Ordered"→"Ordenado/a"
+	N_("Billed"),
+	N_("Costs"),
+	N_("Authorized (total)"),
+	N_("Authorized labor"),
+	N_("Authorized external"),
+	N_("Timesheets (registered labor)"),
+	N_("Purchases (registered external)"),
+	N_("Registered comparable cost"),
+	N_("Material"),
+	N_("part of ERPNext gross margin basis; not part of the comparable contractual cost."),
+	N_("Margins"),
+	N_("Authorized margin"),
+	N_("Authorized margin %"),
+	N_("Registered gross margin"),
+	N_("Registered gross margin %"),
+	N_("Changes"),
+	N_("Revenue impact (applied)"),
+	N_("Cost impact (applied)"),
+	N_("Margin impact (applied)"),
+	N_("Applied addenda"),
+	N_("Pending changes"),
+	N_("Proposal group"),  # pmo-propio: evita "Group"→"Agrupar"
 )
 
 
@@ -129,6 +191,10 @@ def build_project_control(project: str, cutoff=None, sections=None, audience: st
 		ctx[SECTION_PLANNING] = _planning_section(project, sr)
 	if SECTION_SCOPE_CHANGES in wanted:
 		ctx[SECTION_SCOPE_CHANGES] = _scope_changes_section(project, audience)
+	# Económica: SOLO audience interno + gate económico único (rol + READ). Si no pasa, `costs` NO se
+	# compone ni aparece en el payload (nunca llega a template/JS/PDF). El gate va ANTES de componer.
+	if SECTION_COSTS in wanted and audience == "internal" and can_see_project_economics(project):
+		ctx[SECTION_COSTS] = _costs_section(project)
 	# Devolver frappe._dict en profundidad: garantiza acceso por atributo en cualquier entorno Jinja
 	# (el template canónico se renderiza tanto por render_template como por el Print Format/printview).
 	return _deep_dict(ctx)
@@ -264,6 +330,70 @@ def _scope_changes_section(project: str, audience: str) -> dict:
 	if audience == "portal":
 		crs = [c for c in crs if (c.get("workflow_state") or "") != "Draft"]
 	return {"change_requests": crs}
+
+
+_NATIVE_COST_FIELDS = (
+	"company",
+	"total_sales_amount",
+	"total_billed_amount",
+	"total_costing_amount",
+	"total_purchase_cost",
+	"total_consumed_material_cost",
+	"gross_margin",
+	"per_gross_margin",
+)
+
+
+def _costs_section(project: str) -> dict:
+	"""Economía (estado ACTUAL, separado del cutoff). Compone, NO calcula: autorizado desde el contrato
+	canónico de erpnext_proposals (frontera `get_authorized_economics`), reales desde campos nativos de
+	Project (`update_costing`). Sin propuesta → `authorized=None/—` (nunca 0; sin usar estimated_costing).
+
+	`real_cost_native` = EXACTAMENTE la base del `gross_margin` nativo (costing + purchase + material), como
+	presentación derivada de campos nativos (no una autoridad nueva). El gate económico ya se aplicó en el
+	caller; esta función asume acceso concedido."""
+	econ = get_authorized_economics(project)  # {available, reason, data, message}
+	data = econ.get("data") or {}
+	# Conteos derivados de las listas del contrato (presentación; no reimplementa economía).
+	applied_count = len([q for q in (data.get("quotations") or []) if q.get("role") == "applied_change"])
+	pending_count = len(data.get("pending_changes") or [])
+	nat = frappe.db.get_value("Project", project, _NATIVE_COST_FIELDS, as_dict=True) or frappe._dict()
+	costing = flt(nat.get("total_costing_amount"))
+	purchase = flt(nat.get("total_purchase_cost"))
+	material = flt(nat.get("total_consumed_material_cost"))
+	base_currency = (
+		frappe.db.get_value("Company", nat.get("company"), "default_currency") if nat.get("company") else None
+	)
+	return {
+		"as_of": "current",  # NO gobernado por cutoff: los totales nativos no tienen snapshot histórico
+		"authorized_available": econ["available"],
+		"authorized_reason": econ["reason"],  # None | app_absent | no_proposal | inconsistent
+		"authorized_message": econ.get("message"),  # estable/traducible (solo si inconsistent)
+		"authorized": econ["data"],  # contrato canónico completo, o None (nunca 0) si no disponible
+		"commercial": {
+			"total_sales_amount": flt(nat.get("total_sales_amount")),
+			"total_billed_amount": flt(nat.get("total_billed_amount")),
+		},
+		"real_cost": {
+			"costing": costing,  # labor real (Timesheet) = total_costing_amount
+			"purchase": purchase,  # externo real (Purchase Invoice) = total_purchase_cost
+			"material": material,  # consumo de stock; excepción/componente adicional, NO parte del comparable
+			# Costo real COMPARABLE contra authorized_cost (proceso: labor + externo vía OC→PI). Excluye material.
+			"comparable_cost": flt(costing + purchase, 2),
+			# Base del gross_margin NATIVO de ERPNext (incluye material). No se usa para comparar con autorizado.
+			"gross_margin_cost_basis": flt(costing + purchase + material, 2),
+		},
+		"native_margin": {
+			"gross_margin": flt(nat.get("gross_margin")),
+			"per_gross_margin": flt(nat.get("per_gross_margin")),
+		},
+		"changes": {
+			"applied_count": applied_count,
+			"pending_count": pending_count,
+		},  # compacto (sin listar Quotations)
+		"currency": (econ["data"] or {}).get("currency"),  # autorizado; == base cuando hay contrato
+		"base_currency": base_currency,  # moneda de los reales nativos
+	}
 
 
 def _assigned_task_names(names: list) -> set:
@@ -453,6 +583,24 @@ def get_executive_html(project: str, cutoff: str | None = None, audience: str = 
 	"""Endpoint delgado para la Page `PMO Control de Proyecto` (pestaña Reporte Ejecutivo).
 
 	Valida P4 (vía el builder → build_status_report), compone el contexto v1 y renderiza el template
-	canónico server-side. La Page solo inyecta el HTML: no recalcula KPIs (ADR-0011 D4)."""
-	ctx = build_project_control(project, cutoff=cutoff, audience=audience)
+	canónico server-side. La Page solo inyecta el HTML: no recalcula KPIs (ADR-0011 D4).
+
+	Solicita además la sección económica (`costs`): el builder la compone solo si audience=interno y el
+	usuario pasa el gate económico (rol + READ). El Print Format NO la solicita (Q2)."""
+	ctx = build_project_control(
+		project, cutoff=cutoff, audience=audience, sections=[*DEFAULT_SECTIONS, SECTION_COSTS]
+	)
 	return frappe.render_template("pmo/templates/project_control/executive.html", {"pc": ctx})
+
+
+@frappe.whitelist()
+def get_financial_html(project: str, cutoff: str | None = None) -> str:
+	"""Endpoint específico de la Page (pestaña Financiera). Reutiliza `build_project_control` (P4 vía
+	build_status_report + gate económico único) y `pc.costs`; NO consulta economía ni llama a
+	erpnext_proposals fuera de la frontera. Solo `project` + `costs` (no necesita el resto del reporte).
+	Si el usuario no pasa el gate económico, `costs` no se compone y el template muestra "sin acceso".
+	No es un endpoint JSON genérico: devuelve HTML server-side de ESTA vista, gobernado por el mismo gate."""
+	ctx = build_project_control(
+		project, cutoff=cutoff, audience="internal", sections=[SECTION_PROJECT, SECTION_COSTS]
+	)
+	return frappe.render_template("pmo/templates/project_control/financial.html", {"pc": ctx})

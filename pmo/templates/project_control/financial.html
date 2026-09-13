@@ -1,0 +1,86 @@
+{#-
+  Vista financiera de detalle (pestaña dentro de la Page `PMO Control de Proyecto`). Representa `pc.costs`
+  (build_project_control + frontera económica). NO calcula, NO consulta economía; usa las clases CSS que
+  ya inyecta pmo_project_control.js (.pmo-pc-*). Excluida del Print Format/PDF (solo Page).
+-#}
+{% if not pc.costs %}
+  <div class="pmo-pc-empty">{{ _("You do not have economic access to this project.") }}</div>
+{% else %}
+{%- set ec = pc.costs -%}
+{%- set az = ec.authorized -%}
+{%- set cur = ec.base_currency or ec.currency or "" -%}
+{%- macro m(v) -%}{% if v is none %}—{% else %}{{ cur }} {{ "{:,.0f}".format(v) }}{% endif %}{%- endmacro -%}
+{%- macro pctv(v) -%}{% if v is none %}—{% else %}{{ "%.0f"|format(v) }}%{% endif %}{%- endmacro -%}
+{%- macro az_(k) -%}{{ m(az[k] if az else None) }}{%- endmacro -%}
+
+<div class="pmo-pc-context"><span class="pmo-pc-cut">{{ _("Economic state:") }} <b>{{ _("current") }}</b></span></div>
+
+{% if not ec.authorized_available %}
+<div class="pmo-pc-empty note">
+{%- if ec.authorized_reason == "inconsistent" -%}&#9888; {{ ec.authorized_message }}
+{%- elif ec.authorized_reason == "app_absent" -%}{{ _("Authorized reference unavailable.") }}
+{%- else -%}{{ _("No authorized reference (project without linked proposal).") }}
+{%- endif -%}
+</div>
+{% endif %}
+
+<h2>{{ _("Contract") }}</h2>
+<div class="pmo-pc-tablewrap"><table class="pmo-pc-table">
+  <thead><tr><th></th><th class="num">{{ _("Original") }}</th><th class="num">{{ _("Applied changes") }}</th><th class="num">{{ _("Authorized (current)") }}</th></tr></thead>
+  <tbody>
+    <tr><td>{{ _("Contract revenue") }}</td><td class="num">{{ az_("original_revenue") }}</td><td class="num">{{ az_("applied_changes_revenue") }}</td><td class="num">{{ az_("authorized_revenue") }}</td></tr>
+    <tr><td>{{ _("Cost") }}</td><td class="num">{{ az_("original_cost") }}</td><td class="num">{{ az_("applied_changes_cost") }}</td><td class="num">{{ az_("authorized_cost") }}</td></tr>
+    <tr><td>{{ _("Labor") }}</td><td class="num">{{ az_("original_labor") }}</td><td class="num">{{ az_("applied_changes_labor") }}</td><td class="num">{{ az_("authorized_labor") }}</td></tr>
+    <tr><td>{{ _("External") }}</td><td class="num">{{ az_("original_external") }}</td><td class="num">{{ az_("applied_changes_external") }}</td><td class="num">{{ az_("authorized_external") }}</td></tr>
+    <tr><td>{{ _("Margin") }}</td><td class="num">{{ az_("original_margin") }}</td><td class="num">{{ az_("applied_changes_margin") }}</td><td class="num">{{ az_("authorized_margin") }}</td></tr>
+    <tr><td>{{ _("Margin %") }}</td><td class="num">—</td><td class="num">—</td><td class="num">{{ pctv(az.authorized_margin_pct if az else None) }}</td></tr>
+  </tbody>
+</table></div>
+
+<h2>{{ _("Revenues") }}</h2>
+<div class="pmo-pc-kpis">
+  <div class="pmo-pc-kpi"><div class="v">{{ az_("authorized_revenue") }}</div><div class="l">{{ _("Authorized") }}</div></div>
+  <div class="pmo-pc-kpi"><div class="v">{{ m(ec.commercial.total_sales_amount) }}</div><div class="l">{{ _("Ordered (Sales Orders)") }}</div></div>
+  <div class="pmo-pc-kpi"><div class="v">{{ m(ec.commercial.total_billed_amount) }}</div><div class="l">{{ _("Billed") }}</div></div>
+</div>
+
+<h2>{{ _("Costs") }}</h2>
+<div class="pmo-pc-kpis">
+  <div class="pmo-pc-kpi"><div class="v">{{ az_("authorized_cost") }}</div><div class="l">{{ _("Authorized (total)") }}</div></div>
+  <div class="pmo-pc-kpi"><div class="v">{{ az_("authorized_labor") }}</div><div class="l">{{ _("Authorized labor") }}</div></div>
+  <div class="pmo-pc-kpi"><div class="v">{{ az_("authorized_external") }}</div><div class="l">{{ _("Authorized external") }}</div></div>
+</div>
+<div class="pmo-pc-kpis">
+  <div class="pmo-pc-kpi"><div class="v">{{ m(ec.real_cost.costing) }}</div><div class="l">{{ _("Timesheets (registered labor)") }}</div></div>
+  <div class="pmo-pc-kpi"><div class="v">{{ m(ec.real_cost.purchase) }}</div><div class="l">{{ _("Purchases (registered external)") }}</div></div>
+  <div class="pmo-pc-kpi"><div class="v">{{ m(ec.real_cost.comparable_cost) }}</div><div class="l">{{ _("Registered comparable cost") }}</div></div>
+</div>
+<div class="note muted">{{ _("Material") }}: {{ m(ec.real_cost.material) }} — {{ _("part of ERPNext gross margin basis; not part of the comparable contractual cost.") }}</div>
+
+<h2>{{ _("Margins") }}</h2>
+<div class="pmo-pc-kpis">
+  <div class="pmo-pc-kpi"><div class="v">{{ az_("authorized_margin") }}</div><div class="l">{{ _("Authorized margin") }}</div></div>
+  <div class="pmo-pc-kpi"><div class="v">{{ pctv(az.authorized_margin_pct if az else None) }}</div><div class="l">{{ _("Authorized margin %") }}</div></div>
+  <div class="pmo-pc-kpi"><div class="v">{{ m(ec.native_margin.gross_margin) }}</div><div class="l">{{ _("Registered gross margin") }}</div></div>
+  <div class="pmo-pc-kpi"><div class="v">{{ pctv(ec.native_margin.per_gross_margin) }}</div><div class="l">{{ _("Registered gross margin %") }}</div></div>
+</div>
+
+<h2>{{ _("Changes") }}</h2>
+<div class="pmo-pc-kpis">
+  <div class="pmo-pc-kpi"><div class="v">{{ az_("applied_changes_revenue") }}</div><div class="l">{{ _("Revenue impact (applied)") }}</div></div>
+  <div class="pmo-pc-kpi"><div class="v">{{ az_("applied_changes_cost") }}</div><div class="l">{{ _("Cost impact (applied)") }}</div></div>
+  <div class="pmo-pc-kpi"><div class="v">{{ az_("applied_changes_margin") }}</div><div class="l">{{ _("Margin impact (applied)") }}</div></div>
+  <div class="pmo-pc-kpi"><div class="v">{{ ec.changes.applied_count }}</div><div class="l">{{ _("Applied addenda") }}</div></div>
+</div>
+{# El contrato entrega pending_changes como lista de NOMBRES de Quotation (strings). #}
+{% if az and az.pending_changes %}
+<div class="pmo-pc-tablewrap"><table class="pmo-pc-table">
+  <thead><tr><th>{{ _("Pending changes") }}</th></tr></thead>
+  <tbody>
+  {% for p in az.pending_changes %}<tr><td>{{ p }}</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<div class="muted">{{ _("Pending changes") }}: {{ ec.changes.pending_count }}</div>
+{% endif %}
+{% endif %}

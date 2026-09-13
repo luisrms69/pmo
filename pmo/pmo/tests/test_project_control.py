@@ -15,12 +15,16 @@ from frappe.tests import IntegrationTestCase
 from pmo.health import HEALTH_AT_RISK, HEALTH_DEVIATED, HEALTH_ON_TRACK, _health
 from pmo.pmo.report.pmo_portfolio.pmo_portfolio import _health as portfolio_health
 from pmo.project_control import (
+	DEFAULT_SECTIONS,
+	SECTION_COSTS,
 	_assigned_task_names,
+	_costs_section,
 	_executive_section,
 	_planning_section,
 	_scope_changes_section,
 	build_project_control,
 	get_executive_html,
+	get_financial_html,
 )
 
 KPI_KEYS = {
@@ -456,3 +460,259 @@ class TestRenderer(IntegrationTestCase):
 		# `_()` sigue viva tras construir los bits: se renderizan encabezados traducibles posteriores.
 		self.assertIn("Change Requests", html)
 		self.assertIn("Planning quality", html)
+
+
+class TestCostsSection(IntegrationTestCase):
+	"""_costs_section compone (no calcula): autorizado desde la frontera + reales nativos de Project."""
+
+	def _gv_router(self, nat):
+		def gv(dt, name, fields=None, **k):
+			if dt == "Project":
+				return nat  # as_dict de campos nativos
+			if dt == "Company":
+				return "USD"  # default_currency
+			return None
+
+		return gv
+
+	def test_maps_native_and_authorized_passthrough(self):
+		data = {
+			"authorized_cost": 100.0,
+			"authorized_revenue": 150.0,
+			"currency": "USD",
+			"quotations": [{"role": "root"}, {"role": "applied_change"}, {"role": "applied_change"}],
+			"pending_changes": [{"name": "Q-9"}],
+		}
+		nat = frappe._dict(
+			company="C",
+			total_sales_amount=120,
+			total_billed_amount=80,
+			total_costing_amount=30,
+			total_purchase_cost=20,
+			total_consumed_material_cost=5,
+			gross_margin=30,
+			per_gross_margin=25,
+		)
+		with (
+			patch(
+				"pmo.project_control.get_authorized_economics",
+				return_value={"available": True, "reason": None, "data": data, "message": None},
+			),
+			patch("pmo.project_control.frappe.db.get_value", side_effect=self._gv_router(nat)),
+		):
+			c = _costs_section("X")
+		self.assertTrue(c["authorized_available"])
+		self.assertEqual(c["authorized"], data)  # passthrough sin recalcular
+		self.assertEqual(c["commercial"]["total_billed_amount"], 80)
+		# Comparable contra authorized (labor+externo, SIN material) vs base del gross_margin (CON material)
+		self.assertEqual(c["real_cost"]["comparable_cost"], 50)  # 30+20
+		self.assertEqual(c["real_cost"]["gross_margin_cost_basis"], 55)  # 30+20+5
+		self.assertEqual(c["real_cost"]["material"], 5)  # material queda visible como componente aparte
+		self.assertEqual(c["changes"], {"applied_count": 2, "pending_count": 1})  # derivado de las listas
+		self.assertEqual(c["base_currency"], "USD")
+		self.assertEqual(c["as_of"], "current")
+
+	def test_no_proposal_authorized_none_not_zero_but_reals_present(self):
+		nat = frappe._dict(
+			company="C",
+			total_sales_amount=0,
+			total_billed_amount=0,
+			total_costing_amount=30,
+			total_purchase_cost=20,
+			total_consumed_material_cost=0,
+			gross_margin=-50,
+			per_gross_margin=0,
+		)
+		with (
+			patch(
+				"pmo.project_control.get_authorized_economics",
+				return_value={"available": False, "reason": "no_proposal", "data": None, "message": None},
+			),
+			patch("pmo.project_control.frappe.db.get_value", side_effect=self._gv_router(nat)),
+		):
+			c = _costs_section("X")
+		self.assertIsNone(c["authorized"])  # None, NUNCA 0
+		self.assertEqual(c["authorized_reason"], "no_proposal")
+		self.assertEqual(c["real_cost"]["comparable_cost"], 50)  # reales nativos sí se muestran
+		self.assertEqual(c["real_cost"]["gross_margin_cost_basis"], 50)  # sin material
+
+
+class TestCostsGate(IntegrationTestCase):
+	"""La sección económica solo se compone con audience interno + gate económico; nunca por defecto."""
+
+	def _routers(self):
+		real_gl, real_ga = frappe.get_list, frappe.get_all
+
+		def gl(*a, **k):
+			return (
+				[]
+				if k.get("doctype", a[0] if a else None) in ("Task", "PMO Change Request")
+				else real_gl(*a, **k)
+			)
+
+		def ga(*a, **k):
+			return [] if k.get("doctype", a[0] if a else None) == "Task" else real_ga(*a, **k)
+
+		def gv(*a, **k):
+			if k.get("as_dict"):
+				return frappe._dict(project_name="P", status="Open", company=None, customer=None)
+			return None
+
+		return gl, ga, gv
+
+	def _build(self, audience, can_see, with_costs=True):
+		gl, ga, gv = self._routers()
+		sections = [*DEFAULT_SECTIONS, SECTION_COSTS] if with_costs else None
+		with (
+			patch("pmo.project_control.build_status_report", return_value=_sr(baseline=False, total=0)),
+			patch("pmo.project_control.frappe.get_list", side_effect=gl),
+			patch("pmo.project_control.frappe.get_all", side_effect=ga),
+			patch("pmo.project_control.frappe.db.get_value", side_effect=gv),
+			patch("pmo.project_control.can_see_project_economics", return_value=can_see),
+			patch("pmo.project_control._costs_section", return_value={"sentinel": True}) as cs,
+		):
+			ctx = build_project_control("X", cutoff="2026-09-11", audience=audience, sections=sections)
+		return ctx, cs
+
+	def test_internal_authorized_includes_costs(self):
+		ctx, cs = self._build("internal", can_see=True)
+		self.assertIn("costs", ctx)
+		cs.assert_called_once()
+
+	def test_internal_not_authorized_excludes_costs(self):
+		ctx, cs = self._build("internal", can_see=False)
+		self.assertNotIn("costs", ctx)
+		cs.assert_not_called()  # gate ANTES de componer
+
+	def test_portal_never_includes_costs(self):
+		ctx, _cs = self._build("portal", can_see=True)
+		self.assertNotIn("costs", ctx)
+
+	def test_not_requested_by_default_sections(self):
+		# Print Format / wrapper usan DEFAULT_SECTIONS (sin costs) → nunca economía aunque haya acceso.
+		ctx, cs = self._build("internal", can_see=True, with_costs=False)
+		self.assertNotIn("costs", ctx)
+		cs.assert_not_called()
+
+
+class TestFinancialView(IntegrationTestCase):
+	"""Vista financiera de detalle (BLOQUE 4): render de financial.html + gate del endpoint."""
+
+	def _authorized(self):
+		return {
+			"original_revenue": 100,
+			"applied_changes_revenue": 20,
+			"authorized_revenue": 120,
+			"original_cost": 60,
+			"applied_changes_cost": 10,
+			"authorized_cost": 70,
+			"original_labor": 40,
+			"applied_changes_labor": 5,
+			"authorized_labor": 45,
+			"original_external": 20,
+			"applied_changes_external": 5,
+			"authorized_external": 25,
+			"original_margin": 40,
+			"applied_changes_margin": 10,
+			"authorized_margin": 50,
+			"authorized_margin_pct": 42.0,
+			"pending_changes": ["Q-9"],
+		}
+
+	def _pc_with_costs(self, authorized=None, reason=None, message=None):
+		return {
+			"project": {"name": "PROJ-X", "project_name": "Proyecto X"},
+			"costs": {
+				"as_of": "current",
+				"authorized_available": authorized is not None,
+				"authorized_reason": reason,
+				"authorized_message": message,
+				"authorized": authorized,
+				"commercial": {"total_sales_amount": 110, "total_billed_amount": 70},
+				"real_cost": {
+					"costing": 38,
+					"purchase": 15,
+					"material": 5,
+					"comparable_cost": 53,
+					"gross_margin_cost_basis": 58,
+				},
+				"native_margin": {"gross_margin": 12, "per_gross_margin": 17},
+				"changes": {"applied_count": 2, "pending_count": 1},
+				"currency": "USD",
+				"base_currency": "USD",
+			},
+		}
+
+	def _render(self, pc):
+		return frappe.render_template("pmo/templates/project_control/financial.html", {"pc": pc})
+
+	def test_render_authorized_contract_and_reals(self):
+		html = self._render(self._pc_with_costs(authorized=self._authorized()))
+		self.assertIn("Contract", html)
+		self.assertIn("USD 120", html)  # authorized_revenue
+		self.assertIn("Ordered (Sales Orders)", html)  # etiqueta pmo-propia (no "Ordenado/a")
+		self.assertIn("USD 53", html)  # comparable_cost (labor+purchase, SIN material)
+		self.assertIn("Material", html)  # material separado como base del margen
+		self.assertIn("Q-9", html)  # cambio pendiente identificado
+
+	def test_render_no_costs_shows_no_access(self):
+		html = self._render({"project": {"name": "PROJ-X"}})  # sin pc.costs
+		self.assertIn("You do not have economic access to this project.", html)
+
+	def test_render_no_proposal_state(self):
+		html = self._render(self._pc_with_costs(authorized=None, reason="no_proposal"))
+		self.assertIn("No authorized reference", html)
+		self.assertIn("USD 53", html)  # reales nativos siguen visibles
+
+	def test_endpoint_renders_when_costs_composed(self):
+		pc = self._pc_with_costs(authorized=self._authorized())
+		with patch("pmo.project_control.build_project_control", return_value=pc) as b:
+			html = get_financial_html("PROJ-X", cutoff="2026-09-11")
+		self.assertIn("Contract", html)
+		# el endpoint pide solo project + costs (no el reporte completo)
+		_, kw = b.call_args
+		self.assertEqual(kw.get("audience"), "internal")
+
+	def test_endpoint_no_access_when_costs_absent(self):
+		with patch("pmo.project_control.build_project_control", return_value={"project": {"name": "X"}}):
+			html = get_financial_html("PROJ-X")
+		self.assertIn("You do not have economic access to this project.", html)
+
+
+class TestEconomicSecurity(IntegrationTestCase):
+	"""Seguridad económica: el contrato NO se invoca sin permiso; el endpoint no salta P4."""
+
+	def test_contract_not_called_without_economic_permission(self):
+		# El gate va ANTES de componer: si no hay permiso, get_authorized_economics NO se llama.
+		real_gl, real_ga = frappe.get_list, frappe.get_all
+
+		def gl(*a, **k):
+			return (
+				[]
+				if k.get("doctype", a[0] if a else None) in ("Task", "PMO Change Request")
+				else real_gl(*a, **k)
+			)
+
+		def ga(*a, **k):
+			return [] if k.get("doctype", a[0] if a else None) == "Task" else real_ga(*a, **k)
+
+		def gv(*a, **k):
+			return frappe._dict(project_name="P", status="Open", company=None) if k.get("as_dict") else None
+
+		with (
+			patch("pmo.project_control.build_status_report", return_value=_sr(baseline=False, total=0)),
+			patch("pmo.project_control.frappe.get_list", side_effect=gl),
+			patch("pmo.project_control.frappe.get_all", side_effect=ga),
+			patch("pmo.project_control.frappe.db.get_value", side_effect=gv),
+			patch("pmo.project_control.can_see_project_economics", return_value=False),
+			patch("pmo.project_control.get_authorized_economics") as contract,
+		):
+			ctx = build_project_control("X", cutoff="2026-09-11", sections=[*DEFAULT_SECTIONS, SECTION_COSTS])
+		self.assertNotIn("costs", ctx)
+		contract.assert_not_called()  # ni siquiera se consultó el contrato económico
+
+	def test_financial_endpoint_propagates_p4(self):
+		# get_financial_html no permite saltar P4: si build_status_report niega READ, se propaga.
+		with patch("pmo.project_control.build_status_report", side_effect=frappe.PermissionError):
+			with self.assertRaises(frappe.PermissionError):
+				get_financial_html("PROJ-ARBITRARIO")

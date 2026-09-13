@@ -44,6 +44,7 @@ const VIEWS = [
 	{ key: "pva", label: __("Planned vs Actual") },
 	{ key: "baseline", label: __("Baseline Comparison") },
 	{ key: "change", label: __("Change Control") },
+	{ key: "financial", label: __("Financial") },
 ];
 
 const WF_COLOR = {
@@ -177,6 +178,7 @@ class PMOProjectControl {
 		}
 		$v.html(`<div class="pmo-pc-loading">${__("Loading...")}</div>`);
 		if (this.state.view === "executive") return this._view_executive($v);
+		if (this.state.view === "financial") return this._view_financial($v);
 		if (this.state.view === "status")
 			return this._view_report($v, REP_STATUS, this._status_filters(), true);
 		if (this.state.view === "pva")
@@ -199,6 +201,20 @@ class PMOProjectControl {
 	_view_executive($v) {
 		frappe
 			.xcall("pmo.project_control.get_executive_html", {
+				project: this.state.project,
+				cutoff: this.state.status_date || frappe.datetime.get_today(),
+			})
+			.then((html) => $v.html(html))
+			.catch(() => {
+				$v.html(`<div class="pmo-pc-empty">${__("Could not load the data.")}</div>`);
+			});
+	}
+
+	// --- Vista Financiera: HTML server-side (build_project_control + pc.costs + gate económico). ---
+	// La Page solo inyecta; el permiso económico se decide server-side (no en JS). Excluida del PDF.
+	_view_financial($v) {
+		frappe
+			.xcall("pmo.project_control.get_financial_html", {
 				project: this.state.project,
 				cutoff: this.state.status_date || frappe.datetime.get_today(),
 			})

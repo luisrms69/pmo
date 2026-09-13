@@ -30,7 +30,10 @@ correspondiente (respetando privacidad P4); el detalle tabular exportable sigue 
    completada no cuenta como problema de asignación). Cuando un componente no es evaluable (p. ej. sin
    línea base) se muestra "No evaluable", nunca cero. Es exactamente el mismo contenido del reporte
    imprimible **PMO Project Status** (misma fuente), embebido aquí para revisarlo sin cambiar de pantalla.
-   No recalcula nada: el servidor compone el contexto y lo renderiza (respeta P4).
+   No recalcula nada: el servidor compone el contexto y lo renderiza (respeta P4). **Solo para usuarios con
+   acceso económico** (ver "Economía del proyecto"), muestra además un resumen económico compacto: ingresos
+   (autorizado → ordenado → facturado), costo autorizado vs costo registrado, y margen autorizado vs margen
+   bruto registrado. **Este resumen económico NO aparece en el PDF/Print Format.**
 2. **Status / Schedule** — control a la fecha de corte (`PMO Status Report`): resumen (línea base vigente,
    forecast, fechas comprometidas, desvíos, vencidas, horas) y tabla por Task (fin baseline vs forecast,
    slip, compromiso, vencida al corte). Si el proyecto **no tiene línea base vigente** a la fecha, la tabla
@@ -43,7 +46,21 @@ correspondiente (respetando privacidad P4); el detalle tabular exportable sigue 
    Si el proyecto no tiene dos líneas base, se indica claramente.
 5. **Change Control** — solicitudes de cambio del proyecto (`PMO Change Request`), con estado, fecha,
    prioridad e impacto; cada una abre su documento. Respeta la visibilidad del proyecto (P4). Si no hay
-   solicitudes, se indica.
+   solicitudes, se indica. (El **impacto** económico del cambio —horas/días/importe— es una **estimación no
+   vinculante**; la valuación económica autoritativa vive en la Quotation, no en el Change Request.)
+6. **Financiera** — vista económica de detalle (**solo usuarios con acceso económico**). Explica los números
+   del resumen ejecutivo: tabla de **Contrato** (Original · Addendas aplicadas · Autorizado vigente para
+   ingreso/costo/labor/externo/margen/margen %), **Ingresos** (autorizado → ordenado → facturado), **Costos**
+   (autorizado total/labor/externo vs registrado: Timesheets, Compras, costo comparable; el **material
+   consumido** se muestra aparte como base del margen bruto de ERPNext, no del costo comparable), **Márgenes**
+   (autorizado y bruto registrado, lado a lado, sin interpretarlos como desviación) y **Cambios** (impacto
+   aplicado + addendas pendientes). Si el proyecto no tiene propuesta vinculada, muestra "Sin referencia
+   autorizada" y solo los reales de ERPNext. **No aparece en el PDF/Print Format.**
+
+> **Acceso económico:** las secciones económicas (resumen del Reporte Ejecutivo y pestaña Financiera) solo se
+> muestran a usuarios con rol **PMO Manager**, **PMO Executive Access** o **System Manager** **y** permiso de
+> lectura del Project. Tener acceso operativo por asignación o por compartir el proyecto **no** concede
+> acceso económico. La restricción es del lado del servidor.
 
 > El **Reporte Ejecutivo** y el reporte imprimible **PMO Project Status** comparten un **único contexto y
 > un único template** (ADR-0011): el mismo Gantt/resumen se ve en la pestaña, en HTML y en PDF, sin
