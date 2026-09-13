@@ -22,6 +22,7 @@ import frappe
 from frappe import N_
 from frappe.utils import flt, getdate, today
 
+from pmo.governance import build_expediente
 from pmo.health import HEALTH_LABELS, _health
 from pmo.project_economics import can_see_project_economics, get_authorized_economics
 from pmo.status_date import build_status_report
@@ -35,6 +36,9 @@ SECTION_SCOPE_CHANGES = "scope_changes"
 # Print Format/PDF (Q2: la economía no viaja en un documento potencialmente compartible). Además el gate
 # económico se aplica antes de componerla.
 SECTION_COSTS = "costs"
+# Gobierno (ADR-0014 D8): índice de expediente + estado de ciclo de vida derivado. Opt-in (NO en
+# DEFAULT_SECTIONS): solo lo solicita la Page de Project Control; no viaja en el Print Format por defecto.
+SECTION_GOVERNANCE = "governance"
 DEFAULT_SECTIONS = (
 	SECTION_PROJECT,
 	SECTION_EXECUTIVE,
@@ -195,6 +199,10 @@ def build_project_control(project: str, cutoff=None, sections=None, audience: st
 	# compone ni aparece en el payload (nunca llega a template/JS/PDF). El gate va ANTES de componer.
 	if SECTION_COSTS in wanted and audience == "internal" and can_see_project_economics(project):
 		ctx[SECTION_COSTS] = _costs_section(project)
+	# Gobierno (ADR-0014 D8): índice de expediente + estado de ciclo de vida derivado. Solo referencias/
+	# existencia/fechas (no duplica contenido). Opt-in; P4 ya impuesta por build_status_report arriba.
+	if SECTION_GOVERNANCE in wanted:
+		ctx[SECTION_GOVERNANCE] = build_expediente(project)
 	# Devolver frappe._dict en profundidad: garantiza acceso por atributo en cualquier entorno Jinja
 	# (el template canónico se renderiza tanto por render_template como por el Print Format/printview).
 	return _deep_dict(ctx)
