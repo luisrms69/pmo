@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-12
 **Rama activa:** `feat/pmo-reporting-architecture` (base `version-16` @ v0.15.0 → objetivo PR **v0.16.0**)
-**Tarea actual:** Bloque económico del Reporte Ejecutivo (ADR-0012) commiteado; preparando bump 0.16.0 + CHANGELOG y PR contra `version-16`.
+**Tarea actual:** PR #20 abierto contra `version-16` (v0.16.0). Verificando CI. DETENERSE antes de merge/tag/release.
 
 ---
 
@@ -40,9 +40,8 @@ PR abierto contra `version-16`, working tree limpio, CI verde (o solo fallos aje
 - Tests: suite completa **267 + 41 OK**. Linters (ruff check/format, prettier@2.7.1) limpios.
 
 ### Pendiente inmediato
-1. Bump `__version__` 0.15.0 → **0.16.0** + entrada CHANGELOG 0.16.0 (una versión por PR).
-2. `/ship pr`: push + crear PR contra `version-16`; verificar CI.
-3. **DETENERSE antes de merge/tag/release** y presentar checkpoint.
+1. CI del PR #20 en verde (corregir solo fallos atribuibles al cambio).
+2. **DETENERSE antes de merge/tag/release** (merge lo hace el usuario; luego `/ship release` → tag+Release `v0.16.0`).
 
 ### No repetir / no ampliar
 - No ampliar más la UI económica ni sembrar más datos (MVP aceptado por el usuario).
