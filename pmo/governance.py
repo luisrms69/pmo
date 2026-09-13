@@ -43,8 +43,9 @@ def _has_submitted(doctype: str, project: str) -> bool:
 def derive_lifecycle_state(project: str) -> str:
 	"""Estado documental derivado (precedencia: el más avanzado gana). No modifica nada.
 
-	reviewed → closed → closing (Completed sin Closure) → execution (baseline vigente) → planning (Charter
-	emitido) → initiation. Cancelled/On hold no crean estado propio: se derivan de sus artefactos/baseline.
+	reviewed → closed → closing (Project terminal sin Closure) → execution (baseline vigente) → planning
+	(Charter emitido) → initiation. Un Project **terminal** (Completed o Cancelled) sin Closure requiere cierre
+	formal → Closing. On hold no es terminal: se deriva de sus artefactos/baseline.
 	"""
 	from pmo.baseline import get_effective_baseline
 
@@ -52,7 +53,8 @@ def derive_lifecycle_state(project: str) -> str:
 		return LIFECYCLE_REVIEWED
 	if _has_submitted("PMO Project Closure", project):
 		return LIFECYCLE_CLOSED
-	if frappe.db.get_value("Project", project, "status") == "Completed":
+	# Estados terminales reales del Project nativo de ERPNext (Open/On hold/Completed/Cancelled).
+	if frappe.db.get_value("Project", project, "status") in ("Completed", "Cancelled"):
 		return LIFECYCLE_CLOSING
 	if get_effective_baseline(project):
 		return LIFECYCLE_EXECUTION

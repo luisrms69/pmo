@@ -65,6 +65,11 @@ class TestGovernanceLifecycle(IntegrationTestCase):
 		# Project Completed y (aún) sin DocType de Closure → Closing (no rompe: Closure es bloque futuro).
 		self.assertEqual(derive_lifecycle_state(p), LIFECYCLE_CLOSING)
 
+	def test_closing_when_cancelled_without_closure(self):
+		p = _project("GOV Cancelled", status="Cancelled")
+		# Un Project terminal Cancelled sin Closure también requiere cierre formal → Closing.
+		self.assertEqual(derive_lifecycle_state(p), LIFECYCLE_CLOSING)
+
 	def test_expediente_index_shape_and_pending(self):
 		p = _project("GOV Exp")
 		_charter(p)
