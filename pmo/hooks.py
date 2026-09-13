@@ -157,6 +157,8 @@ permission_query_conditions = {
 	"PMO Project Baseline": "pmo.permissions.get_permission_query_conditions_baseline",
 	# ADR-0005 D13: el Change Request hereda la visibilidad del Project.
 	"PMO Change Request": "pmo.permissions.get_permission_query_conditions_change_request",
+	# ADR-0014 D6/D10: el Risk hereda la visibilidad del Project.
+	"PMO Project Risk": "pmo.permissions.get_permission_query_conditions_risk",
 }
 
 has_permission = {
@@ -164,6 +166,7 @@ has_permission = {
 	"Task": "pmo.permissions.has_permission_task",
 	"PMO Project Baseline": "pmo.permissions.has_permission_baseline",
 	"PMO Change Request": "pmo.permissions.has_permission_change_request",
+	"PMO Project Risk": "pmo.permissions.has_permission_risk",
 }
 
 # ADR-0006 D2: la Status Date (Data Date) del Project solo puede ser hoy o pasada (no futura en v0.7.0).

@@ -1,0 +1,196 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "PMO-RISK-.#####",
+ "creation": "2026-09-13 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "project",
+  "title",
+  "column_break_hdr",
+  "status",
+  "identified_on",
+  "section_assessment",
+  "probability",
+  "impact",
+  "column_break_assess",
+  "exposure",
+  "category",
+  "section_detail",
+  "description",
+  "section_response",
+  "risk_owner",
+  "response_strategy",
+  "column_break_resp",
+  "change_request",
+  "response"
+ ],
+ "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Project",
+   "options": "Project",
+   "reqd": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_hdr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Open",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Open\nMitigating\nClosed\nMaterialized\nTransferred",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "identified_on",
+   "fieldtype": "Date",
+   "label": "Identified on"
+  },
+  {
+   "fieldname": "section_assessment",
+   "fieldtype": "Section Break",
+   "label": "Qualitative assessment"
+  },
+  {
+   "fieldname": "probability",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Probability",
+   "options": "Low\nMedium\nHigh",
+   "reqd": 1
+  },
+  {
+   "fieldname": "impact",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Impact",
+   "options": "Low\nMedium\nHigh",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_assess",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Derived from the probability × impact matrix. Read-only.",
+   "fieldname": "exposure",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Exposure",
+   "options": "\nLow\nMedium\nHigh",
+   "read_only": 1
+  },
+  {
+   "description": "Optional. Only if it adds value; no master.",
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "label": "Category",
+   "options": "\nScope\nSchedule\nCost\nResource\nTechnical\nExternal\nGovernance"
+  },
+  {
+   "fieldname": "section_detail",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "section_response",
+   "fieldtype": "Section Break",
+   "label": "Response"
+  },
+  {
+   "fieldname": "risk_owner",
+   "fieldtype": "Link",
+   "label": "Risk owner",
+   "options": "User"
+  },
+  {
+   "description": "ISO 31000 / PMBOK qualitative response strategy.",
+   "fieldname": "response_strategy",
+   "fieldtype": "Select",
+   "label": "Response strategy",
+   "options": "\nAvoid\nMitigate\nTransfer\nAccept"
+  },
+  {
+   "fieldname": "column_break_resp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Set when a risk response requires a controlled change (scope/date/baseline/economics/commitment).",
+   "fieldname": "change_request",
+   "fieldtype": "Link",
+   "label": "Change Request",
+   "options": "PMO Change Request"
+  },
+  {
+   "fieldname": "response",
+   "fieldtype": "Small Text",
+   "label": "Response / action"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "module": "PMO",
+ "name": "PMO Project Risk",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PMO Executive Access"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
