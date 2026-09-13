@@ -64,15 +64,12 @@ Learned`** (`area` ∈ {planning, execution, change_control, resources, cost, go
 `recommended_action`). Solo la child se estructura (reporting futuro). Puede consultar información viva/
 histórica **mientras se prepara**; **al submit queda congelado** (D11). Sin cuestionario extenso.
 
-### D6 — Risk Analysis: capacidad **futura diferida** (fuera de alcance de esta implementación)
-Se retomará **después** de terminar Governance, como iniciativa adicional con su propio ADR. En ese momento se
-decidirá cómo se integra con Charter/Status/Change Control/Closure/Review (p. ej. capa cualitativa ligera
-conforme a ISO 31000 / PMBOK, registro vivo, respuestas que tocan condiciones controladas enrutadas por
-`PMO Change Request`). **En esta implementación NO se crea ningún artefacto de riesgo** (ni `PMO Project Risk`,
-ni child de riesgos iniciales en el Charter), ni se añaden referencias de riesgo a Closure/Review/Dashboard/
-Project Control. Nota: existe código inicial de un `PMO Project Risk` **parqueado** en la rama
-`feat/pmo-project-risk-deferred` (no activo, no migrado); su diseño definitivo se decidirá al retomar la
-iniciativa, sin que condicione los bloques actuales.
+### D6 — Risk Analysis: diferido (fuera de alcance de esta implementación)
+Risk Analysis queda **diferido hasta terminar esta iniciativa**. Su diseño e integración con Charter,
+Status/Control, Change Control, Closure y Post-Project Review se **decidirán posteriormente**. **No condiciona
+ni forma parte** de los bloques actuales de Project Governance & Lifecycle Documentation. En esta
+implementación **no se crea ningún artefacto de riesgo** (ni `PMO Project Risk`, ni child de riesgos iniciales
+en el Charter) ni se añaden referencias de riesgo a Closure/Review/Dashboard/Project Control.
 
 ### D7 — Estado de ciclo de vida derivado, no workflow
 Función pura (`pmo/governance.py`, patrón `health.py`) que deriva un estado documental desde hechos
