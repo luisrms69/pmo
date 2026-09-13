@@ -561,6 +561,75 @@ Salida imprimible/PDF por Project para stakeholders. **Print Format estándar** 
   Format del cliente. Tests: `test_print_status.py` (relevante puro + contexto + render HTML + smoke PDF
   guardado). Sin ADR (reutiliza decisiones vigentes; sin modelo/decisión nuevos).
 
+## Contexto canónico de Project Control (ADR-0011)
+Fuente única del contexto integral de un Project: `pmo.project_control.build_project_control(project,
+cutoff=None, sections=None, audience="internal")`. **Compone** motores existentes; no recalcula (ADR-0011
+D2). Devuelve `frappe._dict` en profundidad (dot-access en cualquier entorno Jinja: `render_template` y
+Print Format/printview).
+- **Secciones (v1 del Reporte Ejecutivo):** `project` (identidad/fechas), `executive` (KPIs), `schedule`
+  (Gantt estático orden `lft` + hitos + tareas relevantes + counts), `planning` (Calidad de Planeación),
+  `scope_changes` (Change Requests). `sections=None` → todas las soportadas; lista → subconjunto. El resto
+  del contrato (resources, hours, costs, freshness, updates…) se añade cuando su vista lo requiera (D7).
+  **Project Updates: diferido**.
+- **`planning` (Calidad de Planeación):** `maturity_pct` = promedio simple de los componentes **evaluables**
+  (None → excluido; ninguno evaluable → None) de 5 métricas sobre tareas **hoja**: % con responsable / con
+  `exp_start_date` / con `exp_end_date` / con `expected_time>0` / **en la baseline vigente al corte**.
+  Denominadores explícitos: comp. 1-4 = todas las hojas (incluye Completed; miden el plan completo);
+  comp. 5 = hojas actuales, numerador = presentes en el snapshot de la baseline vigente (**None sin
+  baseline**; las tareas creadas después bajan la cobertura = drift). **Responsable vigente = ToDo abierto**
+  (`status == "Open"`, semántica nativa de asignación de Frappe; **más estricto** que el canónico de
+  *visibilidad* `_has_active_todo` = `!= Cancelled`, que incluye Closed para conservar lectura — aquí es
+  responsabilidad, no acceso; no un campo nuevo). `unassigned` = tareas hoja **activas** (status ∉
+  {Completed, Cancelled}) sin ToDo abierto (count + lista); se muestra como excepción si `count>0`.
+- **Fuentes por dominio:** estado/cronograma/forecast/**horas a la fecha de corte** =
+  `build_status_report` (P4); salud = `pmo.health` (única); horas planificadas = Σ `Task.expected_time`
+  hojas; Change Requests = `PMO Change Request` (su pqc impone P4). **Corrección ADR-0011:** las horas
+  reales del reporte usan `indicators.actual_hours_to_date` (Timesheet ≤ corte), no el acumulado actual
+  (`_effort_totals`/`Project.actual_time`) — corrige la inconsistencia previa del Print Format.
+  *Cleanup futuro (no bloqueante):* la fórmula de **horas planificadas** (Σ `Task.expected_time` hojas)
+  vive hoy en `_executive_section` y en `pmo_portfolio._effort_totals` (idénticas, sin divergencia);
+  consolidar en un helper `planned_hours(project)` cuando exista una razón para tocar `pmo_portfolio`.
+- **KPIs:** salud, avance real, **`tasks_due_by_cutoff_pct`** ("Tareas previstas al corte" — cuenta tareas,
+  NO "avance esperado"; `overdue` queda para las realmente incumplidas), cumplimiento, slip vs baseline/
+  compromiso, vencidas, forecast>compromiso, planned/actual/%. Ausencia de dato → `None` (no cero).
+- **`audience`** ∈ {internal, portal}: controla exposición/composición, NUNCA permisos (D3). `portal`
+  oculta Change Requests en `Draft`; `internal` los incluye. P4 la impone siempre el motor de dominio.
+- **Template canónico** (D5): `pmo/templates/project_control/executive.html` — solo representa `pc`, sin
+  cálculo/DB/JS. Consumidores: la Page `pmo_project_control` (pestaña **Reporte Ejecutivo** vía endpoint
+  whitelisted `get_executive_html`, que solo inyecta HTML) y el Print Format `PMO Project Status`
+  (`{% set pc = pmo_project_status(doc.name) %}{% include … %}`). `pmo_project_status()` pasa a **wrapper
+  delgado** de `build_project_control` (D4/D7): una sola fuente, sin fórmulas duplicadas.
+- **Salud (fuente única):** `pmo/health.py` (`_health` + constantes + `HEALTH_LABELS`); `pmo_portfolio`
+  la re-exporta (print_status/dashboard sin cambios). Tests: `test_project_control.py` (builder/secciones/
+  P4/None≠0/sin división por cero/horas=actual_hours_to_date/CR por audience/renderer) + regresión
+  `test_print_status.py`.
+
+### Sección económica `costs` (integración con `erpnext_proposals`)
+Economía **interna** del Project, en el mismo builder (sección `costs`, **fuera de `DEFAULT_SECTIONS`**), sin
+motores nuevos ni fórmulas económicas en pmo. Estado **actual** (`as_of="current"`), separado del cutoff
+(los totales nativos no tienen snapshot histórico).
+- **Frontera opcional** `pmo/project_economics.py`: `get_authorized_economics(project)` consume el contrato
+  canónico `erpnext_proposals…project_economics.get_project_authorized_economics` (import **lazy**;
+  `required_apps` sigue `["erpnext"]`). Tres estados diferenciados (no se degrada una inconsistencia a
+  ausencia): `app_absent` · `no_proposal` (ninguna Quotation con `proposal_project==project`) · `inconsistent`
+  (hay propuesta pero el contrato falla → mensaje estable, detalle solo en `logger`) · ok. **No** reimplementa
+  `hours×rate`, costo externo, FX ni addendas; **no** usa `impact_amount` ni `estimated_costing` como fuente.
+- **Gate único server-side** `can_see_project_economics(project)`: rol económico ∈ {PMO Manager, PMO Executive
+  Access, System Manager} **AND** READ del Project. Se evalúa **antes** de componer `costs` (si no pasa, la
+  sección no existe en el payload → nunca llega a template/JS/PDF). DocShare/Task/Portal no reciben economía.
+- **Payload `pc.costs`:** `authorized` = passthrough del contrato (original/applied/authorized × revenue/cost/
+  margin/labor/external + `authorized_margin_pct` + `pending_changes` [nombres] ) o `None` (nunca 0);
+  `commercial` (`total_sales_amount`, `total_billed_amount`); `real_cost` = **`comparable_cost` = costing+
+  purchase** (comparable vs autorizado) y **`gross_margin_cost_basis` = costing+purchase+material** (base del
+  `gross_margin` nativo, sin contaminar el comparable); `native_margin` (`gross_margin`/`per_gross_margin`, sin
+  renombrar); `changes` (conteos aplicadas/pendientes); `currency`/`base_currency`.
+- **Superficies:** bloque compacto en `executive.html` (solo Page — el Print Format usa `DEFAULT_SECTIONS`, **sin
+  economía**) y **pestaña Financiera** (`financial.html`) vía endpoint `get_financial_html` (mismo builder +
+  gate; no es endpoint JSON genérico). `Project.estimated_costing` es espejo del autorizado (lo sincroniza
+  `erpnext_proposals`), nunca SSOT ni fallback. Moneda v1: `authorized` y nativos comparables solo si base
+  única (el contrato es fail-closed ante moneda incompatible). Tests: `test_project_economics.py` (frontera/
+  gate/estados) + `test_project_control.py` (costs: comparable≠basis, gate, portal, no-DEFAULT, seguridad).
+
 ## Fuera de alcance
 Planificado vs Real (ADR-0008): sin EVM (EV/PV/AC), CPI/SPI, forecast (EAC/ETC), planned time-phased/BCWS,
 ni Baseline como fuente del plan; el Workspace de control no añade Number Cards ni charts.

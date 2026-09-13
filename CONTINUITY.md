@@ -1,55 +1,83 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-09-10
-**Rama activa:** `feat/product-readiness-round` (base `version-16` @ v0.11.0, commit `6ff63cb`).
-**Ronda:** Product readiness — **una rama, 5 commits, objetivo release `v0.12.0`.**
+**Fecha:** 2026-09-12
+**Rama activa:** `feat/pmo-reporting-architecture` (base `version-16` @ v0.15.0 → objetivo PR **v0.16.0**)
+**Tarea actual:** PR #20 abierto contra `version-16` (v0.16.0). Verificando CI. DETENERSE antes de merge/tag/release.
 
-## Plan que estoy siguiendo
-5 mejoras, un commit independiente por cada una (no rama/PR por mejora):
-1. UX captura/mantenimiento `PMO Capacity`.  ← **commit en curso**
-2. Dashboard / portafolio multi-proyecto.
-3. Salida presentable `PMO Status Report` (Commit #3: revisar primero el Print Format existente en
-   `frappe-infrastructure` antes de diseñar — acordado).
-4. Corrección documental `capacity-planning.md` (texto stale de Actual/Util. real) + actualización completa
-   de `docs/roadmap.md` (integrada aquí, sin sexto commit).
-5. Workspace PMO unificado / landing enlazando las capacidades implementadas.
+---
 
-Guardarraíles: P4; nativo primero; sin motores paralelos; sin tocar #9/#10/constraints; sin rediseñar ADRs.
+## Recuperación rápida
 
-## Estado por commits
-- **Commit #1 — UX `PMO Capacity`. ✅ (commit en curso)**
-  - `pmo/capacity.py`: `get_capacity_detail` (resolver único {hours,origin,from_date}; `get_capacity` wrapper).
-  - Report `PMO Resource Capacity` (cobertura: capacidad efectiva/origen/vigencia por recurso; scope por
-    observador; sin Project/Task). `pmo_capacity.js` (default from_date + intro). Docs usuario+arquitectura.
-  - migrate en test-pmo OK (report registrado); smoke `execute()` OK. Tests `test_resource_capacity.py` (7).
-    **Suite 244/244**, sin regresión Capacity/Availability.
-- **Commit #2 — Portafolio multi-proyecto. ✅ (commit en curso)**
-  - Report `PMO Portfolio`: fila por Project visible (salud En plan/En riesgo/Desviado, forecast, slips,
-    vencidas, forecast>compromiso, Planned/Actual/%); reusa `build_status_report` (P4) + suma esfuerzo nativa.
-    `try/except PermissionError` por proyecto. Filtros Company + Incluir completados. Docs usuario+arquitectura.
-  - migrate en test-pmo OK (registrado); smoke `execute()` OK. Tests `test_portfolio.py` (7). **Suite 251/251**.
-- **Commit #3 — Status Report presentable. ✅ (commit en curso)**
-  - Print Format estándar `PMO Project Status` (Jinja, doc_type Project) resumen-primero + tareas relevantes;
-    método Jinja `pmo.print_status.pmo_project_status` (reusa build_status_report; P4). Fechas ISO (evita bug
-    locale). Agnóstico al generador PDF (wkhtmltopdf 1º; Gotenberg vía config del site). No toca el PF del
-    cliente. migrate OK; render HTML ✔; PDF generado (18KB, quirk de exit de wkhtmltopdf en headless → test
-    skip). Tests `test_print_status.py` (4). **Suite 255/255 (+1 skip)**.
-- **Commit #4 — documental. ✅ (commit en curso)**
-  - `capacity-planning.md`: corregida nota stale (Actual SÍ se muestra en el reporte + Planned vs Actual).
-  - `docs/roadmap.md`: consolidado (Entregado v0.7–v0.11; v0.12.0 marcada **En implementación, sin release**;
-    Workspace landing = pendiente Commit #5). 7 pendientes preservados con tiers; #9/#10 referenciados.
-- **Commit #5 — Workspace PMO unificado / landing. ✅ (commit en curso)**
-  - Workspace público `PMO` (seq 10, primero): shortcuts hero + cards agrupando 9 reportes + 3 DocTypes de
-    config. Sin charts/number_cards. `PMO Capacity`/`PMO Control` intactos (regression test). migrate OK.
-    Tests `test_pmo_workspace.py` (5). **Suite 260/260 (+1 skip PDF)**.
+Estoy trabajando en:
+El **PR de arquitectura de reporting canónica** de Project Control. La rama reúne (un solo PR):
+ADR-0011 (contexto canónico) + Reporte Ejecutivo v1 + Calidad de Planeación + **bloque económico
+(ADR-0012)**. El bloque económico añade la sección `costs` a `build_project_control` consumiendo el
+contrato de `erpnext_proposals` (`get_project_authorized_economics`), sin recalcular economía.
 
-- **Commit release-prep — bump 0.11.0 → 0.12.0 + CHANGELOG [0.12.0]. ✅ (commit en curso)**
+Plan que estoy siguiendo:
+ADR-0011 + ADR-0012 + spec económica del usuario (BLOQUE 0–5, MVP aceptado). Flujo `/ship pr` autorizado
+de corrido: commit → bump/CHANGELOG → gates → push → PR. DETENERSE antes de merge/tag/release.
 
-## Siguiente paso
-**PR #16** abierto contra `version-16` (https://github.com/luisrms69/pmo/pull/16), v0.12.0 MINOR. Esperando
-CI. Tras merge (lo hace el usuario): `/sync-check` → `/ship release` v0.12.0. No merge/tag/release por Claude.
+Objetivo inmediato:
+Crear/actualizar el PR contra `version-16` con bump **0.16.0** (MINOR) y verificar CI.
 
-## Cuidados / no repetir
+Criterio de avance:
+PR abierto contra `version-16`, working tree limpio, CI verde (o solo fallos ajenos al cambio).
+
+---
+
+## Estado actual
+
+### Ya cerrado
+- ADR-0011 (`ba1070f`); Reporte Ejecutivo v1 (`bf57b19`); Calidad de Planeación (`a10d387`); fix shadowing `_` (`8650276`).
+- **Bloque económico (ADR-0012)**: frontera `pmo/project_economics.py` (contrato lazy, 3 estados + ok,
+  gate económico), sección `costs` en `build_project_control` (comparable_cost vs gross_margin_cost_basis),
+  bloque compacto en `executive.html` (solo Page), pestaña **Financiera** (`financial.html` +
+  `get_financial_html`), `impact_amount`/`impact_days` marcados no vinculantes. Docs: ADR-0012 +
+  arquitectura.md + project-control.md. Tests: `test_project_economics.py` + ampliación de
+  `test_project_control.py`.
+- Validación real end-to-end en `pmo-v16.dev` (cadena PROJ-0009: root + addenda aplicada + addenda pendiente).
+- Tests: suite completa **267 + 41 OK**. Linters (ruff check/format, prettier@2.7.1) limpios.
+
+### Pendiente inmediato
+1. CI del PR #20 en verde (corregir solo fallos atribuibles al cambio).
+2. **DETENERSE antes de merge/tag/release** (merge lo hace el usuario; luego `/ship release` → tag+Release `v0.16.0`).
+
+### No repetir / no ampliar
+- No ampliar más la UI económica ni sembrar más datos (MVP aceptado por el usuario).
+- No segunda fuente de verdad económica; todo autorizado entra por el contrato (ADR-0012 D1).
+- Economía **nunca** en Print Format/PDF (ADR-0012 D6, decisión estructural).
+- No degradar estado `inconsistent` a ausencia (ADR-0012 D3).
+
+---
+
+## Decisiones vigentes
+- **SSOT económico = Quotation congelada** vía `get_project_authorized_economics`; pmo compone, no recalcula.
+- **Gate económico único server-side**: rol {PMO Manager, PMO Executive Access, System Manager} **AND**
+  Project READ, evaluado antes de componer `costs`; si no pasa, `pc.costs` no existe en el payload.
+- **`comparable_cost`** = costing+purchase (vs autorizado); **`gross_margin_cost_basis`** = +material
+  (base del `gross_margin` nativo). Material no contamina el comparable.
+- `frappe.logger("pmo").warning` (no `frappe.log_error`) en el estado `inconsistent` — evita ensuciar el suite.
+- Moneda v1: comparación solo con base única; el contrato es fail-closed ante moneda incompatible.
+
+---
+
+## Archivos relevantes ahora
+### Leer primero
+- `pmo/project_control.py` — builder canónico + sección `costs` + `get_financial_html`.
+- `pmo/project_economics.py` — frontera/gate hacia `erpnext_proposals`.
+- `pmo/templates/project_control/{executive,financial}.html`.
+- `docs/adr/0012-project-economics-integration.md`.
+### Fuera de git (no commitear)
+- `one_offs/seed_finance.py` — seed económico dev-only (cadena real PROJ-0009, gitignored).
+
+---
+
+## Riesgos / cuidados
 - La suite corre en dos lotes (integración + unitarios); no leer solo el último "Ran N".
-- Print Format base para #3 vive en `frappe-infrastructure` (revisar al iniciar #3, no antes).
-- Rama protegida `version-16`; remoto `upstream`; BD/`bench migrate` con autorización; git solo vía `/ship`.
+- Tras i18n/build → `clear-cache` para que el servidor tome traducciones nuevas.
+- CI usa `ruff check` + `prettier@2.7.1` exactos; linters solo sobre `.py`/`.js`, nunca `.json`.
+- `pyproject.toml` deriva la versión vía flit (`dynamic`); tocar solo `pmo/__init__.py::__version__`.
+
+## Información faltante
+- Ninguna para continuar; el PR se crea contra `version-16` y se detiene antes de merge/tag/release.

@@ -1,5 +1,37 @@
 # Changelog — pmo
 
+## [0.16.0] — 2026-09-12
+
+Arquitectura de reporting canónica de Project Control: una fuente, muchas vistas. Introduce el contexto
+canónico `build_project_control` (ADR-0011), el Reporte Ejecutivo v1, Calidad de Planeación y el **bloque
+económico** que consume el contrato de `erpnext_proposals` sin recalcular economía (ADR-0012).
+
+### Added
+- **ADR-0011** — contexto canónico único `build_project_control(project, cutoff, sections, audience)`:
+  compone (no recalcula) los motores de dominio; Page/HTML/PDF/Portal son consumidores.
+- **Reporte Ejecutivo v1** — vista integral en la Page `PMO Control de Proyecto`, con template único
+  (`templates/project_control/executive.html`) compartido con el Print Format `PMO Project Status`.
+- **Calidad de Planeación** — Madurez de planeación (5 componentes evaluables) + tareas activas sin
+  responsable (responsable vigente = ToDo `Open`).
+- **Bloque económico (ADR-0012)** — sección `costs`:
+  - Frontera opcional `pmo/project_economics.py` (import lazy a `erpnext_proposals`; `required_apps` sigue
+    `["erpnext"]`); 3 estados diferenciados (`app_absent`/`no_proposal`/`inconsistent`) + ok, sin degradar
+    inconsistencia a ausencia.
+  - Gate económico único server-side (`can_see_project_economics`): rol {PMO Manager, PMO Executive Access,
+    System Manager} **AND** Project READ, evaluado antes de componer; sin él la sección no existe en el payload.
+  - `comparable_cost` (costing+purchase, vs autorizado) separado de `gross_margin_cost_basis` (+material,
+    base del margen bruto nativo); margen autorizado y bruto registrado lado a lado, sin recalcular.
+  - Bloque compacto en el Reporte Ejecutivo (solo Page) + pestaña **Financiera** (`financial.html` vía
+    `get_financial_html`). **Excluida del Print Format/PDF** (decisión estructural).
+- Documentación: `docs/adr/0011-*`, `docs/adr/0012-*`, `docs/tecnico/arquitectura.md`,
+  `docs/usuario/project-control.md`. Tests: `test_project_control.py` (ampliado), `test_project_economics.py`.
+
+### Changed
+- `pmo_project_status()` converge hacia el builder canónico (wrapper delgado); `pmo/health.py` confirmado
+  como fuente única de salud.
+- `impact_amount`/`impact_days` de `PMO Change Request`: descripción explícita de **estimación no
+  vinculante** (la valuación autoritativa vive en la Quotation).
+
 ## [0.13.0] — 2026-09-10
 
 Ronda i18n: la app pasa a **inglés como fuente canónica** y trae su **propio catálogo español**

@@ -12,28 +12,59 @@ correspondiente (respetando privacidad P4); el detalle tabular exportable sigue 
 
 - **Project** — selector; solo muestra proyectos que puedes ver (P4).
 - **Status Date (fecha de corte)** — se prellena con la del Project (ADR-0006) o **hoy** por defecto; puedes
-  cambiarla. La pantalla indica siempre qué fecha de corte se está usando. Aplica a *Status / Schedule* y
-  *Planned vs Actual*.
+  cambiarla. La pantalla indica siempre qué fecha de corte se está usando. Aplica a *Reporte Ejecutivo*,
+  *Status / Schedule* y *Planned vs Actual*.
 - **Abrir Project** — abre el documento nativo del Project.
 
 ## Pestañas
 
-1. **Status / Schedule** — control a la fecha de corte (`PMO Status Report`): resumen (línea base vigente,
+1. **Reporte Ejecutivo** — vista integral del proyecto a la fecha de corte, pensada para dirección/cliente,
+   en una sola página: encabezado con salud (semáforo), avance real, línea base y desvío, forecast y fecha
+   comprometida con su desvío, **tareas previstas al corte** (cuántas tareas del plan debían estar
+   terminadas — no es "avance"), cumplimiento, tareas vencidas, esfuerzo (horas reales a la fecha de corte
+   vs planificadas y % consumido), **cronograma Gantt**, hitos, tabla de tareas con desviación y el
+   **historial de solicitudes de cambio** (todas las formalizadas). Incluye además **Calidad de
+   Planeación**: un indicador de **Madurez de planeación** (promedio de 5 componentes — % de tareas hoja
+   con responsable / con fecha inicio / con fecha fin / con estimación / incorporadas a la línea base
+   vigente) con su desglose siempre visible, y el listado de **tareas activas sin responsable** (una tarea
+   completada no cuenta como problema de asignación). Cuando un componente no es evaluable (p. ej. sin
+   línea base) se muestra "No evaluable", nunca cero. Es exactamente el mismo contenido del reporte
+   imprimible **PMO Project Status** (misma fuente), embebido aquí para revisarlo sin cambiar de pantalla.
+   No recalcula nada: el servidor compone el contexto y lo renderiza (respeta P4). **Solo para usuarios con
+   acceso económico** (ver "Economía del proyecto"), muestra además un resumen económico compacto: ingresos
+   (autorizado → ordenado → facturado), costo autorizado vs costo registrado, y margen autorizado vs margen
+   bruto registrado. **Este resumen económico NO aparece en el PDF/Print Format.**
+2. **Status / Schedule** — control a la fecha de corte (`PMO Status Report`): resumen (línea base vigente,
    forecast, fechas comprometidas, desvíos, vencidas, horas) y tabla por Task (fin baseline vs forecast,
    slip, compromiso, vencida al corte). Si el proyecto **no tiene línea base vigente** a la fecha, la tabla
    aparece vacía con una nota explicativa; el resumen sigue aplicando.
-2. **Planned vs Actual** — esfuerzo por Task (`PMO Planned vs Actual`): planificado, real, variación y
+3. **Planned vs Actual** — esfuerzo por Task (`PMO Planned vs Actual`): planificado, real, variación y
    % consumido (con barra). La **variación** es `Real − Planificado`: positiva (sobreconsumo) se resalta;
    negativa (bajo lo planificado) es neutra.
-3. **Baseline Comparison** — comparación entre **dos líneas base emitidas** del proyecto
+4. **Baseline Comparison** — comparación entre **dos líneas base emitidas** del proyecto
    (`PMO Baseline Comparison`): tareas añadidas/eliminadas/modificadas, cambios de asignación y de Proyecto.
    Si el proyecto no tiene dos líneas base, se indica claramente.
-4. **Change Control** — solicitudes de cambio del proyecto (`PMO Change Request`), con estado, fecha,
+5. **Change Control** — solicitudes de cambio del proyecto (`PMO Change Request`), con estado, fecha,
    prioridad e impacto; cada una abre su documento. Respeta la visibilidad del proyecto (P4). Si no hay
-   solicitudes, se indica.
+   solicitudes, se indica. (El **impacto** económico del cambio —horas/días/importe— es una **estimación no
+   vinculante**; la valuación económica autoritativa vive en la Quotation, no en el Change Request.)
+6. **Financiera** — vista económica de detalle (**solo usuarios con acceso económico**). Explica los números
+   del resumen ejecutivo: tabla de **Contrato** (Original · Addendas aplicadas · Autorizado vigente para
+   ingreso/costo/labor/externo/margen/margen %), **Ingresos** (autorizado → ordenado → facturado), **Costos**
+   (autorizado total/labor/externo vs registrado: Timesheets, Compras, costo comparable; el **material
+   consumido** se muestra aparte como base del margen bruto de ERPNext, no del costo comparable), **Márgenes**
+   (autorizado y bruto registrado, lado a lado, sin interpretarlos como desviación) y **Cambios** (impacto
+   aplicado + addendas pendientes). Si el proyecto no tiene propuesta vinculada, muestra "Sin referencia
+   autorizada" y solo los reales de ERPNext. **No aparece en el PDF/Print Format.**
 
-> El cronograma **Gantt** del proyecto se presenta en el **reporte imprimible** *PMO Project Status*
-> (resumen ejecutivo + avance + Gantt en un solo documento), no como pestaña interactiva aquí.
+> **Acceso económico:** las secciones económicas (resumen del Reporte Ejecutivo y pestaña Financiera) solo se
+> muestran a usuarios con rol **PMO Manager**, **PMO Executive Access** o **System Manager** **y** permiso de
+> lectura del Project. Tener acceso operativo por asignación o por compartir el proyecto **no** concede
+> acceso económico. La restricción es del lado del servidor.
+
+> El **Reporte Ejecutivo** y el reporte imprimible **PMO Project Status** comparten un **único contexto y
+> un único template** (ADR-0011): el mismo Gantt/resumen se ve en la pestaña, en HTML y en PDF, sin
+> duplicar cálculos.
 
 ## Privacidad
 
