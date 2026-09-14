@@ -106,6 +106,12 @@ def customers_block():
 	return {"customers": _data()["customers"]}
 
 
+@frappe.whitelist()
+def governance_block():
+	"""Sección Project Governance (ADR-0014 D9): conteos + proyectos con acción de gobierno pendiente. P4."""
+	return {"governance": _data()["governance"]}
+
+
 def _metric(filters):
 	filters = frappe.parse_json(filters) if isinstance(filters, str) else (filters or {})
 	return filters.get("metric")
@@ -222,7 +228,39 @@ def _build():
 		"attention": attention,
 		"delayed_tasks": _delayed_tasks(),
 		"customers": customers,
+		"governance": _governance(),
 	}
+
+
+def _governance():
+	"""Sección Project Governance (ADR-0014 D9). Consume las señales canónicas de `pmo.governance`
+	(fuente única) sobre los Projects VISIBLES (P4 vía get_list, que aplica permission_query_conditions).
+	Incluye estados terminales (Completed/Cancelled), a diferencia del portafolio activo. Sin maturity score."""
+	from pmo.governance import derive_lifecycle_state, governance_flags
+
+	counts = {"without_charter": 0, "needs_closure": 0, "needs_review": 0, "open_change_requests": 0}
+	items = []
+	for p in frappe.get_list("Project", fields=["name", "project_name", "customer", "status"], limit=0):
+		f = governance_flags(p.name)
+		if not f["has_charter"]:
+			counts["without_charter"] += 1
+		if f["needs_closure"]:
+			counts["needs_closure"] += 1
+		if f["needs_review"]:
+			counts["needs_review"] += 1
+		counts["open_change_requests"] += cint(f["open_change_requests"])
+		if (not f["has_charter"]) or f["needs_closure"] or f["needs_review"]:
+			items.append(
+				{
+					"project": p.name,
+					"project_name": p.project_name,
+					"customer": p.customer,
+					"status": p.status,
+					"lifecycle": derive_lifecycle_state(p.name),
+					**f,
+				}
+			)
+	return {"counts": counts, "items": items[:20]}
 
 
 def _attention_reason(health_key, slip_committed, slip_baseline, overdue, exceeds):

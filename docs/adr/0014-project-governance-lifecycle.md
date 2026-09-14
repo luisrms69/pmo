@@ -92,9 +92,17 @@ Post-Project Review, con **enlaces + existencia + fechas**, sin duplicar conteni
 de Risks se añadirá cuando se implemente la capacidad de Risk, D6.)
 
 ### D9 — Dashboard PMO (sin nuevo dashboard, sin maturity score)
-Extender las filas de portafolio existentes (ya con `has_baseline`) con `has_charter`, `needs_closure`
-(Completed sin Closure), `needs_review` (cerrado sin Review) y `open_change_requests`; una sección "Project
-Governance" reusando `_build`. (Señales de riesgo se añadirán con la capacidad de Risk, D6.)
+Extender las filas de portafolio existentes (ya con `has_baseline`) con señales de gobierno; una sección
+"Project Governance" reusando `_build`. Las señales se **centralizan en `pmo/governance.py`** (fuente única)
+y Portfolio/Dashboard las **consumen** (no se duplican reglas por superficie). Semántica canónica, alineada
+con D4/D7:
+- `has_charter` = existe Charter **submitted**;
+- `needs_closure` = `Project.status ∈ {Completed, Cancelled}` **y** no existe Closure submitted (mismos
+  estados terminales de D4/D7 — no solo `Completed`);
+- `needs_review` = existe Closure submitted **y** no existe Review submitted;
+- `open_change_requests` = Change Requests en estados abiertos canónicos (`Draft`, `In Review`).
+
+(Señales de riesgo se añadirán con la capacidad de Risk, D6.)
 
 ### D10 — P4 reutilizado (sin segunda política)
 Los artefactos heredan la visibilidad del Project vía `pmo.permissions` (`permission_query_conditions` +

@@ -32,6 +32,12 @@ LIFECYCLE_LABELS = {
 	LIFECYCLE_REVIEWED: N_("Post-project reviewed"),
 }
 
+# Estados terminales reales del Project nativo de ERPNext (Open/On hold/Completed/Cancelled): ambos requieren
+# cierre formal (ADR-0014 D4/D7). Fuente única reutilizada por lifecycle y por las señales de gobierno.
+TERMINAL_STATUSES = ("Completed", "Cancelled")
+# Estados abiertos canónicos del Change Request (ADR-0005): aún no resueltos.
+OPEN_CHANGE_REQUEST_STATES = ("Draft", "In Review")
+
 
 def _has_submitted(doctype: str, project: str) -> bool:
 	"""¿Existe un documento SUBMITTED de `doctype` para el Project? Guardado si el DocType aún no existe."""
@@ -53,8 +59,8 @@ def derive_lifecycle_state(project: str) -> str:
 		return LIFECYCLE_REVIEWED
 	if _has_submitted("PMO Project Closure", project):
 		return LIFECYCLE_CLOSED
-	# Estados terminales reales del Project nativo de ERPNext (Open/On hold/Completed/Cancelled).
-	if frappe.db.get_value("Project", project, "status") in ("Completed", "Cancelled"):
+	# Estados terminales reales del Project nativo de ERPNext (fuente única TERMINAL_STATUSES).
+	if frappe.db.get_value("Project", project, "status") in TERMINAL_STATUSES:
 		return LIFECYCLE_CLOSING
 	if get_effective_baseline(project):
 		return LIFECYCLE_EXECUTION
@@ -116,4 +122,22 @@ def build_expediente(project: str) -> dict:
 		},
 		"closure": _artifact("PMO Project Closure", project, "creation"),
 		"review": _artifact("PMO Post-Project Review", project, "creation"),
+	}
+
+
+def governance_flags(project: str) -> dict:
+	"""Señales de gobierno por Project (ADR-0014 D9), **fuente única** consumida por Portfolio/Dashboard.
+	No duplica reglas por superficie; semántica alineada con D4/D7."""
+	status = frappe.db.get_value("Project", project, "status")
+	has_charter = _has_submitted("PMO Project Charter", project)
+	has_closure = _has_submitted("PMO Project Closure", project)
+	has_review = _has_submitted("PMO Post-Project Review", project)
+	open_crs = frappe.db.count(
+		"PMO Change Request", {"project": project, "workflow_state": ("in", OPEN_CHANGE_REQUEST_STATES)}
+	)
+	return {
+		"has_charter": has_charter,
+		"needs_closure": (status in TERMINAL_STATUSES) and not has_closure,
+		"needs_review": has_closure and not has_review,
+		"open_change_requests": open_crs,
 	}
