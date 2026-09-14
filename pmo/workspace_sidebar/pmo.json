@@ -1,6 +1,5 @@
 {
  "app": "pmo",
- "creation": "2026-09-11 00:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
  "header_icon": "project",
@@ -67,8 +66,6 @@
    "type": "Link"
   }
  ],
- "modified": "2026-09-14 00:00:00.000000",
- "modified_by": "Administrator",
  "module": "PMO",
  "name": "PMO",
  "standard": 1,
