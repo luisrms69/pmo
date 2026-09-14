@@ -10,6 +10,7 @@
  "field_order": [
   "project",
   "closure_date",
+  "column_break_hdr",
   "accepted_by",
   "accepted_on",
   "section_checklist",
@@ -56,6 +57,10 @@
    "in_list_view": 1,
    "label": "Closure date",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_hdr",
+   "fieldtype": "Column Break"
   },
   {
    "description": "Who formally accepts the closure (name or role; may be the client). Required for a Completed Project.",
