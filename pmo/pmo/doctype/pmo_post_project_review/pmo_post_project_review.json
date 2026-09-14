@@ -1,0 +1,215 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "PMO-PPR-.#####",
+ "creation": "2026-09-13 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "is_submittable": 1,
+ "field_order": [
+  "project",
+  "title",
+  "column_break_hdr",
+  "review_date",
+  "reviewed_by",
+  "section_eval",
+  "objectives_achieved",
+  "what_worked",
+  "what_didnt",
+  "causes",
+  "recommendations",
+  "section_lessons",
+  "lessons",
+  "section_snapshot",
+  "issued_by",
+  "issued_at",
+  "column_break_snap",
+  "snapshot_schema_version",
+  "snapshot_hash",
+  "section_snapshot_data",
+  "snapshot",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Project",
+   "options": "Project",
+   "reqd": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
+  },
+  {
+   "fieldname": "column_break_hdr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "review_date",
+   "fieldtype": "Date",
+   "label": "Review date"
+  },
+  {
+   "fieldname": "reviewed_by",
+   "fieldtype": "Link",
+   "label": "Reviewed by",
+   "options": "User"
+  },
+  {
+   "fieldname": "section_eval",
+   "fieldtype": "Section Break",
+   "label": "Evaluation (post-project)"
+  },
+  {
+   "fieldname": "objectives_achieved",
+   "fieldtype": "Small Text",
+   "label": "Objectives achieved",
+   "reqd": 1
+  },
+  {
+   "fieldname": "what_worked",
+   "fieldtype": "Small Text",
+   "label": "What worked"
+  },
+  {
+   "fieldname": "what_didnt",
+   "fieldtype": "Small Text",
+   "label": "What did not work"
+  },
+  {
+   "fieldname": "causes",
+   "fieldtype": "Small Text",
+   "label": "Causes"
+  },
+  {
+   "fieldname": "recommendations",
+   "fieldtype": "Small Text",
+   "label": "Recommendations"
+  },
+  {
+   "fieldname": "section_lessons",
+   "fieldtype": "Section Break",
+   "label": "Lessons learned"
+  },
+  {
+   "fieldname": "lessons",
+   "fieldtype": "Table",
+   "label": "Lessons learned",
+   "options": "PMO Lessons Learned"
+  },
+  {
+   "collapsible": 1,
+   "description": "Frozen on submit (evidence). Not editable after submit.",
+   "fieldname": "section_snapshot",
+   "fieldtype": "Section Break",
+   "label": "Review snapshot (frozen on submit)"
+  },
+  {
+   "fieldname": "issued_by",
+   "fieldtype": "Link",
+   "label": "Issued by",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issued_at",
+   "fieldtype": "Datetime",
+   "label": "Issued at",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_snap",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "snapshot_schema_version",
+   "fieldtype": "Int",
+   "label": "Snapshot schema version",
+   "read_only": 1
+  },
+  {
+   "fieldname": "snapshot_hash",
+   "fieldtype": "Data",
+   "label": "Snapshot hash",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_snapshot_data",
+   "fieldtype": "Section Break",
+   "label": "Frozen snapshot (JSON)"
+  },
+  {
+   "description": "Immutable canonical snapshot of the review at submit (same form that is hashed).",
+   "fieldname": "snapshot",
+   "fieldtype": "Code",
+   "label": "Snapshot",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PMO Post-Project Review",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "module": "PMO",
+ "name": "PMO Post-Project Review",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PMO Executive Access"
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

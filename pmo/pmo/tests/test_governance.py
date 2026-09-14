@@ -77,12 +77,23 @@ class TestGovernanceLifecycle(IntegrationTestCase):
 		self.assertEqual(exp["lifecycle_state"], LIFECYCLE_PLANNING)
 		self.assertTrue(exp["charter"]["available"])
 		self.assertTrue(exp["charter"]["reference"])
-		# Closure ya existe como DocType (BLOQUE 4) y no hay doc para este Project → disponible False, sin pending.
+		# Charter/Closure/Review ya existen como DocTypes (BLOQUES 2/4/5); sin doc para este Project →
+		# disponible False y sin pending (pending es solo para DocTypes aún inexistentes).
 		self.assertFalse(exp["closure"]["available"])
 		self.assertFalse(exp["closure"]["pending"])
-		# Review aún NO existe como DocType (bloque futuro) → pending, sin romper (mecanismo forward-compatible).
-		self.assertTrue(exp["review"]["pending"])
+		self.assertFalse(exp["review"]["available"])
+		self.assertFalse(exp["review"]["pending"])
 		self.assertIn("open", exp["change_requests"])
+
+	def test_artifact_pending_when_doctype_absent(self):
+		# Mecanismo forward-compatible (desacoplado de doctypes reales): un artefacto cuyo DocType no existe
+		# se marca pending, sin romper.
+		from pmo.governance import _artifact
+
+		p = _project("GOV Absent")
+		art = _artifact("PMO Nonexistent Artifact", p, "creation")
+		self.assertTrue(art["pending"])
+		self.assertFalse(art["available"])
 
 	def test_governance_is_optin_not_default(self):
 		# La sección governance NO viaja por defecto (no en DEFAULT_SECTIONS); es opt-in.
