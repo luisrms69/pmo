@@ -21,7 +21,7 @@ NUMBER_CARDS = {
 	"PMO Projects Without Baseline",
 }
 CHARTS = {"PMO Portfolio Health", "PMO Capacity Snapshot", "PMO Top Projects by Effort"}
-CUSTOM_BLOCKS = {"PMO Attention", "PMO Customers", "PMO Governance"}
+CUSTOM_BLOCKS = {"PMO Attention", "PMO Customers"}
 REPORT_LINKS = {
 	"PMO Portfolio",
 	"PMO Status Report",

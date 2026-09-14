@@ -53,9 +53,21 @@
    "link_type": "Page",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 0,
+   "icon": "project",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PMO Governance",
+   "link_to": "PMO Governance",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-09-11 21:00:00.000000",
+ "modified": "2026-09-14 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "PMO",
  "name": "PMO",
