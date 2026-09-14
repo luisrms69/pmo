@@ -97,8 +97,11 @@ La huella es **semántica, no técnica**: NO incluye `name`, nombres de child ro
 ni IDs que cambien al versionar; una nueva versión con el **mismo delta produce la misma huella**; preserva la
 multiplicidad de filas, normalizadas y ordenadas canónicamente. Estable solo en `docstatus>=1` (congelado).
 
-- Al `CR Approved`, PMO fija **read-only** `approved_addendum` (la Quotation exacta revisada) y
-  `approved_delta_fingerprint`.
+- **Precondición de `CR Approved`:** la Addenda vinculada debe estar realmente en **`En Revisión`**
+  (`docstatus=1`, congelada y exacta); PMO **rechaza server-side** aprobar el CR contra un **Borrador** (un
+  Draft aún puede mutar y no tiene huella comparable). Al `CR Approved`, PMO fija **read-only**
+  `approved_addendum` (la Quotation exacta revisada) y `approved_delta_fingerprint` (huella de **esa** versión
+  en `En Revisión`).
 - Si se reversiona (rechazo del cliente → nueva versión del mismo `ROOT-ADD-NN`) y la huella de la nueva
   versión (en `En Revisión`) **difiere**, el Project Owner debe **re-aprobar** esa versión mediante una acción
   explícita ("Reaprobar versión de Addenda") que actualiza `approved_addendum`/`approved_delta_fingerprint`
@@ -115,7 +118,14 @@ Los gates son **server-side**, independientes de botones/JS. PMO intercepta el g
 sigue ignorando al CR** (dependencia `pmo → erpnext_proposals` intacta). Reglas:
 - **CR no `Approved` + Addenda en `En Revisión`** → PMO **bloquea server-side** cualquier avance de la Addenda
   salvo `Rechazada`.
-- **CR `Approved`** → PMO permite continuar la Addenda `Aprobada → Enviada al Cliente → Ganada`.
+- **CR `Approved` + transición `En Revisión → Aprobada`** → PMO la permite **solo si** la huella de **esa**
+  versión == `approved_delta_fingerprint`. Si **difiere** (caso típico: rechazo del cliente → **nueva versión**
+  del mismo `ROOT-ADD-NN` con delta distinto), PMO **bloquea server-side** el avance hasta que el Project Owner
+  ejecute **"Reaprobar versión de Addenda"** (D6), que actualiza `approved_addendum`/`approved_delta_fingerprint`.
+  Este gate en `Aprobada` cierra el hueco de que una versión con delta distinto llegue al cliente **antes** de
+  la re-aprobación; **no** se delega la protección a `apply` (que la bloquearía demasiado tarde).
+- **CR `Approved` + versión ya re-aprobada (o nunca cambiada)** → PMO permite continuar la Addenda
+  `Aprobada → Enviada al Cliente → Ganada`.
 - **CR `Rejected`** → **no** se auto-ejecutan acciones con permisos elevados; un `Proposals Manager` ejecuta la
   transición nativa de la Addenda a `Rechazada`.
 - **`apply`** compara **siempre** la huella de la versión `Ganada` contra `approved_delta_fingerprint` y
