@@ -37,6 +37,30 @@
  },
  {
   "doctype": "Custom Field",
+  "name": "Project-pmo_operational_owner",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_operational_owner",
+  "label": "Responsable operativo interno",
+  "fieldtype": "Link",
+  "options": "Employee",
+  "insert_after": "company",
+  "description": "Persona interna responsable de la operación/ejecución diaria del proyecto, distinta del Project Manager. El PMO Project Handoff toma este valor y lo congela al emitir."
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_customer_contact",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_customer_contact",
+  "label": "Contacto principal del cliente",
+  "fieldtype": "Link",
+  "options": "Contact",
+  "insert_after": "pmo_operational_owner",
+  "description": "Contacto principal del cliente para este proyecto. El PMO Project Handoff toma este valor y lo congela al emitir."
+ },
+ {
+  "doctype": "Custom Field",
   "name": "ToDo-pmo_planned_hours",
   "dt": "ToDo",
   "module": "PMO",

@@ -161,8 +161,8 @@ permission_query_conditions = {
 	"PMO Project Baseline": "pmo.permissions.get_permission_query_conditions_baseline",
 	# ADR-0005 D13: el Change Request hereda la visibilidad del Project.
 	"PMO Change Request": "pmo.permissions.get_permission_query_conditions_change_request",
-	# ADR-0014 D3/D10: el Charter hereda la visibilidad del Project.
-	"PMO Project Charter": "pmo.permissions.get_permission_query_conditions_charter",
+	# ADR-0014 D3/D10: el Handoff hereda la visibilidad del Project.
+	"PMO Project Handoff": "pmo.permissions.get_permission_query_conditions_handoff",
 	# ADR-0014 D4/D10: el Closure hereda la visibilidad del Project.
 	"PMO Project Closure": "pmo.permissions.get_permission_query_conditions_closure",
 	# ADR-0014 D5/D10: el Post-Project Review hereda la visibilidad del Project.
@@ -176,7 +176,7 @@ has_permission = {
 	"Task": "pmo.permissions.has_permission_task",
 	"PMO Project Baseline": "pmo.permissions.has_permission_baseline",
 	"PMO Change Request": "pmo.permissions.has_permission_change_request",
-	"PMO Project Charter": "pmo.permissions.has_permission_charter",
+	"PMO Project Handoff": "pmo.permissions.has_permission_handoff",
 	"PMO Project Closure": "pmo.permissions.has_permission_closure",
 	"PMO Post-Project Review": "pmo.permissions.has_permission_review",
 	"PMO Project Risk Assessment": "pmo.permissions.has_permission_risk_assessment",

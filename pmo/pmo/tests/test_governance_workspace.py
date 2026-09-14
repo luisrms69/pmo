@@ -14,7 +14,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 GOV_DOCTYPE_LINKS = {
-	"PMO Project Charter",
+	"PMO Project Handoff",
 	"PMO Project Baseline",
 	"PMO Change Request",
 	"PMO Project Closure",

@@ -4,7 +4,7 @@
 """ADR-0014 D9 — señales de gobierno (governance_flags) + sección Project Governance del Dashboard.
 
 Datos ficticios. Cubre: semántica canónica de needs_closure ({Completed, Cancelled} sin Closure),
-has_charter/needs_review/open_change_requests, y que el bloque del Dashboard consume esas señales (P4).
+has_handoff/needs_review/open_change_requests, y que el bloque del Dashboard consume esas señales (P4).
 """
 
 import frappe
@@ -23,8 +23,10 @@ def _project(name, status="Open"):
 	return pid
 
 
-def _charter(project):
-	d = frappe.get_doc({"doctype": "PMO Project Charter", "project": project, "objective": "X"})
+def _handoff(project):
+	d = frappe.get_doc(
+		{"doctype": "PMO Project Handoff", "project": project, "handoff_summary": "Transferencia X"}
+	)
 	d.insert(ignore_permissions=True)
 	d.submit()
 	return d
@@ -64,17 +66,17 @@ class TestGovernanceDashboard(IntegrationTestCase):
 		self.assertFalse(f["needs_closure"])
 		self.assertTrue(f["needs_review"])  # cerrado sin Review
 
-	def test_has_charter_signal(self):
-		p = _project("GD Charter")
-		self.assertFalse(governance_flags(p)["has_charter"])
-		_charter(p)
-		self.assertTrue(governance_flags(p)["has_charter"])
+	def test_has_handoff_signal(self):
+		p = _project("GD Handoff")
+		self.assertFalse(governance_flags(p)["has_handoff"])
+		_handoff(p)
+		self.assertTrue(governance_flags(p)["has_handoff"])
 
 	def test_open_change_request_only_appears_in_items(self):
 		from pmo.dashboard import governance_block
 
-		p = _project("GD CROnly", status="Open")  # no terminal, con Charter → único pendiente = CR abierto
-		_charter(p)
+		p = _project("GD CROnly", status="Open")  # no terminal, con Handoff → único pendiente = CR abierto
+		_handoff(p)
 		cr = frappe.get_doc(
 			{
 				"doctype": "PMO Change Request",
@@ -99,7 +101,7 @@ class TestGovernanceDashboard(IntegrationTestCase):
 		_cols, rows, *_ = execute({})
 		self.assertTrue(rows)
 		for r in rows:
-			self.assertIn("has_charter", r)
+			self.assertIn("has_handoff", r)
 			self.assertIn("needs_closure", r)
 			self.assertIn("open_change_requests", r)
 

@@ -242,18 +242,18 @@ def has_permission_change_request(doc, ptype=None, user=None):
 	return is_project_visible(project, user)  # read
 
 
-# --- PMO Project Charter (ADR-0014 D3/D10): P4 heredado del Project ---------------
+# --- PMO Project Handoff (ADR-0014 D3/D10): P4 heredado del Project ---------------
 
 
-def get_permission_query_conditions_charter(user=None):
-	"""Listados: solo Charters cuyo Project es visible (owner/DocShare-read). Executive/Admin: sin condición."""
+def get_permission_query_conditions_handoff(user=None):
+	"""Listados: solo Handoffs cuyo Project es visible (owner/DocShare-read). Executive/Admin: sin condición."""
 	user = user or frappe.session.user
 	if _is_global_reader(user):
 		return ""
-	return f"`tabPMO Project Charter`.project in ({_member_projects_subquery(user)})"
+	return f"`tabPMO Project Handoff`.project in ({_member_projects_subquery(user)})"
 
 
-def has_permission_charter(doc, ptype=None, user=None):
+def has_permission_handoff(doc, ptype=None, user=None):
 	"""READ = visibilidad del Project. WRITE/CREATE/SUBMIT/CANCEL/AMEND = solo el owner del Project
 	(documento de gobierno). Executive read-only; SHARE denegado. Siempre True/False."""
 	user = user or frappe.session.user

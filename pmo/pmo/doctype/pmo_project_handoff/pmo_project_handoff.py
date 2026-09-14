@@ -1,16 +1,19 @@
 # Copyright (c) 2026, Consultoria en Negocios y Aplicaciones and contributors
 # For license information, please see license.txt
 
-"""PMO Project Charter (ADR-0014 D3/D11) — autorizacion/arranque formal del Project.
+"""PMO Project Handoff (ADR-0014) — evidencia formal de la transferencia del Project a ejecucion.
 
-Submittable + track_changes: al emitir (submit) se **congela** un snapshot canonico con hash (mismo patron
-que PMO Project Baseline: `canonical_json` + `snapshot_hash`). El Charter **compone**, no recaptura: los datos
-canonicos (customer/company, fecha comprometida, propuesta ganada, economia autorizada, hitos y equipo
-iniciales) se derivan del Project y se congelan como evidencia historica del arranque; solo se capturan a mano
-los campos de gobierno que no existen en otro lado (sponsor/PM/objetivo/alcance/entregables/supuestos/
-restricciones).
+Documento corto y submittable: deja constancia del handoff (acta de transferencia) y marca el hito de
+Governance "handoff completado". Flujo: Proposal ganada -> Project + WBS inicial -> **Project Handoff** ->
+Baseline.
 
-Autosuficiente: NO depende de Risk ni de ningun registro de riesgos (ADR-0014 D3/D6). No toca PHI.
+Naturaleza (heredada del anterior Charter): submittable + track_changes, uno emitido por Project, snapshot
+canonico con hash (patron PMO Project Baseline: `canonical_json` + `snapshot_hash`) congelado al submit, y
+P4 heredado del Project. NO recaptura alcance/entregables/economia: el Handoff **compone** datos ya
+existentes en Project/Proposal y solo captura a mano lo que no vive en otro lado (resumen de handoff).
+
+El responsable operativo interno y el contacto principal del cliente viven en el Project (custom fields) y se
+**congelan** en el Handoff al emitir; cambios posteriores en el Project no alteran un Handoff ya emitido.
 """
 
 import frappe
@@ -21,16 +24,15 @@ from pmo.baseline import canonical_json, snapshot_hash
 from pmo.permissions import get_project_team
 from pmo.project_economics import get_authorized_economics
 
-CHARTER_SNAPSHOT_SCHEMA_VERSION = 1
+HANDOFF_SNAPSHOT_SCHEMA_VERSION = 1
 
 
-def build_charter_snapshot(project: str) -> dict:
-	"""Snapshot canonico de arranque: compone datos ya existentes (no recalcula ni recaptura).
+def build_handoff_snapshot(project: str) -> dict:
+	"""Snapshot canonico del handoff: compone datos ya existentes (no recalcula ni recaptura).
 
-	Economia autorizada: se consume la frontera canonica `get_authorized_economics` (lazy a
-	erpnext_proposals); si no esta disponible se registra el motivo, nunca se inventa. Hitos = Tasks
-	`is_milestone`; equipo inicial = `Project.users`.
-	"""
+	Incluye el responsable operativo interno y el contacto principal del cliente (custom fields del Project),
+	economia autorizada (frontera canonica `get_authorized_economics`, lazy a erpnext_proposals), hitos
+	(`Task.is_milestone`) y equipo inicial derivado de las fuentes P4 (owner + DocShare + ToDo)."""
 	proj = (
 		frappe.db.get_value(
 			"Project",
@@ -42,6 +44,8 @@ def build_charter_snapshot(project: str) -> dict:
 				"expected_start_date",
 				"expected_end_date",
 				"pmo_committed_end_date",
+				"pmo_operational_owner",
+				"pmo_customer_contact",
 			],
 			as_dict=True,
 		)
@@ -53,7 +57,7 @@ def build_charter_snapshot(project: str) -> dict:
 		else None
 	)
 	# `proposal_project` es un custom field de erpnext_proposals: solo se consulta si la app esta instalada
-	# (autosuficiencia, ADR-0014 D3 — el Charter no depende de erpnext_proposals).
+	# (autosuficiencia — el Handoff no depende de erpnext_proposals).
 	proposal = None
 	if "erpnext_proposals" in frappe.get_installed_apps():
 		proposal = frappe.db.get_value(
@@ -86,12 +90,12 @@ def build_charter_snapshot(project: str) -> dict:
 			order_by="exp_end_date asc",
 		)
 	]
-	# Equipo inicial DERIVADO de las fuentes P4 canónicas (owner + DocShare + ToDo activo), no de
-	# `Project User` (la membresía no se persiste; ADR-0002). Congelado en el snapshot al submit.
+	# Equipo inicial DERIVADO de las fuentes P4 canonicas (owner + DocShare + ToDo activo), no de
+	# `Project User` (la membresia no se persiste; ADR-0002). Congelado en el snapshot al submit.
 	team = [{"user": u} for u in get_project_team(project)]
 
 	return {
-		"snapshot_schema_version": CHARTER_SNAPSHOT_SCHEMA_VERSION,
+		"snapshot_schema_version": HANDOFF_SNAPSHOT_SCHEMA_VERSION,
 		"project": {
 			"name": project,
 			"project_name": proj.get("project_name"),
@@ -108,6 +112,8 @@ def build_charter_snapshot(project: str) -> dict:
 			if proj.get("pmo_committed_end_date")
 			else None,
 		},
+		"operational_owner": proj.get("pmo_operational_owner"),
+		"customer_contact": proj.get("pmo_customer_contact"),
 		"proposal_reference": proposal,
 		"economics": economics,
 		"milestones": milestones,
@@ -115,27 +121,31 @@ def build_charter_snapshot(project: str) -> dict:
 	}
 
 
-class PMOProjectCharter(Document):
+class PMOProjectHandoff(Document):
 	def validate(self):
-		# Un solo Charter emitido por Project (las enmiendas reemplazan; el anterior queda cancelado).
+		# Un solo Handoff emitido por Project (las enmiendas reemplazan; el anterior queda cancelado).
 		if not self.amended_from:
 			existing = frappe.db.exists(
-				"PMO Project Charter",
+				"PMO Project Handoff",
 				{"project": self.project, "docstatus": 1, "name": ["!=", self.name or ""]},
 			)
 			if existing:
-				frappe.throw(frappe._("This Project already has an issued Charter ({0}).").format(existing))
+				frappe.throw(frappe._("This Project already has an issued Handoff ({0}).").format(existing))
 
 	def before_submit(self):
-		# Congela la evidencia canonica al emitir (ADR-0014 D3/D11). El Print Format se reconstruye SOLO
-		# desde este snapshot, nunca desde datos vivos.
-		snapshot = build_charter_snapshot(self.project)
+		# Congela la evidencia canonica al emitir. El responsable operativo y el contacto del cliente se toman
+		# del Project y quedan fijos: cambios posteriores en el Project no alteran un Handoff ya emitido.
+		snapshot = build_handoff_snapshot(self.project)
 		self.snapshot_schema_version = snapshot["snapshot_schema_version"]
 		self.snapshot_hash = snapshot_hash(snapshot)
 		self.snapshot = canonical_json(snapshot)  # forma canonica (misma que se hashea)
 
 		# Campos derivados de presentacion (congelados): se leen del snapshot, no de datos vivos.
+		self.operational_owner = snapshot["operational_owner"]
+		self.customer_contact = snapshot["customer_contact"]
 		self.committed_end_date = snapshot["project"]["committed_end_date"]
 		self.proposal_reference = snapshot["proposal_reference"]
+		self.customer = snapshot["project"]["customer"]
+		self.company = snapshot["project"]["company"]
 		self.issued_by = frappe.session.user
 		self.issued_at = now_datetime()

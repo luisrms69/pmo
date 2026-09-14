@@ -66,7 +66,7 @@ _DASHBOARD_STRINGS = (
 	# Sección Project Governance (Custom HTML Block "PMO Governance")
 	N_("Pending governance actions"),
 	N_("No pending governance actions."),
-	N_("Without Charter"),
+	N_("Without Handoff"),
 	N_("Requires Closure"),
 	N_("Requires Review"),
 	N_("Open change requests"),
@@ -245,19 +245,19 @@ def _governance():
 	Incluye estados terminales (Completed/Cancelled), a diferencia del portafolio activo. Sin maturity score."""
 	from pmo.governance import derive_lifecycle_state, governance_flags
 
-	counts = {"without_charter": 0, "needs_closure": 0, "needs_review": 0, "open_change_requests": 0}
+	counts = {"without_handoff": 0, "needs_closure": 0, "needs_review": 0, "open_change_requests": 0}
 	items = []
 	for p in frappe.get_list("Project", fields=["name", "project_name", "customer", "status"], limit=0):
 		f = governance_flags(p.name)
-		if not f["has_charter"]:
-			counts["without_charter"] += 1
+		if not f["has_handoff"]:
+			counts["without_handoff"] += 1
 		if f["needs_closure"]:
 			counts["needs_closure"] += 1
 		if f["needs_review"]:
 			counts["needs_review"] += 1
 		counts["open_change_requests"] += cint(f["open_change_requests"])
 		if (
-			(not f["has_charter"])
+			(not f["has_handoff"])
 			or f["needs_closure"]
 			or f["needs_review"]
 			or cint(f["open_change_requests"]) > 0

@@ -39,8 +39,10 @@ def _project(name, status="Open"):
 	return pid
 
 
-def _charter(project):
-	doc = frappe.get_doc({"doctype": "PMO Project Charter", "project": project, "objective": "X"})
+def _handoff(project):
+	doc = frappe.get_doc(
+		{"doctype": "PMO Project Handoff", "project": project, "handoff_summary": "Transferencia X"}
+	)
 	doc.insert(ignore_permissions=True)
 	doc.submit()
 	return doc
@@ -54,10 +56,10 @@ class TestGovernanceLifecycle(IntegrationTestCase):
 		p = _project("GOV Init")
 		self.assertEqual(derive_lifecycle_state(p), LIFECYCLE_INITIATION)
 
-	def test_planning_after_charter(self):
+	def test_planning_after_handoff(self):
 		p = _project("GOV Plan")
-		_charter(p)
-		# Charter emitido, sin baseline vigente → Planning.
+		_handoff(p)
+		# Handoff emitido, sin baseline vigente → Planning.
 		self.assertEqual(derive_lifecycle_state(p), LIFECYCLE_PLANNING)
 
 	def test_closing_when_completed_without_closure(self):
@@ -72,12 +74,12 @@ class TestGovernanceLifecycle(IntegrationTestCase):
 
 	def test_expediente_index_shape_and_pending(self):
 		p = _project("GOV Exp")
-		_charter(p)
+		_handoff(p)
 		exp = build_expediente(p)
 		self.assertEqual(exp["lifecycle_state"], LIFECYCLE_PLANNING)
-		self.assertTrue(exp["charter"]["available"])
-		self.assertTrue(exp["charter"]["reference"])
-		# Charter/Closure/Review ya existen como DocTypes (BLOQUES 2/4/5); sin doc para este Project →
+		self.assertTrue(exp["handoff"]["available"])
+		self.assertTrue(exp["handoff"]["reference"])
+		# Handoff/Closure/Review ya existen como DocTypes (BLOQUES 2/4/5); sin doc para este Project →
 		# disponible False y sin pending (pending es solo para DocTypes aún inexistentes).
 		self.assertFalse(exp["closure"]["available"])
 		self.assertFalse(exp["closure"]["pending"])

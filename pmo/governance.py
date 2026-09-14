@@ -4,7 +4,7 @@
 """Governance & Lifecycle (ADR-0014 D7/D8) — estado de ciclo de vida DERIVADO + índice de expediente.
 
 No hay workflow ni estado paralelo sobre `Project` (ADR-0014 D7): el estado documental se **deriva** de
-hechos existentes (Project.status + existencia/submit de Charter/Baseline/Closure/Review), igual que
+hechos existentes (Project.status + existencia/submit de Handoff/Baseline/Closure/Review), igual que
 `pmo.health` deriva el semáforo. El índice de expediente (D8) es solo referencias/existencia/fechas; no
 duplica el contenido de otras vistas.
 
@@ -50,7 +50,7 @@ def derive_lifecycle_state(project: str) -> str:
 	"""Estado documental derivado (precedencia: el más avanzado gana). No modifica nada.
 
 	reviewed → closed → closing (Project terminal sin Closure) → execution (baseline vigente) → planning
-	(Charter emitido) → initiation. Un Project **terminal** (Completed o Cancelled) sin Closure requiere cierre
+	(Handoff emitido) → initiation. Un Project **terminal** (Completed o Cancelled) sin Closure requiere cierre
 	formal → Closing. On hold no es terminal: se deriva de sus artefactos/baseline.
 	"""
 	from pmo.baseline import get_effective_baseline
@@ -64,7 +64,7 @@ def derive_lifecycle_state(project: str) -> str:
 		return LIFECYCLE_CLOSING
 	if get_effective_baseline(project):
 		return LIFECYCLE_EXECUTION
-	if _has_submitted("PMO Project Charter", project):
+	if _has_submitted("PMO Project Handoff", project):
 		return LIFECYCLE_PLANNING
 	return LIFECYCLE_INITIATION
 
@@ -94,7 +94,7 @@ def _artifact(doctype: str, project: str, date_field: str) -> dict:
 
 def build_expediente(project: str) -> dict:
 	"""Índice del expediente de gobierno (ADR-0014 D8): existencia + referencias + fechas, sin duplicar
-	contenido. Charter/Baseline reales; Closure/Review como pendientes hasta su bloque. Change Requests =
+	contenido. Handoff/Baseline reales; Closure/Review como pendientes hasta su bloque. Change Requests =
 	conteos (abiertos/total). Status/Control siempre disponible (el detalle vive en sus vistas)."""
 	baseline = frappe.db.get_value("Project", project, "pmo_status_date")  # marca de control disponible
 	from pmo.baseline import get_effective_baseline
@@ -106,7 +106,7 @@ def build_expediente(project: str) -> dict:
 	open_states = {"Draft", "In Review"}
 	return {
 		"lifecycle_state": derive_lifecycle_state(project),
-		"charter": _artifact("PMO Project Charter", project, "charter_date"),
+		"handoff": _artifact("PMO Project Handoff", project, "handoff_date"),
 		"baseline": {
 			"available": bool(eff_baseline),
 			"pending": False,
@@ -129,14 +129,14 @@ def governance_flags(project: str) -> dict:
 	"""Señales de gobierno por Project (ADR-0014 D9), **fuente única** consumida por Portfolio/Dashboard.
 	No duplica reglas por superficie; semántica alineada con D4/D7."""
 	status = frappe.db.get_value("Project", project, "status")
-	has_charter = _has_submitted("PMO Project Charter", project)
+	has_handoff = _has_submitted("PMO Project Handoff", project)
 	has_closure = _has_submitted("PMO Project Closure", project)
 	has_review = _has_submitted("PMO Post-Project Review", project)
 	open_crs = frappe.db.count(
 		"PMO Change Request", {"project": project, "workflow_state": ("in", OPEN_CHANGE_REQUEST_STATES)}
 	)
 	return {
-		"has_charter": has_charter,
+		"has_handoff": has_handoff,
 		"needs_closure": (status in TERMINAL_STATUSES) and not has_closure,
 		"needs_review": has_closure and not has_review,
 		"open_change_requests": open_crs,
