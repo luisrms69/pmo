@@ -96,18 +96,49 @@ class TestProjectClosure(IntegrationTestCase):
 		eco = json.loads(doc.economics_snapshot)
 		self.assertEqual(eco["as_of"], "current_at_issuance")
 
+	def test_economics_snapshot_hash_matches_frozen_json(self):
+		# Integridad del snapshot ECONÓMICO contra su JSON congelado (leído como Administrator = con gate).
+		p = _project("CLS EcoHash")
+		doc = _closure(p)
+		doc.submit()
+		self.assertTrue(doc.economics_snapshot)
+		self.assertEqual(
+			doc.economics_snapshot_hash,
+			hashlib.sha256(doc.economics_snapshot.encode("utf-8")).hexdigest(),
+		)
+
 	def test_economics_isolated_by_permlevel(self):
 		pu = _user("cls_pu@example.com", roles=["Projects User"])
 		eu = _user("cls_eco@example.com", roles=["PMO Executive Access"])  # rol económico + lectura global
 		p = _project("CLS Iso", owner=pu)
 		doc = _closure(p)
-		doc.submit()
-		# Projects User (READ del Project, sin rol económico) NO obtiene permlevel 1.
+		doc.submit()  # emitido por Administrator (con gate) → economía capturada
+
+		# (a) permlevel: el Projects User no accede al nivel 1; el usuario económico sí.
 		frappe.set_user(pu)
 		self.assertNotIn(1, doc.get_permlevel_access("read"))
-		# Usuario con rol económico SÍ obtiene permlevel 1.
 		frappe.set_user(eu)
 		self.assertIn(1, doc.get_permlevel_access("read"))
+
+		# (b) vía normal de lectura/serialización: apply_fieldlevel_read_permissions elimina los campos
+		# económicos para el usuario sin gate y los conserva para el usuario con gate.
+		frappe.set_user(pu)
+		d_pu = frappe.get_doc("PMO Project Closure", doc.name)
+		d_pu.apply_fieldlevel_read_permissions()
+		self.assertIsNone(d_pu.get("economics_snapshot"))
+		self.assertIsNone(d_pu.get("economics_snapshot_hash"))
+		frappe.set_user(eu)
+		d_eu = frappe.get_doc("PMO Project Closure", doc.name)
+		d_eu.apply_fieldlevel_read_permissions()
+		self.assertTrue(d_eu.get("economics_snapshot"))
+
+		# (c) Print Format: el usuario sin gate NO ve economía en el printable, ni la sección ni cifras.
+		# (El acceso económico de los usuarios con gate es por el campo `economics_snapshot`, prueba (b);
+		# el printable no expone economía — defensa por permlevel + gate en la plantilla.)
+		frappe.set_user(pu)
+		html_pu = frappe.get_print("PMO Project Closure", doc.name, print_format="PMO Project Closure")
+		self.assertNotIn("Economic evidence", html_pu)
+		self.assertNotIn("Authorized revenue", html_pu)
 		frappe.set_user("Administrator")
 
 	def test_reject_closure_on_non_terminal_project(self):

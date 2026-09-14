@@ -33,7 +33,7 @@ from pmo.project_control import (
 	SECTION_SCOPE_CHANGES,
 	build_project_control,
 )
-from pmo.project_economics import get_authorized_economics
+from pmo.project_economics import can_see_project_economics, get_authorized_economics
 
 CLOSURE_SNAPSHOT_SCHEMA_VERSION = 1
 _TERMINAL_STATUSES = ("Completed", "Cancelled")
@@ -82,10 +82,23 @@ def build_closure_snapshot(project: str, closing_date: str) -> dict:
 	}
 
 
-def build_closure_economics(project: str) -> dict:
+def build_closure_economics(project: str, user: str | None = None) -> dict:
 	"""Evidencia economica congelada por la frontera canonica. Semantica `current_at_issuance` (los totales
 	nativos no tienen snapshot historico; no se inventa historico a closure_date). Se persiste en un campo
-	con permlevel 1 (gate economico)."""
+	con permlevel 1 (gate economico).
+
+	Respeta la frontera de `pmo/project_economics`: el gate `can_see_project_economics` se aplica ANTES de
+	cargar cualquier dato economico (get_authorized_economics presupone al caller ya gateado). Si el emisor
+	NO pasa el gate, NO se cargan cifras: se congela un marcador `captured=False` (sin segunda politica ni
+	excepcion silenciosa). Para congelar evidencia economica completa, el Closure debe emitirlo un usuario con
+	rol economico + READ del Project."""
+	if not can_see_project_economics(project, user):
+		return {
+			"snapshot_schema_version": CLOSURE_SNAPSHOT_SCHEMA_VERSION,
+			"as_of": "current_at_issuance",
+			"captured": False,
+			"reason": "economic_gate_not_passed",
+		}
 	econ = get_authorized_economics(project)
 	edata = econ.get("data") or {}
 	native = frappe.db.get_value("Project", project, _NATIVE_COST_FIELDS, as_dict=True) or frappe._dict()
@@ -94,6 +107,7 @@ def build_closure_economics(project: str) -> dict:
 	return {
 		"snapshot_schema_version": CLOSURE_SNAPSHOT_SCHEMA_VERSION,
 		"as_of": "current_at_issuance",
+		"captured": True,
 		"authorized_available": econ.get("available"),
 		"authorized_reason": econ.get("reason"),
 		"authorized_revenue": edata.get("authorized_revenue"),
@@ -136,8 +150,9 @@ class PMOProjectClosure(Document):
 		self.snapshot_schema_version = snap["snapshot_schema_version"]
 		self.snapshot_hash = snapshot_hash(snap)
 		self.snapshot = canonical_json(snap)
-		# Evidencia economica congelada, permlevel 1 (aislada del READ no economico).
-		eco = build_closure_economics(self.project)
+		# Evidencia economica congelada, permlevel 1 (aislada del READ no economico). El gate economico se
+		# aplica ANTES de cargar economia: un emisor sin rol economico congela `captured=False` (sin cifras).
+		eco = build_closure_economics(self.project, frappe.session.user)
 		self.economics_snapshot = canonical_json(eco)
 		self.economics_snapshot_hash = snapshot_hash(eco)
 
