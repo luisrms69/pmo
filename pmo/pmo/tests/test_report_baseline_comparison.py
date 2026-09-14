@@ -70,7 +70,7 @@ def _leaf(subject, project, end):
 	)
 
 
-def _baseline(project, revision, btype="Original", supersedes=None, effective=None):
+def _baseline(project, revision, btype="Original", supersedes=None, effective=None, reason="Motivo"):
 	doc = frappe.get_doc(
 		{
 			"doctype": "PMO Project Baseline",
@@ -79,6 +79,7 @@ def _baseline(project, revision, btype="Original", supersedes=None, effective=No
 			"baseline_type": btype,
 			"supersedes_baseline": supersedes,
 			"effective_date": effective or "2026-01-01",
+			"reason": reason,
 		}
 	).insert(ignore_permissions=True)
 	doc.submit()

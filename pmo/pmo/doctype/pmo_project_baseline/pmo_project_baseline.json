@@ -10,6 +10,7 @@
   "project",
   "revision",
   "baseline_type",
+  "change_request",
   "supersedes_baseline",
   "column_break_gov",
   "effective_date",
@@ -18,9 +19,9 @@
   "approved_by",
   "approved_at",
   "column_break_appr",
-  "snapshot_at",
   "amended_from",
   "snapshot_section",
+  "snapshot_at",
   "snapshot_schema_version",
   "snapshot_hash",
   "snapshot",
@@ -32,80 +33,90 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Project",
+   "label": "Proyecto",
    "options": "Project",
    "reqd": 1
   },
   {
+   "description": "Identificador consecutivo generado automáticamente para ordenar el historial de líneas base del proyecto.",
    "fieldname": "revision",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Revision",
-   "reqd": 1
+   "label": "Versión de línea base",
+   "no_copy": 1,
+   "read_only": 1
   },
   {
    "default": "Original",
+   "description": "Original: primera versión autorizada del plan. Cambio aprobado: nueva referencia derivada de una Solicitud de Cambio aprobada e implementada. Replaneación aprobada: nueva referencia por decisión de gestión (por ejemplo, desviaciones acumuladas), sin requerir una Solicitud de Cambio.",
    "fieldname": "baseline_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Baseline type",
+   "label": "Tipo de línea base",
    "options": "Original\nApproved Change\nReplan",
    "reqd": 1
   },
   {
-   "depends_on": "eval:doc.baseline_type!=\"Original\"",
+   "depends_on": "eval:doc.baseline_type=='Approved Change'",
+   "description": "Solicitud de Cambio aprobada e implementada que justifica esta nueva línea base. Solo se listan las del mismo proyecto en estado Implementado que aún no tienen una línea base posterior asociada.",
+   "fieldname": "change_request",
+   "fieldtype": "Link",
+   "label": "Solicitud de cambio",
+   "mandatory_depends_on": "eval:doc.baseline_type=='Approved Change'",
+   "options": "PMO Change Request"
+  },
+  {
+   "depends_on": "eval:doc.baseline_type!='Original'",
+   "description": "Versión autorizada anterior que deja de ser la referencia vigente cuando se aprueba esta línea base. Se determina automáticamente con la línea base vigente del proyecto.",
    "fieldname": "supersedes_baseline",
    "fieldtype": "Link",
-   "label": "Supersedes baseline",
-   "options": "PMO Project Baseline"
+   "label": "Línea base sustituida",
+   "options": "PMO Project Baseline",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_gov",
    "fieldtype": "Column Break"
   },
   {
-   "description": "Effective date (not in the future in v0.5.0).",
+   "default": "Today",
+   "description": "Fecha a partir de la cual esta línea base se utiliza como referencia oficial para medir el proyecto.",
    "fieldname": "effective_date",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Effective date",
+   "label": "Fecha de vigencia",
    "reqd": 1
   },
   {
+   "description": "Explica por qué se sustituye la línea base vigente. En una replaneación, describe la desviación o la decisión de gestión que justifica establecer una nueva referencia.",
    "fieldname": "reason",
    "fieldtype": "Small Text",
-   "label": "Reason"
+   "label": "Motivo",
+   "mandatory_depends_on": "eval:doc.baseline_type!='Original'"
   },
   {
+   "description": "Al enviar (Submit) la línea base, el usuario que realiza el Submit queda registrado como su aprobador.",
    "fieldname": "approval_section",
    "fieldtype": "Section Break",
-   "label": "Approval"
+   "label": "Aprobación"
   },
   {
-   "description": "Set automatically on Submit.",
    "fieldname": "approved_by",
    "fieldtype": "Link",
-   "label": "Approved by",
+   "label": "Aprobado por",
    "options": "User",
    "read_only": 1
   },
   {
    "fieldname": "approved_at",
    "fieldtype": "Datetime",
-   "label": "Approved at",
+   "label": "Fecha de aprobación",
    "read_only": 1
   },
   {
    "fieldname": "column_break_appr",
    "fieldtype": "Column Break"
-  },
-  {
-   "description": "Technical timestamp of the snapshot capture.",
-   "fieldname": "snapshot_at",
-   "fieldtype": "Datetime",
-   "label": "Snapshot at",
-   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -118,20 +129,27 @@
   },
   {
    "collapsible": 1,
+   "description": "Evidencia técnica congelada al emitir, para integridad y auditoría. No requiere captura del usuario.",
    "fieldname": "snapshot_section",
    "fieldtype": "Section Break",
-   "label": "Snapshot"
+   "label": "Datos técnicos (snapshot e integridad)"
+  },
+  {
+   "fieldname": "snapshot_at",
+   "fieldtype": "Datetime",
+   "label": "Sello de tiempo del snapshot",
+   "read_only": 1
   },
   {
    "fieldname": "snapshot_schema_version",
    "fieldtype": "Int",
-   "label": "Snapshot schema version",
+   "label": "Versión de esquema del snapshot",
    "read_only": 1
   },
   {
    "fieldname": "snapshot_hash",
    "fieldtype": "Data",
-   "label": "Snapshot hash",
+   "label": "Hash del snapshot",
    "read_only": 1
   },
   {
@@ -144,7 +162,7 @@
   {
    "fieldname": "preflight_result",
    "fieldtype": "Code",
-   "label": "Preflight result (JSON)",
+   "label": "Resultado del preflight (JSON)",
    "options": "JSON",
    "read_only": 1
   }

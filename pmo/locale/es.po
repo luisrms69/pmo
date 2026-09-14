@@ -272,7 +272,7 @@ msgstr "Aprobado"
 #. Baseline'
 #: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
 msgid "Approved Change"
-msgstr "Cambio Aprobado"
+msgstr "Cambio aprobado"
 
 #. Label of the approved_at (Datetime) field in DocType 'PMO Change Request'
 #. Label of the approved_at (Datetime) field in DocType 'PMO Project Baseline'
@@ -1480,7 +1480,7 @@ msgstr "Disponibilidad restante"
 #. Baseline'
 #: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
 msgid "Replan"
-msgstr "Replaneación"
+msgstr "Replaneación aprobada"
 
 #. Label of the section_detail (Section Break) field in DocType 'PMO Change
 #. Request'

@@ -67,7 +67,7 @@ def _project(name, owner="Administrator", members=(), company=None):
 	return pid
 
 
-def _baseline(project, revision, btype="Original", supersedes=None, effective=None):
+def _baseline(project, revision, btype="Original", supersedes=None, effective=None, reason="Motivo"):
 	doc = frappe.get_doc(
 		{
 			"doctype": "PMO Project Baseline",
@@ -76,6 +76,7 @@ def _baseline(project, revision, btype="Original", supersedes=None, effective=No
 			"baseline_type": btype,
 			"supersedes_baseline": supersedes,
 			"effective_date": effective or today(),
+			"reason": reason,
 		}
 	).insert(ignore_permissions=True)
 	doc.submit()

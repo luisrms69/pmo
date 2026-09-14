@@ -3,6 +3,13 @@
 
 // ADR-0005 D11: abrir el reporte PMO Baseline Comparison comparando esta línea base con la que sustituye.
 frappe.ui.form.on("PMO Project Baseline", {
+	setup(frm) {
+		// "Cambio aprobado": solo Change Requests del mismo Project, Implemented y sin baseline posterior.
+		frm.set_query("change_request", () => ({
+			query: "pmo.pmo.doctype.pmo_project_baseline.pmo_project_baseline.change_request_query",
+			filters: { project: frm.doc.project },
+		}));
+	},
 	refresh(frm) {
 		if (frm.doc.docstatus === 1 && frm.doc.supersedes_baseline) {
 			frm.add_custom_button(__("Compare with previous baseline"), () => {

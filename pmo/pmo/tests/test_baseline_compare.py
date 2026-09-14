@@ -203,7 +203,9 @@ class TestCompareBaselinesP4(IntegrationTestCase):
 			.name
 		)
 
-	def _baseline(self, project, revision, btype="Original", supersedes=None, effective=None):
+	def _baseline(
+		self, project, revision, btype="Original", supersedes=None, effective=None, reason="Motivo"
+	):
 		doc = frappe.get_doc(
 			{
 				"doctype": "PMO Project Baseline",
@@ -212,6 +214,7 @@ class TestCompareBaselinesP4(IntegrationTestCase):
 				"baseline_type": btype,
 				"supersedes_baseline": supersedes,
 				"effective_date": effective or "2026-01-01",
+				"reason": reason,
 			}
 		).insert(ignore_permissions=True)
 		doc.submit()
