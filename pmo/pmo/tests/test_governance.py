@@ -58,7 +58,12 @@ def _prepare_handoff_parties(project):
 def _handoff(project):
 	_prepare_handoff_parties(project)
 	doc = frappe.get_doc(
-		{"doctype": "PMO Project Handoff", "project": project, "handoff_summary": "Transferencia X"}
+		{
+			"doctype": "PMO Project Handoff",
+			"project": project,
+			"handoff_summary": "Transferencia X",
+			"contractual_legal_ready": 1,
+		}
 	)
 	doc.insert(ignore_permissions=True)
 	doc.submit()

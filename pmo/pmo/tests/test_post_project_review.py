@@ -51,6 +51,15 @@ def _closure(project):
 			"project": project,
 			"closure_date": "2026-03-31",
 			"final_result": "ok",
+			"accepted_by": "Cliente",
+			"accepted_on": "2026-03-31",
+			"chk_pending_items": 1,
+			"chk_ops_handover": 1,
+			"chk_contractual_legal": 1,
+			"chk_admin_financial": 1,
+			"chk_documentation": 1,
+			"chk_communicated": 1,
+			"chk_resources_released": 1,
 		}
 	)
 	doc.insert(ignore_permissions=True)

@@ -2390,3 +2390,207 @@ msgstr "Liga la nueva línea base antes de cerrar: emite una PMO Project Baselin
 #: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
 msgid "Record the Stakeholder Communication before closing the implemented change (use 'N/A' if it genuinely does not apply)."
 msgstr "Registra la Comunicación a interesados antes de cerrar el cambio implementado (usa 'N/A' si realmente no aplica)."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Closure Checklist"
+msgstr "Lista de verificación de cierre"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Pending items resolved or transferred"
+msgstr "Pendientes resueltos o transferidos"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Operations / support handover completed"
+msgstr "Entrega a operación/soporte completada"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Contractual / legal obligations reviewed"
+msgstr "Obligaciones contractuales/legales revisadas"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Administrative / financial close reviewed"
+msgstr "Cierre administrativo/financiero revisado"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Project documentation completed"
+msgstr "Documentación del proyecto completada"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Closure communicated to stakeholders"
+msgstr "Cierre comunicado a los interesados"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Resources released / reassigned"
+msgstr "Recursos liberados/reasignados"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Contractual / Legal Readiness Verified"
+msgstr "Readiness contractual/legal verificada"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Formal date used to close the Project and freeze the Closure's operational evidence."
+msgstr "Fecha formal usada para cerrar el Project y congelar la evidencia operativa del Closure."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Who formally accepts the closure (name or role; may be the client). Required for a Completed Project."
+msgstr "Quién acepta formalmente el cierre (nombre o rol; puede ser el cliente). Obligatorio para un Project Completed."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Date of the formal acceptance of the closure. Required for a Completed Project."
+msgstr "Fecha de la aceptación formal del cierre. Obligatoria para un Project Completed."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Closure confirmations: each item states that it was reviewed/completed and that no closure action is left unattended. All must be confirmed before closing. An item may be confirmed even when the specific case does not require a complex operation."
+msgstr "Confirmaciones de cierre: cada punto indica que fue revisado/completado y que no queda una acción de cierre sin atender. Todas deben confirmarse antes de cerrar. Un punto puede confirmarse aunque el caso concreto no requiera una operación compleja."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Executive summary of how the Project ended versus what was committed, and the final outcome."
+msgstr "Resumen ejecutivo de cómo terminó el Project frente a lo comprometido, y el resultado final."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Pending items that do not disappear with the closure and were transferred to operations, support, the client or another owner. May stay empty if there are none."
+msgstr "Pendientes que no desaparecen con el cierre y fueron transferidos a operación, soporte, el cliente u otro responsable. Puede quedar vacío si no existen."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "No pending items are left without an owner, and any post-project pending item was transferred/documented. Does not replace 'Pending items transferred', which holds the detail when there are pending items."
+msgstr "No quedan pendientes sin dueño, y cualquier pendiente posterior al proyecto quedó transferido/documentado. No reemplaza 'Pendientes transferidos', que contiene el detalle cuando existen pendientes."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Where applicable, operations, support, knowledge, accesses and operational documentation were handed over to the post-project owner. Can be marked as reviewed/completed even without a complex operational transition."
+msgstr "Cuando aplica, operación, soporte, conocimiento, accesos y documentación operacional fueron entregados al responsable posterior al Project. Puede marcarse como revisado/completado aun sin una transición operativa compleja."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "PMO reviewed that no relevant contractual/legal obligations were overlooked, and that warranties, SLAs, post-project support or other later commitments were identified/transferred. Not a legal review; only evidence that this front was reviewed before closing."
+msgstr "PMO revisó que no quedan obligaciones contractuales/legales relevantes inadvertidas, y que garantías, SLA, soporte post-proyecto u otros compromisos posteriores quedaron identificados/transferidos. No es una revisión jurídica; solo evidencia de que ese frente fue revisado antes del cierre."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Where applicable, pending billing/collections, purchases/suppliers, orders and other administrative items related to the Project were reviewed. A review confirmation, not new financial logic."
+msgstr "Cuando aplica, se revisaron facturación/cobros pendientes, compras/proveedores, órdenes y otros pendientes administrativos relacionados con el Project. Una confirmación de revisión, no nueva lógica financiera."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "The Project's file/documentation is sufficiently complete and available."
+msgstr "El expediente/documentación del Project quedó suficientemente completo y disponible."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "The relevant stakeholders were informed of the closure."
+msgstr "Los interesados relevantes fueron informados del cierre."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "The project's resources were released, reassigned or reviewed as appropriate. Does not modify Capacity Planning or assignments."
+msgstr "Los recursos del proyecto fueron liberados, reasignados o revisados según corresponda. No modifica Capacity Planning ni asignaciones."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "PMO confirms that, where applicable, the requirements needed to start execution were verified (e.g. contracts, NDAs, orders/authorizations, commercial terms or other contractual/legal requirements needed to begin). This is not a legal approval of the documents, nor a capture of contracts; only a readiness confirmation before starting execution. Required before issuing the Handoff."
+msgstr "PMO confirma que, cuando aplica, los requisitos necesarios para iniciar la ejecución fueron verificados (por ejemplo contratos, NDAs, órdenes/autorizaciones, términos comerciales u otros requisitos contractuales/legales necesarios para comenzar). No es una aprobación jurídica de los documentos ni una captura de contratos; solo una confirmación de readiness antes de iniciar la ejecución. Requerido antes de emitir el Handoff."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "A Completed Project requires the formal acceptance (Accepted by and Accepted on) before closing."
+msgstr "Un Project Completed requiere la aceptación formal (Aceptado por y Fecha de aceptación) antes de cerrar."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Confirm all Closure Checklist items before issuing the Closure."
+msgstr "Confirma todos los puntos de la Lista de verificación de cierre antes de emitir el Closure."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Cannot close: the Project has {0} open Change Request(s). Resolve or close them (Rejected/Closed) before closing the Project."
+msgstr "No se puede cerrar: el Project tiene {0} Solicitud(es) de Cambio abierta(s). Resuélvelas o ciérralas (Rechazada/Cerrada) antes de cerrar el Project."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Confirm 'Contractual / Legal Readiness Verified' before issuing the Handoff."
+msgstr "Confirma 'Readiness contractual/legal verificada' antes de emitir el Handoff."
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Project Closure"
+msgstr "Cierre de Proyecto"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Closure date"
+msgstr "Fecha de cierre"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Issued by"
+msgstr "Emitido por"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Accepted by"
+msgstr "Aceptado por"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Final result"
+msgstr "Resultado final"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Schedule (as of closure date)"
+msgstr "Cronograma (a la fecha de cierre)"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Baseline end"
+msgstr "Fin de línea base"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Committed end"
+msgstr "Fin comprometido"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Forecast / final end"
+msgstr "Pronóstico / fin final"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Slip vs baseline (d)"
+msgstr "Desvío vs línea base (d)"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Effort (as of closure date)"
+msgstr "Esfuerzo (a la fecha de cierre)"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Actual hours"
+msgstr "Horas reales"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "% complete"
+msgstr "% completado"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Changes"
+msgstr "Cambios"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Total change requests"
+msgstr "Total de solicitudes de cambio"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Pending items transferred"
+msgstr "Pendientes transferidos"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Observations"
+msgstr "Observaciones"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Economic evidence (restricted; {0})"
+msgstr "Evidencia económica (restringida; {0})"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Authorized revenue"
+msgstr "Ingreso autorizado"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Authorized cost"
+msgstr "Costo autorizado"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Billed"
+msgstr "Facturado"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Comparable registered cost"
+msgstr "Costo registrado comparable"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Gross margin (native)"
+msgstr "Margen bruto (nativo)"
+
+#: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
+msgid "Frozen evidence; rebuilt only from the frozen closure snapshot, never from live data."
+msgstr "Evidencia congelada; reconstruida solo desde el snapshot de cierre congelado, nunca desde datos vivos."

@@ -123,6 +123,14 @@ class PMOProjectHandoff(Document):
 				frappe.throw(frappe._("This Project already has an issued Handoff ({0}).").format(existing))
 
 	def before_submit(self):
+		# Readiness contractual/legal previa a ejecución: confirmación mínima antes de emitir el Handoff. PMO
+		# no aprueba jurídicamente ni captura contratos; solo confirma que los requisitos para iniciar se
+		# verificaron cuando aplica (Proposal/Quotation ya autorizada → Project → Handoff verifica → ejecución).
+		if not self.contractual_legal_ready:
+			frappe.throw(
+				frappe._("Confirm 'Contractual / Legal Readiness Verified' before issuing the Handoff.")
+			)
+
 		# Congela la evidencia canonica al emitir. El responsable operativo y el contacto del cliente se toman
 		# del Project y quedan fijos: cambios posteriores en el Project no alteran un Handoff ya emitido.
 		snapshot = build_handoff_snapshot(self.project)

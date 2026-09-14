@@ -17,6 +17,7 @@
   "customer_contact",
   "section_summary",
   "handoff_summary",
+  "contractual_legal_ready",
   "section_snapshot",
   "customer",
   "company",
@@ -94,6 +95,13 @@
    "fieldtype": "Small Text",
    "label": "Resumen de handoff",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "PMO confirms that, where applicable, the requirements needed to start execution were verified (e.g. contracts, NDAs, orders/authorizations, commercial terms or other contractual/legal requirements needed to begin). This is not a legal approval of the documents, nor a capture of contracts; only a readiness confirmation before starting execution. Required before issuing the Handoff.",
+   "fieldname": "contractual_legal_ready",
+   "fieldtype": "Check",
+   "label": "Contractual / Legal Readiness Verified"
   },
   {
    "collapsible": 1,

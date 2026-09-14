@@ -90,6 +90,7 @@ def _handoff(project, **kw):
 			"doctype": "PMO Project Handoff",
 			"project": project,
 			"handoff_summary": kw.get("handoff_summary", "Se transfiere a ejecución con kickoff acordado."),
+			"contractual_legal_ready": kw.get("contractual_legal_ready", 1),
 		}
 	)
 	doc.insert(ignore_permissions=True)
@@ -156,6 +157,18 @@ class TestProjectHandoff(IntegrationTestCase):
 		doc = _handoff(p)
 		with self.assertRaises(ValidationError):
 			doc.submit()
+
+	def test_requires_contractual_legal_readiness_to_submit(self):
+		# Readiness contractual/legal debe estar confirmada antes de emitir el Handoff.
+		p, _emp, _ct = _ready_project("HOF Readiness")
+		doc = _handoff(p, contractual_legal_ready=0)
+		with self.assertRaises(ValidationError):
+			doc.submit()
+		# Confirmada -> emite normalmente.
+		doc.reload()
+		doc.contractual_legal_ready = 1
+		doc.submit()
+		self.assertEqual(doc.docstatus, 1)
 
 	def test_one_handoff_per_project(self):
 		p, _emp, _ct = _ready_project("HOF Unique")

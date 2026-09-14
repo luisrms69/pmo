@@ -60,14 +60,30 @@ El Handoff **no contiene estructura de Risk Analysis** y no depende de ningún r
   sujeta a `can_see_project_economics` (permlevel 1, D4); persistirla en un snapshot legible por cualquiera con
   READ del Project/Handoff la filtraría. La economía vive en su frontera canónica y en el Closure (permlevel 1).
 - **NO se reintroducen** objetivo, alcance, entregables, supuestos ni restricciones como captura del usuario.
+- **Verificación contractual/legal de readiness (`contractual_legal_ready`, Check obligatorio antes del
+  Submit):** PMO confirma que, cuando aplica, los requisitos para iniciar ejecución (contratos, NDA, órdenes/
+  autorizaciones, términos comerciales u otros) fueron verificados. Es el punto correcto del ciclo
+  (`Proposal/Quotation autorizada → Project → Handoff verifica readiness → ejecución`). **No** es aprobación
+  jurídica, **no** crea workflow Legal, **no** captura contratos ni Links, **no** toca `erpnext_proposals`.
 - Submittable → evidencia histórica inmutable del arranque; snapshot/hash/timestamps quedan en sección técnica
   read-only, fuera de la captura normal.
 
 ### D4 — Closure: toda la evidencia se congela al submit (snapshot-only)
 - **Capturado:** `final_result`, aceptación formal (`accepted_by`, `accepted_on`), `pending_items_transferred`,
-  `closure_observations`.
+  `closure_observations`. Se elimina `title` (redundante con Project + `PMO-CLS-xxxxx`). `closure_date` es
+  **obligatoria**.
+- **Closure Checklist (confirmaciones de cierre; sin child DocType ni tabla configurable):** 7 checks canónicos
+  —pendientes resueltos/transferidos · entrega a operación/soporte · obligaciones contractuales/legales
+  revisadas · cierre administrativo/financiero revisado · documentación completa · cierre comunicado a
+  interesados · recursos liberados/reasignados—. Cada uno confirma *"revisado y sin acción de cierre
+  pendiente"* (puede confirmarse aunque el caso no requiera una operación compleja). **Todos** obligatorios para
+  emitir. No duplican `pending_items_transferred` (detalle) ni acceptance (`accepted_by/on`).
 - **Guard de cierre:** el Closure solo se emite (submit) para un Project en estado **terminal** (`Completed` o
-  `Cancelled`); un Project no terminal rechaza el submit. Coherente con el estado de ciclo derivado (D7).
+  `Cancelled`); un Project no terminal rechaza el submit. **`Completed`** exige aceptación formal
+  (`accepted_by` + `accepted_on`). **Guard automático de Change Requests abiertos:** no se puede cerrar si el
+  Project tiene CR en estados abiertos (`OPEN_CHANGE_REQUEST_STATES` de Governance: Draft/In Review/Approved/
+  Implemented); Rejected/Closed no bloquean. Se consume la fuente única; no se duplica la lista ni se añade un
+  check manual. Coherente con el estado de ciclo derivado (D7).
 - **Congelación al submit:** el Closure **compone desde `build_project_control`** (cutoff = `closure_date`) la
   evidencia **no económica** (cronograma/esfuerzo/cambios) y la congela en `snapshot` con hash; **no recalcula
   ni reimplementa** esos dominios.

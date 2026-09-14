@@ -70,7 +70,12 @@ def _handoff(project):
 	frappe.db.set_value("Project", project, "pmo_operational_owner", emp, update_modified=False)
 	frappe.db.set_value("Project", project, "pmo_customer_contact", ct, update_modified=False)
 	d = frappe.get_doc(
-		{"doctype": "PMO Project Handoff", "project": project, "handoff_summary": "Transferencia X"}
+		{
+			"doctype": "PMO Project Handoff",
+			"project": project,
+			"handoff_summary": "Transferencia X",
+			"contractual_legal_ready": 1,
+		}
 	)
 	d.insert(ignore_permissions=True)
 	d.submit()
@@ -84,6 +89,15 @@ def _closure(project):
 			"project": project,
 			"closure_date": "2026-03-31",
 			"final_result": "ok",
+			"accepted_by": "Cliente",
+			"accepted_on": "2026-03-31",
+			"chk_pending_items": 1,
+			"chk_ops_handover": 1,
+			"chk_contractual_legal": 1,
+			"chk_admin_financial": 1,
+			"chk_documentation": 1,
+			"chk_communicated": 1,
+			"chk_resources_released": 1,
 		}
 	)
 	d.insert(ignore_permissions=True)

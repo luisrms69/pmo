@@ -26,7 +26,7 @@ from frappe.model.document import Document
 from frappe.utils import flt, now_datetime, today
 
 from pmo.baseline import canonical_json, snapshot_hash
-from pmo.governance import derive_lifecycle_state
+from pmo.governance import OPEN_CHANGE_REQUEST_STATES, derive_lifecycle_state
 from pmo.project_control import (
 	SECTION_EXECUTIVE,
 	SECTION_PROJECT,
@@ -37,6 +37,17 @@ from pmo.project_economics import can_see_project_economics, get_authorized_econ
 
 CLOSURE_SNAPSHOT_SCHEMA_VERSION = 1
 _TERMINAL_STATUSES = ("Completed", "Cancelled")
+
+# Checklist de cierre (checks de confirmación; todos requeridos para emitir). Orden estable de presentación.
+CLOSURE_CHECKLIST_FIELDS = (
+	"chk_pending_items",
+	"chk_ops_handover",
+	"chk_contractual_legal",
+	"chk_admin_financial",
+	"chk_documentation",
+	"chk_communicated",
+	"chk_resources_released",
+)
 
 _NATIVE_COST_FIELDS = (
 	"total_sales_amount",
@@ -142,6 +153,30 @@ class PMOProjectClosure(Document):
 					"Closure can only be issued for a terminal Project (Completed or Cancelled). "
 					"Current status: {0}."
 				).format(status or "—")
+			)
+
+		# Aceptación formal: un Project Completed exige aceptación explícita antes de cerrar.
+		if status == "Completed" and not (self.accepted_by and self.accepted_on):
+			frappe.throw(
+				frappe._(
+					"A Completed Project requires the formal acceptance (Accepted by and Accepted on) before closing."
+				)
+			)
+
+		# Closure Checklist: todas las confirmaciones de cierre deben estar marcadas.
+		if any(not self.get(fn) for fn in CLOSURE_CHECKLIST_FIELDS):
+			frappe.throw(frappe._("Confirm all Closure Checklist items before issuing the Closure."))
+
+		# Guard automático de Change Requests abiertos (fuente única de Governance; no se duplica la lista).
+		open_crs = frappe.db.count(
+			"PMO Change Request",
+			{"project": self.project, "workflow_state": ("in", OPEN_CHANGE_REQUEST_STATES)},
+		)
+		if open_crs:
+			frappe.throw(
+				frappe._(
+					"Cannot close: the Project has {0} open Change Request(s). Resolve or close them (Rejected/Closed) before closing the Project."
+				).format(open_crs)
 			)
 
 		closing_date = str(self.closure_date) if self.closure_date else today()

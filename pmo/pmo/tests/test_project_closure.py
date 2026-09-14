@@ -18,6 +18,15 @@ from frappe.tests import IntegrationTestCase
 
 from pmo.governance import LIFECYCLE_CLOSED, derive_lifecycle_state
 from pmo.permissions import has_permission_closure
+from pmo.pmo.doctype.pmo_project_closure.pmo_project_closure import CLOSURE_CHECKLIST_FIELDS
+
+
+def _open_cr(project, state):
+	cr = frappe.get_doc(
+		{"doctype": "PMO Change Request", "project": project, "title": "C", "reason": "R"}
+	).insert(ignore_permissions=True)
+	frappe.db.set_value("PMO Change Request", cr.name, "workflow_state", state, update_modified=False)
+	return cr
 
 
 def _user(email, roles=()):
@@ -56,14 +65,18 @@ def _project(name, owner="Administrator", status="Completed"):
 
 
 def _closure(project, **kw):
-	doc = frappe.get_doc(
-		{
-			"doctype": "PMO Project Closure",
-			"project": project,
-			"closure_date": kw.get("closure_date", "2026-03-31"),
-			"final_result": kw.get("final_result", "Delivered"),
-		}
-	)
+	# Por defecto: aceptación formal + checklist completo (para emitir). Cualquiera se puede sobreescribir.
+	data = {
+		"doctype": "PMO Project Closure",
+		"project": project,
+		"closure_date": kw.get("closure_date", "2026-03-31"),
+		"final_result": kw.get("final_result", "Delivered"),
+		"accepted_by": kw.get("accepted_by", "Cliente"),
+		"accepted_on": kw.get("accepted_on", "2026-03-31"),
+	}
+	for fn in CLOSURE_CHECKLIST_FIELDS:
+		data[fn] = kw.get(fn, 1)
+	doc = frappe.get_doc(data)
 	doc.insert(ignore_permissions=True)
 	return doc
 
@@ -200,3 +213,49 @@ class TestProjectClosure(IntegrationTestCase):
 		html2 = frappe.get_print("PMO Project Closure", doc.name, print_format="PMO Project Closure")
 		self.assertEqual(html1, html2)
 		self.assertNotIn("2099-12-31", html2)
+
+	# --- estructura / gates de Submit (bloque Closure checklist) ------------------
+
+	def test_title_removed_from_doctype(self):
+		self.assertIsNone(frappe.get_meta("PMO Project Closure").get_field("title"))
+
+	def test_closure_date_mandatory(self):
+		p = _project("CLS DateReq")
+		doc = _closure(p)  # tiene fecha por default
+		doc.closure_date = None
+		with self.assertRaises(frappe.exceptions.MandatoryError):
+			doc.save()
+
+	def test_completed_requires_accepted_by(self):
+		p = _project("CLS AccBy", status="Completed")
+		doc = _closure(p, accepted_by="")  # Completed sin aceptante
+		with self.assertRaises(ValidationError):
+			doc.submit()
+
+	def test_completed_requires_accepted_on(self):
+		p = _project("CLS AccOn", status="Completed")
+		doc = _closure(p, accepted_on="")  # Completed sin fecha de aceptación
+		with self.assertRaises(ValidationError):
+			doc.submit()
+
+	def test_checklist_incomplete_blocks_submit(self):
+		p = _project("CLS Chk")
+		doc = _closure(p, chk_documentation=0)  # un check pendiente
+		with self.assertRaises(ValidationError):
+			doc.submit()
+
+	def test_open_change_request_states_block_closure(self):
+		for st in ("Draft", "In Review", "Approved", "Implemented"):
+			p = _project(f"CLS CR {st}")
+			_open_cr(p, st)
+			doc = _closure(p)
+			with self.assertRaises(ValidationError):
+				doc.submit()  # CR abierto bloquea el cierre
+
+	def test_terminal_change_request_states_do_not_block_closure(self):
+		for st in ("Rejected", "Closed"):
+			p = _project(f"CLS CRT {st}")
+			_open_cr(p, st)
+			doc = _closure(p)
+			doc.submit()  # Rejected/Closed no bloquean
+			self.assertEqual(doc.docstatus, 1)
