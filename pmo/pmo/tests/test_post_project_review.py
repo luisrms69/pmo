@@ -108,7 +108,9 @@ class TestPostProjectReview(IntegrationTestCase):
 		doc.submit()
 		frozen, frozen_hash = doc.snapshot, doc.snapshot_hash
 		# Cambiar campos capturados vía DB después del submit no altera la evidencia congelada.
-		frappe.db.set_value("PMO Post-Project Review", doc.name, "recommendations", "changed", update_modified=False)
+		frappe.db.set_value(
+			"PMO Post-Project Review", doc.name, "recommendations", "changed", update_modified=False
+		)
 		doc.reload()
 		self.assertEqual(doc.snapshot, frozen)
 		self.assertEqual(doc.snapshot_hash, frozen_hash)
@@ -128,6 +130,24 @@ class TestPostProjectReview(IntegrationTestCase):
 		self.assertEqual(snap["lessons"][0]["area"], "Planning")
 		# Integridad contra la evidencia congelada.
 		self.assertEqual(doc.snapshot_hash, hashlib.sha256(doc.snapshot.encode("utf-8")).hexdigest())
+
+	def test_freezes_closure_traceability(self):
+		p = _project("PPR Trace")
+		cls = _closure(p)
+		doc = _review(p)
+		doc.submit()
+		snap = json.loads(doc.snapshot)
+		# Congela reviewed_by + referencia y hash del Closure base.
+		self.assertIn("reviewed_by", snap)
+		self.assertEqual(snap["based_on_closure"]["reference"], cls.name)
+		self.assertEqual(snap["based_on_closure"]["snapshot_hash"], cls.snapshot_hash)
+		frozen = doc.snapshot
+		# Enmienda/cancelación posterior del Closure NO altera la trazabilidad congelada en la Review.
+		cls.reload()
+		cls.cancel()
+		doc.reload()
+		self.assertEqual(doc.snapshot, frozen)
+		self.assertEqual(json.loads(doc.snapshot)["based_on_closure"]["reference"], cls.name)
 
 	def test_lifecycle_reviewed(self):
 		p = _project("PPR Lifecycle")

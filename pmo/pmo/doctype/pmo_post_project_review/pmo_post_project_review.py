@@ -21,11 +21,30 @@ from pmo.baseline import canonical_json, snapshot_hash
 REVIEW_SNAPSHOT_SCHEMA_VERSION = 1
 
 
+def _base_closure(project: str) -> dict:
+	"""Referencia + hash del Closure submitted que habilita la Review (trazabilidad de evidencia). Congela
+	QUÉ cierre documental fue la base, de modo que una enmienda/cancelación posterior del Closure no rompa la
+	trazabilidad. No duplica el Closure ni crea DocType nuevo."""
+	row = frappe.get_all(
+		"PMO Project Closure",
+		filters={"project": project, "docstatus": 1},
+		fields=["name", "snapshot_hash"],
+		order_by="creation desc",
+		limit=1,
+	)
+	if not row:
+		return {"reference": None, "snapshot_hash": None}
+	return {"reference": row[0]["name"], "snapshot_hash": row[0].get("snapshot_hash")}
+
+
 def build_review_snapshot(doc) -> dict:
-	"""Congela el contenido evaluado + lessons (evidencia inmutable de la revisión)."""
+	"""Congela el contenido evaluado + lessons + trazabilidad (reviewed_by, Closure base) — evidencia
+	inmutable de la revisión."""
 	return {
 		"snapshot_schema_version": REVIEW_SNAPSHOT_SCHEMA_VERSION,
 		"review_date": str(doc.review_date) if doc.review_date else None,
+		"reviewed_by": doc.reviewed_by,
+		"based_on_closure": _base_closure(doc.project),
 		"objectives_achieved": doc.objectives_achieved,
 		"what_worked": doc.what_worked,
 		"what_didnt": doc.what_didnt,
