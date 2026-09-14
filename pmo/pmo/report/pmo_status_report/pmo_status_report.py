@@ -79,13 +79,38 @@ def _summary(report):
 	counts = ind["counts"]
 	forecast_end = (report.get("current") or {}).get("expected_end_date")
 
+	# Presentación de la baseline vigente: revisión humana (BL-001) en vez del name técnico (PMO-BL-00005).
+	# La identidad interna (name) se conserva para navegar al documento (ver `_open` abajo).
+	baseline_revision = None
+	if baseline:
+		baseline_revision = (
+			baseline.get("revision")
+			or frappe.db.get_value("PMO Project Baseline", baseline["name"], "revision")
+			or baseline["name"]
+		)
+
+	# Desvío vs compromiso: sin `pmo_committed_end_date` no aplica (no es N/D). El cálculo no cambia cuando sí
+	# existe fecha comprometida.
+	committed = report.get("committed_end_date")
+	if slip_committed is not None:
+		committed_value = slip_committed
+		committed_indicator = "Red" if slip_committed > 0 else "Green"
+	elif not committed:
+		committed_value = _("Sin fecha comprometida")
+		committed_indicator = "Gray"
+	else:
+		committed_value = _("N/A")
+		committed_indicator = "Green"
+
 	summary = [
 		{"label": _("Cutoff date"), "value": report["status_date"], "datatype": "Data"},
 		{
 			"label": _("Effective baseline"),
-			"value": baseline["name"] if baseline else _("— (no baseline at date)"),
+			"value": baseline_revision if baseline else _("— (no baseline at date)"),
 			"datatype": "Data",
 			"indicator": "Blue" if baseline else "Gray",
+			# Navegación al documento (identidad interna intacta); lo consume la página Project Control.
+			**({"_open": {"doctype": "PMO Project Baseline", "name": baseline["name"]}} if baseline else {}),
 		},
 		# ADR-0009 D1: el forecast vigente es el plan vivo de ERPNext, no una predicción calculada por PMO.
 		{
@@ -102,12 +127,12 @@ def _summary(report):
 		},
 		{
 			"label": _("Slip vs commitment (days)"),
-			"value": slip_committed if slip_committed is not None else _("N/A"),
+			"value": committed_value,
 			"datatype": "Data",
-			"indicator": "Red" if (slip_committed or 0) > 0 else "Green",
+			"indicator": committed_indicator,
 		},
 		{
-			"label": _("Tasks: forecast exceeds commitment"),
+			"label": _("Tareas fuera de compromiso"),
 			"value": exceeds,
 			"datatype": "Int",
 			"indicator": "Orange" if exceeds else "Green",

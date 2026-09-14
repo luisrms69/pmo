@@ -13,7 +13,7 @@ from pmo.pmo.report.pmo_status_report.pmo_status_report import _columns, _rows, 
 _REPORT = {
 	"project": "PROJ-X",
 	"status_date": "2026-03-31",
-	"baseline": {"name": "PMO-BL-X", "expected_end_date": "2026-06-30"},
+	"baseline": {"name": "PMO-BL-X", "revision": "BL-007", "expected_end_date": "2026-06-30"},
 	"current": {"expected_end_date": "2026-07-11"},
 	"committed_end_date": "2026-06-20",
 	"note": None,
@@ -90,12 +90,16 @@ class TestStatusReportPresentation(unittest.TestCase):
 		self.assertEqual(cards["Slip vs Baseline (days)"]["indicator"], "Red")
 		self.assertEqual(cards["Slip vs commitment (days)"]["value"], 21)
 		self.assertEqual(cards["Slip vs commitment (days)"]["indicator"], "Red")
-		self.assertEqual(cards["Tasks: forecast exceeds commitment"]["value"], 2)
-		self.assertEqual(cards["Tasks: forecast exceeds commitment"]["indicator"], "Orange")
+		self.assertEqual(cards["Tareas fuera de compromiso"]["value"], 2)
+		self.assertEqual(cards["Tareas fuera de compromiso"]["indicator"], "Orange")
 		self.assertEqual(cards["Overdue unfinished tasks"]["value"], 1)
 		self.assertEqual(cards["Actual hours to date"]["value"], 40.0)
 		self.assertEqual(cards["Completed / due to date"]["value"], "1 / 2")
-		self.assertEqual(cards["Effective baseline"]["value"], "PMO-BL-X")
+		# Baseline vigente: se muestra la revisión humana (BL-007), no el name técnico, y conserva navegación.
+		self.assertEqual(cards["Effective baseline"]["value"], "BL-007")
+		self.assertEqual(
+			cards["Effective baseline"]["_open"], {"doctype": "PMO Project Baseline", "name": "PMO-BL-X"}
+		)
 
 	def test_summary_no_baseline_and_no_committed(self):
 		report = dict(_REPORT)
@@ -105,6 +109,17 @@ class TestStatusReportPresentation(unittest.TestCase):
 		)
 		cards = {c["label"]: c for c in _summary(report)}
 		self.assertEqual(cards["Effective baseline"]["indicator"], "Gray")
+		self.assertNotIn("_open", cards["Effective baseline"])  # sin baseline no hay navegación
 		self.assertEqual(cards["Slip vs Baseline (days)"]["value"], "N/A")
+		# Con fecha comprometida presente (aunque sin slip) se conserva N/A (cálculo intacto).
 		self.assertEqual(cards["Slip vs commitment (days)"]["value"], "N/A")
 		self.assertEqual(cards["Slip vs commitment (days)"]["indicator"], "Green")
+
+	def test_summary_no_committed_date_shows_message(self):
+		# Sin `pmo_committed_end_date` en el Project: la tarjeta muestra "Sin fecha comprometida" (no N/D).
+		report = dict(_REPORT)
+		report["committed_end_date"] = None
+		report["indicators"] = dict(_REPORT["indicators"], slip_vs_committed_days=None)
+		cards = {c["label"]: c for c in _summary(report)}
+		self.assertEqual(cards["Slip vs commitment (days)"]["value"], "Sin fecha comprometida")
+		self.assertEqual(cards["Slip vs commitment (days)"]["indicator"], "Gray")

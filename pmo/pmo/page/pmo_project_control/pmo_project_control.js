@@ -413,7 +413,13 @@ class PMOProjectControl {
 				// sin quitar la métrica. Los que tienen indicador (Red/Orange/…) conservan su énfasis.
 				const isCount = ["Int", "Float", "Percent"].includes(s.datatype);
 				const zero = isCount && !cls && (s.value === 0 || s.value === 0.0);
-				const val = this._fmt_value(s.value, s.datatype);
+				// Tarjeta con navegación (p. ej. Línea base vigente): muestra el valor humano (revision) como
+				// enlace al documento, sin cambiar la identidad interna.
+				const val = s._open
+					? `<a href="/app/${frappe.router.slug(s._open.doctype)}/${encodeURIComponent(
+							s._open.name
+					  )}">${frappe.utils.escape_html(String(s.value))}</a>`
+					: this._fmt_value(s.value, s.datatype);
 				return `<div class="pmo-pc-kpi ${cls} ${
 					zero ? "zero" : ""
 				}"><div class="v">${val}</div><div class="l">${frappe.utils.escape_html(
