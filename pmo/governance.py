@@ -127,9 +127,16 @@ def build_expediente(project: str) -> dict:
 
 def governance_flags(project: str) -> dict:
 	"""Señales de gobierno por Project (ADR-0014 D9), **fuente única** consumida por Portfolio/Dashboard.
-	No duplica reglas por superficie; semántica alineada con D4/D7."""
+	No duplica reglas por superficie; semántica alineada con D4/D7.
+
+	`needs_baseline` = tiene Handoff submitted **y** no tiene línea base vigente/submitted (siguiente acción
+	natural del arranque: Proposal ganada → Project → Handoff → **Baseline**). Risk queda fuera: no se
+	consulta ni se genera ninguna señal de riesgo aquí (reserva de UX únicamente)."""
+	from pmo.baseline import get_effective_baseline
+
 	status = frappe.db.get_value("Project", project, "status")
 	has_handoff = _has_submitted("PMO Project Handoff", project)
+	has_baseline = bool(get_effective_baseline(project))
 	has_closure = _has_submitted("PMO Project Closure", project)
 	has_review = _has_submitted("PMO Post-Project Review", project)
 	open_crs = frappe.db.count(
@@ -137,6 +144,7 @@ def governance_flags(project: str) -> dict:
 	)
 	return {
 		"has_handoff": has_handoff,
+		"needs_baseline": has_handoff and not has_baseline,
 		"needs_closure": (status in TERMINAL_STATUSES) and not has_closure,
 		"needs_review": has_closure and not has_review,
 		"open_change_requests": open_crs,

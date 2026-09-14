@@ -63,13 +63,23 @@ _DASHBOARD_STRINGS = (
 	N_("At risk / deviated"),
 	N_("No customer-linked projects."),
 	N_("Could not load this PMO panel."),
-	# Sección Project Governance (Custom HTML Block "PMO Governance")
-	N_("Pending governance actions"),
-	N_("No pending governance actions."),
-	N_("Without Handoff"),
-	N_("Requires Closure"),
-	N_("Requires Review"),
-	N_("Open change requests"),
+	# Sección Project Governance (Custom HTML Block "PMO Governance"): indicadores + acciones humanas.
+	N_("Acciones pendientes de gobernanza"),
+	N_("No hay acciones de gobernanza pendientes."),
+	N_("Sin Handoff"),
+	N_("Sin línea base"),
+	N_("Solicitudes de cambio abiertas"),
+	N_("Requieren cierre"),
+	N_("Requieren revisión"),
+	N_("Análisis de riesgo"),
+	N_("Pendiente de implementación"),
+	# Acciones por Project (se construyen server-side en _governance_actions).
+	N_("Crear Handoff"),
+	N_("Crear línea base inicial"),
+	N_("Atender {0} solicitud de cambio"),
+	N_("Atender {0} solicitudes de cambio"),
+	N_("Emitir cierre"),
+	N_("Realizar revisión post-proyecto"),
 )
 
 _KPI_METRICS = ("active", "requiring_attention", "overdue_tasks", "without_baseline", "clients")
@@ -239,37 +249,64 @@ def _build():
 	}
 
 
+def _governance_actions(f):
+	"""Acciones de gobierno en lenguaje humano, DERIVADAS de las señales canónicas (fuente única
+	`pmo.governance`). Sin claves internas de lifecycle. Orden natural del ciclo:
+	Handoff → Baseline → Cambios → Cierre → Revisión. Risk NO participa (reserva de UX)."""
+	actions = []
+	if not f["has_handoff"]:
+		actions.append(frappe._("Crear Handoff"))
+	elif f["needs_baseline"]:
+		# Solo cuando ya hay Handoff (no se muestra si todavía falta el Handoff).
+		actions.append(frappe._("Crear línea base inicial"))
+	n = cint(f["open_change_requests"])
+	if n > 0:
+		actions.append(
+			frappe._("Atender {0} solicitud de cambio").format(n)
+			if n == 1
+			else frappe._("Atender {0} solicitudes de cambio").format(n)
+		)
+	if f["needs_closure"]:
+		actions.append(frappe._("Emitir cierre"))
+	if f["needs_review"]:
+		actions.append(frappe._("Realizar revisión post-proyecto"))
+	return actions
+
+
 def _governance():
 	"""Sección Project Governance (ADR-0014 D9). Consume las señales canónicas de `pmo.governance`
 	(fuente única) sobre los Projects VISIBLES (P4 vía get_list, que aplica permission_query_conditions).
-	Incluye estados terminales (Completed/Cancelled), a diferencia del portafolio activo. Sin maturity score."""
-	from pmo.governance import derive_lifecycle_state, governance_flags
+	Devuelve conteos + filas con ACCIONES en lenguaje humano; **no expone** claves internas de lifecycle.
+	Incluye estados terminales (Completed/Cancelled). Sin maturity score. Risk: reserva de UX (sin señal)."""
+	from pmo.governance import governance_flags
 
-	counts = {"without_handoff": 0, "needs_closure": 0, "needs_review": 0, "open_change_requests": 0}
+	counts = {
+		"without_handoff": 0,
+		"needs_baseline": 0,
+		"open_change_requests": 0,
+		"needs_closure": 0,
+		"needs_review": 0,
+	}
 	items = []
 	for p in frappe.get_list("Project", fields=["name", "project_name", "customer", "status"], limit=0):
 		f = governance_flags(p.name)
 		if not f["has_handoff"]:
 			counts["without_handoff"] += 1
+		if f["needs_baseline"]:
+			counts["needs_baseline"] += 1
 		if f["needs_closure"]:
 			counts["needs_closure"] += 1
 		if f["needs_review"]:
 			counts["needs_review"] += 1
 		counts["open_change_requests"] += cint(f["open_change_requests"])
-		if (
-			(not f["has_handoff"])
-			or f["needs_closure"]
-			or f["needs_review"]
-			or cint(f["open_change_requests"]) > 0
-		):
+		actions = _governance_actions(f)
+		if actions:
 			items.append(
 				{
 					"project": p.name,
 					"project_name": p.project_name,
 					"customer": p.customer,
-					"status": p.status,
-					"lifecycle": derive_lifecycle_state(p.name),
-					**f,
+					"actions": actions,
 				}
 			)
 	return {"counts": counts, "items": items[:20]}

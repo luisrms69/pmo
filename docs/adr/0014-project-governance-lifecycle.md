@@ -112,12 +112,22 @@ Extender las filas de portafolio existentes (ya con `has_baseline`) con señales
 y Portfolio/Dashboard las **consumen** (no se duplican reglas por superficie). Semántica canónica, alineada
 con D4/D7:
 - `has_handoff` = existe Handoff **submitted** (hito de arranque completado);
+- `needs_baseline` = `has_handoff` **y** no existe línea base vigente/submitted (siguiente acción del
+  arranque: Proposal ganada → Project → Handoff → **Baseline**);
 - `needs_closure` = `Project.status ∈ {Completed, Cancelled}` **y** no existe Closure submitted (mismos
   estados terminales de D4/D7 — no solo `Completed`);
 - `needs_review` = existe Closure submitted **y** no existe Review submitted;
 - `open_change_requests` = Change Requests en estados abiertos canónicos (`Draft`, `In Review`).
 
-(Señales de riesgo se añadirán con la capacidad de Risk, D6.)
+**Pending Governance Actions** (Custom HTML Block "PMO Governance") es una **lista de trabajo**: 6 indicadores
+(Sin Handoff · Sin línea base · Solicitudes de cambio abiertas · Requieren cierre · Requieren revisión ·
+Análisis de riesgo —reserva de UX, sin lógica—) y filas por Project con **acciones en lenguaje humano**
+(*Crear Handoff · Crear línea base inicial · Atender N solicitud(es) de cambio · Emitir cierre · Realizar
+revisión post-proyecto*), derivadas server-side de las señales. **No** se exponen claves internas de lifecycle
+(`initiation/planning/execution_control`) al usuario. Las acciones se construyen en `_governance_actions`
+(dashboard) consumiendo `governance_flags` (fuente única), sin duplicar reglas en JS.
+
+(Señales de riesgo se añadirán con la capacidad de Risk, D6; hoy el indicador de riesgo es solo reserva de UX.)
 
 ### D10 — P4 reutilizado (sin segunda política)
 Los artefactos heredan la visibilidad del Project vía `pmo.permissions` (`permission_query_conditions` +
