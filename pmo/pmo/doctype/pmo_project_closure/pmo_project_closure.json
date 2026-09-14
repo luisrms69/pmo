@@ -1,0 +1,197 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "PMO-CLS-.#####",
+ "creation": "2026-09-13 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "is_submittable": 1,
+ "field_order": [
+  "project",
+  "title",
+  "column_break_hdr",
+  "closure_date",
+  "accepted_by",
+  "accepted_on",
+  "section_result",
+  "final_result",
+  "pending_items_transferred",
+  "closure_observations",
+  "section_snapshot",
+  "issued_by",
+  "issued_at",
+  "column_break_snap",
+  "snapshot_schema_version",
+  "snapshot_hash",
+  "section_snapshot_data",
+  "snapshot",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Project",
+   "options": "Project",
+   "reqd": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
+  },
+  {
+   "fieldname": "column_break_hdr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "description": "Cutoff used to freeze the closure metrics.",
+   "fieldname": "closure_date",
+   "fieldtype": "Date",
+   "label": "Closure date"
+  },
+  {
+   "description": "Who formally accepts the closure (name or role; may be the client).",
+   "fieldname": "accepted_by",
+   "fieldtype": "Data",
+   "label": "Accepted by"
+  },
+  {
+   "fieldname": "accepted_on",
+   "fieldtype": "Date",
+   "label": "Accepted on"
+  },
+  {
+   "fieldname": "section_result",
+   "fieldtype": "Section Break",
+   "label": "Closure"
+  },
+  {
+   "fieldname": "final_result",
+   "fieldtype": "Small Text",
+   "label": "Final result",
+   "reqd": 1
+  },
+  {
+   "fieldname": "pending_items_transferred",
+   "fieldtype": "Small Text",
+   "label": "Pending items transferred"
+  },
+  {
+   "fieldname": "closure_observations",
+   "fieldtype": "Small Text",
+   "label": "Closure observations"
+  },
+  {
+   "collapsible": 1,
+   "description": "Metrics frozen from canonical sources at submit. Not captured by hand; not editable.",
+   "fieldname": "section_snapshot",
+   "fieldtype": "Section Break",
+   "label": "Closure snapshot (frozen on submit)"
+  },
+  {
+   "fieldname": "issued_by",
+   "fieldtype": "Link",
+   "label": "Issued by",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issued_at",
+   "fieldtype": "Datetime",
+   "label": "Issued at",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_snap",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "snapshot_schema_version",
+   "fieldtype": "Int",
+   "label": "Snapshot schema version",
+   "read_only": 1
+  },
+  {
+   "fieldname": "snapshot_hash",
+   "fieldtype": "Data",
+   "label": "Snapshot hash",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_snapshot_data",
+   "fieldtype": "Section Break",
+   "label": "Frozen snapshot (JSON)"
+  },
+  {
+   "description": "Immutable canonical snapshot at closure (same form that is hashed). The Print Format is rebuilt only from here, never from live data.",
+   "fieldname": "snapshot",
+   "fieldtype": "Code",
+   "label": "Snapshot",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PMO Project Closure",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "module": "PMO",
+ "name": "PMO Project Closure",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PMO Executive Access"
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

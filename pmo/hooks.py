@@ -159,6 +159,8 @@ permission_query_conditions = {
 	"PMO Change Request": "pmo.permissions.get_permission_query_conditions_change_request",
 	# ADR-0014 D3/D10: el Charter hereda la visibilidad del Project.
 	"PMO Project Charter": "pmo.permissions.get_permission_query_conditions_charter",
+	# ADR-0014 D4/D10: el Closure hereda la visibilidad del Project.
+	"PMO Project Closure": "pmo.permissions.get_permission_query_conditions_closure",
 }
 
 has_permission = {
@@ -167,6 +169,7 @@ has_permission = {
 	"PMO Project Baseline": "pmo.permissions.has_permission_baseline",
 	"PMO Change Request": "pmo.permissions.has_permission_change_request",
 	"PMO Project Charter": "pmo.permissions.has_permission_charter",
+	"PMO Project Closure": "pmo.permissions.has_permission_closure",
 }
 
 # ADR-0006 D2: la Status Date (Data Date) del Project solo puede ser hoy o pasada (no futura en v0.7.0).

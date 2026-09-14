@@ -77,8 +77,10 @@ class TestGovernanceLifecycle(IntegrationTestCase):
 		self.assertEqual(exp["lifecycle_state"], LIFECYCLE_PLANNING)
 		self.assertTrue(exp["charter"]["available"])
 		self.assertTrue(exp["charter"]["reference"])
-		# Closure/Review aún no existen como DocType → marcados pendientes, sin romper.
-		self.assertTrue(exp["closure"]["pending"])
+		# Closure ya existe como DocType (BLOQUE 4) y no hay doc para este Project → disponible False, sin pending.
+		self.assertFalse(exp["closure"]["available"])
+		self.assertFalse(exp["closure"]["pending"])
+		# Review aún NO existe como DocType (bloque futuro) → pending, sin romper (mecanismo forward-compatible).
 		self.assertTrue(exp["review"]["pending"])
 		self.assertIn("open", exp["change_requests"])
 
