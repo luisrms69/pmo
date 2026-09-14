@@ -130,11 +130,21 @@ def _baseline(
 
 def _implemented_cr(project, owner):
 	"""Crea un PMO Change Request y lo lleva por su Workflow real hasta `Implemented` (aprobado + aplicado,
-	a la espera de su nueva baseline). Requiere una baseline vigente en el Project (gate de `In Review`)."""
+	a la espera de su nueva baseline). Requiere una baseline vigente en el Project (gate de `In Review`).
+	El gate de Implemented exige responsable de implementación y aceptación del cliente documentada."""
 	from frappe.model.workflow import apply_workflow
 
+	emp = _employee("CR Impl Owner", owner)
 	cr = frappe.get_doc(
-		{"doctype": "PMO Change Request", "project": project, "title": "Cambio", "reason": "Motivo"}
+		{
+			"doctype": "PMO Change Request",
+			"project": project,
+			"title": "Cambio",
+			"reason": "Motivo",
+			"implementation_owner": emp,
+			"customer_approval_status": "Not Required",
+			"customer_approval_notes": "Cambio sin impacto al cliente",
+		}
 	).insert(ignore_permissions=True)
 	prev = frappe.session.user
 	frappe.set_user(owner)

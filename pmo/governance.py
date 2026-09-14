@@ -35,8 +35,9 @@ LIFECYCLE_LABELS = {
 # Estados terminales reales del Project nativo de ERPNext (Open/On hold/Completed/Cancelled): ambos requieren
 # cierre formal (ADR-0014 D4/D7). Fuente única reutilizada por lifecycle y por las señales de gobierno.
 TERMINAL_STATUSES = ("Completed", "Cancelled")
-# Estados abiertos canónicos del Change Request (ADR-0005): aún no resueltos.
-OPEN_CHANGE_REQUEST_STATES = ("Draft", "In Review")
+# Estados abiertos/accionables canónicos del Change Request (ADR-0005): un CR sigue requiriendo trabajo en
+# Draft, In Review, Approved e Implemented (no cerrado). Terminales: Rejected, Closed.
+OPEN_CHANGE_REQUEST_STATES = ("Draft", "In Review", "Approved", "Implemented")
 
 
 def _has_submitted(doctype: str, project: str) -> bool:
@@ -103,7 +104,7 @@ def build_expediente(project: str) -> dict:
 	crs = frappe.get_all(
 		"PMO Change Request", filters={"project": project}, fields=["name", "workflow_state"], limit=0
 	)
-	open_states = {"Draft", "In Review"}
+	open_states = set(OPEN_CHANGE_REQUEST_STATES)
 	return {
 		"lifecycle_state": derive_lifecycle_state(project),
 		"handoff": _artifact("PMO Project Handoff", project, "handoff_date"),

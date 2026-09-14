@@ -109,11 +109,23 @@ Un CR **no puede formalizarse** (pasar a `En revisión`) si el Project no tiene 
 (`get_effective_baseline`). Antes de esa baseline se está en **planificación**, no en Change Control. Al
 formalizar, `baseline_before` se resuelve y **congela**. Gate **duro**, no warning.
 
-### D5 — Cardinalidad de baselines
+### D5 — Cardinalidad de baselines (reconciliada con el modelo actual de Baseline)
 
-`baseline_before` y `baseline_after` viven **en el CR**. **Muchos CR pueden consolidarse en una misma
-`baseline_after`.** **No** se añade un Link singular `change_request` en `PMO Project Baseline` (que
-ADR-0004 dejó fuera): la Baseline muestra sus CR relacionados por **backlink/dashboard**.
+**Actualización (reconciliación con `PMO Project Baseline`, tipo `Approved Change`).** La cardinalidad
+"muchos CR → una `baseline_after`" **queda derogada**. Modelo vigente **uno-a-uno**:
+
+- `baseline_before` sigue viviendo **en el CR** (Link, read-only, congelado al formalizar).
+- `baseline_after` en el CR es **read-only para el usuario** (`allow_on_submit` solo porque el sistema lo
+  actualiza tras el submit del CR). **No** hay selección manual, ni botón "Use current baseline", ni query
+  de selección: se eliminan.
+- Una `PMO Project Baseline` de tipo **`Approved Change`** referencia **exactamente un** `PMO Change Request`
+  (campo `change_request`, ADR-0004 D4) y, **al Submit**, fija automáticamente
+  `PMO Change Request.baseline_after = esa Baseline` mediante `doc.save` normal bajo la autoridad del Project
+  Owner (sin `ignore_permissions`, sin segunda semántica).
+- El usuario **no** relaciona manualmente CR y Baseline en ambos lados. Secuencia:
+  `CR Approved → implementar en el Current Plan → Mark Implemented → crear Baseline Approved Change
+  seleccionando ese CR → Submit fija CR.baseline_after → CR puede Closed`.
+- `Replan` **no** se usa para cerrar Change Requests (replaneación de gestión sin CR).
 
 ### D6 — Autoridad y coordinación de Workflows (Modelo 1)
 
@@ -149,10 +161,12 @@ su grupo) **y** `applied_quotation` (Link, ro — la versión `Ganada` efectivam
 addendum usa un **`proposal_group` distinto** del original (evita el bloqueo de single-live contra la
 propuesta original `Ganada`, que no es estado muerto).
 
-### D9 — Nueva Baseline después de implementar
+### D9 — Nueva Baseline después de implementar (reconciliado)
 
-Tras `Implementado`, el owner crea una nueva `PMO Project Baseline` (Approved Change), se liga
-`baseline_after` (mismo Project, `effective_date ≥ baseline_before`) y se **Cierra** el CR.
+Tras `Implementado`, el owner crea una nueva `PMO Project Baseline` de tipo `Approved Change`
+**seleccionando ese CR**; al Submit de esa Baseline se fija automáticamente `CR.baseline_after` (mismo
+Project, `effective_date ≥ baseline_before`). Solo entonces el CR puede **Cerrarse**. El gate
+`Implementado → Cerrado` exige `baseline_after` **y** `stakeholder_communication`.
 
 ### D10 — Persistencia post-submit (nativa, sin bypass)
 
@@ -173,8 +187,8 @@ Identifica: Tasks añadidas/eliminadas, cambios de fechas, `expected_time`, estr
 assignments (`override_hours`/`effective_hours`) y fechas de Project. Whitelisted
 `get_baseline_comparison(a, b)` con check `read` sobre **ambas** baselines (= `is_project_visible`) y mismo
 Project → **P4-safe**, sin fuga cross-project. Render **modesto** (diálogo/tabla), rotulado **"cambios
-entre baselines"** — **no** atribución exclusiva por CR (muchos CR → una `baseline_after`). Sin overlay
-Gantt.
+entre baselines"**. Con el modelo actual la Baseline `Approved Change` referencia un único CR; el CR abre
+el comparador como contexto (before → after). Sin overlay Gantt.
 
 ### D12 — Change Register (Report View nativo)
 
@@ -192,6 +206,33 @@ Hooks (sin tocar DocPerms), mismo patrón que `PMO Project Baseline`: `read` = `
 acceso. Los miembros pueden crear, documentar, evaluar y enviar a revisión, pero **no aprueban por ser
 members**. Coherencia de UI: `condition` en las transiciones de aprobación (además del gate P4), para no
 depender solo de que el submit falle tras pulsar.
+
+### D14 — Reconciliación con el procedimiento del cliente (FO-AG Control de Cambios)
+
+Se alinea el CR con el procedimiento real **sin** reintroducir matriz A/M/B, Calidad, Evaluación de Valor,
+business case, CCB complejo, fechas de implementación duplicadas ni firmas gráficas. Campos añadidos:
+
+- **Aceptación del cliente (solo cambios SIN addendum):** `customer_approval_status`
+  (`Pending`/`Approved`/`Not Required`), `customer_approved_by` (Contact), `customer_approved_on` (Date),
+  `customer_approval_notes` (Small Text). Con `proposal_group` la aceptación **deriva** de la Quotation
+  Ganada/aplicada (no se recaptura). Sin e-signature.
+- **`implementation_owner`** (Link Employee): responsable de confirmar la incorporación al Current Plan;
+  default inicial `Project.pmo_operational_owner` (no modifica el Project), editable mientras el CR sea
+  editable, obligatorio antes de `Mark Implemented`.
+- **`stakeholder_communication`** (Small Text, `allow_on_submit`): evidencia de comunicación a interesados;
+  admite `N/A`. Comments/Communication/Files nativos siguen como evidencia complementaria.
+
+**Gates finales del Workflow** (`Draft → In Review → Approved/Rejected → Implemented → Closed`):
+- `In Review`: baseline vigente + congela `baseline_before` (D4).
+- `Rejected`: **`decision_notes` obligatorio**.
+- `Implemented`: `implementation_owner` definido; si `impacts_commercial` → `proposal_group` +
+  `applied_to_project`; si **no** hay addendum → `customer_approval_status` = `Approved` (Contact+fecha) o
+  `Not Required` (justificación); `Pending` bloquea.
+- `Closed`: `baseline_after` (fijada por la Baseline `Approved Change`) + `stakeholder_communication`.
+
+**Señal de Governance (abiertos/accionables):** `OPEN_CHANGE_REQUEST_STATES = {Draft, In Review, Approved,
+Implemented}`; terminales `Rejected`/`Closed`. `Pending Governance Actions` la consume automáticamente
+(fuente única `pmo.governance`).
 
 ## Interacción con `erpnext_proposals` — contrato publicado (v0.22.0)
 
@@ -264,6 +305,7 @@ accounting, constraints avanzados, **Status Date / Planificado vs Real (v0.7)**,
 
 - **ADR-0002:** reutiliza el boundary P4 (`is_project_visible`, `PMO Executive Access` read-only,
   `PMO Manager` sin acceso).
-- **ADR-0004:** consume Baselines inmutables y snapshots v1; **resuelve no añadir** el link
-  `change_request` en Baseline (que ADR-0004 dejó fuera) usando cardinalidad del lado del CR. No modifica
-  invariantes de lineage / effective_date / cancelación.
+- **ADR-0004:** consume Baselines inmutables y snapshots v1. **Reconciliación vigente (D5):** la Baseline
+  de tipo `Approved Change` **sí** lleva un Link `change_request` (uno-a-uno) y, al Submit, fija
+  `CR.baseline_after`. Queda **derogada** la decisión previa de "no añadir el link en Baseline / cardinalidad
+  muchos-CR del lado del CR". No modifica invariantes de lineage / effective_date / cancelación.

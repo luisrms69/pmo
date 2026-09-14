@@ -254,16 +254,17 @@ class PMOProjectBaseline(Document):
 
 	def _link_change_request_baseline_after(self):
 		"""Al aprobar (Submit) una baseline de tipo Cambio aprobado, fija `PMO Change Request.baseline_after`
-		= esta baseline (campo `allow_on_submit`), usando el mecanismo Frappe normal (save que re-valida la
-		integridad de baselines del CR). No crea una segunda semantica: reutiliza el vinculo existente. La
-		autoridad es el propio Submit de la baseline."""
+		= esta baseline (campo `allow_on_submit`), usando el mecanismo Frappe normal (`doc.save`, que re-valida
+		la integridad de baselines del CR). No crea una segunda semantica ni eleva permisos: el submit de la
+		baseline lo realiza el Project Owner, que tiene autoridad de escritura sobre el CR del mismo Project
+		(P4). Reutiliza el vinculo existente `baseline_after` (read-only para el usuario, allow_on_submit)."""
 		if self.baseline_type != APPROVED_CHANGE or not self.change_request:
 			return
 		cr = frappe.get_doc("PMO Change Request", self.change_request)
 		if cr.baseline_after == self.name:
 			return
 		cr.baseline_after = self.name
-		cr.save(ignore_permissions=True)
+		cr.save()
 
 	# --- congelado autoritativo (ADR-0004 D5): solo en before_submit ---------------
 

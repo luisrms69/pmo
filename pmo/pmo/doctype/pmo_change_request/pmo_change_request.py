@@ -14,16 +14,19 @@ Semántica de estados (Workflow `PMO Change Request`):
   de baseline (cubre cualquier ruta a `docstatus=1`).
 - **Aplicar Quotation al Project** (acción explícita, no transición): materializa los Scope Items vía el
   contrato `erpnext_proposals.apply_addendum_to_project` y fija `applied_*`. **No** mueve el Workflow.
-- **Marcar Implementado**: transición Approved→Implemented; gate: si hay `proposal_group`, exige
-  `applied_to_project`.
-- **Cerrar**: transición Implemented→Closed; gate: exige `baseline_after`.
+- **Rechazar**: transición In Review→Rejected; gate: `decision_notes` obligatorio.
+- **Marcar Implementado**: transición Approved→Implemented; gate: `implementation_owner` definido; si
+  `impacts_commercial` exige addenda aplicada (`proposal_group` + `applied_to_project`); si NO hay addenda,
+  aceptación del cliente documentada (`customer_approval_status` Approved con Contact+fecha, o Not Required
+  con justificación; Pending bloquea).
+- **Cerrar**: transición Implemented→Closed; gate: `baseline_after` (fijada por una Baseline `Approved
+  Change` que referencia el CR) + `stakeholder_communication`.
 """
 
 import frappe
 from frappe import N_
 from frappe.model.document import Document
-from frappe.query_builder import Order
-from frappe.utils import cint, getdate, now_datetime, today
+from frappe.utils import getdate, now_datetime, today
 
 from pmo import change_control
 
@@ -60,12 +63,37 @@ _IMPACT_LABELS = (
 
 
 class PMOChangeRequest(Document):
+	def before_insert(self):
+		# Default inicial del responsable de implementación desde el Project (dato propio del cambio; editable
+		# mientras el CR sea editable). NO modifica el Project.
+		if not self.implementation_owner and self.project:
+			self.implementation_owner = frappe.db.get_value("Project", self.project, "pmo_operational_owner")
+
 	def validate(self):
 		self._set_defaults()
 		self._compute_impact_summary()
 		self._set_currency_default()
+		self._validate_customer_approval()
 		self._validate_baseline_integrity()
 		self._apply_workflow_gates()
+
+	def _validate_customer_approval(self):
+		"""Aceptación del cliente (solo cambios SIN addenda comercial): coherencia de campos por estado.
+		Con `proposal_group` la aceptación deriva de la Quotation Ganada/aplicada y no se captura aquí."""
+		if self.proposal_group:
+			return
+		if self.customer_approval_status == "Approved" and not (
+			self.customer_approved_by and self.customer_approved_on
+		):
+			frappe.throw(
+				frappe._(
+					"An Approved customer approval requires the approving Contact and the approval date."
+				)
+			)
+		if self.customer_approval_status == "Not Required" and not (
+			self.customer_approval_notes and self.customer_approval_notes.strip()
+		):
+			frappe.throw(frappe._("A 'Not Required' customer approval requires a justification note."))
 
 	def before_update_after_submit(self):
 		"""En un doc submitted, Frappe ejecuta SOLO este hook (no `validate`). Las transiciones
@@ -138,18 +166,67 @@ class PMOChangeRequest(Document):
 			return
 		if new_state == IN_REVIEW:
 			self._ensure_baseline_before()  # gate duro + congelado
+		elif new_state == REJECTED:
+			if not (self.decision_notes and self.decision_notes.strip()):
+				frappe.throw(
+					frappe._("Provide Decision notes explaining why the Change Request is rejected.")
+				)
 		elif new_state == IMPLEMENTED:
-			if self.proposal_group and not self.applied_to_project:
+			self._gate_implemented()
+		elif new_state == CLOSED:
+			self._gate_closed()
+
+	def _gate_implemented(self):
+		"""Gate Approved -> Implemented: responsable definido; impacto comercial aplicado por addenda; y sin
+		addenda, aceptación del cliente documentada. `Mark Implemented` sigue siendo la confirmación explícita
+		del responsable (no se valida programáticamente que todo el Current Plan se haya editado)."""
+		if not self.implementation_owner:
+			frappe.throw(frappe._("Set the Implementation Owner before marking the change as implemented."))
+		if self.impacts_commercial and not (self.proposal_group and self.applied_to_project):
+			frappe.throw(
+				frappe._(
+					"Commercial impact: create the addendum Quotation and apply it to the Project (Applied to Project) before implementing."
+				)
+			)
+		if self.proposal_group and not self.applied_to_project:
+			frappe.throw(
+				frappe._(
+					"Apply the Quotation to the Project (the Scope Items) before marking the change as implemented."
+				)
+			)
+		if not self.proposal_group:
+			# Sin addenda comercial: la aceptación del cliente debe estar documentada.
+			status = self.customer_approval_status
+			if status not in ("Approved", "Not Required"):
+				frappe.throw(
+					frappe._("Document the customer approval (Approved or Not Required) before implementing.")
+				)
+			if status == "Approved" and not (self.customer_approved_by and self.customer_approved_on):
 				frappe.throw(
 					frappe._(
-						"Apply the Quotation to the Project (the Scope Items) before marking the change as implemented."
+						"An Approved customer approval requires the approving Contact and the approval date."
 					)
 				)
-		elif new_state == CLOSED:
-			if not self.baseline_after:
-				frappe.throw(
-					frappe._("Link the new baseline (Baseline After) before closing the Change Request.")
+			if status == "Not Required" and not (
+				self.customer_approval_notes and self.customer_approval_notes.strip()
+			):
+				frappe.throw(frappe._("A 'Not Required' customer approval requires a justification note."))
+
+	def _gate_closed(self):
+		"""Gate Implemented -> Closed: baseline_after (fijada por una Baseline `Approved Change` que referencia
+		este CR) y comunicación a interesados informada."""
+		if not self.baseline_after:
+			frappe.throw(
+				frappe._(
+					"Link the new baseline before closing: submit a PMO Project Baseline of type 'Approved Change' that references this Change Request."
 				)
+			)
+		if not (self.stakeholder_communication and self.stakeholder_communication.strip()):
+			frappe.throw(
+				frappe._(
+					"Record the Stakeholder Communication before closing the implemented change (use 'N/A' if it genuinely does not apply)."
+				)
+			)
 
 	def _ensure_baseline_before(self):
 		"""Gate duro (ADR-0005 D4): sin baseline vigente no hay Change Control. Congela `baseline_before`
@@ -279,58 +356,3 @@ def crear_addenda(change_request: str):
 		doc.proposal_group = group
 		doc.save()
 	return new_quotation
-
-
-# --- UX de baseline_after: selección explícita, más guiada (ADR-0005 D5) -----------
-
-
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
-def baseline_after_query(
-	doctype: str,
-	txt: str,
-	searchfield: str,
-	start: int,
-	page_len: int,
-	filters: dict | None = None,
-):
-	"""Link query para `baseline_after`: baselines Submitted del mismo Project, distintas de
-	`baseline_before` y compatibles temporalmente (`effective_date >= baseline_before.effective_date`).
-	Reduce fricción sin automatizar la relación (que es de negocio, no "la vigente al instante").
-
-	Construido con Query Builder (`frappe.qb`): sin SQL por f-string; los valores viajan como parámetros."""
-	filters = filters or {}
-	like = f"%{txt or ''}%"
-	b = frappe.qb.DocType("PMO Project Baseline")
-	query = (
-		frappe.qb.from_(b)
-		.select(b.name, b.revision)
-		.where(b.docstatus == 1)
-		.where(b.project == filters.get("project"))
-		.where(b.name.like(like) | b.revision.like(like))
-		.orderby(b.effective_date, order=Order.desc)
-		.orderby(b.creation, order=Order.desc)
-		.limit(cint(page_len))
-		.offset(cint(start))
-	)
-	before = filters.get("baseline_before")
-	if before:
-		query = query.where(b.name != before)
-		eff = frappe.db.get_value("PMO Project Baseline", before, "effective_date")
-		if eff:
-			query = query.where(b.effective_date >= eff)
-	return query.run()
-
-
-@frappe.whitelist()
-def get_current_baseline(project: str):
-	"""Conveniencia para el botón 'Usar línea base vigente': devuelve la baseline vigente del Project si es
-	visible para el usuario (P4). NO fija nada; el usuario puede escoger otra."""
-	if not project:
-		return None
-	from pmo.baseline import get_effective_baseline
-	from pmo.permissions import is_project_visible
-
-	if not is_project_visible(project, frappe.session.user):
-		frappe.throw(frappe._("You do not have access to this Project."), frappe.PermissionError)
-	return get_effective_baseline(project)

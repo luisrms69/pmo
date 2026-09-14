@@ -2254,3 +2254,139 @@ msgstr "«Current» es el plan de hoy evaluado contra la fecha de corte, no una 
 msgid "— (no baseline at date)"
 msgstr "— (sin línea base a la fecha)"
 
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Customer Approval"
+msgstr "Aceptación del cliente"
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Customer Approval Status"
+msgstr "Estado de aprobación del cliente"
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Customer Approved By"
+msgstr "Aprobado por el cliente"
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Customer Approved On"
+msgstr "Fecha de aprobación del cliente"
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Customer Approval Notes"
+msgstr "Notas de aprobación del cliente"
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Implementation Owner"
+msgstr "Responsable de implementación"
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Stakeholder Communication"
+msgstr "Comunicación a interesados"
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Evaluation"
+msgstr "Evaluación"
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Commercial"
+msgstr "Comercial"
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Pending"
+msgstr "Pendiente"
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Not Required"
+msgstr "No requerido"
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Why the change is requested (the driver/justification)."
+msgstr "Por qué se solicita el cambio (el motivo/justificación)."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Detailed description of the requested change."
+msgstr "Descripción detallada del cambio solicitado."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "The change affects the commercial agreement. If checked, it must go through a Quotation/Addendum applied to the Project before it can be implemented."
+msgstr "El cambio afecta el acuerdo comercial. Si se marca, debe pasar por una Cotización/Addendum aplicada al Project antes de poder implementarse."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Free-text notes on the impact of the change."
+msgstr "Notas libres sobre el impacto del cambio."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Commercial thread of the change. The commercial acceptance lives in the Quotation/Addendum workflow, not here."
+msgstr "Hilo comercial del cambio. La aceptación comercial vive en el flujo de la Cotización/Addendum, no aquí."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Baseline that incorporates the change. Set automatically when a PMO Project Baseline of type 'Approved Change' referencing this Change Request is submitted; it is not selected manually."
+msgstr "Línea base que incorpora el cambio. Se fija automáticamente al emitir una PMO Project Baseline de tipo 'Approved Change' que referencia esta Solicitud de Cambio; no se selecciona manualmente."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Governance decision notes. Mandatory when the change is rejected: state clearly why it was rejected."
+msgstr "Notas de la decisión de gobernanza. Obligatorias cuando el cambio se rechaza: indica claramente por qué se rechazó."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "For changes without a commercial addendum: record the customer's approval. When there is a Quotation/Addendum, acceptance derives from the Won Quotation and this section does not apply."
+msgstr "Para cambios sin addendum comercial: registra la aprobación del cliente. Cuando hay Cotización/Addendum, la aceptación deriva de la Cotización Ganada y esta sección no aplica."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Whether the customer's approval is Pending, Approved, or Not Required for this change."
+msgstr "Si la aprobación del cliente para este cambio está Pendiente, Aprobada o No requerida."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Customer contact who approved the change."
+msgstr "Contacto del cliente que aprobó el cambio."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Date on which the customer approved the change."
+msgstr "Fecha en que el cliente aprobó el cambio."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Reference to the customer's approval evidence (email, minutes, file, etc.). When 'Not Required', explain why the customer's approval is not needed."
+msgstr "Referencia a la evidencia de aprobación del cliente (correo, minuta, archivo, etc.). Cuando es 'No requerido', explica por qué no se necesita la aprobación del cliente."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Person responsible for coordinating/confirming that the approved change was incorporated into the Current Plan. Defaults to the Project's operational owner but is owned by this change and can be edited while the CR is editable. It does not modify the Project."
+msgstr "Persona responsable de coordinar/confirmar que el cambio aprobado quedó incorporado al Plan Vigente. Toma por defecto el responsable operativo del Project, pero es un dato propio del cambio y puede editarse mientras el CR sea editable. No modifica el Project."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Document the adjustments made, the plan updates needed, and any implementation considerations."
+msgstr "Documenta los ajustes realizados, las actualizaciones necesarias al plan y cualquier consideración de implementación."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "What communication was done to stakeholders, or where the corresponding evidence is. Native Comments/Communication/Files remain the complementary evidence. Write 'N/A' when it genuinely does not apply. Required before closing an implemented change."
+msgstr "Qué comunicación se realizó a los interesados, o dónde está la evidencia correspondiente. Los Comentarios/Comunicaciones/Archivos nativos siguen siendo la evidencia complementaria. Escribe 'N/A' cuando realmente no aplique. Requerido antes de cerrar un cambio implementado."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Provide Decision notes explaining why the Change Request is rejected."
+msgstr "Indica las Notas de la decisión que expliquen por qué se rechaza la Solicitud de Cambio."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Set the Implementation Owner before marking the change as implemented."
+msgstr "Define el Responsable de implementación antes de marcar el cambio como implementado."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Commercial impact: create the addendum Quotation and apply it to the Project (Applied to Project) before implementing."
+msgstr "Impacto comercial: crea la Cotización/Addendum y aplícala al Project (Aplicado al Project) antes de implementar."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Document the customer approval (Approved or Not Required) before implementing."
+msgstr "Documenta la aprobación del cliente (Aprobada o No requerida) antes de implementar."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "An Approved customer approval requires the approving Contact and the approval date."
+msgstr "Una aprobación del cliente 'Aprobada' requiere el Contacto que aprueba y la fecha de aprobación."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "A 'Not Required' customer approval requires a justification note."
+msgstr "Una aprobación del cliente 'No requerida' requiere una nota de justificación."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Link the new baseline before closing: submit a PMO Project Baseline of type 'Approved Change' that references this Change Request."
+msgstr "Liga la nueva línea base antes de cerrar: emite una PMO Project Baseline de tipo 'Approved Change' que referencie esta Solicitud de Cambio."
+
+#: pmo/pmo/doctype/pmo_change_request (bloque reconciliacion CR)
+msgid "Record the Stakeholder Communication before closing the implemented change (use 'N/A' if it genuinely does not apply)."
+msgstr "Registra la Comunicación a interesados antes de cerrar el cambio implementado (usa 'N/A' si realmente no aplica)."

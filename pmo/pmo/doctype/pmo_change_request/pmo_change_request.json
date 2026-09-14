@@ -25,14 +25,14 @@
   "impacts_commercial",
   "impacts_risk",
   "impact_summary",
+  "impact_notes",
   "section_impact_qty",
   "impact_hours",
   "impact_days",
   "column_break_impact_qty",
   "currency",
   "impact_amount",
-  "section_impact_notes",
-  "impact_notes",
+  "section_evaluation",
   "evaluation_notes",
   "section_proposal",
   "proposal_group",
@@ -45,10 +45,17 @@
   "approved_at",
   "column_break_decision",
   "decision_notes",
+  "section_customer_approval",
+  "customer_approval_status",
+  "customer_approved_by",
+  "customer_approved_on",
+  "customer_approval_notes",
   "section_implementation",
+  "implementation_owner",
   "applied_to_project",
   "applied_at",
   "implementation_notes",
+  "stakeholder_communication",
   "amended_from"
  ],
  "fields": [
@@ -110,12 +117,14 @@
    "label": "Request"
   },
   {
+   "description": "Why the change is requested (the driver/justification).",
    "fieldname": "reason",
    "fieldtype": "Small Text",
    "label": "Reason",
    "reqd": 1
   },
   {
+   "description": "Detailed description of the requested change.",
    "fieldname": "description",
    "fieldtype": "Text Editor",
    "label": "Description"
@@ -149,6 +158,7 @@
   },
   {
    "default": "0",
+   "description": "The change affects the commercial agreement. If checked, it must go through a Quotation/Addendum applied to the Project before it can be implemented.",
    "fieldname": "impacts_commercial",
    "fieldtype": "Check",
    "label": "Commercial"
@@ -166,6 +176,12 @@
    "in_list_view": 1,
    "label": "Impact summary",
    "read_only": 1
+  },
+  {
+   "description": "Free-text notes on the impact of the change.",
+   "fieldname": "impact_notes",
+   "fieldtype": "Small Text",
+   "label": "Impact notes"
   },
   {
    "fieldname": "section_impact_qty",
@@ -202,13 +218,9 @@
    "options": "currency"
   },
   {
-   "fieldname": "section_impact_notes",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "impact_notes",
-   "fieldtype": "Small Text",
-   "label": "Impact notes"
+   "fieldname": "section_evaluation",
+   "fieldtype": "Section Break",
+   "label": "Evaluation"
   },
   {
    "description": "Technical/PM evaluation of the change. Multi-party discussion uses native Comments.",
@@ -218,9 +230,10 @@
   },
   {
    "collapsible": 1,
+   "description": "Commercial thread of the change. The commercial acceptance lives in the Quotation/Addendum workflow, not here.",
    "fieldname": "section_proposal",
    "fieldtype": "Section Break",
-   "label": "Proposal (Quotation)"
+   "label": "Commercial"
   },
   {
    "description": "Logical thread (Proposal Group) of the Quotation-addendum. Preserves the version history.",
@@ -251,11 +264,12 @@
    "read_only": 1
   },
   {
-   "description": "Baseline that incorporates the change. Linked by the owner (explicit selection) before closing.",
+   "description": "Baseline that incorporates the change. Set automatically when a PMO Project Baseline of type 'Approved Change' referencing this Change Request is submitted; it is not selected manually.",
    "fieldname": "baseline_after",
    "fieldtype": "Link",
    "label": "After baseline",
    "options": "PMO Project Baseline",
+   "read_only": 1,
    "allow_on_submit": 1
   },
   {
@@ -282,14 +296,61 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "Governance decision notes. Mandatory when the change is rejected: state clearly why it was rejected.",
    "fieldname": "decision_notes",
    "fieldtype": "Small Text",
    "label": "Decision notes"
   },
   {
+   "depends_on": "eval:!doc.proposal_group",
+   "description": "For changes without a commercial addendum: record the customer's approval. When there is a Quotation/Addendum, acceptance derives from the Won Quotation and this section does not apply.",
+   "fieldname": "section_customer_approval",
+   "fieldtype": "Section Break",
+   "label": "Customer Approval"
+  },
+  {
+   "default": "Pending",
+   "description": "Whether the customer's approval is Pending, Approved, or Not Required for this change.",
+   "fieldname": "customer_approval_status",
+   "fieldtype": "Select",
+   "label": "Customer Approval Status",
+   "options": "Pending\nApproved\nNot Required"
+  },
+  {
+   "depends_on": "eval:doc.customer_approval_status=='Approved'",
+   "description": "Customer contact who approved the change.",
+   "fieldname": "customer_approved_by",
+   "fieldtype": "Link",
+   "label": "Customer Approved By",
+   "mandatory_depends_on": "eval:doc.customer_approval_status=='Approved'",
+   "options": "Contact"
+  },
+  {
+   "depends_on": "eval:doc.customer_approval_status=='Approved'",
+   "description": "Date on which the customer approved the change.",
+   "fieldname": "customer_approved_on",
+   "fieldtype": "Date",
+   "label": "Customer Approved On",
+   "mandatory_depends_on": "eval:doc.customer_approval_status=='Approved'"
+  },
+  {
+   "description": "Reference to the customer's approval evidence (email, minutes, file, etc.). When 'Not Required', explain why the customer's approval is not needed.",
+   "fieldname": "customer_approval_notes",
+   "fieldtype": "Small Text",
+   "label": "Customer Approval Notes",
+   "mandatory_depends_on": "eval:doc.customer_approval_status=='Not Required'"
+  },
+  {
    "fieldname": "section_implementation",
    "fieldtype": "Section Break",
    "label": "Implementation"
+  },
+  {
+   "description": "Person responsible for coordinating/confirming that the approved change was incorporated into the Current Plan. Defaults to the Project's operational owner but is owned by this change and can be edited while the CR is editable. It does not modify the Project.",
+   "fieldname": "implementation_owner",
+   "fieldtype": "Link",
+   "label": "Implementation Owner",
+   "options": "Employee"
   },
   {
    "description": "The Quotation's Scope Items were materialized as Tasks. Does not imply the Implemented state.",
@@ -308,9 +369,17 @@
    "allow_on_submit": 1
   },
   {
+   "description": "Document the adjustments made, the plan updates needed, and any implementation considerations.",
    "fieldname": "implementation_notes",
    "fieldtype": "Small Text",
    "label": "Implementation notes",
+   "allow_on_submit": 1
+  },
+  {
+   "description": "What communication was done to stakeholders, or where the corresponding evidence is. Native Comments/Communication/Files remain the complementary evidence. Write 'N/A' when it genuinely does not apply. Required before closing an implemented change.",
+   "fieldname": "stakeholder_communication",
+   "fieldtype": "Small Text",
+   "label": "Stakeholder Communication",
    "allow_on_submit": 1
   },
   {

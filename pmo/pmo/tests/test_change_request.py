@@ -21,10 +21,16 @@ from pmo import change_control
 from pmo.permissions import has_permission_change_request
 from pmo.pmo.doctype.pmo_change_request.pmo_change_request import (
 	aplicar_quotation_al_project,
-	baseline_after_query,
 	crear_addenda,
-	get_current_baseline,
 )
+
+
+def _employee(name):
+	return frappe.db.exists("Employee", {"employee_name": name}) or (
+		frappe.get_doc({"doctype": "Employee", "employee_name": name, "first_name": name})
+		.insert(ignore_permissions=True, ignore_mandatory=True)
+		.name
+	)
 
 
 def _user(email, roles=()):
@@ -67,7 +73,9 @@ def _project(name, owner="Administrator", members=(), company=None):
 	return pid
 
 
-def _baseline(project, revision, btype="Original", supersedes=None, effective=None, reason="Motivo"):
+def _baseline(
+	project, revision, btype="Original", supersedes=None, effective=None, reason="Motivo", change_request=None
+):
 	doc = frappe.get_doc(
 		{
 			"doctype": "PMO Project Baseline",
@@ -77,6 +85,7 @@ def _baseline(project, revision, btype="Original", supersedes=None, effective=No
 			"supersedes_baseline": supersedes,
 			"effective_date": effective or today(),
 			"reason": reason,
+			"change_request": change_request,
 		}
 	).insert(ignore_permissions=True)
 	doc.submit()
@@ -283,26 +292,30 @@ class TestChangeRequest(IntegrationTestCase):
 
 	def test_implemented_gate_and_close_gate(self):
 		owner = _user("cr-wf4@example.com", ["Projects User"])
+		emp = _employee("Impl Owner WF4")
 		p = _project("CR-WF4", owner=owner)
-		b1 = _baseline(p, "BL-001", effective="2026-01-01")
-		cr = _cr(p, proposal_group="GRP-1")  # con proposal -> exige aplicar antes de implementar
+		_baseline(p, "BL-001", effective="2026-01-01")
+		# comercial + responsable de implementación definido
+		cr = _cr(p, proposal_group="GRP-1", implementation_owner=emp)
 		self._run(cr, "Send for Review", owner)
 		self._run(cr, "Approve", owner)
-		# Marcar implementado sin aplicar la Quotation -> bloqueado
+		# Marcar implementado sin aplicar la Quotation -> bloqueado (impacto comercial)
 		self._assert_action_raises(cr, "Mark Implemented", owner)
-		# simular aplicacion (la accion real se prueba aparte) y avanzar
 		frappe.db.set_value("PMO Change Request", cr.name, "applied_to_project", 1)
 		cr.reload()
 		self._run(cr, "Mark Implemented", owner)
 		self.assertEqual(cr.workflow_state, "Implemented")
 		# Cerrar sin baseline_after -> bloqueado
 		self._assert_action_raises(cr, "Close", owner)
-		# ligar baseline_after (owner) y cerrar
-		b2 = _baseline(p, "BL-002", btype="Replan", supersedes=b1.name, effective="2026-02-01")
+		# baseline_after se fija automáticamente por una Baseline Approved Change que referencia este CR
+		b2 = _baseline(p, "BL-002", btype="Approved Change", change_request=cr.name, effective="2026-02-01")
 		cr.reload()
+		self.assertEqual(cr.baseline_after, b2.name)  # fijada por el sistema, no manual
+		# Cerrar sin stakeholder_communication -> bloqueado
+		self._assert_action_raises(cr, "Close", owner)
 		frappe.set_user(owner)
 		try:
-			cr.baseline_after = b2.name
+			cr.stakeholder_communication = "Correo enviado a interesados"
 			cr.save()
 			apply_workflow(cr, "Close")
 		finally:
@@ -312,19 +325,81 @@ class TestChangeRequest(IntegrationTestCase):
 
 	def test_implemented_ok_without_proposal(self):
 		owner = _user("cr-wf5@example.com", ["Projects User"])
+		emp = _employee("Impl Owner WF5")
 		p = _project("CR-WF5", owner=owner)
 		_baseline(p, "BL-001")
-		cr = _cr(p)  # sin proposal_group -> solo-cronograma
+		# sin proposal_group -> solo-cronograma; exige responsable + aceptación del cliente documentada
+		cr = _cr(
+			p,
+			implementation_owner=emp,
+			customer_approval_status="Not Required",
+			customer_approval_notes="Cambio interno sin impacto al cliente",
+		)
 		self._run(cr, "Send for Review", owner)
 		self._run(cr, "Approve", owner)
-		self._run(cr, "Mark Implemented", owner)  # OK sin aplicar Quotation
+		self._run(cr, "Mark Implemented", owner)
 		self.assertEqual(cr.workflow_state, "Implemented")
+
+	def test_rejected_requires_decision_notes(self):
+		owner = _user("cr-rej@example.com", ["Projects User"])
+		p = _project("CR-REJ", owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p)
+		self._run(cr, "Send for Review", owner)
+		self._assert_action_raises(cr, "Reject", owner)  # sin decision_notes -> bloqueado
+		frappe.set_user(owner)
+		try:
+			cr.decision_notes = "Rechazado por costo/beneficio"
+			cr.save()
+			apply_workflow(cr, "Reject")
+		finally:
+			frappe.set_user("Administrator")
+		cr.reload()
+		self.assertEqual(cr.workflow_state, "Rejected")
+
+	def test_implementation_owner_required_before_implemented(self):
+		owner = _user("cr-io@example.com", ["Projects User"])
+		p = _project("CR-IO", owner=owner)  # sin pmo_operational_owner -> impl owner vacío
+		_baseline(p, "BL-001")
+		cr = _cr(
+			p,
+			customer_approval_status="Not Required",
+			customer_approval_notes="n/a",
+		)
+		self.assertFalse(cr.implementation_owner)
+		self._run(cr, "Send for Review", owner)
+		self._run(cr, "Approve", owner)
+		self._assert_action_raises(cr, "Mark Implemented", owner)  # falta implementation_owner
+
+	def test_noncommercial_pending_blocks_implemented(self):
+		owner = _user("cr-pend@example.com", ["Projects User"])
+		emp = _employee("Impl Owner PEND")
+		p = _project("CR-PEND", owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p, implementation_owner=emp)  # customer_approval_status default = Pending
+		self._run(cr, "Send for Review", owner)
+		self._run(cr, "Approve", owner)
+		self._assert_action_raises(cr, "Mark Implemented", owner)  # Pending bloquea
+
+	def test_customer_approval_approved_requires_contact_and_date(self):
+		p = _project("CR-CAA")
+		with self.assertRaises(ValidationError):  # validación server-side de aceptación del cliente
+			_cr(p, customer_approval_status="Approved")  # sin Contact ni fecha
+
+	def test_not_required_requires_justification(self):
+		p = _project("CR-CANR")
+		with self.assertRaises(ValidationError):
+			_cr(p, customer_approval_status="Not Required")  # sin notas de justificación
+
+	def test_baseline_after_is_read_only(self):
+		# El usuario no relaciona manualmente CR y Baseline: baseline_after es read-only (lo fija la Baseline).
+		self.assertTrue(frappe.get_meta("PMO Change Request").get_field("baseline_after").read_only)
 
 	def test_cancel_blocked_on_terminal_state(self):
 		owner = _user("cr-wf6@example.com", ["Projects User"])
 		p = _project("CR-WF6", owner=owner)
 		_baseline(p, "BL-001")
-		cr = _cr(p)
+		cr = _cr(p, decision_notes="Rechazado")  # Reject exige decision_notes
 		self._run(cr, "Send for Review", owner)
 		self._run(cr, "Reject", owner)
 		self.assertEqual(cr.workflow_state, "Rejected")
@@ -332,39 +407,6 @@ class TestChangeRequest(IntegrationTestCase):
 		try:
 			with self.assertRaises(ValidationError):
 				cr.cancel()  # estado terminal
-		finally:
-			frappe.set_user("Administrator")
-
-	# --- UX baseline_after: query filtrada + conveniencia vigente (5.1) ----------
-
-	def test_baseline_after_query_filters(self):
-		p = _project("CR-BAQ")
-		other = _project("CR-BAQ-OTHER")
-		b1 = _baseline(p, "BL-001", effective="2026-02-01")
-		b2 = _baseline(p, "BL-002", btype="Replan", supersedes=b1.name, effective="2026-03-01")
-		bother = _baseline(other, "BL-001", effective="2026-03-01")
-		rows = baseline_after_query(
-			"PMO Project Baseline", "", "name", 0, 20, {"project": p, "baseline_before": b1.name}
-		)
-		names = [r[0] for r in rows]
-		self.assertIn(b2.name, names)  # posterior, mismo Project
-		self.assertNotIn(b1.name, names)  # excluye la propia baseline_before
-		self.assertNotIn(bother.name, names)  # excluye otro Project
-
-	def test_get_current_baseline_p4(self):
-		owner = _user("cr-gcb-owner@example.com")
-		outsider = _user("cr-gcb-out@example.com")
-		p = _project("CR-GCB", owner=owner)
-		b1 = _baseline(p, "BL-001")
-		frappe.set_user(owner)
-		try:
-			self.assertEqual(get_current_baseline(p), b1.name)
-		finally:
-			frappe.set_user("Administrator")
-		frappe.set_user(outsider)
-		try:
-			with self.assertRaises(frappe.PermissionError):
-				get_current_baseline(p)
 		finally:
 			frappe.set_user("Administrator")
 

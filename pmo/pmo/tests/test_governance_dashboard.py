@@ -270,6 +270,19 @@ class TestPendingGovernanceActions(IntegrationTestCase):
 		self.assertNotIn("needs_risk", counts)
 		self.assertFalse(any("risk" in k for k in counts))
 
+	def test_open_change_request_states(self):
+		# Abiertos/accionables: Draft, In Review, Approved, Implemented. Terminales: Rejected, Closed.
+		p = _project("PGA CRStates")
+		_handoff(p)
+		_baseline(p)  # aísla el conteo al CR (sin needs_handoff/needs_baseline)
+		for st in ("Draft", "In Review", "Approved", "Implemented"):
+			cr = _open_cr(p, f"CR {st}")
+			frappe.db.set_value("PMO Change Request", cr.name, "workflow_state", st, update_modified=False)
+		for st in ("Rejected", "Closed"):
+			cr = _open_cr(p, f"CR {st}")
+			frappe.db.set_value("PMO Change Request", cr.name, "workflow_state", st, update_modified=False)
+		self.assertEqual(governance_flags(p)["open_change_requests"], 4)  # solo los 4 abiertos
+
 	def test_p4_only_visible_projects(self):
 		owner = _user("pga-owner@example.com")
 		stranger = _user("pga-stranger@example.com")
