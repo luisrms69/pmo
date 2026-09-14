@@ -55,7 +55,10 @@ El Handoff **no contiene estructura de Risk Analysis** y no depende de ningún r
   para completar datos*. Los campos **nunca** se editan ni se escriben hacia el Project desde el Handoff (fuente
   única = Project); solo se consultan, se muestran y se congelan al Submit.
 - **Derivado + snapshot al submit** (patrón `snapshot`+`snapshot_hash` del Baseline): customer/company,
-  `pmo_committed_end_date`, referencia a Proposal/Quotation, hitos/equipo iniciales.
+  `pmo_committed_end_date`, referencia a Proposal/Quotation, hitos/equipo iniciales. **Toda la evidencia
+  capturada del Handoff entra al `snapshot`/`snapshot_hash`:** `handoff_date`, `project_manager`,
+  `handoff_summary`, responsable operativo/contacto del cliente, `contractual_legal_ready` y la metadata de
+  emisión (`issued_by`/`issued_at`, fijados **antes** de construir el snapshot).
 - **Sin economía en el snapshot (política P4):** el Handoff **no** guarda economía autorizada. La economía está
   sujeta a `can_see_project_economics` (permlevel 1, D4); persistirla en un snapshot legible por cualquiera con
   READ del Project/Handoff la filtraría. La economía vive en su frontera canónica y en el Closure (permlevel 1).
@@ -91,6 +94,12 @@ El Handoff **no contiene estructura de Risk Analysis** y no depende de ningún r
 - **Congelación al submit:** el Closure **compone desde `build_project_control`** (cutoff = `closure_date`) la
   evidencia **no económica** (cronograma/esfuerzo/cambios) y la congela en `snapshot` con hash; **no recalcula
   ni reimplementa** esos dominios.
+- **Toda la evidencia humana capturada entra al `snapshot`/`snapshot_hash`:** `closure_checklist`, aceptación
+  (`accepted_by`/`accepted_on`), `final_result`, `pending_items_transferred`, `closure_observations` y la
+  metadata de emisión (`issued_by`/`issued_at`, fijados **antes** de construir el snapshot). No es segunda
+  captura: se toman del propio documento en `before_submit`.
+- **Integridad temporal:** `closure_date` **no puede ser futura**; si hay `accepted_on`, **no puede ser
+  posterior** a `closure_date`. `Completed` exige aceptación (`accepted_by`+`accepted_on`); `Cancelled` no.
 - **Semántica temporal (explícita):** cronograma y esfuerzo son **al corte `closure_date`** (vía
   `build_status_report`). La **economía nativa no tiene snapshot histórico** (la sección `costs` es
   `as_of:"current"`, ADR-0012), por lo que la evidencia económica se congela como **`current_at_issuance`**

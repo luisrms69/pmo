@@ -174,6 +174,28 @@ class TestProjectHandoff(IntegrationTestCase):
 		doc.submit()
 		self.assertTrue(json.loads(doc.snapshot)["contractual_legal_ready"])
 
+	def test_human_evidence_in_snapshot_and_hash(self):
+		p, _emp, _ct = _ready_project("HOF HumanSnap")
+		doc = _handoff(p, handoff_summary="Acta de transferencia")
+		doc.submit()
+		cap = json.loads(doc.snapshot)["captured"]
+		for k in ("handoff_date", "project_manager", "handoff_summary", "issued_by", "issued_at"):
+			self.assertIn(k, cap)
+		self.assertEqual(cap["handoff_summary"], "Acta de transferencia")
+		self.assertEqual(cap["issued_by"], "Administrator")
+		self.assertTrue(cap["issued_at"])
+		# El hash cubre la evidencia humana capturada.
+		cap1 = {
+			"handoff_date": "2026-01-01",
+			"project_manager": None,
+			"handoff_summary": "A",
+			"issued_by": "Administrator",
+			"issued_at": "2026-01-01 10:00:00",
+		}
+		h1 = snapshot_hash(build_handoff_snapshot(p, True, cap1))
+		h2 = snapshot_hash(build_handoff_snapshot(p, True, dict(cap1, handoff_summary="B")))
+		self.assertNotEqual(h1, h2)
+
 	def test_requires_contractual_legal_readiness_to_submit(self):
 		# Readiness contractual/legal debe estar confirmada antes de emitir el Handoff.
 		p, _emp, _ct = _ready_project("HOF Readiness")

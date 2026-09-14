@@ -26,11 +26,15 @@ from pmo.permissions import get_project_team
 HANDOFF_SNAPSHOT_SCHEMA_VERSION = 1
 
 
-def build_handoff_snapshot(project: str, contractual_legal_ready: bool = False) -> dict:
+def build_handoff_snapshot(
+	project: str, contractual_legal_ready: bool = False, captured: dict | None = None
+) -> dict:
 	"""Snapshot canonico del handoff: compone datos ya existentes (no recalcula ni recaptura).
 
-	`contractual_legal_ready` = confirmacion de readiness contractual/legal del documento; queda **dentro del
-	snapshot** y por tanto cubierta por `snapshot_hash` (evidencia congelada del Handoff, ADR-0014).
+	`contractual_legal_ready` = confirmacion de readiness contractual/legal del documento. `captured` =
+	evidencia humana capturada del propio documento (fecha de handoff, project manager, resumen y metadata de
+	emision). Ambas quedan **dentro del snapshot** y por tanto cubiertas por `snapshot_hash` (evidencia
+	congelada del Handoff, ADR-0014).
 
 	Incluye el responsable operativo interno y el contacto principal del cliente (custom fields del Project),
 	hitos (`Task.is_milestone`) y equipo inicial derivado de las fuentes P4 (owner + DocShare + ToDo). **NO**
@@ -106,6 +110,7 @@ def build_handoff_snapshot(project: str, contractual_legal_ready: bool = False) 
 			if proj.get("pmo_committed_end_date")
 			else None,
 		},
+		"captured": captured or {},
 		"operational_owner": proj.get("pmo_operational_owner"),
 		"customer_contact": proj.get("pmo_customer_contact"),
 		"contractual_legal_ready": bool(contractual_legal_ready),
@@ -135,10 +140,22 @@ class PMOProjectHandoff(Document):
 				frappe._("Confirm 'Contractual / Legal Readiness Verified' before issuing the Handoff.")
 			)
 
+		# Metadata de emisión ANTES de construir el snapshot, para que quede DENTRO de él (y del hash).
+		self.issued_by = frappe.session.user
+		self.issued_at = now_datetime()
+
+		# Evidencia humana capturada del propio documento → congelada en el snapshot (cubierta por el hash).
+		captured = {
+			"handoff_date": str(self.handoff_date) if self.handoff_date else None,
+			"project_manager": self.project_manager,
+			"handoff_summary": self.handoff_summary,
+			"issued_by": self.issued_by,
+			"issued_at": str(self.issued_at),
+		}
 		# Congela la evidencia canonica al emitir. El responsable operativo y el contacto del cliente se toman
 		# del Project y quedan fijos: cambios posteriores en el Project no alteran un Handoff ya emitido. La
 		# readiness contractual/legal del documento entra al snapshot (queda cubierta por el hash).
-		snapshot = build_handoff_snapshot(self.project, self.contractual_legal_ready)
+		snapshot = build_handoff_snapshot(self.project, self.contractual_legal_ready, captured)
 
 		# Los dos datos que justifican el Handoff deben existir para poder emitirlo (acta de transferencia):
 		# el responsable operativo interno y el contacto principal del cliente viven en el Project.
@@ -166,5 +183,3 @@ class PMOProjectHandoff(Document):
 		self.proposal_reference = snapshot["proposal_reference"]
 		self.customer = snapshot["project"]["customer"]
 		self.company = snapshot["project"]["company"]
-		self.issued_by = frappe.session.user
-		self.issued_at = now_datetime()

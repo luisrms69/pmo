@@ -2594,3 +2594,75 @@ msgstr "Margen bruto (nativo)"
 #: pmo/pmo/doctype/pmo_project_closure (bloque Closure checklist)
 msgid "Frozen evidence; rebuilt only from the frozen closure snapshot, never from live data."
 msgstr "Evidencia congelada; reconstruida solo desde el snapshot de cierre congelado, nunca desde datos vivos."
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Project"
+msgstr "Proyecto"
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Accepted on"
+msgstr "Fecha de aceptación"
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Closure"
+msgstr "Cierre"
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Closure observations"
+msgstr "Observaciones de cierre"
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Closure snapshot (frozen on submit)"
+msgstr "Snapshot de cierre (congelado al emitir)"
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Issued at"
+msgstr "Emitido el"
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Frozen snapshot (JSON)"
+msgstr "Snapshot congelado (JSON)"
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Economic evidence (restricted)"
+msgstr "Evidencia económica (restringida)"
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Economics snapshot hash"
+msgstr "Hash del snapshot económico"
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Economics snapshot"
+msgstr "Snapshot económico"
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Non-economic metrics frozen from build_project_control at submit (cutoff = closure date). Not editable."
+msgstr "Métricas no económicas congeladas desde build_project_control al emitir (corte = fecha de cierre). No editable."
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Immutable non-economic snapshot at closure (schedule/effort/changes). The Print Format is rebuilt only from here, never from live data."
+msgstr "Snapshot no económico inmutable al cierre (cronograma/esfuerzo/cambios). El Print Format se reconstruye solo desde aquí, nunca desde datos vivos."
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Economic evidence — permlevel 1: readable only by economic roles (economic gate). Not exposed to plain Project READ."
+msgstr "Evidencia económica — permlevel 1: legible solo por roles económicos (gate económico). No expuesta al READ simple del Project."
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Immutable economic snapshot frozen at issuance (current_at_issuance). Restricted by permlevel 1 to economic roles."
+msgstr "Snapshot económico inmutable congelado al emitir (current_at_issuance). Restringido por permlevel 1 a roles económicos."
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "This Project already has an issued Closure ({0})."
+msgstr "Este Project ya tiene un Closure emitido ({0})."
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Closure can only be issued for a terminal Project (Completed or Cancelled). Current status: {0}."
+msgstr "El Closure solo se emite para un Project terminal (Completed o Cancelled). Estado actual: {0}."
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Closure date cannot be in the future."
+msgstr "La fecha de cierre no puede estar en el futuro."
+
+#: pmo/pmo/doctype/pmo_project_closure (cierre def.)
+msgid "Accepted on cannot be later than the Closure date."
+msgstr "La fecha de aceptación no puede ser posterior a la fecha de cierre."

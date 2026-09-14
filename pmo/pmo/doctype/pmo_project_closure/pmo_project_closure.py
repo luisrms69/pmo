@@ -23,7 +23,7 @@ El Print Format se reconstruye SOLO desde estos snapshots congelados, nunca desd
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import flt, now_datetime, today
+from frappe.utils import flt, getdate, now_datetime, today
 
 from pmo.baseline import canonical_json, snapshot_hash
 from pmo.governance import count_open_change_requests, derive_lifecycle_state
@@ -61,12 +61,16 @@ _NATIVE_COST_FIELDS = (
 )
 
 
-def build_closure_snapshot(project: str, closing_date: str, checklist: dict | None = None) -> dict:
+def build_closure_snapshot(
+	project: str, closing_date: str, checklist: dict | None = None, captured: dict | None = None
+) -> dict:
 	"""Evidencia NO economica al corte `closure_date`, **compuesta desde build_project_control** (D4).
 
-	`checklist` = confirmaciones de cierre (7 booleanos con claves estables) tomadas del Closure al emitir;
-	quedan **dentro del snapshot canonico** y por tanto cubiertas por `snapshot_hash` (evidencia congelada,
-	ADR-0014 D4/D11). No es una segunda captura: son los mismos campos `chk_*` del documento."""
+	`checklist` = confirmaciones de cierre (7 booleanos con claves estables) tomadas del Closure al emitir.
+	`captured` = evidencia humana capturada del propio documento (aceptación, resultado final, pendientes,
+	observaciones y metadata de emisión). Ambas quedan **dentro del snapshot canonico** y por tanto cubiertas
+	por `snapshot_hash` (evidencia congelada, ADR-0014 D4/D11). No es una segunda captura: son los mismos
+	campos del documento tomados en `before_submit`. El Print Format se reconstruye SOLO desde aquí."""
 	pc = build_project_control(
 		project,
 		cutoff=closing_date,
@@ -80,6 +84,7 @@ def build_closure_snapshot(project: str, closing_date: str, checklist: dict | No
 		"snapshot_schema_version": CLOSURE_SNAPSHOT_SCHEMA_VERSION,
 		"closing_date": str(closing_date),
 		"lifecycle_state_at_closure": derive_lifecycle_state(project),
+		"captured": captured or {},
 		"closure_checklist": checklist or {},
 		"schedule": {
 			"as_of": "closure_date",
@@ -150,6 +155,15 @@ class PMOProjectClosure(Document):
 			)
 			if existing:
 				frappe.throw(frappe._("This Project already has an issued Closure ({0}).").format(existing))
+		self._validate_dates()
+
+	def _validate_dates(self):
+		"""Integridad temporal: la fecha de cierre no puede ser futura; la aceptación no puede ser posterior
+		a la fecha de cierre."""
+		if self.closure_date and getdate(self.closure_date) > getdate(today()):
+			frappe.throw(frappe._("Closure date cannot be in the future."))
+		if self.accepted_on and self.closure_date and getdate(self.accepted_on) > getdate(self.closure_date):
+			frappe.throw(frappe._("Accepted on cannot be later than the Closure date."))
 
 	def before_submit(self):
 		# Guard de cierre (ADR-0014 D4): solo se emite Closure para un Project terminal (Completed/Cancelled).
@@ -183,11 +197,25 @@ class PMOProjectClosure(Document):
 				).format(open_crs)
 			)
 
+		# Metadata de emisión ANTES de construir el snapshot, para que quede DENTRO de él (y del hash).
+		self.issued_by = frappe.session.user
+		self.issued_at = now_datetime()
+
 		closing_date = str(self.closure_date) if self.closure_date else today()
 		# Confirmaciones del checklist tomadas del documento → congeladas en el snapshot (cubiertas por el hash).
 		checklist = {key: bool(self.get(field)) for field, key in CLOSURE_CHECKLIST_SNAPSHOT_KEYS}
+		# Evidencia humana capturada del propio documento → congelada en el snapshot (cubierta por el hash).
+		captured = {
+			"accepted_by": self.accepted_by,
+			"accepted_on": str(self.accepted_on) if self.accepted_on else None,
+			"final_result": self.final_result,
+			"pending_items_transferred": self.pending_items_transferred,
+			"closure_observations": self.closure_observations,
+			"issued_by": self.issued_by,
+			"issued_at": str(self.issued_at),
+		}
 		# Evidencia NO economica (compuesta desde build_project_control), permlevel 0.
-		snap = build_closure_snapshot(self.project, closing_date, checklist)
+		snap = build_closure_snapshot(self.project, closing_date, checklist, captured)
 		self.snapshot_schema_version = snap["snapshot_schema_version"]
 		self.snapshot_hash = snapshot_hash(snap)
 		self.snapshot = canonical_json(snap)
@@ -196,6 +224,3 @@ class PMOProjectClosure(Document):
 		eco = build_closure_economics(self.project, frappe.session.user)
 		self.economics_snapshot = canonical_json(eco)
 		self.economics_snapshot_hash = snapshot_hash(eco)
-
-		self.issued_by = frappe.session.user
-		self.issued_at = now_datetime()

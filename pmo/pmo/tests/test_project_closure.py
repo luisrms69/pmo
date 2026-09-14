@@ -310,3 +310,54 @@ class TestProjectClosure(IntegrationTestCase):
 		self.assertIn("current_at_issuance", html)
 		self.assertNotIn("restricted; 0)", html)
 		self.assertNotIn("{0}", html)
+
+	def test_human_evidence_in_snapshot_and_hash(self):
+		p = _project("CLS HumanSnap")
+		doc = _closure(p, final_result="Delivered on time", accepted_by="ACME", closure_observations="Notas")
+		doc.submit()
+		cap = json.loads(doc.snapshot)["captured"]
+		for k in (
+			"accepted_by",
+			"accepted_on",
+			"final_result",
+			"pending_items_transferred",
+			"closure_observations",
+			"issued_by",
+			"issued_at",
+		):
+			self.assertIn(k, cap)
+		self.assertEqual(cap["final_result"], "Delivered on time")
+		self.assertEqual(cap["accepted_by"], "ACME")
+		self.assertEqual(cap["issued_by"], "Administrator")
+		self.assertTrue(cap["issued_at"])  # emitido dentro del snapshot
+		# El hash cubre la evidencia humana: cambiar cualquiera cambia el snapshot/hash construido.
+		chk = {"pending_items_resolved_or_transferred": True}
+		base = {
+			"accepted_by": "A",
+			"accepted_on": "2026-03-31",
+			"final_result": "X",
+			"pending_items_transferred": None,
+			"closure_observations": None,
+			"issued_by": "Administrator",
+			"issued_at": "2026-03-31 10:00:00",
+		}
+		h1 = snapshot_hash(build_closure_snapshot(p, "2026-03-31", chk, base))
+		h2 = snapshot_hash(build_closure_snapshot(p, "2026-03-31", chk, dict(base, final_result="Y")))
+		self.assertNotEqual(h1, h2)
+
+	def test_closure_date_not_future(self):
+		p = _project("CLS Future")
+		with self.assertRaises(ValidationError):
+			_closure(p, closure_date="2999-01-01")
+
+	def test_accepted_on_not_after_closure_date(self):
+		p = _project("CLS AccAfter")
+		with self.assertRaises(ValidationError):
+			_closure(p, closure_date="2026-03-31", accepted_on="2026-06-30")
+
+	def test_print_format_reads_from_frozen_snapshot(self):
+		p = _project("CLS PFSnap")
+		doc = _closure(p, final_result="Cerrado OK")
+		doc.submit()
+		html = frappe.get_print("PMO Project Closure", doc.name, print_format="PMO Project Closure")
+		self.assertIn("Cerrado OK", html)  # el resultado final viene del snapshot congelado
