@@ -63,7 +63,8 @@ El Handoff **no contiene estructura de Risk Analysis** y no depende de ningún r
 - **Verificación contractual/legal de readiness (`contractual_legal_ready`, Check obligatorio antes del
   Submit):** PMO confirma que, cuando aplica, los requisitos para iniciar ejecución (contratos, NDA, órdenes/
   autorizaciones, términos comerciales u otros) fueron verificados. Es el punto correcto del ciclo
-  (`Proposal/Quotation autorizada → Project → Handoff verifica readiness → ejecución`). **No** es aprobación
+  (`Proposal/Quotation autorizada → Project → Handoff verifica readiness → ejecución`). **Entra al `snapshot`/
+  `snapshot_hash` del Handoff** (evidencia congelada). **No** es aprobación
   jurídica, **no** crea workflow Legal, **no** captura contratos ni Links, **no** toca `erpnext_proposals`.
 - Submittable → evidencia histórica inmutable del arranque; snapshot/hash/timestamps quedan en sección técnica
   read-only, fuera de la captura normal.
@@ -77,13 +78,16 @@ El Handoff **no contiene estructura de Risk Analysis** y no depende de ningún r
   revisadas · cierre administrativo/financiero revisado · documentación completa · cierre comunicado a
   interesados · recursos liberados/reasignados—. Cada uno confirma *"revisado y sin acción de cierre
   pendiente"* (puede confirmarse aunque el caso no requiera una operación compleja). **Todos** obligatorios para
-  emitir. No duplican `pending_items_transferred` (detalle) ni acceptance (`accepted_by/on`).
+  emitir. No duplican `pending_items_transferred` (detalle) ni acceptance (`accepted_by/on`). **Las 7
+  confirmaciones entran al `snapshot` canónico (clave `closure_checklist`) y quedan cubiertas por
+  `snapshot_hash`** (evidencia congelada, D11).
 - **Guard de cierre:** el Closure solo se emite (submit) para un Project en estado **terminal** (`Completed` o
   `Cancelled`); un Project no terminal rechaza el submit. **`Completed`** exige aceptación formal
   (`accepted_by` + `accepted_on`). **Guard automático de Change Requests abiertos:** no se puede cerrar si el
-  Project tiene CR en estados abiertos (`OPEN_CHANGE_REQUEST_STATES` de Governance: Draft/In Review/Approved/
-  Implemented); Rejected/Closed no bloquean. Se consume la fuente única; no se duplica la lista ni se añade un
-  check manual. Coherente con el estado de ciclo derivado (D7).
+  Project tiene CR **abiertos**. Un CR está abierto ⇔ `workflow_state ∈ {Draft, In Review, Approved,
+  Implemented}` **y** `docstatus != 2` (**un CR cancelado nunca cuenta como abierto**); Rejected/Closed no
+  bloquean. Se consume la fuente única de Governance (`count_open_change_requests`); no se duplica la lista ni
+  se añade un check manual. Coherente con el estado de ciclo derivado (D7).
 - **Congelación al submit:** el Closure **compone desde `build_project_control`** (cutoff = `closure_date`) la
   evidencia **no económica** (cronograma/esfuerzo/cambios) y la congela en `snapshot` con hash; **no recalcula
   ni reimplementa** esos dominios.
@@ -136,7 +140,9 @@ con D4/D7:
 - `needs_closure` = `Project.status ∈ {Completed, Cancelled}` **y** no existe Closure submitted (mismos
   estados terminales de D4/D7 — no solo `Completed`);
 - `needs_review` = existe Closure submitted **y** no existe Review submitted;
-- `open_change_requests` = Change Requests en estados abiertos canónicos (`Draft`, `In Review`).
+- `open_change_requests` = Change Requests **abiertos** = `workflow_state ∈ {Draft, In Review, Approved,
+  Implemented}` **y** `docstatus != 2` (un CR cancelado **no** cuenta como abierto). Fuente única
+  `count_open_change_requests`.
 
 **Pending Governance Actions** (Custom HTML Block "PMO Governance") es una **lista de trabajo**: 6 indicadores
 (Sin Handoff · Sin línea base · Solicitudes de cambio abiertas · Requieren cierre · Requieren revisión ·

@@ -26,7 +26,7 @@ from frappe.model.document import Document
 from frappe.utils import flt, now_datetime, today
 
 from pmo.baseline import canonical_json, snapshot_hash
-from pmo.governance import OPEN_CHANGE_REQUEST_STATES, derive_lifecycle_state
+from pmo.governance import count_open_change_requests, derive_lifecycle_state
 from pmo.project_control import (
 	SECTION_EXECUTIVE,
 	SECTION_PROJECT,
@@ -38,16 +38,18 @@ from pmo.project_economics import can_see_project_economics, get_authorized_econ
 CLOSURE_SNAPSHOT_SCHEMA_VERSION = 1
 _TERMINAL_STATUSES = ("Completed", "Cancelled")
 
-# Checklist de cierre (checks de confirmación; todos requeridos para emitir). Orden estable de presentación.
-CLOSURE_CHECKLIST_FIELDS = (
-	"chk_pending_items",
-	"chk_ops_handover",
-	"chk_contractual_legal",
-	"chk_admin_financial",
-	"chk_documentation",
-	"chk_communicated",
-	"chk_resources_released",
+# Checklist de cierre (checks de confirmación; todos requeridos para emitir). Mapeo estable
+# campo del DocType -> clave del snapshot congelado (la evidencia queda cubierta por snapshot_hash).
+CLOSURE_CHECKLIST_SNAPSHOT_KEYS = (
+	("chk_pending_items", "pending_items_resolved_or_transferred"),
+	("chk_ops_handover", "operations_support_handover_completed"),
+	("chk_contractual_legal", "contractual_legal_obligations_reviewed"),
+	("chk_admin_financial", "administrative_financial_close_reviewed"),
+	("chk_documentation", "project_documentation_completed"),
+	("chk_communicated", "closure_communicated_to_stakeholders"),
+	("chk_resources_released", "resources_released_reassigned"),
 )
+CLOSURE_CHECKLIST_FIELDS = tuple(field for field, _key in CLOSURE_CHECKLIST_SNAPSHOT_KEYS)
 
 _NATIVE_COST_FIELDS = (
 	"total_sales_amount",
@@ -59,8 +61,12 @@ _NATIVE_COST_FIELDS = (
 )
 
 
-def build_closure_snapshot(project: str, closing_date: str) -> dict:
-	"""Evidencia NO economica al corte `closure_date`, **compuesta desde build_project_control** (D4)."""
+def build_closure_snapshot(project: str, closing_date: str, checklist: dict | None = None) -> dict:
+	"""Evidencia NO economica al corte `closure_date`, **compuesta desde build_project_control** (D4).
+
+	`checklist` = confirmaciones de cierre (7 booleanos con claves estables) tomadas del Closure al emitir;
+	quedan **dentro del snapshot canonico** y por tanto cubiertas por `snapshot_hash` (evidencia congelada,
+	ADR-0014 D4/D11). No es una segunda captura: son los mismos campos `chk_*` del documento."""
 	pc = build_project_control(
 		project,
 		cutoff=closing_date,
@@ -74,6 +80,7 @@ def build_closure_snapshot(project: str, closing_date: str) -> dict:
 		"snapshot_schema_version": CLOSURE_SNAPSHOT_SCHEMA_VERSION,
 		"closing_date": str(closing_date),
 		"lifecycle_state_at_closure": derive_lifecycle_state(project),
+		"closure_checklist": checklist or {},
 		"schedule": {
 			"as_of": "closure_date",
 			"baseline_end": proj.get("baseline_end"),
@@ -167,11 +174,8 @@ class PMOProjectClosure(Document):
 		if any(not self.get(fn) for fn in CLOSURE_CHECKLIST_FIELDS):
 			frappe.throw(frappe._("Confirm all Closure Checklist items before issuing the Closure."))
 
-		# Guard automático de Change Requests abiertos (fuente única de Governance; no se duplica la lista).
-		open_crs = frappe.db.count(
-			"PMO Change Request",
-			{"project": self.project, "workflow_state": ("in", OPEN_CHANGE_REQUEST_STATES)},
-		)
+		# Guard automático de Change Requests abiertos (fuente única de Governance; excluye cancelados).
+		open_crs = count_open_change_requests(self.project)
 		if open_crs:
 			frappe.throw(
 				frappe._(
@@ -180,8 +184,10 @@ class PMOProjectClosure(Document):
 			)
 
 		closing_date = str(self.closure_date) if self.closure_date else today()
+		# Confirmaciones del checklist tomadas del documento → congeladas en el snapshot (cubiertas por el hash).
+		checklist = {key: bool(self.get(field)) for field, key in CLOSURE_CHECKLIST_SNAPSHOT_KEYS}
 		# Evidencia NO economica (compuesta desde build_project_control), permlevel 0.
-		snap = build_closure_snapshot(self.project, closing_date)
+		snap = build_closure_snapshot(self.project, closing_date, checklist)
 		self.snapshot_schema_version = snap["snapshot_schema_version"]
 		self.snapshot_hash = snapshot_hash(snap)
 		self.snapshot = canonical_json(snap)

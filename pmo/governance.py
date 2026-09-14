@@ -40,6 +40,25 @@ TERMINAL_STATUSES = ("Completed", "Cancelled")
 OPEN_CHANGE_REQUEST_STATES = ("Draft", "In Review", "Approved", "Implemented")
 
 
+def _cr_is_open(workflow_state, docstatus) -> bool:
+	"""Un CR está ABIERTO ⇔ workflow_state en OPEN_CHANGE_REQUEST_STATES **y** no está cancelado
+	(docstatus != 2). Semántica canónica única (un CR cancelado nunca cuenta como abierto)."""
+	return (workflow_state or "") in OPEN_CHANGE_REQUEST_STATES and docstatus != 2
+
+
+def count_open_change_requests(project: str) -> int:
+	"""Número de Change Requests ABIERTOS del Project. Fuente única consumida por governance_flags,
+	build_expediente y el guard de PMO Project Closure. Excluye cancelados (docstatus = 2)."""
+	return frappe.db.count(
+		"PMO Change Request",
+		{
+			"project": project,
+			"workflow_state": ("in", OPEN_CHANGE_REQUEST_STATES),
+			"docstatus": ("!=", 2),
+		},
+	)
+
+
 def _has_submitted(doctype: str, project: str) -> bool:
 	"""¿Existe un documento SUBMITTED de `doctype` para el Project? Guardado si el DocType aún no existe."""
 	if not frappe.db.exists("DocType", doctype):
@@ -102,9 +121,11 @@ def build_expediente(project: str) -> dict:
 
 	eff_baseline = get_effective_baseline(project)
 	crs = frappe.get_all(
-		"PMO Change Request", filters={"project": project}, fields=["name", "workflow_state"], limit=0
+		"PMO Change Request",
+		filters={"project": project},
+		fields=["name", "workflow_state", "docstatus"],
+		limit=0,
 	)
-	open_states = set(OPEN_CHANGE_REQUEST_STATES)
 	return {
 		"lifecycle_state": derive_lifecycle_state(project),
 		"handoff": _artifact("PMO Project Handoff", project, "handoff_date"),
@@ -119,7 +140,7 @@ def build_expediente(project: str) -> dict:
 		"status_control": {"available": True, "pending": False, "as_of": str(baseline) if baseline else None},
 		"change_requests": {
 			"total": len(crs),
-			"open": len([c for c in crs if (c.get("workflow_state") or "") in open_states]),
+			"open": len([c for c in crs if _cr_is_open(c.get("workflow_state"), c.get("docstatus"))]),
 		},
 		"closure": _artifact("PMO Project Closure", project, "creation"),
 		"review": _artifact("PMO Post-Project Review", project, "creation"),
@@ -140,9 +161,7 @@ def governance_flags(project: str) -> dict:
 	has_baseline = bool(get_effective_baseline(project))
 	has_closure = _has_submitted("PMO Project Closure", project)
 	has_review = _has_submitted("PMO Post-Project Review", project)
-	open_crs = frappe.db.count(
-		"PMO Change Request", {"project": project, "workflow_state": ("in", OPEN_CHANGE_REQUEST_STATES)}
-	)
+	open_crs = count_open_change_requests(project)
 	return {
 		"has_handoff": has_handoff,
 		"needs_baseline": has_handoff and not has_baseline,

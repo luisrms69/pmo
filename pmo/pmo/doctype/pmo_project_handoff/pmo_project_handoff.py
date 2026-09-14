@@ -26,8 +26,11 @@ from pmo.permissions import get_project_team
 HANDOFF_SNAPSHOT_SCHEMA_VERSION = 1
 
 
-def build_handoff_snapshot(project: str) -> dict:
+def build_handoff_snapshot(project: str, contractual_legal_ready: bool = False) -> dict:
 	"""Snapshot canonico del handoff: compone datos ya existentes (no recalcula ni recaptura).
+
+	`contractual_legal_ready` = confirmacion de readiness contractual/legal del documento; queda **dentro del
+	snapshot** y por tanto cubierta por `snapshot_hash` (evidencia congelada del Handoff, ADR-0014).
 
 	Incluye el responsable operativo interno y el contacto principal del cliente (custom fields del Project),
 	hitos (`Task.is_milestone`) y equipo inicial derivado de las fuentes P4 (owner + DocShare + ToDo). **NO**
@@ -105,6 +108,7 @@ def build_handoff_snapshot(project: str) -> dict:
 		},
 		"operational_owner": proj.get("pmo_operational_owner"),
 		"customer_contact": proj.get("pmo_customer_contact"),
+		"contractual_legal_ready": bool(contractual_legal_ready),
 		"proposal_reference": proposal,
 		"milestones": milestones,
 		"team": team,
@@ -132,8 +136,9 @@ class PMOProjectHandoff(Document):
 			)
 
 		# Congela la evidencia canonica al emitir. El responsable operativo y el contacto del cliente se toman
-		# del Project y quedan fijos: cambios posteriores en el Project no alteran un Handoff ya emitido.
-		snapshot = build_handoff_snapshot(self.project)
+		# del Project y quedan fijos: cambios posteriores en el Project no alteran un Handoff ya emitido. La
+		# readiness contractual/legal del documento entra al snapshot (queda cubierta por el hash).
+		snapshot = build_handoff_snapshot(self.project, self.contractual_legal_ready)
 
 		# Los dos datos que justifican el Handoff deben existir para poder emitirlo (acta de transferencia):
 		# el responsable operativo interno y el contacto principal del cliente viven en el Project.

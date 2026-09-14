@@ -16,16 +16,25 @@ import frappe
 from frappe.exceptions import ValidationError
 from frappe.tests import IntegrationTestCase
 
+from pmo.baseline import snapshot_hash
 from pmo.governance import LIFECYCLE_CLOSED, derive_lifecycle_state
 from pmo.permissions import has_permission_closure
-from pmo.pmo.doctype.pmo_project_closure.pmo_project_closure import CLOSURE_CHECKLIST_FIELDS
+from pmo.pmo.doctype.pmo_project_closure.pmo_project_closure import (
+	CLOSURE_CHECKLIST_FIELDS,
+	build_closure_snapshot,
+)
 
 
-def _open_cr(project, state):
+def _open_cr(project, state, docstatus=0):
 	cr = frappe.get_doc(
 		{"doctype": "PMO Change Request", "project": project, "title": "C", "reason": "R"}
 	).insert(ignore_permissions=True)
-	frappe.db.set_value("PMO Change Request", cr.name, "workflow_state", state, update_modified=False)
+	frappe.db.set_value(
+		"PMO Change Request",
+		cr.name,
+		{"workflow_state": state, "docstatus": docstatus},
+		update_modified=False,
+	)
 	return cr
 
 
@@ -259,3 +268,45 @@ class TestProjectClosure(IntegrationTestCase):
 			doc = _closure(p)
 			doc.submit()  # Rejected/Closed no bloquean
 			self.assertEqual(doc.docstatus, 1)
+
+	def test_cancelled_open_state_cr_does_not_block_closure(self):
+		# CR con workflow_state abierto pero cancelado (docstatus=2) NO bloquea el cierre.
+		p = _project("CLS CRCancel")
+		_open_cr(p, "In Review", docstatus=2)
+		doc = _closure(p)
+		doc.submit()
+		self.assertEqual(doc.docstatus, 1)
+
+	def test_checklist_included_in_snapshot_and_hash(self):
+		p = _project("CLS ChkSnap")
+		doc = _closure(p)
+		doc.submit()
+		snap = json.loads(doc.snapshot)
+		self.assertIn("closure_checklist", snap)
+		expected = {
+			"pending_items_resolved_or_transferred",
+			"operations_support_handover_completed",
+			"contractual_legal_obligations_reviewed",
+			"administrative_financial_close_reviewed",
+			"project_documentation_completed",
+			"closure_communicated_to_stakeholders",
+			"resources_released_reassigned",
+		}
+		self.assertEqual(set(snap["closure_checklist"]), expected)
+		self.assertTrue(all(snap["closure_checklist"].values()))  # todos confirmados al emitir
+		# El hash cubre el checklist: cambiar cualquier confirmación cambia el snapshot/hash construido.
+		all_true = {k: True for k in expected}
+		one_false = dict(all_true, project_documentation_completed=False)
+		h_all = snapshot_hash(build_closure_snapshot(p, "2026-03-31", all_true))
+		h_one = snapshot_hash(build_closure_snapshot(p, "2026-03-31", one_false))
+		self.assertNotEqual(h_all, h_one)
+
+	def test_print_format_economic_as_of_placeholder(self):
+		# El as_of económico se renderiza (Administrator pasa el gate); no queda "restricted; 0" ni "{0}".
+		p = _project("CLS PFEco")
+		doc = _closure(p)
+		doc.submit()
+		html = frappe.get_print("PMO Project Closure", doc.name, print_format="PMO Project Closure")
+		self.assertIn("current_at_issuance", html)
+		self.assertNotIn("restricted; 0)", html)
+		self.assertNotIn("{0}", html)

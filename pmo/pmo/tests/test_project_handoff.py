@@ -16,6 +16,7 @@ import frappe
 from frappe.exceptions import MandatoryError, ValidationError
 from frappe.tests import IntegrationTestCase
 
+from pmo.baseline import snapshot_hash
 from pmo.permissions import has_permission_handoff
 from pmo.pmo.doctype.pmo_project_handoff.pmo_project_handoff import build_handoff_snapshot
 
@@ -157,6 +158,21 @@ class TestProjectHandoff(IntegrationTestCase):
 		doc = _handoff(p)
 		with self.assertRaises(ValidationError):
 			doc.submit()
+
+	def test_contractual_legal_ready_in_snapshot_and_hash(self):
+		p, _emp, _ct = _ready_project("HOF ReadySnap")
+		snap_true = build_handoff_snapshot(p, True)
+		snap_false = build_handoff_snapshot(p, False)
+		self.assertTrue(snap_true["contractual_legal_ready"])
+		self.assertFalse(snap_false["contractual_legal_ready"])
+		# El hash cubre la readiness: cambiar el valor cambia el snapshot/hash construido.
+		self.assertNotEqual(snapshot_hash(snap_true), snapshot_hash(snap_false))
+
+	def test_submitted_handoff_freezes_readiness_in_snapshot(self):
+		p, _emp, _ct = _ready_project("HOF ReadyFreeze")
+		doc = _handoff(p)  # contractual_legal_ready = 1
+		doc.submit()
+		self.assertTrue(json.loads(doc.snapshot)["contractual_legal_ready"])
 
 	def test_requires_contractual_legal_readiness_to_submit(self):
 		# Readiness contractual/legal debe estar confirmada antes de emitir el Handoff.

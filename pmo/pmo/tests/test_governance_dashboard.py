@@ -297,6 +297,23 @@ class TestPendingGovernanceActions(IntegrationTestCase):
 			frappe.db.set_value("PMO Change Request", cr.name, "workflow_state", st, update_modified=False)
 		self.assertEqual(governance_flags(p)["open_change_requests"], 4)  # solo los 4 abiertos
 
+	def test_cancelled_cr_not_counted_open(self):
+		# CR con workflow_state abierto pero cancelado (docstatus=2) NO cuenta como abierto en ninguna superficie.
+		from pmo.governance import build_expediente
+
+		p = _project("PGA CRCancel")
+		_handoff(p)
+		_baseline(p)
+		cr = _open_cr(p, "Cancelled CR")
+		frappe.db.set_value(
+			"PMO Change Request",
+			cr.name,
+			{"workflow_state": "In Review", "docstatus": 2},
+			update_modified=False,
+		)
+		self.assertEqual(governance_flags(p)["open_change_requests"], 0)
+		self.assertEqual(build_expediente(p)["change_requests"]["open"], 0)
+
 	def test_p4_only_visible_projects(self):
 		owner = _user("pga-owner@example.com")
 		stranger = _user("pga-stranger@example.com")
