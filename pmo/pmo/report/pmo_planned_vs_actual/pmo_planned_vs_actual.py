@@ -7,7 +7,9 @@ Capacidad de **reporting** (no una capa de planificación): pone lado a lado dat
 - **Planned** = `Task.expected_time`.
 - **Actual**: sin `status_date` → `Task.actual_time` (acumulado nativo alimentado por Timesheet); con
   `status_date` → Σ `Timesheet Detail.hours` submitted hasta la fecha (`pmo.actual`, semántica ADR-0003).
-- **Variance Hours** = Actual - Planned; **% Consumed** = Actual / Planned (guarda de división por 0).
+- **Horas disponibles** (presentación) = Planned total - Actual al corte; **% Consumed** = Actual / Planned
+  (guarda de división por 0). NO es una "variación plan vs real a la fecha": este reporte no calcula el plan
+  acumulado al corte, solo pone lado a lado el plan total y el real al corte.
 - Detalle por **Task hoja**; total de Project excluyendo `is_group` del rollup.
 
 P4-safe por delegación: los Script Report NO aplican `permission_query_conditions`, así que `execute` exige
@@ -73,7 +75,8 @@ def _rows(tasks, actual_by_task):
 				"subject": t.get("subject"),
 				"planned_hours": planned,
 				"actual_hours": actual,
-				"variance_hours": flt(actual - planned, 2),
+				# Presentación: horas disponibles = plan total - real al corte (no una variación acumulada).
+				"available_hours": flt(planned - actual, 2),
 				"pct_consumed": _pct(actual, planned),
 			}
 		)
@@ -89,9 +92,24 @@ def _columns():
 	return [
 		{"fieldname": "task", "label": _("Task"), "fieldtype": "Link", "options": "Task", "width": 200},
 		{"fieldname": "subject", "label": _("Description"), "fieldtype": "Data", "width": 300},
-		{"fieldname": "planned_hours", "label": _("Planned Hours"), "fieldtype": "Float", "width": 130},
-		{"fieldname": "actual_hours", "label": _("Actual Hours"), "fieldtype": "Float", "width": 130},
-		{"fieldname": "variance_hours", "label": _("Variance Hours"), "fieldtype": "Float", "width": 130},
+		{
+			"fieldname": "planned_hours",
+			"label": _("Horas planificadas totales"),
+			"fieldtype": "Float",
+			"width": 160,
+		},
+		{
+			"fieldname": "actual_hours",
+			"label": _("Horas reales al corte"),
+			"fieldtype": "Float",
+			"width": 150,
+		},
+		{
+			"fieldname": "available_hours",
+			"label": _("Horas disponibles"),
+			"fieldtype": "Float",
+			"width": 140,
+		},
 		{"fieldname": "pct_consumed", "label": _("% Consumed"), "fieldtype": "Percent", "width": 110},
 	]
 
@@ -99,20 +117,23 @@ def _columns():
 def _summary(project, status_date, planned, actual):
 	# Total de Project a nivel esfuerzo. El Actual total respeta la fecha de corte si se indicó.
 	project_actual = get_actual_hours_asof(project, status_date) if status_date else flt(actual, 2)
-	variance = flt(project_actual - planned, 2)
+	# Presentación: horas disponibles = plan total - real al corte. Un Project sin real al corte muestra el
+	# plan íntegro como disponible (p. ej. 216 planificadas, 0 reales → 216 disponibles), no "-216".
+	available = flt(planned - project_actual, 2)
 	return [
 		{
 			"label": _("Cutoff (Status Date)"),
 			"value": str(status_date) if status_date else _("Total (native)"),
 			"datatype": "Data",
 		},
-		{"label": _("Planned Hours (Project)"), "value": flt(planned, 2), "datatype": "Float"},
-		{"label": _("Actual Hours (Project)"), "value": flt(project_actual, 2), "datatype": "Float"},
+		{"label": _("Horas planificadas totales"), "value": flt(planned, 2), "datatype": "Float"},
+		{"label": _("Horas reales al corte"), "value": flt(project_actual, 2), "datatype": "Float"},
 		{
-			"label": _("Variance Hours"),
-			"value": variance,
+			"label": _("Horas disponibles"),
+			"value": available,
 			"datatype": "Float",
-			"indicator": "Red" if variance > 0 else "Green",
+			# Disponible negativo = real supera al plan (sobreconsumo) → Rojo; si no, Verde.
+			"indicator": "Red" if available < 0 else "Green",
 		},
 		{"label": _("% Consumed"), "value": _pct(project_actual, planned) or 0, "datatype": "Percent"},
 	]

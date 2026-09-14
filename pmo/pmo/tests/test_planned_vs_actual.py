@@ -43,7 +43,7 @@ class TestPlannedVsActual(unittest.TestCase):
 		cols = _columns()
 		self.assertEqual(
 			[c["fieldname"] for c in cols],
-			["task", "subject", "planned_hours", "actual_hours", "variance_hours", "pct_consumed"],
+			["task", "subject", "planned_hours", "actual_hours", "available_hours", "pct_consumed"],
 		)
 		self.assertEqual(cols[0]["fieldtype"], "Link")
 		self.assertEqual(cols[0]["options"], "Task")
@@ -55,9 +55,9 @@ class TestPlannedVsActual(unittest.TestCase):
 		self.assertEqual([r["task"] for r in data], ["T1", "T2"])  # grupo excluido
 		self.assertEqual(planned, 15.0)
 		self.assertEqual(actual, 14.0)
-		self.assertEqual(data[0]["variance_hours"], -2.0)  # 8 - 10
+		self.assertEqual(data[0]["available_hours"], 2.0)  # planned - actual: 10 - 8
 		self.assertEqual(data[0]["pct_consumed"], 80.0)
-		self.assertEqual(data[1]["variance_hours"], 1.0)  # 6 - 5
+		self.assertEqual(data[1]["available_hours"], -1.0)  # planned - actual: 5 - 6 (sobreconsumo)
 
 	def test_rows_asof_map_overrides_actual_time(self):
 		# Con map as-of, se ignora actual_time nativo; tarea sin entrada en el map → 0.
@@ -69,12 +69,12 @@ class TestPlannedVsActual(unittest.TestCase):
 		self.assertEqual(data[0]["actual_hours"], 3.0)
 		self.assertEqual(data[1]["actual_hours"], 0.0)
 
-	def test_rows_no_plan_variance_and_pct(self):
+	def test_rows_no_plan_available_and_pct(self):
 		tasks = [_t("T1", 0, 4)]  # sin plan, con actual
 		data, planned, actual = _rows(tasks, None)
 		self.assertEqual(planned, 0.0)
 		self.assertEqual(actual, 4.0)
-		self.assertEqual(data[0]["variance_hours"], 4.0)
+		self.assertEqual(data[0]["available_hours"], -4.0)  # planned - actual: 0 - 4
 		self.assertIsNone(data[0]["pct_consumed"])
 
 
@@ -303,12 +303,17 @@ class TestPlannedVsActualReport(IntegrationTestCase):
 		self.assertEqual(set(rows), {self.t1, self.t2})
 		self.assertEqual(rows[self.t1]["planned_hours"], 10.0)
 		self.assertEqual(rows[self.t1]["actual_hours"], 6.0)  # solo el 09-09, no el 09-10
-		self.assertEqual(rows[self.t1]["variance_hours"], -4.0)
+		self.assertEqual(rows[self.t1]["available_hours"], 4.0)  # planned - actual: 10 - 6
 		self.assertEqual(rows[self.t1]["pct_consumed"], 60.0)
 		self.assertEqual(rows[self.t2]["planned_hours"], 4.0)
 		self.assertEqual(rows[self.t2]["actual_hours"], 0.0)
+		self.assertEqual(rows[self.t2]["available_hours"], 4.0)  # sin real al corte → plan íntegro disponible
 		self.assertEqual(rows[self.t2]["pct_consumed"], 0.0)
-		self.assertTrue(summary)  # report_summary con cards
+		# Resumen: horas disponibles = plan total (14) - real al corte (6) = 8, no una variación negativa.
+		cards = {c["label"]: c for c in summary}
+		self.assertEqual(cards["Horas planificadas totales"]["value"], 14.0)
+		self.assertEqual(cards["Horas reales al corte"]["value"], 6.0)
+		self.assertEqual(cards["Horas disponibles"]["value"], 8.0)
 
 	def test_execute_requires_project(self):
 		with self.assertRaises(frappe.ValidationError):
