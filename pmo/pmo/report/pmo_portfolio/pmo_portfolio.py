@@ -19,6 +19,8 @@ import frappe
 from frappe import N_, _
 from frappe.utils import flt, today
 
+from pmo.governance import governance_flags
+
 # Salud: única fuente de verdad en pmo.health (claves + algoritmo, ADR-0011 D2). Se re-exporta aquí para
 # los consumidores que ya importan estos símbolos desde este módulo (print_status, dashboard).
 from pmo.health import (  # re-export estable para print_status/dashboard
@@ -107,6 +109,9 @@ def _project_row(project):
 		"health_key": health_key,  # valor interno estable (lógica/resumen)
 		"health": _(HEALTH_LABELS[health_key]),  # presentación traducida
 		"has_baseline": has_baseline,  # para el resumen (sin columna propia)
+		# Señales de gobierno canónicas (ADR-0014 D9): fuente única en pmo.governance; sin recalcular ni
+		# columnas nuevas — expuestas en la fila para consumidores/resúmenes.
+		**governance_flags(project),
 	}
 
 

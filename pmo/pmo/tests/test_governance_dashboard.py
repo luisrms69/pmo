@@ -70,6 +70,39 @@ class TestGovernanceDashboard(IntegrationTestCase):
 		_charter(p)
 		self.assertTrue(governance_flags(p)["has_charter"])
 
+	def test_open_change_request_only_appears_in_items(self):
+		from pmo.dashboard import governance_block
+
+		p = _project("GD CROnly", status="Open")  # no terminal, con Charter → único pendiente = CR abierto
+		_charter(p)
+		cr = frappe.get_doc(
+			{
+				"doctype": "PMO Change Request",
+				"project": p,
+				"title": "Scope change",
+				"reason": "Client request",
+			}
+		)
+		cr.insert(ignore_permissions=True)  # docstatus 0 → workflow_state Draft (abierto)
+		f = governance_flags(p)
+		self.assertEqual(f["open_change_requests"], 1)
+		self.assertFalse(f["needs_closure"])
+		self.assertFalse(f["needs_review"])
+		frappe.cache().delete_value(f"pmo:dashboard:{frappe.session.user}")
+		items = governance_block()["governance"]["items"]
+		self.assertTrue(any(it["project"] == p for it in items))  # aparece por CR abierto
+
+	def test_portfolio_row_exposes_governance_flags(self):
+		from pmo.pmo.report.pmo_portfolio.pmo_portfolio import execute
+
+		_project("GD PortFlags", status="Open")
+		_cols, rows, *_ = execute({})
+		self.assertTrue(rows)
+		for r in rows:
+			self.assertIn("has_charter", r)
+			self.assertIn("needs_closure", r)
+			self.assertIn("open_change_requests", r)
+
 	def test_dashboard_governance_block_consumes_signals(self):
 		from pmo.dashboard import governance_block
 

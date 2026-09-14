@@ -63,6 +63,13 @@ _DASHBOARD_STRINGS = (
 	N_("At risk / deviated"),
 	N_("No customer-linked projects."),
 	N_("Could not load this PMO panel."),
+	# Sección Project Governance (Custom HTML Block "PMO Governance")
+	N_("Pending governance actions"),
+	N_("No pending governance actions."),
+	N_("Without Charter"),
+	N_("Requires Closure"),
+	N_("Requires Review"),
+	N_("Open change requests"),
 )
 
 _KPI_METRICS = ("active", "requiring_attention", "overdue_tasks", "without_baseline", "clients")
@@ -249,7 +256,12 @@ def _governance():
 		if f["needs_review"]:
 			counts["needs_review"] += 1
 		counts["open_change_requests"] += cint(f["open_change_requests"])
-		if (not f["has_charter"]) or f["needs_closure"] or f["needs_review"]:
+		if (
+			(not f["has_charter"])
+			or f["needs_closure"]
+			or f["needs_review"]
+			or cint(f["open_change_requests"]) > 0
+		):
 			items.append(
 				{
 					"project": p.name,
