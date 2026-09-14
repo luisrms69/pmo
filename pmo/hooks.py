@@ -167,6 +167,8 @@ permission_query_conditions = {
 	"PMO Project Closure": "pmo.permissions.get_permission_query_conditions_closure",
 	# ADR-0014 D5/D10: el Post-Project Review hereda la visibilidad del Project.
 	"PMO Post-Project Review": "pmo.permissions.get_permission_query_conditions_review",
+	# ADR-0014 Risk/D10: el Risk Assessment hereda la visibilidad del Project.
+	"PMO Project Risk Assessment": "pmo.permissions.get_permission_query_conditions_risk_assessment",
 }
 
 has_permission = {
@@ -177,6 +179,7 @@ has_permission = {
 	"PMO Project Charter": "pmo.permissions.has_permission_charter",
 	"PMO Project Closure": "pmo.permissions.has_permission_closure",
 	"PMO Post-Project Review": "pmo.permissions.has_permission_review",
+	"PMO Project Risk Assessment": "pmo.permissions.has_permission_risk_assessment",
 }
 
 # ADR-0006 D2: la Status Date (Data Date) del Project solo puede ser hoy o pasada (no futura en v0.7.0).

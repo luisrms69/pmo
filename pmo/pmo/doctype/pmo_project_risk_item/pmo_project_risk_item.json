@@ -1,0 +1,102 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-09-14 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "question_code",
+  "question",
+  "applies",
+  "column_break_a",
+  "probability",
+  "impact",
+  "exposure",
+  "may_affect_controlled",
+  "action"
+ ],
+ "fields": [
+  {
+   "fieldname": "question_code",
+   "fieldtype": "Data",
+   "label": "Code",
+   "read_only": 1,
+   "in_list_view": 0
+  },
+  {
+   "columns": 4,
+   "fieldname": "question",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Question",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "default": "No",
+   "fieldname": "applies",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Applies",
+   "options": "No\nYes"
+  },
+  {
+   "fieldname": "column_break_a",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 1,
+   "depends_on": "eval:doc.applies=='Yes'",
+   "fieldname": "probability",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Probability",
+   "options": "\nLow\nMedium\nHigh"
+  },
+  {
+   "columns": 1,
+   "depends_on": "eval:doc.applies=='Yes'",
+   "fieldname": "impact",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Impact",
+   "options": "\nLow\nMedium\nHigh"
+  },
+  {
+   "columns": 1,
+   "description": "Derived from probability x impact. Read-only.",
+   "fieldname": "exposure",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Exposure",
+   "options": "\nLow\nMedium\nHigh",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.applies=='Yes'",
+   "description": "Could this potentially affect an authorized/controlled condition (scope, committed date, baseline, authorized economics)? Signal only.",
+   "fieldname": "may_affect_controlled",
+   "fieldtype": "Select",
+   "label": "May affect controlled condition",
+   "options": "\nYes\nNo\nUndetermined"
+  },
+  {
+   "depends_on": "eval:doc.applies=='Yes'",
+   "fieldname": "action",
+   "fieldtype": "Small Text",
+   "label": "Action"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "module": "PMO",
+ "name": "PMO Project Risk Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
