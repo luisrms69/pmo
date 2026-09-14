@@ -58,6 +58,9 @@ doctype_calendar_js = {"Task": "public/js/task_calendar_pmo.js"}
 doctype_js = {
 	"PMO Change Request": "public/js/pmo_change_request.js",
 	"PMO Project Baseline": "public/js/pmo_project_baseline.js",
+	# Handoff: refleja read-only el responsable operativo / contacto del cliente desde el Project y avisa si
+	# faltan antes del Submit (fuente única = Project; no se editan ni se escriben desde el Handoff).
+	"PMO Project Handoff": "public/js/pmo_project_handoff.js",
 	# Solo navegación: botón "PMO Project Control" en el form nativo de Project (no toca core).
 	"Project": "public/js/project_pmo.js",
 }

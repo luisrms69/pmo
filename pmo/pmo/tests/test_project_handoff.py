@@ -224,3 +224,16 @@ class TestProjectHandoff(IntegrationTestCase):
 		self.assertFalse(has_permission_handoff(doc, "submit", stranger))
 		# SHARE denegado incluso al owner
 		self.assertFalse(has_permission_handoff(doc, "share", owner))
+
+	def test_handoff_never_writes_to_project(self):
+		# Fuente única = Project. El Handoff consulta/congela, pero NUNCA escribe hacia el Project.
+		p = _project("HOF NoWrite")  # sin responsable/contacto
+		_handoff(p)  # guardar borrador no debe fijar nada en el Project
+		self.assertIsNone(frappe.db.get_value("Project", p, "pmo_operational_owner"))
+		self.assertIsNone(frappe.db.get_value("Project", p, "pmo_customer_contact"))
+
+	def test_owner_contact_fields_are_read_only(self):
+		# Nunca editables desde el Handoff (read-only en el esquema).
+		m = frappe.get_meta("PMO Project Handoff")
+		self.assertTrue(m.get_field("operational_owner").read_only)
+		self.assertTrue(m.get_field("customer_contact").read_only)

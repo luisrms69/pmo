@@ -50,7 +50,10 @@ El Handoff **no contiene estructura de Risk Analysis** y no depende de ningún r
   Employee) y `pmo_customer_contact` (contacto principal del cliente, Link Contact) — ambos custom fields del
   Project; cambios posteriores en el Project no alteran un Handoff ya emitido. **Ambos son obligatorios para
   emitir** (guard en `before_submit`): sin ellos no hay transferencia formal. La `handoff_date` también es
-  obligatoria.
+  obligatoria. **UX (Draft):** un `doctype_js` **read-only** consulta el Project al elegirlo y en cada refresh,
+  refleja los valores vigentes y —si falta alguno— muestra un aviso antes del Submit y un botón *Abrir Project
+  para completar datos*. Los campos **nunca** se editan ni se escriben hacia el Project desde el Handoff (fuente
+  única = Project); solo se consultan, se muestran y se congelan al Submit.
 - **Derivado + snapshot al submit** (patrón `snapshot`+`snapshot_hash` del Baseline): customer/company,
   `pmo_committed_end_date`, referencia a Proposal/Quotation, hitos/equipo iniciales.
 - **Sin economía en el snapshot (política P4):** el Handoff **no** guarda economía autorizada. La economía está
