@@ -3,9 +3,10 @@
 
 """ADR-0014 D4 — PMO Project Closure. Datos ficticios.
 
-Cubre: congelado autoritativo al submit (snapshot canonico + hash + issued_by/at), integridad del hash
-contra el JSON congelado (no vivo), invariante un-Closure-por-Project, y P4 (read = visibilidad del Project;
-write/submit = solo owner).
+Cubre: congelado al submit (snapshot no economico compuesto desde build_project_control + hash), aislamiento
+economico por permlevel (economia NO legible con solo READ del Project), guard de estado terminal
+(Completed/Cancelled), integridad del hash contra el JSON congelado, un-Closure-por-Project, P4 owner-only,
+lifecycle terminal -> closed, y Print Format inmutable (renderiza solo desde la evidencia congelada).
 """
 
 import hashlib
@@ -15,10 +16,11 @@ import frappe
 from frappe.exceptions import ValidationError
 from frappe.tests import IntegrationTestCase
 
+from pmo.governance import LIFECYCLE_CLOSED, derive_lifecycle_state
 from pmo.permissions import has_permission_closure
 
 
-def _user(email):
+def _user(email, roles=()):
 	if not frappe.db.exists("User", email):
 		frappe.get_doc(
 			{
@@ -29,6 +31,8 @@ def _user(email):
 				"user_type": "System User",
 			}
 		).insert(ignore_permissions=True)
+	if roles:
+		frappe.get_doc("User", email).add_roles(*roles)
 	return email
 
 
@@ -71,7 +75,7 @@ class TestProjectClosure(IntegrationTestCase):
 	def tearDown(self):
 		frappe.set_user("Administrator")
 
-	def test_submit_freezes_snapshot(self):
+	def test_submit_freezes_snapshot_non_economic(self):
 		p = _project("CLS Freeze")
 		doc = _closure(p)
 		self.assertFalse(doc.snapshot_hash)
@@ -82,40 +86,61 @@ class TestProjectClosure(IntegrationTestCase):
 		snap = json.loads(doc.snapshot)
 		self.assertEqual(snap["snapshot_schema_version"], 1)
 		self.assertIn("schedule", snap)
-		self.assertIn("economics", snap)
 		self.assertIn("effort", snap)
+		self.assertIn("changes", snap)
+		# La economía NO está en el snapshot no-económico (aislada en economics_snapshot).
+		self.assertNotIn("economics", snap)
+		self.assertNotIn("authorized_revenue", doc.snapshot)
+		# La evidencia económica sí se congela, en su campo restringido.
+		self.assertTrue(doc.economics_snapshot)
+		eco = json.loads(doc.economics_snapshot)
+		self.assertEqual(eco["as_of"], "current_at_issuance")
+
+	def test_economics_isolated_by_permlevel(self):
+		pu = _user("cls_pu@example.com", roles=["Projects User"])
+		eu = _user("cls_eco@example.com", roles=["PMO Executive Access"])  # rol económico + lectura global
+		p = _project("CLS Iso", owner=pu)
+		doc = _closure(p)
+		doc.submit()
+		# Projects User (READ del Project, sin rol económico) NO obtiene permlevel 1.
+		frappe.set_user(pu)
+		self.assertNotIn(1, doc.get_permlevel_access("read"))
+		# Usuario con rol económico SÍ obtiene permlevel 1.
+		frappe.set_user(eu)
+		self.assertIn(1, doc.get_permlevel_access("read"))
+		frappe.set_user("Administrator")
+
+	def test_reject_closure_on_non_terminal_project(self):
+		p = _project("CLS Open", status="Open")
+		doc = _closure(p)
+		# Un Project no terminal (Open) debe rechazar el submit del Closure.
+		with self.assertRaises(ValidationError):
+			doc.submit()
 
 	def test_hash_matches_frozen_json_not_live(self):
 		p = _project("CLS Hash")
 		doc = _closure(p)
 		doc.submit()
-		# Integridad contra la EVIDENCIA CONGELADA: hash == sha256 del JSON almacenado.
 		self.assertEqual(doc.snapshot_hash, hashlib.sha256(doc.snapshot.encode("utf-8")).hexdigest())
 		frozen, frozen_hash = doc.snapshot, doc.snapshot_hash
-		# Cambiar el Project despues del submit NO altera el snapshot ni el hash.
 		frappe.db.set_value("Project", p, "expected_end_date", "2027-12-31", update_modified=False)
 		doc.reload()
 		self.assertEqual(doc.snapshot, frozen)
 		self.assertEqual(doc.snapshot_hash, frozen_hash)
 
 	def test_completed_with_closure_is_closed(self):
-		from pmo.governance import LIFECYCLE_CLOSED, derive_lifecycle_state
-
 		p = _project("CLS Completed", status="Completed")
 		_closure(p).submit()
 		self.assertEqual(derive_lifecycle_state(p), LIFECYCLE_CLOSED)
 
 	def test_cancelled_with_closure_is_closed(self):
-		from pmo.governance import LIFECYCLE_CLOSED, derive_lifecycle_state
-
 		p = _project("CLS Cancelled", status="Cancelled")
 		_closure(p).submit()
 		self.assertEqual(derive_lifecycle_state(p), LIFECYCLE_CLOSED)
 
 	def test_one_closure_per_project(self):
 		p = _project("CLS Unique")
-		doc = _closure(p)
-		doc.submit()
+		_closure(p).submit()
 		with self.assertRaises(ValidationError):
 			_closure(p)
 
@@ -129,3 +154,18 @@ class TestProjectClosure(IntegrationTestCase):
 		self.assertTrue(has_permission_closure(doc, "submit", owner))
 		self.assertFalse(has_permission_closure(doc, "submit", stranger))
 		self.assertFalse(has_permission_closure(doc, "share", owner))
+
+	def test_print_format_immutable(self):
+		p = _project("CLS Print")
+		doc = _closure(p)
+		doc.submit()
+		html1 = frappe.get_print("PMO Project Closure", doc.name, print_format="PMO Project Closure")
+		# El forecast/final congelado aparece en la salida.
+		frozen_end = json.loads(doc.snapshot)["schedule"]["forecast_end"]
+		if frozen_end:
+			self.assertIn(str(frozen_end), html1)
+		# Cambiar el Project despues del submit NO cambia la salida histórica del Closure.
+		frappe.db.set_value("Project", p, "expected_end_date", "2099-12-31", update_modified=False)
+		html2 = frappe.get_print("PMO Project Closure", doc.name, print_format="PMO Project Closure")
+		self.assertEqual(html1, html2)
+		self.assertNotIn("2099-12-31", html2)

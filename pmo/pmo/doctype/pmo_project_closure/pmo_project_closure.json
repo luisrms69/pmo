@@ -26,6 +26,9 @@
   "snapshot_hash",
   "section_snapshot_data",
   "snapshot",
+  "section_economics",
+  "economics_snapshot_hash",
+  "economics_snapshot",
   "amended_from"
  ],
  "fields": [
@@ -50,7 +53,7 @@
   },
   {
    "default": "Today",
-   "description": "Cutoff used to freeze the closure metrics.",
+   "description": "Cutoff used to freeze schedule/effort metrics.",
    "fieldname": "closure_date",
    "fieldtype": "Date",
    "label": "Closure date"
@@ -89,7 +92,7 @@
   },
   {
    "collapsible": 1,
-   "description": "Metrics frozen from canonical sources at submit. Not captured by hand; not editable.",
+   "description": "Non-economic metrics frozen from build_project_control at submit (cutoff = closure date). Not editable.",
    "fieldname": "section_snapshot",
    "fieldtype": "Section Break",
    "label": "Closure snapshot (frozen on submit)"
@@ -130,11 +133,35 @@
    "label": "Frozen snapshot (JSON)"
   },
   {
-   "description": "Immutable canonical snapshot at closure (same form that is hashed). The Print Format is rebuilt only from here, never from live data.",
+   "description": "Immutable non-economic snapshot at closure (schedule/effort/changes). The Print Format is rebuilt only from here, never from live data.",
    "fieldname": "snapshot",
    "fieldtype": "Code",
    "label": "Snapshot",
    "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "description": "Economic evidence — permlevel 1: readable only by economic roles (economic gate). Not exposed to plain Project READ.",
+   "fieldname": "section_economics",
+   "fieldtype": "Section Break",
+   "label": "Economic evidence (restricted)",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "economics_snapshot_hash",
+   "fieldtype": "Data",
+   "label": "Economics snapshot hash",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "description": "Immutable economic snapshot frozen at issuance (current_at_issuance). Restricted by permlevel 1 to economic roles.",
+   "fieldname": "economics_snapshot",
+   "fieldtype": "Code",
+   "label": "Economics snapshot",
+   "options": "JSON",
+   "permlevel": 1,
    "read_only": 1
   },
   {
@@ -188,6 +215,21 @@
    "share": 1,
    "submit": 1,
    "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "PMO Manager"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "PMO Executive Access"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager"
   }
  ],
  "sort_field": "modified",

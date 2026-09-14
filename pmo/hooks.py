@@ -94,7 +94,11 @@ doctype_js = {
 # `pmo_project_status(project, status_date=None)` alimenta el Print Format "PMO Project Status"
 # (reutiliza build_status_report; P4 lo impone esa función).
 jinja = {
-	"methods": ["pmo.print_status.pmo_project_status"],
+	"methods": [
+		"pmo.print_status.pmo_project_status",
+		# ADR-0014 D4: gate económico reutilizado en el Print Format del Closure (aislamiento económico).
+		"pmo.project_economics.can_see_project_economics",
+	],
 }
 
 # Installation

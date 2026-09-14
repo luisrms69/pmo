@@ -48,14 +48,23 @@ El Charter **no contiene estructura de Risk Analysis** y no depende de ningún r
 ### D4 — Closure: toda la evidencia se congela al submit (snapshot-only)
 - **Capturado:** `final_result`, aceptación formal (`accepted_by`, `accepted_on`), `pending_items_transferred`,
   `closure_observations`.
-- **Congelación al submit:** en `on_submit`, `build_project_control` (al corte de cierre) + fuentes canónicas
-  **alimentan un snapshot** guardado con hash. Métricas (fechas baseline/comprometida/real + desviación;
-  ingreso autorizado/facturado; costo autorizado/real; margen; cambios; horas plan vs real) quedan
-  **congeladas**, **no** como campos editables.
-- **El Print Format posterior se reconstruye SOLO desde el snapshot congelado**, nunca consultando
-  `build_project_control` en vivo. Flujo: `build_project_control → snapshot al submit → Closure congelado →
-  Print Format`. Cambios posteriores en el Project **no** alteran retrospectivamente cómo "cerró". No inventa
-  métricas.
+- **Guard de cierre:** el Closure solo se emite (submit) para un Project en estado **terminal** (`Completed` o
+  `Cancelled`); un Project no terminal rechaza el submit. Coherente con el estado de ciclo derivado (D7).
+- **Congelación al submit:** el Closure **compone desde `build_project_control`** (cutoff = `closure_date`) la
+  evidencia **no económica** (cronograma/esfuerzo/cambios) y la congela en `snapshot` con hash; **no recalcula
+  ni reimplementa** esos dominios.
+- **Semántica temporal (explícita):** cronograma y esfuerzo son **al corte `closure_date`** (vía
+  `build_status_report`). La **economía nativa no tiene snapshot histórico** (la sección `costs` es
+  `as_of:"current"`, ADR-0012), por lo que la evidencia económica se congela como **`current_at_issuance`**
+  (estado al momento de emitir) y **nunca** se etiqueta como histórica a `closure_date`. La economía se toma de
+  la **frontera canónica** (`get_authorized_economics` + totales nativos), no de una segunda implementación.
+- **Aislamiento económico (P4):** la evidencia económica se guarda en un campo **`economics_snapshot` con
+  `permlevel 1`**, legible solo por los roles económicos (los de `can_see_project_economics`). Un usuario con
+  READ del Project pero **sin** permiso económico **no** puede leerla. No se debilita P4 ni se crea una segunda
+  política.
+- **El Print Format se reconstruye SOLO desde los snapshots congelados**, nunca desde datos vivos, y respeta
+  el gate económico. Flujo: `build_project_control → snapshot al submit → Closure congelado → Print Format`.
+  Cambios posteriores en el Project **no** alteran cómo "cerró". No inventa métricas.
 
 ### D5 — Post-Project Review mínimo (ISO 21513; proporcional)
 Distinto del Closure (Closure = *cómo terminó*, factual; Review = *qué aprendimos*, posterior). Capturado:
