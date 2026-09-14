@@ -4,9 +4,11 @@
 """ADR-0014 — PMO Project Handoff. Datos ficticios.
 
 Cubre: naturaleza submittable + un-Handoff-por-Project, congelado autoritativo en before_submit (snapshot +
-hash + issued_by/at), obligatoriedad del resumen de handoff, toma/congelado del responsable operativo interno
-y del contacto principal del cliente desde el Project (cambios posteriores en el Project no alteran el Handoff
-ya emitido), y P4 (read = visibilidad del Project; write/submit = solo owner; Executive read-only)."""
+hash + issued_by/at), obligatoriedad del resumen de handoff y de la fecha, guard de emisión (responsable
+operativo interno y contacto principal del cliente deben existir en el Project), ausencia de economía en el
+snapshot (política económica), toma/congelado de responsable/contacto desde el Project (cambios posteriores en
+el Project no alteran el Handoff ya emitido), y P4 (read = visibilidad del Project; write/submit = solo owner;
+Executive read-only)."""
 
 import json
 
@@ -35,10 +37,7 @@ def _user(email, roles=()):
 
 
 def _employee(name):
-	existing = frappe.db.exists("Employee", {"employee_name": name})
-	if existing:
-		return existing
-	return (
+	return frappe.db.exists("Employee", {"employee_name": name}) or (
 		frappe.get_doc({"doctype": "Employee", "employee_name": name, "first_name": name})
 		.insert(ignore_permissions=True, ignore_mandatory=True)
 		.name
@@ -46,10 +45,7 @@ def _employee(name):
 
 
 def _contact(name):
-	existing = frappe.db.exists("Contact", {"first_name": name})
-	if existing:
-		return existing
-	return (
+	return frappe.db.exists("Contact", {"first_name": name}) or (
 		frappe.get_doc({"doctype": "Contact", "first_name": name})
 		.insert(ignore_permissions=True, ignore_mandatory=True)
 		.name
@@ -80,6 +76,14 @@ def _project(name, owner="Administrator", committed=None, operational_owner=None
 	return pid
 
 
+def _ready_project(name, owner="Administrator", committed=None):
+	"""Project con responsable operativo y contacto del cliente ya fijados (listo para emitir el Handoff)."""
+	emp = _employee(f"Op {name}")
+	ct = _contact(f"Contact {name}")
+	p = _project(name, owner=owner, committed=committed, operational_owner=emp, customer_contact=ct)
+	return p, emp, ct
+
+
 def _handoff(project, **kw):
 	doc = frappe.get_doc(
 		{
@@ -100,7 +104,7 @@ class TestProjectHandoff(IntegrationTestCase):
 		frappe.set_user("Administrator")
 
 	def test_is_submittable_and_freezes_snapshot(self):
-		p = _project("HOF Freeze", committed="2026-03-31")
+		p, _emp, _ct = _ready_project("HOF Freeze", committed="2026-03-31")
 		doc = _handoff(p)
 		self.assertEqual(doc.docstatus, 0)
 		self.assertFalse(doc.snapshot_hash)  # nada congelado antes del submit
@@ -120,16 +124,48 @@ class TestProjectHandoff(IntegrationTestCase):
 		with self.assertRaises(MandatoryError):
 			doc.insert(ignore_permissions=True)
 
+	def test_handoff_date_is_mandatory(self):
+		# Tiene default Today, pero si el usuario la borra no debe poder guardar (acta de transferencia).
+		p = _project("HOF Date")
+		doc = _handoff(p)  # borrador con fecha por default
+		doc.handoff_date = None
+		with self.assertRaises(MandatoryError):
+			doc.save()
+
+	def test_no_economics_in_snapshot(self):
+		# Política económica: el snapshot del Handoff NO contiene economía autorizada (sujeta a
+		# can_see_project_economics / permlevel 1). Un lector del Project/Handoff no debe verla aquí.
+		p, _emp, _ct = _ready_project("HOF NoEcon")
+		snap = build_handoff_snapshot(p)
+		self.assertNotIn("economics", snap)
+		self.assertNotIn("authorized_revenue", json.dumps(snap))
+		self.assertNotIn("authorized_margin", json.dumps(snap))
+
+	def test_requires_operational_owner_to_submit(self):
+		# Sin responsable operativo interno en el Project no se puede emitir el Handoff.
+		ct = _contact("Contact OnlyContact")
+		p = _project("HOF NoOwner", customer_contact=ct)  # sin operational_owner
+		doc = _handoff(p)
+		with self.assertRaises(ValidationError):
+			doc.submit()
+
+	def test_requires_customer_contact_to_submit(self):
+		# Sin contacto principal del cliente en el Project no se puede emitir el Handoff.
+		emp = _employee("Op OnlyOwner")
+		p = _project("HOF NoContact", operational_owner=emp)  # sin customer_contact
+		doc = _handoff(p)
+		with self.assertRaises(ValidationError):
+			doc.submit()
+
 	def test_one_handoff_per_project(self):
-		p = _project("HOF Unique")
+		p, _emp, _ct = _ready_project("HOF Unique")
 		doc = _handoff(p)
 		doc.submit()
 		with self.assertRaises(ValidationError):
 			_handoff(p)  # un segundo Handoff (no enmienda) para el mismo Project se rechaza
 
 	def test_operational_owner_frozen_from_project(self):
-		emp = _employee("Op Owner HOF")
-		p = _project("HOF OpOwner", operational_owner=emp)
+		p, emp, _ct = _ready_project("HOF OpOwner")
 		doc = _handoff(p)
 		doc.submit()
 		self.assertEqual(doc.operational_owner, emp)
@@ -142,8 +178,7 @@ class TestProjectHandoff(IntegrationTestCase):
 		self.assertEqual(json.loads(doc.snapshot)["operational_owner"], emp)
 
 	def test_customer_contact_frozen_from_project(self):
-		ct = _contact("Primary Contact HOF")
-		p = _project("HOF Contact", customer_contact=ct)
+		p, _emp, ct = _ready_project("HOF Contact")
 		doc = _handoff(p)
 		doc.submit()
 		self.assertEqual(doc.customer_contact, ct)
@@ -157,7 +192,7 @@ class TestProjectHandoff(IntegrationTestCase):
 	def test_snapshot_hash_matches_frozen_json_not_live(self):
 		import hashlib
 
-		p = _project("HOF Hash", committed="2026-03-31")
+		p, _emp, _ct = _ready_project("HOF Hash", committed="2026-03-31")
 		doc = _handoff(p)
 		doc.submit()
 		self.assertEqual(doc.snapshot_hash, hashlib.sha256(doc.snapshot.encode("utf-8")).hexdigest())

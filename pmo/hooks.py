@@ -195,8 +195,8 @@ doc_events = {
 	},
 }
 
-# Fixtures: Custom Fields (Project-pmo_status_date, Project-pmo_committed_end_date, Task-pmo_deadline,
-# ToDo-pmo_planned_hours) + roles PMO + Custom Role de reports.
+# Fixtures: Custom Fields (Project-pmo_status_date, Project-pmo_committed_end_date, Project-pmo_operational_owner,
+# Project-pmo_customer_contact, Task-pmo_deadline, ToDo-pmo_planned_hours) + roles PMO + Custom Role de reports.
 # (La membresía de Project ya NO usa un Custom Field/child: se deriva de owner + DocShare + ToDo; ADR-0002.)
 # Los Custom Role restringen 3 Script Reports de ERPNext (que ignoran pqc vía get_all/db.sql) a
 # `PMO Executive Access`/`Administrator`. Viven en doctype aparte (el sync del Report no los pisa) y el
@@ -211,6 +211,8 @@ fixtures = [
 				[
 					"Project-pmo_status_date",
 					"Project-pmo_committed_end_date",
+					"Project-pmo_operational_owner",
+					"Project-pmo_customer_contact",
 					"Task-pmo_deadline",
 					"ToDo-pmo_planned_hours",
 				],

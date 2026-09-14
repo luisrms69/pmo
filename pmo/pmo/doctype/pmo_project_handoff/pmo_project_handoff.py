@@ -22,7 +22,6 @@ from frappe.utils import now_datetime
 
 from pmo.baseline import canonical_json, snapshot_hash
 from pmo.permissions import get_project_team
-from pmo.project_economics import get_authorized_economics
 
 HANDOFF_SNAPSHOT_SCHEMA_VERSION = 1
 
@@ -31,8 +30,11 @@ def build_handoff_snapshot(project: str) -> dict:
 	"""Snapshot canonico del handoff: compone datos ya existentes (no recalcula ni recaptura).
 
 	Incluye el responsable operativo interno y el contacto principal del cliente (custom fields del Project),
-	economia autorizada (frontera canonica `get_authorized_economics`, lazy a erpnext_proposals), hitos
-	(`Task.is_milestone`) y equipo inicial derivado de las fuentes P4 (owner + DocShare + ToDo)."""
+	hitos (`Task.is_milestone`) y equipo inicial derivado de las fuentes P4 (owner + DocShare + ToDo). **NO**
+	incluye economia autorizada: el Handoff es una transferencia operativa y la economia esta sujeta al gate
+	`can_see_project_economics` (permlevel 1); guardarla en un snapshot legible por cualquiera con READ del
+	Project/Handoff violaria esa politica. La economia autorizada vive en su frontera canonica y en el Closure
+	(campo permlevel 1), no aqui."""
 	proj = (
 		frappe.db.get_value(
 			"Project",
@@ -65,17 +67,6 @@ def build_handoff_snapshot(project: str) -> dict:
 			{"proposal_project": project, "workflow_state": "Ganada", "docstatus": 1},
 			"name",
 		)
-
-	econ = get_authorized_economics(project)  # {available, reason, data, message}
-	edata = econ.get("data") or {}
-	economics = {
-		"available": econ.get("available"),
-		"reason": econ.get("reason"),
-		"authorized_revenue": edata.get("authorized_revenue"),
-		"authorized_cost": edata.get("authorized_cost"),
-		"authorized_margin": edata.get("authorized_margin"),
-		"currency": edata.get("currency"),
-	}
 
 	milestones = [
 		{
@@ -115,7 +106,6 @@ def build_handoff_snapshot(project: str) -> dict:
 		"operational_owner": proj.get("pmo_operational_owner"),
 		"customer_contact": proj.get("pmo_customer_contact"),
 		"proposal_reference": proposal,
-		"economics": economics,
 		"milestones": milestones,
 		"team": team,
 	}
@@ -136,6 +126,22 @@ class PMOProjectHandoff(Document):
 		# Congela la evidencia canonica al emitir. El responsable operativo y el contacto del cliente se toman
 		# del Project y quedan fijos: cambios posteriores en el Project no alteran un Handoff ya emitido.
 		snapshot = build_handoff_snapshot(self.project)
+
+		# Los dos datos que justifican el Handoff deben existir para poder emitirlo (acta de transferencia):
+		# el responsable operativo interno y el contacto principal del cliente viven en el Project.
+		if not snapshot["operational_owner"]:
+			frappe.throw(
+				frappe._(
+					"Set the internal Operational Owner (Responsable operativo interno) on the Project before issuing the Handoff."
+				)
+			)
+		if not snapshot["customer_contact"]:
+			frappe.throw(
+				frappe._(
+					"Set the primary Customer Contact (Contacto principal del cliente) on the Project before issuing the Handoff."
+				)
+			)
+
 		self.snapshot_schema_version = snapshot["snapshot_schema_version"]
 		self.snapshot_hash = snapshot_hash(snapshot)
 		self.snapshot = canonical_json(snapshot)  # forma canonica (misma que se hashea)

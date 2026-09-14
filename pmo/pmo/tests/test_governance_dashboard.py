@@ -24,6 +24,19 @@ def _project(name, status="Open"):
 
 
 def _handoff(project):
+	# El Handoff exige responsable operativo interno + contacto del cliente en el Project para emitirse.
+	emp = frappe.db.exists("Employee", {"employee_name": "GD Op Owner"}) or (
+		frappe.get_doc({"doctype": "Employee", "employee_name": "GD Op Owner", "first_name": "GD"})
+		.insert(ignore_permissions=True, ignore_mandatory=True)
+		.name
+	)
+	ct = frappe.db.exists("Contact", {"first_name": "GD Contact"}) or (
+		frappe.get_doc({"doctype": "Contact", "first_name": "GD Contact"})
+		.insert(ignore_permissions=True, ignore_mandatory=True)
+		.name
+	)
+	frappe.db.set_value("Project", project, "pmo_operational_owner", emp, update_modified=False)
+	frappe.db.set_value("Project", project, "pmo_customer_contact", ct, update_modified=False)
 	d = frappe.get_doc(
 		{"doctype": "PMO Project Handoff", "project": project, "handoff_summary": "Transferencia X"}
 	)

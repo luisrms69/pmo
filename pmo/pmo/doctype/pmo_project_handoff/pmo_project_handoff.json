@@ -46,7 +46,8 @@
    "fieldname": "handoff_date",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Fecha de handoff"
+   "label": "Fecha de handoff",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_hdr",

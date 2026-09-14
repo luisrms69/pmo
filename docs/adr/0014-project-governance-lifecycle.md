@@ -48,10 +48,14 @@ El Handoff **no contiene estructura de Risk Analysis** y no depende de ningún r
   dependencias y consideraciones operativas).
 - **Se toma del Project y se congela al submit:** `pmo_operational_owner` (responsable operativo interno, Link
   Employee) y `pmo_customer_contact` (contacto principal del cliente, Link Contact) — ambos custom fields del
-  Project; cambios posteriores en el Project no alteran un Handoff ya emitido.
+  Project; cambios posteriores en el Project no alteran un Handoff ya emitido. **Ambos son obligatorios para
+  emitir** (guard en `before_submit`): sin ellos no hay transferencia formal. La `handoff_date` también es
+  obligatoria.
 - **Derivado + snapshot al submit** (patrón `snapshot`+`snapshot_hash` del Baseline): customer/company,
-  `pmo_committed_end_date`, economía autorizada (contrato erpnext_proposals), referencia a Proposal/Quotation,
-  hitos/equipo iniciales.
+  `pmo_committed_end_date`, referencia a Proposal/Quotation, hitos/equipo iniciales.
+- **Sin economía en el snapshot (política P4):** el Handoff **no** guarda economía autorizada. La economía está
+  sujeta a `can_see_project_economics` (permlevel 1, D4); persistirla en un snapshot legible por cualquiera con
+  READ del Project/Handoff la filtraría. La economía vive en su frontera canónica y en el Closure (permlevel 1).
 - **NO se reintroducen** objetivo, alcance, entregables, supuestos ni restricciones como captura del usuario.
 - Submittable → evidencia histórica inmutable del arranque; snapshot/hash/timestamps quedan en sección técnica
   read-only, fuera de la captura normal.
