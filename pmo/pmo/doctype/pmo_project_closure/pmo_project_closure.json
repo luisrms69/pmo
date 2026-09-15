@@ -18,6 +18,7 @@
   "chk_ops_handover",
   "chk_contractual_legal",
   "chk_admin_financial",
+  "column_break_chk",
   "chk_documentation",
   "chk_communicated",
   "chk_resources_released",
@@ -107,6 +108,10 @@
    "fieldname": "chk_admin_financial",
    "fieldtype": "Check",
    "label": "Administrative / financial close reviewed"
+  },
+  {
+   "fieldname": "column_break_chk",
+   "fieldtype": "Column Break"
   },
   {
    "default": "0",
