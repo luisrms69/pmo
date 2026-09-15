@@ -8,25 +8,27 @@ Quotation-addendum y a las baselines before/after.
 Semántica de estados (Workflow `PMO Change Request`):
     Draft → In Review → Approved / Rejected → Implemented → Closed
 
-- Al pasar a **In Review** (formalizar): gate duro de baseline vigente + congelado de `baseline_before`.
-- **Aprobar/Rechazar** = Submit (autoridad owner-only sellada por P4 sobre `submit` + condición del
-  Workflow). `before_submit` fija `approved_by`/`approved_at` y actúa como **red de seguridad** del gate
-  de baseline (cubre cualquier ruta a `docstatus=1`).
-- **Aplicar Quotation al Project** (acción explícita, no transición): materializa los Scope Items vía el
-  contrato `erpnext_proposals.apply_addendum_to_project` y fija `applied_*`. **No** mueve el Workflow.
-- **Rechazar**: transición In Review→Rejected; gate: `decision_notes` obligatorio.
-- **Marcar Implementado**: transición Approved→Implemented; gate: `implementation_owner` definido; si
-  `impacts_commercial` exige addenda aplicada (`proposal_group` + `applied_to_project`); si NO hay addenda,
-  aceptación del cliente documentada (`customer_approval_status` Approved con Contact+fecha, o Not Required
-  con justificación; Pending bloquea).
+Flujo único addenda-céntrico (ADR-0015):
+- Al pasar a **In Review** (formalizar): gate duro de baseline vigente + congelado de `baseline_before`
+  **y** Addenda ya creada (`proposal_group`); no existe ruta paralela "sin Addenda" (B4).
+- **Aprobar** = Submit que aterriza en `Approved`: captura server-side `approved_addendum` +
+  `approved_delta_fingerprint` (versión viva `En Revision` + huella canónica de `erpnext_proposals`),
+  fail-closed, y fija `approved_by`/`approved_at` (B5). **Rechazar** también es Submit pero NO es
+  aprobación: no captura ni marca aprobación. `before_submit` es además red de seguridad de los gates.
+- **Reapprove addendum version** (acción explícita, no transición): cuando se emite una versión divergente,
+  el Project Owner re-aprueba y se actualiza `approved_addendum`/`approved_delta_fingerprint` sin cambiar
+  el workflow ni `applied_*` (B5).
+- **Marcar Implementado**: transición Approved→Implemented; gate: `implementation_owner` + Addenda
+  (`proposal_group`) + `applied_to_project`. `impacts_commercial` es solo clasificación informativa.
 - **Cerrar**: transición Implemented→Closed; gate: `baseline_after` (fijada por una Baseline `Approved
   Change` que referencia el CR) + `stakeholder_communication`.
+- El **apply** gobernado (deriva la versión Ganada + guard de fingerprint) es B6; no vive aquí todavía.
 """
 
 import frappe
 from frappe import N_
 from frappe.model.document import Document
-from frappe.utils import getdate, now_datetime, today
+from frappe.utils import cint, getdate, now_datetime, today
 
 from pmo import change_control
 
@@ -40,6 +42,10 @@ REJECTED = N_("Rejected")
 IMPLEMENTED = N_("Implemented")
 CLOSED = N_("Closed")
 _TERMINAL_STATES = (REJECTED, CLOSED)
+
+# Estado del workflow "Propuesta Comercial" (erpnext_proposals) en el que la Addenda está congelada
+# (docstatus 1) y lista para gobernarse. Valor EXACTO del fixture (sin acento).
+ADDENDUM_REVIEW_STATE = "En Revision"
 
 # Workflow Action labels (canónicos en inglés, definidos en workflow.json). Solo marcados para
 # extracción (N_ es no-op): el motor de Workflow compara estos valores; el es.po da el español visible.
@@ -228,10 +234,25 @@ class PMOChangeRequest(Document):
 		(no `allow_on_submit`)."""
 		self._ensure_baseline_before()
 		self._ensure_addendum()  # red de seguridad del flujo único: ni un submit directo aprueba sin Addenda
+		# Rechazar también es un Submit (docstatus 0→1): NO es una aprobación → no registra aprobación ni
+		# captura la Addenda gobernada (B5). Solo el aterrizaje en `Approved` es aprobación real.
+		if self.get("workflow_state") == REJECTED:
+			return
+		# Aprobación gobernada (B5): fija la versión exacta de Addenda aprobada + su fingerprint canónico.
+		self._capture_approved_addendum()
 		if not self.approved_by:
 			self.approved_by = frappe.session.user
 		if not self.approved_at:
 			self.approved_at = now_datetime()
+
+	def _capture_approved_addendum(self):
+		"""Al aprobar (In Review → Approved / submit directo): resuelve la versión viva de la Addenda del
+		grupo, exige que esté congelada y `En Revision`, y persiste `approved_addendum` +
+		`approved_delta_fingerprint` (huella canónica de `erpnext_proposals`). Fail-closed ante
+		ausencia/inconsistencia/error. `pmo` NO calcula la huella ni resuelve versiones por su cuenta."""
+		quotation, fingerprint = _resolve_live_addendum_in_review(self.proposal_group)
+		self.approved_addendum = quotation
+		self.approved_delta_fingerprint = fingerprint
 
 	# --- cancel: escape controlado (D10) -------------------------------------------
 
@@ -256,6 +277,59 @@ class PMOChangeRequest(Document):
 					"Cannot cancel a Change Request in a terminal state ({0}). Record a new Change Request."
 				).format(self.get("workflow_state"))
 			)
+
+
+# --- Aprobación gobernada de la Addenda (B5) ---------------------------------------
+
+
+def _addendum_state(quotation: str):
+	"""Estado congelado de la Quotation-addenda (docstatus + workflow_state). Seam aislado de la lectura de
+	esquema de `erpnext_proposals` (Quotation.workflow_state) para poder verificar el estado sin reimplementar
+	nada. Devuelve un `_dict` o `None`."""
+	return frappe.db.get_value("Quotation", quotation, ["docstatus", "workflow_state"], as_dict=True)
+
+
+def _resolve_live_addendum_in_review(proposal_group: str):
+	"""Resuelve la versión VIVA de la Addenda del grupo y su fingerprint canónico, exigiendo que esté
+	congelada y `En Revision`. Devuelve `(quotation, fingerprint)`. Fail-closed ante ausencia/estado
+	inválido/error del contrato. `pmo` NO parsea grupos, NO calcula la huella y NO resuelve versiones: todo
+	proviene de `erpnext_proposals` (vía `change_control`)."""
+	if not proposal_group:
+		frappe.throw(frappe._("The Change Request has no Addendum to approve."))
+	quotation = change_control.get_live_proposal_for_group(proposal_group)
+	if not quotation:
+		frappe.throw(frappe._("No live Addendum version was found for this Change Request's Proposal Group."))
+	info = _addendum_state(quotation)
+	if not info or cint(info.docstatus) != 1 or info.workflow_state != ADDENDUM_REVIEW_STATE:
+		frappe.throw(
+			frappe._(
+				"The Addendum must be frozen and In Review (submitted) before the change can be approved. "
+				"Current version: {0}."
+			).format(quotation)
+		)
+	fingerprint = change_control.get_addendum_delta_fingerprint(quotation)
+	if not fingerprint:
+		frappe.throw(frappe._("Could not obtain the Addendum's delta fingerprint (fail-closed)."))
+	return quotation, fingerprint
+
+
+@frappe.whitelist()
+def reapprove_addendum_version(change_request: str):
+	"""Re-aprueba la versión vigente de la Addenda cuando se emitió una nueva versión del mismo grupo
+	(rechazo del cliente → nueva versión). Owner-only (P4 `submit` == owner). Actualiza `approved_addendum`
+	y `approved_delta_fingerprint` con la versión viva `En Revision`. NO cambia `workflow_state`,
+	`approved_by`/`approved_at` ni `applied_*`; la trazabilidad queda en Version/track_changes."""
+	doc = frappe.get_doc("PMO Change Request", change_request)
+	doc.check_permission("submit")  # owner-only (P4): aprobar/re-aprobar es autoridad del Project Owner
+	if doc.docstatus != 1 or doc.get("workflow_state") != APPROVED:
+		frappe.throw(frappe._("Re-approval is only possible for an Approved Change Request."))
+	if doc.applied_to_project:
+		frappe.throw(frappe._("The change was already applied; re-approval no longer applies."))
+	quotation, fingerprint = _resolve_live_addendum_in_review(doc.proposal_group)
+	doc.approved_addendum = quotation
+	doc.approved_delta_fingerprint = fingerprint
+	doc.save()  # solo campos allow_on_submit sobre el CR submitted
+	return {"approved_addendum": quotation, "approved_delta_fingerprint": fingerprint}
 
 
 # --- Acción explícita: Crear addenda comercial (ADR-0015) --------------------------

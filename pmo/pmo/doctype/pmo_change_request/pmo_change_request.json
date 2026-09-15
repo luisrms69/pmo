@@ -43,6 +43,8 @@
   "section_decision",
   "approved_by",
   "approved_at",
+  "approved_addendum",
+  "approved_delta_fingerprint",
   "column_break_decision",
   "decision_notes",
   "section_implementation",
@@ -286,6 +288,23 @@
    "fieldtype": "Datetime",
    "label": "Approved at",
    "read_only": 1
+  },
+  {
+   "description": "Exact Addendum version (Quotation) that governance approved. Captured server-side when the change is Approved; updated by 'Reapprove addendum version' if a divergent new version is issued.",
+   "fieldname": "approved_addendum",
+   "fieldtype": "Link",
+   "label": "Approved addendum",
+   "options": "Quotation",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "description": "Canonical delta fingerprint (from erpnext_proposals) of the approved Addendum version. The apply guard (B6) compares the Won version's fingerprint against this value.",
+   "fieldname": "approved_delta_fingerprint",
+   "fieldtype": "Data",
+   "label": "Approved delta fingerprint",
+   "read_only": 1,
+   "allow_on_submit": 1
   },
   {
    "fieldname": "column_break_decision",

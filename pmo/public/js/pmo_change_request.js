@@ -64,5 +64,31 @@ frappe.ui.form.on("PMO Change Request", {
 		// NOTA (B4): la acción "Apply Quotation to Project" con Quotation seleccionada por el usuario fue
 		// eliminada. El apply automático y gobernado (deriva la versión Ganada + guard de fingerprint) se
 		// añade en B6.
+
+		// B5: re-aprobar la versión vigente de la Addenda cuando cambió el delta (nueva versión En Revisión).
+		// Solo visible en CR Approved y no aplicado; toda la validación es server-side (owner-only + estado).
+		if (
+			frm.doc.docstatus === 1 &&
+			frm.doc.workflow_state === "Approved" &&
+			!frm.doc.applied_to_project
+		) {
+			frm.add_custom_button(__("Reapprove addendum version"), () => {
+				frappe
+					.call({
+						method: "pmo.pmo.doctype.pmo_change_request.pmo_change_request.reapprove_addendum_version",
+						args: { change_request: frm.doc.name },
+						freeze: true,
+						freeze_message: __("Reapproving addendum version…"),
+					})
+					.then((r) => {
+						if (r.exc || !r.message) return;
+						frm.reload_doc();
+						frappe.show_alert({
+							message: __("Addendum version reapproved."),
+							indicator: "green",
+						});
+					});
+			});
+		}
 	},
 });

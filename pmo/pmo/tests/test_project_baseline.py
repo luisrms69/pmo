@@ -16,8 +16,10 @@ from frappe.exceptions import ValidationError
 from frappe.tests import IntegrationTestCase
 from frappe.utils import today
 
+from pmo import change_control
 from pmo.baseline import build_snapshot, get_effective_baseline, run_preflight, snapshot_hash
 from pmo.permissions import has_permission_baseline
+from pmo.pmo.doctype.pmo_change_request import pmo_change_request as crmod
 
 
 def _user(email, roles=()):
@@ -148,16 +150,35 @@ def _implemented_cr(project, owner):
 			"proposal_group": "GRP-1",
 		}
 	).insert(ignore_permissions=True)
+	# B5: la captura al aprobar consulta el contrato de erpnext_proposals (ausente en el site de tests).
+	# Se mockean los seams para que la captura tenga éxito (versión viva En Revision + fingerprint).
+	cust = frappe.db.exists("Customer", {"customer_name": "BL-B5-Cust"})
+	if not cust:
+		c = frappe.get_doc({"doctype": "Customer", "customer_name": "BL-B5-Cust"})
+		c.flags.ignore_validate = True
+		cust = c.insert(ignore_permissions=True, ignore_mandatory=True).name
+	_q = frappe.get_doc({"doctype": "Quotation", "quotation_to": "Customer", "party_name": cust})
+	_q.flags.ignore_validate = True
+	addn = _q.insert(ignore_permissions=True, ignore_mandatory=True).name
+	orig_live = change_control.get_live_proposal_for_group
+	orig_fp = change_control.get_addendum_delta_fingerprint
+	orig_state = crmod._addendum_state
+	change_control.get_live_proposal_for_group = lambda pg: addn
+	change_control.get_addendum_delta_fingerprint = lambda q: "FP-DEFAULT"
+	crmod._addendum_state = lambda q: frappe._dict(docstatus=1, workflow_state="En Revision")
 	prev = frappe.session.user
 	frappe.set_user(owner)
 	try:
 		apply_workflow(cr, "Send for Review")  # In Review: congela baseline_before = vigente
-		apply_workflow(cr, "Approve")  # Approved (Submit)
+		apply_workflow(cr, "Approve")  # Approved (Submit) → captura Addenda gobernada
 		frappe.db.set_value("PMO Change Request", cr.name, "applied_to_project", 1)
 		cr.reload()
 		apply_workflow(cr, "Mark Implemented")  # Implemented (Addenda aplicada)
 	finally:
 		frappe.set_user(prev)
+		change_control.get_live_proposal_for_group = orig_live
+		change_control.get_addendum_delta_fingerprint = orig_fp
+		crmod._addendum_state = orig_state
 	cr.reload()
 	return cr
 

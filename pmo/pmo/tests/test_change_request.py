@@ -19,7 +19,11 @@ from frappe.utils import today
 
 from pmo import change_control
 from pmo.permissions import has_permission_change_request
-from pmo.pmo.doctype.pmo_change_request.pmo_change_request import crear_addenda
+from pmo.pmo.doctype.pmo_change_request import pmo_change_request as crmod
+from pmo.pmo.doctype.pmo_change_request.pmo_change_request import (
+	crear_addenda,
+	reapprove_addendum_version,
+)
 
 
 def _employee(name):
@@ -105,7 +109,40 @@ def _company():
 	return frappe.db.get_value("Company", {}, "name")
 
 
+def _addendum_quotation():
+	"""Quotation mínima (registro real) para satisfacer el Link `approved_addendum`. El site de tests no
+	tiene Company/Fiscal Year ni el esquema de proposals, así que se salta la validación (`ignore_validate`):
+	solo necesita EXISTIR con un nombre real; su estado se controla mockeando `_addendum_state`."""
+	cust = frappe.db.exists("Customer", {"customer_name": "CR-B5-Cust"})
+	if not cust:
+		c = frappe.get_doc({"doctype": "Customer", "customer_name": "CR-B5-Cust"})
+		c.flags.ignore_validate = True
+		cust = c.insert(ignore_permissions=True, ignore_mandatory=True).name
+	q = frappe.get_doc({"doctype": "Quotation", "quotation_to": "Customer", "party_name": cust})
+	q.flags.ignore_validate = True
+	return q.insert(ignore_permissions=True, ignore_mandatory=True).name
+
+
 class TestChangeRequest(IntegrationTestCase):
+	def setUp(self):
+		# B5: el site de tests no tiene erpnext_proposals ni el esquema de Quotation (workflow_state /
+		# proposal_group). Se mockean los seams de contrato para que la CAPTURA al aprobar tenga éxito por
+		# defecto (versión viva `En Revision` + fingerprint). Los tests de fallo sobreescriben estos mocks.
+		frappe.set_user("Administrator")
+		self._addn = _addendum_quotation()  # Quotation real para el Link approved_addendum
+		self._orig_live = change_control.get_live_proposal_for_group
+		self._orig_fp = change_control.get_addendum_delta_fingerprint
+		self._orig_state = crmod._addendum_state
+		change_control.get_live_proposal_for_group = lambda pg: self._addn
+		change_control.get_addendum_delta_fingerprint = lambda q: "FP-DEFAULT"
+		crmod._addendum_state = lambda q: frappe._dict(docstatus=1, workflow_state="En Revision")
+
+	def tearDown(self):
+		change_control.get_live_proposal_for_group = self._orig_live
+		change_control.get_addendum_delta_fingerprint = self._orig_fp
+		crmod._addendum_state = self._orig_state
+		frappe.set_user("Administrator")
+
 	def _run(self, doc, action, user):
 		prev = frappe.session.user
 		frappe.set_user(user)
@@ -430,3 +467,116 @@ class TestChangeRequest(IntegrationTestCase):
 
 	# NOTA (B4): los tests de la acción "Aplicar Quotation al Project" (con Quotation manual) se eliminaron
 	# junto con esa acción. El apply automático y gobernado se prueba en B6.
+
+	# --- B5: aprobación gobernada + fingerprint + re-aprobación -------------------
+
+	def _approved(self, name):
+		owner = _user(name.lower() + "@example.com", ["Projects User"])
+		p = _project(name, owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p, proposal_group="GRP-1")
+		self._run(cr, "Send for Review", owner)
+		self._run(cr, "Approve", owner)
+		return owner, cr
+
+	def test_approve_captures_addendum_and_fingerprint(self):
+		_owner, cr = self._approved("CR-B5A")
+		self.assertEqual(cr.workflow_state, "Approved")
+		self.assertEqual(cr.approved_addendum, self._addn)
+		self.assertEqual(cr.approved_delta_fingerprint, "FP-DEFAULT")
+
+	def test_reject_does_not_capture(self):
+		owner = _user("cr-b5rej@example.com", ["Projects User"])
+		p = _project("CR-B5REJ", owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p, proposal_group="GRP-1", decision_notes="Rechazado por costo")
+		self._run(cr, "Send for Review", owner)
+		self._run(cr, "Reject", owner)
+		self.assertEqual(cr.workflow_state, "Rejected")
+		self.assertFalse(cr.approved_addendum)
+		self.assertFalse(cr.approved_delta_fingerprint)
+		self.assertFalse(cr.approved_by)  # rechazar no es aprobar
+		self.assertFalse(cr.approved_at)
+
+	def test_approve_blocked_without_live_addendum(self):
+		owner = _user("cr-b5nolive@example.com", ["Projects User"])
+		p = _project("CR-B5NOLIVE", owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p, proposal_group="GRP-1")
+		self._run(cr, "Send for Review", owner)
+		change_control.get_live_proposal_for_group = lambda pg: None  # no hay versión viva
+		self._assert_action_raises(cr, "Approve", owner)
+		self.assertEqual(cr.docstatus, 0)  # aprobación fail-closed: no quedó submitted
+
+	def test_approve_blocked_with_draft_addendum(self):
+		owner = _user("cr-b5draft@example.com", ["Projects User"])
+		p = _project("CR-B5DRAFT", owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p, proposal_group="GRP-1")
+		self._run(cr, "Send for Review", owner)
+		crmod._addendum_state = lambda q: frappe._dict(docstatus=0, workflow_state="Borrador")
+		self._assert_action_raises(cr, "Approve", owner)
+		self.assertEqual(cr.docstatus, 0)
+
+	def test_approve_blocked_on_fingerprint_error(self):
+		owner = _user("cr-b5fp@example.com", ["Projects User"])
+		p = _project("CR-B5FP", owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p, proposal_group="GRP-1")
+		self._run(cr, "Send for Review", owner)
+
+		def _boom(q):
+			frappe.throw(frappe._("fingerprint failed"))
+
+		change_control.get_addendum_delta_fingerprint = _boom
+		self._assert_action_raises(cr, "Approve", owner)
+		self.assertEqual(cr.docstatus, 0)
+
+	def test_reapprove_only_when_approved(self):
+		owner = _user("cr-b5ra1@example.com", ["Projects User"])
+		p = _project("CR-B5RA1", owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p, proposal_group="GRP-1")
+		self._run(cr, "Send for Review", owner)  # In Review (docstatus 0)
+		frappe.set_user(owner)
+		try:
+			with self.assertRaises(ValidationError):
+				reapprove_addendum_version(cr.name)
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_reapprove_owner_only(self):
+		stranger = _user("cr-b5ra2-s@example.com", ["Projects User"])
+		_owner, cr = self._approved("CR-B5RA2")  # el owner del project lo crea _approved
+		frappe.set_user(stranger)
+		try:
+			with self.assertRaises(frappe.PermissionError):
+				reapprove_addendum_version(cr.name)
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_reapprove_updates_fingerprint_without_side_effects(self):
+		owner = _user("cr-b5ra3@example.com", ["Projects User"])
+		p = _project("CR-B5RA3", owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p, proposal_group="GRP-1")
+		self._run(cr, "Send for Review", owner)
+		self._run(cr, "Approve", owner)
+		self.assertEqual(cr.approved_delta_fingerprint, "FP-DEFAULT")
+		approved_by, approved_at = cr.approved_by, cr.approved_at
+		# nueva versión divergente En Revisión (otra Quotation real)
+		addn_v2 = _addendum_quotation()
+		change_control.get_live_proposal_for_group = lambda pg: addn_v2
+		change_control.get_addendum_delta_fingerprint = lambda q: "FP-V2"
+		frappe.set_user(owner)
+		try:
+			reapprove_addendum_version(cr.name)
+		finally:
+			frappe.set_user("Administrator")
+		cr.reload()
+		self.assertEqual(cr.approved_addendum, addn_v2)
+		self.assertEqual(cr.approved_delta_fingerprint, "FP-V2")
+		self.assertEqual(cr.workflow_state, "Approved")  # no cambia el workflow
+		self.assertEqual(cr.approved_by, approved_by)  # no cambia la aprobación original
+		self.assertEqual(cr.approved_at, approved_at)
+		self.assertFalse(cr.applied_to_project)  # no toca applied_*

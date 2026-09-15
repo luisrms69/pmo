@@ -26,6 +26,7 @@ from frappe import _
 _ADDENDUM_APPLIER = "erpnext_proposals.erpnext_proposals.utils.project.apply_addendum_to_project"
 _ADDENDUM_CREATOR = "erpnext_proposals.erpnext_proposals.utils.addendum.create_addendum_quotation"
 _LIVE_RESOLVER = "erpnext_proposals.erpnext_proposals.utils.proposal_versioning.get_live_proposal_for_group"
+_FINGERPRINT = "erpnext_proposals.erpnext_proposals.utils.addendum.get_addendum_delta_fingerprint"
 
 
 def _resolve(path, contrato):
@@ -63,3 +64,11 @@ def get_live_proposal_for_group(proposal_group: str) -> str | None:
 	aserción de estado que necesite (`En Revisión` para aprobar; `Ganada` para aplicar — B5/B6)."""
 	fn = _resolve(_LIVE_RESOLVER, "get_live_proposal_for_group(proposal_group)")
 	return fn(proposal_group)
+
+
+def get_addendum_delta_fingerprint(quotation: str) -> str:
+	"""Delega en `erpnext_proposals` (>= 0.24.0) la huella canónica del delta SEMÁNTICO congelado de una
+	addenda formal (ADR-0019 §7.2). `pmo` NO reimplementa la huella: la consume. Fail-closed: `erpnext_proposals`
+	lanza si la addenda no es formal/congelada; `pmo` propaga el error (guarda solo huellas válidas)."""
+	fn = _resolve(_FINGERPRINT, "get_addendum_delta_fingerprint(quotation)")
+	return fn(quotation)

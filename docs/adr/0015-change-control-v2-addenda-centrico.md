@@ -75,6 +75,13 @@ problemas distintos:** formalizar (workflow) vs. materializar (apply-split). El 
 `customer_approval_status/by/on/notes`. PMO **no** duplica la aprobación comercial.
 
 ### D5 — Orden del flujo (con salida limpia de rechazo)
+
+> **Valor técnico del estado.** El `workflow_state` canónico de la Quotation en el workflow "Propuesta
+> Comercial" es **`En Revision` (sin acento)** — ese es el valor exacto del fixture que PMO compara
+> server-side. En este ADR y en la UX puede aparecer como "En Revisión" (acentuado) por legibilidad, pero
+> el valor consumido por el código es `En Revision`. (Mismo criterio para los demás estados: `Aprobada`,
+> `Enviada al Cliente`, `Ganada`, `Rechazada`, `Borrador`.)
+
 ```
 CR Draft → crear Addenda ROOT-ADD-NN → preparar → Addenda "En Revisión" (docstatus 1, delta CONGELADO)
 → CR In Review → CR Approved
