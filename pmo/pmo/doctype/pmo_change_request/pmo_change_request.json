@@ -45,11 +45,6 @@
   "approved_at",
   "column_break_decision",
   "decision_notes",
-  "section_customer_approval",
-  "customer_approval_status",
-  "customer_approved_by",
-  "customer_approved_on",
-  "customer_approval_notes",
   "section_implementation",
   "implementation_owner",
   "applied_to_project",
@@ -236,10 +231,11 @@
    "label": "Commercial"
   },
   {
-   "description": "Logical thread (Proposal Group) of the Quotation-addendum. Preserves the version history.",
+   "description": "Logical thread (Proposal Group) of the Quotation-addendum. Set only by the system when the Addendum is created; preserves the version history.",
    "fieldname": "proposal_group",
    "fieldtype": "Data",
-   "label": "Proposal group"
+   "label": "Proposal group",
+   "read_only": 1
   },
   {
    "description": "Won version actually applied to the Project. Set on apply.",
@@ -300,45 +296,6 @@
    "fieldname": "decision_notes",
    "fieldtype": "Small Text",
    "label": "Decision notes"
-  },
-  {
-   "depends_on": "eval:!doc.proposal_group",
-   "description": "For changes without a commercial addendum: record the customer's approval. When there is a Quotation/Addendum, acceptance derives from the Won Quotation and this section does not apply.",
-   "fieldname": "section_customer_approval",
-   "fieldtype": "Section Break",
-   "label": "Customer Approval"
-  },
-  {
-   "default": "Pending",
-   "description": "Whether the customer's approval is Pending, Approved, or Not Required for this change.",
-   "fieldname": "customer_approval_status",
-   "fieldtype": "Select",
-   "label": "Customer Approval Status",
-   "options": "Pending\nApproved\nNot Required"
-  },
-  {
-   "depends_on": "eval:doc.customer_approval_status=='Approved'",
-   "description": "Customer contact who approved the change.",
-   "fieldname": "customer_approved_by",
-   "fieldtype": "Link",
-   "label": "Customer Approved By",
-   "mandatory_depends_on": "eval:doc.customer_approval_status=='Approved'",
-   "options": "Contact"
-  },
-  {
-   "depends_on": "eval:doc.customer_approval_status=='Approved'",
-   "description": "Date on which the customer approved the change.",
-   "fieldname": "customer_approved_on",
-   "fieldtype": "Date",
-   "label": "Customer Approved On",
-   "mandatory_depends_on": "eval:doc.customer_approval_status=='Approved'"
-  },
-  {
-   "description": "Reference to the customer's approval evidence (email, minutes, file, etc.). When 'Not Required', explain why the customer's approval is not needed.",
-   "fieldname": "customer_approval_notes",
-   "fieldtype": "Small Text",
-   "label": "Customer Approval Notes",
-   "mandatory_depends_on": "eval:doc.customer_approval_status=='Not Required'"
   },
   {
    "fieldname": "section_implementation",

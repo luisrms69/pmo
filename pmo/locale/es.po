@@ -238,9 +238,17 @@ msgstr "Aplicado al Proyecto"
 msgid "Apply Quotation to Project"
 msgstr "Aplicar Cotización al Project"
 
-#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:144
-msgid "Apply the Quotation to the Project (the Scope Items) before marking the change as implemented."
-msgstr "Aplica la Cotización al Project (los Scope Items) antes de marcar el cambio como implementado."
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py (Change Control v2)
+msgid "Apply the Addendum to the Project (the Scope Items) before marking the change as implemented."
+msgstr "Aplica la Addenda al Project (los Scope Items) antes de marcar el cambio como implementado."
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py (Change Control v2)
+msgid "Create the Addendum before sending the Change Request for review (every formal change goes through exactly one Addendum)."
+msgstr "Crea la Addenda antes de enviar la Solicitud de Cambio a revisión (todo cambio formal pasa por exactamente una Addenda)."
+
+#: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py (Change Control v2)
+msgid "Create the Addendum for this Change Request before it can be implemented."
+msgstr "Crea la Addenda de esta Solicitud de Cambio antes de poder implementarla."
 
 #: pmo/pmo/page/tag_import/tag_import.js:102
 msgid "Apply will NOT write ANY tag while there are errors ({0}). It is all or nothing: fix the CSV and retry."

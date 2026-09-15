@@ -73,27 +73,8 @@ class PMOChangeRequest(Document):
 		self._set_defaults()
 		self._compute_impact_summary()
 		self._set_currency_default()
-		self._validate_customer_approval()
 		self._validate_baseline_integrity()
 		self._apply_workflow_gates()
-
-	def _validate_customer_approval(self):
-		"""Aceptación del cliente (solo cambios SIN addenda comercial): coherencia de campos por estado.
-		Con `proposal_group` la aceptación deriva de la Quotation Ganada/aplicada y no se captura aquí."""
-		if self.proposal_group:
-			return
-		if self.customer_approval_status == "Approved" and not (
-			self.customer_approved_by and self.customer_approved_on
-		):
-			frappe.throw(
-				frappe._(
-					"An Approved customer approval requires the approving Contact and the approval date."
-				)
-			)
-		if self.customer_approval_status == "Not Required" and not (
-			self.customer_approval_notes and self.customer_approval_notes.strip()
-		):
-			frappe.throw(frappe._("A 'Not Required' customer approval requires a justification note."))
 
 	def before_update_after_submit(self):
 		"""En un doc submitted, Frappe ejecuta SOLO este hook (no `validate`). Las transiciones
@@ -166,6 +147,7 @@ class PMOChangeRequest(Document):
 			return
 		if new_state == IN_REVIEW:
 			self._ensure_baseline_before()  # gate duro + congelado
+			self._ensure_addendum()  # flujo único: toda CR formal tiene su Addenda (B4)
 		elif new_state == REJECTED:
 			if not (self.decision_notes and self.decision_notes.strip()):
 				frappe.throw(
@@ -177,40 +159,22 @@ class PMOChangeRequest(Document):
 			self._gate_closed()
 
 	def _gate_implemented(self):
-		"""Gate Approved -> Implemented: responsable definido; impacto comercial aplicado por addenda; y sin
-		addenda, aceptación del cliente documentada. `Mark Implemented` sigue siendo la confirmación explícita
-		del responsable (no se valida programáticamente que todo el Current Plan se haya editado)."""
+		"""Gate Approved -> Implemented (flujo único, B4): responsable definido + Addenda existente
+		(`proposal_group`) + aplicada al Project (`applied_to_project`). No hay ruta "sin Addenda".
+		`impacts_commercial` es solo clasificación informativa y NO participa en este gate. `Mark
+		Implemented` sigue siendo la confirmación explícita del responsable."""
 		if not self.implementation_owner:
 			frappe.throw(frappe._("Set the Implementation Owner before marking the change as implemented."))
-		if self.impacts_commercial and not (self.proposal_group and self.applied_to_project):
-			frappe.throw(
-				frappe._(
-					"Commercial impact: create the addendum Quotation and apply it to the Project (Applied to Project) before implementing."
-				)
-			)
-		if self.proposal_group and not self.applied_to_project:
-			frappe.throw(
-				frappe._(
-					"Apply the Quotation to the Project (the Scope Items) before marking the change as implemented."
-				)
-			)
 		if not self.proposal_group:
-			# Sin addenda comercial: la aceptación del cliente debe estar documentada.
-			status = self.customer_approval_status
-			if status not in ("Approved", "Not Required"):
-				frappe.throw(
-					frappe._("Document the customer approval (Approved or Not Required) before implementing.")
+			frappe.throw(
+				frappe._("Create the Addendum for this Change Request before it can be implemented.")
+			)
+		if not self.applied_to_project:
+			frappe.throw(
+				frappe._(
+					"Apply the Addendum to the Project (the Scope Items) before marking the change as implemented."
 				)
-			if status == "Approved" and not (self.customer_approved_by and self.customer_approved_on):
-				frappe.throw(
-					frappe._(
-						"An Approved customer approval requires the approving Contact and the approval date."
-					)
-				)
-			if status == "Not Required" and not (
-				self.customer_approval_notes and self.customer_approval_notes.strip()
-			):
-				frappe.throw(frappe._("A 'Not Required' customer approval requires a justification note."))
+			)
 
 	def _gate_closed(self):
 		"""Gate Implemented -> Closed: baseline_after (fijada por una Baseline `Approved Change` que referencia
@@ -225,6 +189,17 @@ class PMOChangeRequest(Document):
 			frappe.throw(
 				frappe._(
 					"Record the Stakeholder Communication before closing the implemented change (use 'N/A' if it genuinely does not apply)."
+				)
+			)
+
+	def _ensure_addendum(self):
+		"""Flujo único (ADR-0015 B4): una CR no puede pasar a `In Review` sin su Addenda canónica ya creada
+		(`proposal_group` fijado por el sistema al crearla). No existe ruta paralela "sin Addenda"."""
+		if not self.proposal_group:
+			frappe.throw(
+				frappe._(
+					"Create the Addendum before sending the Change Request for review "
+					"(every formal change goes through exactly one Addendum)."
 				)
 			)
 
@@ -252,6 +227,7 @@ class PMOChangeRequest(Document):
 		incluido un submit directo que se salte 'En Revision'). El contenido de la solicitud queda inmutable
 		(no `allow_on_submit`)."""
 		self._ensure_baseline_before()
+		self._ensure_addendum()  # red de seguridad del flujo único: ni un submit directo aprueba sin Addenda
 		if not self.approved_by:
 			self.approved_by = frappe.session.user
 		if not self.approved_at:
@@ -282,34 +258,10 @@ class PMOChangeRequest(Document):
 			)
 
 
-# --- Acción explícita: Aplicar Quotation al Project (ADR-0005 D7) -------------------
-
-
-@frappe.whitelist()
-def aplicar_quotation_al_project(change_request: str, quotation: str):
-	"""Aplica los Scope Items de la Quotation-addendum al Project EXISTENTE del CR, delegando en el
-	contrato de `erpnext_proposals` (`apply_addendum_to_project`). Owner-only (P4 sobre write del CR
-	submitted). NO mueve el Workflow: solo fija `applied_to_project`/`applied_at`/`applied_quotation`. La
-	transición a `Implemented` es un paso explícito posterior ("Mark Implemented")."""
-	doc = frappe.get_doc("PMO Change Request", change_request)
-	doc.check_permission("write")  # sobre un CR submitted → owner-only por P4
-	if doc.docstatus != 1 or doc.get("workflow_state") != APPROVED:
-		frappe.throw(
-			frappe._("A Quotation can only be applied from a Change Request in the 'Approved' state.")
-		)
-	if doc.applied_to_project:
-		frappe.throw(frappe._("The Quotation was already applied to this Change Request."))
-	if not quotation:
-		frappe.throw(frappe._("Specify the (Won) Quotation to apply."))
-
-	# Delegación: erpnext_proposals valida (Ganada/single-live/…), escribe proposal_project y anexa Tasks.
-	result = change_control.apply_addendum_to_project(quotation, doc.project)
-
-	doc.applied_to_project = 1
-	doc.applied_at = now_datetime()
-	doc.applied_quotation = quotation
-	doc.save()  # solo campos allow_on_submit sobre el CR submitted
-	return result
+# --- Acción explícita: Crear addenda comercial (ADR-0015) --------------------------
+# NOTA (B4): la acción de "Aplicar Quotation al Project" con Quotation seleccionada por el usuario fue
+# ELIMINADA. El apply automático y gobernado (deriva la versión Ganada + guard de fingerprint) se
+# implementa en B6; entre B4 y B6 no existe ruta de apply.
 
 
 @frappe.whitelist()

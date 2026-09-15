@@ -19,10 +19,7 @@ from frappe.utils import today
 
 from pmo import change_control
 from pmo.permissions import has_permission_change_request
-from pmo.pmo.doctype.pmo_change_request.pmo_change_request import (
-	aplicar_quotation_al_project,
-	crear_addenda,
-)
+from pmo.pmo.doctype.pmo_change_request.pmo_change_request import crear_addenda
 
 
 def _employee(name):
@@ -153,12 +150,29 @@ class TestChangeRequest(IntegrationTestCase):
 	def test_before_submit_sets_approval(self):
 		p = _project("CR-P5")
 		_baseline(p, "BL-001")  # sin baseline vigente no se puede aprobar
-		cr = _cr(p)
+		cr = _cr(p, proposal_group="GRP-1")  # flujo único: Addenda requerida también en submit directo
 		cr.submit()  # ruta directa: aterriza en 'Aprobado' (primer doc_status=1)
 		cr.reload()
 		self.assertEqual(cr.docstatus, 1)
 		self.assertTrue(cr.approved_by and cr.approved_at)
 		self.assertTrue(cr.baseline_before)  # red de seguridad del gate
+
+	def test_direct_submit_blocked_without_addendum(self):
+		"""Flujo único (B4): un submit() directo (sin pasar por In Review) tampoco aprueba sin Addenda."""
+		p = _project("CR-P5C")
+		_baseline(p, "BL-001")  # baseline OK, pero sin proposal_group
+		cr = _cr(p)
+		with self.assertRaises(ValidationError):
+			cr.submit()
+
+	def test_direct_submit_allowed_with_addendum_and_baseline(self):
+		"""Con Addenda + baseline, el submit directo sigue permitido (comportamiento actual)."""
+		p = _project("CR-P5D")
+		_baseline(p, "BL-001")
+		cr = _cr(p, proposal_group="GRP-1")
+		cr.submit()
+		cr.reload()
+		self.assertEqual(cr.docstatus, 1)
 
 	def test_submit_blocked_without_baseline(self):
 		p = _project("CR-P5B")  # sin baseline vigente
@@ -169,7 +183,7 @@ class TestChangeRequest(IntegrationTestCase):
 	def test_before_cancel_blocked_when_applied(self):
 		p = _project("CR-P6")
 		_baseline(p, "BL-001")
-		cr = _cr(p)
+		cr = _cr(p, proposal_group="GRP-1")
 		cr.submit()
 		frappe.db.set_value("PMO Change Request", cr.name, "applied_to_project", 1)
 		cr.reload()
@@ -235,7 +249,7 @@ class TestChangeRequest(IntegrationTestCase):
 		member = _user("cr-member2@example.com")
 		p = _project("CR-P8", owner=owner, members=[member])
 		_baseline(p, "BL-001")
-		cr = _cr(p)
+		cr = _cr(p, proposal_group="GRP-1")
 		cr.submit()
 		cr.reload()
 		self.assertFalse(has_permission_change_request(cr, "write", member))
@@ -247,7 +261,7 @@ class TestChangeRequest(IntegrationTestCase):
 		owner = _user("cr-wf1@example.com", ["Projects User"])
 		p = _project("CR-WF1", owner=owner)
 		_baseline(p, "BL-001")
-		cr = _cr(p)
+		cr = _cr(p, proposal_group="GRP-1")  # flujo único: la Addenda ya existe antes de formalizar
 		self._run(cr, "Send for Review", owner)
 		self.assertEqual(cr.workflow_state, "In Review")
 		self.assertTrue(cr.baseline_before)  # congelada al formalizar
@@ -259,7 +273,16 @@ class TestChangeRequest(IntegrationTestCase):
 	def test_review_gate_requires_baseline(self):
 		owner = _user("cr-wf2@example.com", ["Projects User"])
 		p = _project("CR-WF2", owner=owner)  # sin baseline
-		cr = _cr(p)
+		cr = _cr(p, proposal_group="GRP-1")  # con Addenda: aísla el gate de baseline
+		with self.assertRaises(ValidationError):
+			self._run(cr, "Send for Review", owner)
+
+	def test_review_gate_requires_addendum(self):
+		"""Flujo único (B4): sin Addenda (`proposal_group`) no se puede pasar a In Review, aunque haya baseline."""
+		owner = _user("cr-wf2b@example.com", ["Projects User"])
+		p = _project("CR-WF2B", owner=owner)
+		_baseline(p, "BL-001")
+		cr = _cr(p)  # sin proposal_group
 		with self.assertRaises(ValidationError):
 			self._run(cr, "Send for Review", owner)
 
@@ -268,7 +291,7 @@ class TestChangeRequest(IntegrationTestCase):
 		member = _user("cr-wf3-m@example.com", ["Projects User"])
 		p = _project("CR-WF3", owner=owner, members=[member])
 		_baseline(p, "BL-001")
-		cr = _cr(p)
+		cr = _cr(p, proposal_group="GRP-1")
 		self._run(cr, "Send for Review", member)  # member SI puede formalizar
 		self.assertEqual(cr.workflow_state, "In Review")
 		frappe.set_user(member)
@@ -299,7 +322,7 @@ class TestChangeRequest(IntegrationTestCase):
 		cr = _cr(p, proposal_group="GRP-1", implementation_owner=emp)
 		self._run(cr, "Send for Review", owner)
 		self._run(cr, "Approve", owner)
-		# Marcar implementado sin aplicar la Quotation -> bloqueado (impacto comercial)
+		# Marcar implementado sin aplicar la Addenda -> bloqueado (flujo único, B4)
 		self._assert_action_raises(cr, "Mark Implemented", owner)
 		frappe.db.set_value("PMO Change Request", cr.name, "applied_to_project", 1)
 		cr.reload()
@@ -323,28 +346,11 @@ class TestChangeRequest(IntegrationTestCase):
 		cr.reload()
 		self.assertEqual(cr.workflow_state, "Closed")
 
-	def test_implemented_ok_without_proposal(self):
-		owner = _user("cr-wf5@example.com", ["Projects User"])
-		emp = _employee("Impl Owner WF5")
-		p = _project("CR-WF5", owner=owner)
-		_baseline(p, "BL-001")
-		# sin proposal_group -> solo-cronograma; exige responsable + aceptación del cliente documentada
-		cr = _cr(
-			p,
-			implementation_owner=emp,
-			customer_approval_status="Not Required",
-			customer_approval_notes="Cambio interno sin impacto al cliente",
-		)
-		self._run(cr, "Send for Review", owner)
-		self._run(cr, "Approve", owner)
-		self._run(cr, "Mark Implemented", owner)
-		self.assertEqual(cr.workflow_state, "Implemented")
-
 	def test_rejected_requires_decision_notes(self):
 		owner = _user("cr-rej@example.com", ["Projects User"])
 		p = _project("CR-REJ", owner=owner)
 		_baseline(p, "BL-001")
-		cr = _cr(p)
+		cr = _cr(p, proposal_group="GRP-1")
 		self._run(cr, "Send for Review", owner)
 		self._assert_action_raises(cr, "Reject", owner)  # sin decision_notes -> bloqueado
 		frappe.set_user(owner)
@@ -361,35 +367,26 @@ class TestChangeRequest(IntegrationTestCase):
 		owner = _user("cr-io@example.com", ["Projects User"])
 		p = _project("CR-IO", owner=owner)  # sin pmo_operational_owner -> impl owner vacío
 		_baseline(p, "BL-001")
-		cr = _cr(
-			p,
-			customer_approval_status="Not Required",
-			customer_approval_notes="n/a",
-		)
+		cr = _cr(p, proposal_group="GRP-1")  # con Addenda, pero sin implementation_owner
 		self.assertFalse(cr.implementation_owner)
 		self._run(cr, "Send for Review", owner)
 		self._run(cr, "Approve", owner)
 		self._assert_action_raises(cr, "Mark Implemented", owner)  # falta implementation_owner
 
-	def test_noncommercial_pending_blocks_implemented(self):
-		owner = _user("cr-pend@example.com", ["Projects User"])
-		emp = _employee("Impl Owner PEND")
-		p = _project("CR-PEND", owner=owner)
-		_baseline(p, "BL-001")
-		cr = _cr(p, implementation_owner=emp)  # customer_approval_status default = Pending
-		self._run(cr, "Send for Review", owner)
-		self._run(cr, "Approve", owner)
-		self._assert_action_raises(cr, "Mark Implemented", owner)  # Pending bloquea
+	def test_proposal_group_is_read_only(self):
+		# Flujo único (B4): el usuario no fija proposal_group manualmente; lo pone el sistema al crear la Addenda.
+		self.assertTrue(frappe.get_meta("PMO Change Request").get_field("proposal_group").read_only)
 
-	def test_customer_approval_approved_requires_contact_and_date(self):
-		p = _project("CR-CAA")
-		with self.assertRaises(ValidationError):  # validación server-side de aceptación del cliente
-			_cr(p, customer_approval_status="Approved")  # sin Contact ni fecha
-
-	def test_not_required_requires_justification(self):
-		p = _project("CR-CANR")
-		with self.assertRaises(ValidationError):
-			_cr(p, customer_approval_status="Not Required")  # sin notas de justificación
+	def test_customer_approval_fields_removed(self):
+		# B4: el modelo heredado de aceptación del cliente ya no existe.
+		meta = frappe.get_meta("PMO Change Request")
+		for fn in (
+			"customer_approval_status",
+			"customer_approved_by",
+			"customer_approved_on",
+			"customer_approval_notes",
+		):
+			self.assertIsNone(meta.get_field(fn))
 
 	def test_baseline_after_is_read_only(self):
 		# El usuario no relaciona manualmente CR y Baseline: baseline_after es read-only (lo fija la Baseline).
@@ -399,7 +396,7 @@ class TestChangeRequest(IntegrationTestCase):
 		owner = _user("cr-wf6@example.com", ["Projects User"])
 		p = _project("CR-WF6", owner=owner)
 		_baseline(p, "BL-001")
-		cr = _cr(p, decision_notes="Rechazado")  # Reject exige decision_notes
+		cr = _cr(p, proposal_group="GRP-1", decision_notes="Rechazado")  # Reject exige decision_notes
 		self._run(cr, "Send for Review", owner)
 		self._run(cr, "Reject", owner)
 		self.assertEqual(cr.workflow_state, "Rejected")
@@ -420,7 +417,7 @@ class TestChangeRequest(IntegrationTestCase):
 	def test_crear_addenda_requires_editable(self):
 		p = _project("CR-ADD-E")
 		_baseline(p, "BL-001")
-		cr = _cr(p)
+		cr = _cr(p, proposal_group="GRP-1")  # Addenda requerida para poder someter
 		cr.submit()  # docstatus 1 -> ya no editable
 		with self.assertRaises(ValidationError):
 			crear_addenda(cr.name)
@@ -431,61 +428,5 @@ class TestChangeRequest(IntegrationTestCase):
 		with self.assertRaises(ValidationError):
 			crear_addenda(cr.name)
 
-	# --- Accion "Aplicar Quotation al Project" (Bloque 3) ------------------------
-
-	def _approved_cr(self, name, owner_email):
-		owner = _user(owner_email, ["Projects User"])
-		p = _project(name, owner=owner)
-		_baseline(p, "BL-001")
-		cr = _cr(p, proposal_group="GRP-X")
-		self._run(cr, "Send for Review", owner)
-		self._run(cr, "Approve", owner)
-		return owner, p, cr
-
-	def test_apply_action_integration_unavailable(self):
-		owner, _p, cr = self._approved_cr("CR-APP1", "cr-app1@example.com")
-		# erpnext_proposals no instalado en test-pmo.localhost -> el contrato no resuelve -> throw claro
-		frappe.set_user(owner)
-		try:
-			with self.assertRaises(ValidationError):
-				aplicar_quotation_al_project(cr.name, "QTN-FAKE")
-		finally:
-			frappe.set_user("Administrator")
-		cr.reload()
-		self.assertFalse(cr.applied_to_project)  # no se marca aplicado si el contrato falla
-
-	def test_apply_action_success_mocked(self):
-		owner, _p, cr = self._approved_cr("CR-APP2", "cr-app2@example.com")
-		q = self._quotation()
-		orig = change_control.apply_addendum_to_project
-		change_control.apply_addendum_to_project = lambda quotation, project: {
-			"project": project,
-			"tasks_created": 3,
-		}
-		try:
-			frappe.set_user(owner)
-			try:
-				res = aplicar_quotation_al_project(cr.name, q)
-			finally:
-				frappe.set_user("Administrator")
-		finally:
-			change_control.apply_addendum_to_project = orig
-		cr.reload()
-		self.assertTrue(cr.applied_to_project)
-		self.assertEqual(cr.applied_quotation, q)
-		self.assertEqual(cr.workflow_state, "Approved")  # la accion NO mueve el Workflow
-		self.assertEqual(res["tasks_created"], 3)
-
-	def _quotation(self):
-		"""Quotation mínima solo para satisfacer el link `applied_quotation`. El site de tests no tiene
-		Company ni Fiscal Year, así que se salta la validación de ERPNext (`ignore_validate`): el registro
-		solo necesita existir."""
-		cust_name = "CR-Test-Cust"
-		cust = frappe.db.exists("Customer", {"customer_name": cust_name})
-		if not cust:
-			c = frappe.get_doc({"doctype": "Customer", "customer_name": cust_name})
-			c.flags.ignore_validate = True
-			cust = c.insert(ignore_permissions=True, ignore_mandatory=True).name
-		q = frappe.get_doc({"doctype": "Quotation", "quotation_to": "Customer", "party_name": cust})
-		q.flags.ignore_validate = True
-		return q.insert(ignore_permissions=True, ignore_mandatory=True).name
+	# NOTA (B4): los tests de la acción "Aplicar Quotation al Project" (con Quotation manual) se eliminaron
+	# junto con esa acción. El apply automático y gobernado se prueba en B6.

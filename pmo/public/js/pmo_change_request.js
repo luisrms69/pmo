@@ -61,54 +61,8 @@ frappe.ui.form.on("PMO Change Request", {
 			});
 		}
 
-		// ADR-0005 D7: acción "Aplicar Cotización al Project" (owner, CR Aprobado no aplicado). Delega en el
-		// contrato de erpnext_proposals (server-side); el cliente no escribe proposal_project.
-		if (
-			frm.doc.docstatus === 1 &&
-			frm.doc.workflow_state === "Approved" &&
-			!frm.doc.applied_to_project
-		) {
-			frm.add_custom_button(__("Apply Quotation to Project"), () => {
-				const d = new frappe.ui.Dialog({
-					title: __("Apply Quotation to Project"),
-					fields: [
-						{
-							fieldname: "quotation",
-							fieldtype: "Link",
-							options: "Quotation",
-							label: __("Quotation (Won)"),
-							reqd: 1,
-							get_query: () =>
-								frm.doc.proposal_group
-									? { filters: { proposal_group: frm.doc.proposal_group } }
-									: {},
-						},
-					],
-					primary_action_label: __("Apply"),
-					primary_action(values) {
-						frappe
-							.call({
-								method: "pmo.pmo.doctype.pmo_change_request.pmo_change_request.aplicar_quotation_al_project",
-								args: {
-									change_request: frm.doc.name,
-									quotation: values.quotation,
-								},
-								freeze: true,
-								freeze_message: __("Applying scope to Project…"),
-							})
-							.then((r) => {
-								if (r.exc) return;
-								d.hide();
-								frm.reload_doc();
-								frappe.show_alert({
-									message: __("Scope applied to Project."),
-									indicator: "green",
-								});
-							});
-					},
-				});
-				d.show();
-			});
-		}
+		// NOTA (B4): la acción "Apply Quotation to Project" con Quotation seleccionada por el usuario fue
+		// eliminada. El apply automático y gobernado (deriva la versión Ganada + guard de fingerprint) se
+		// añade en B6.
 	},
 });

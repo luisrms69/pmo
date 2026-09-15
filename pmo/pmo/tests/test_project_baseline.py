@@ -135,6 +135,9 @@ def _implemented_cr(project, owner):
 	from frappe.model.workflow import apply_workflow
 
 	emp = _employee("CR Impl Owner", owner)
+	# Flujo único (ADR-0015 B4): toda CR formal tiene su Addenda (`proposal_group`). El apply real vive en
+	# erpnext_proposals (no instalado en el site de tests) → se marca `applied_to_project` vía DB para
+	# habilitar el gate de Implemented, igual que en test_change_request.
 	cr = frappe.get_doc(
 		{
 			"doctype": "PMO Change Request",
@@ -142,8 +145,7 @@ def _implemented_cr(project, owner):
 			"title": "Cambio",
 			"reason": "Motivo",
 			"implementation_owner": emp,
-			"customer_approval_status": "Not Required",
-			"customer_approval_notes": "Cambio sin impacto al cliente",
+			"proposal_group": "GRP-1",
 		}
 	).insert(ignore_permissions=True)
 	prev = frappe.session.user
@@ -151,7 +153,9 @@ def _implemented_cr(project, owner):
 	try:
 		apply_workflow(cr, "Send for Review")  # In Review: congela baseline_before = vigente
 		apply_workflow(cr, "Approve")  # Approved (Submit)
-		apply_workflow(cr, "Mark Implemented")  # Implemented (sin proposal_group -> ok)
+		frappe.db.set_value("PMO Change Request", cr.name, "applied_to_project", 1)
+		cr.reload()
+		apply_workflow(cr, "Mark Implemented")  # Implemented (Addenda aplicada)
 	finally:
 		frappe.set_user(prev)
 	cr.reload()

@@ -22,9 +22,10 @@ no eleva permisos ni hace bypass: la autoría comercial la impone `erpnext_propo
 import frappe
 from frappe import _
 
-# Contrato publicado en erpnext_proposals (>= 0.22.0).
+# Contrato publicado en erpnext_proposals (>= 0.22.0; live-version resolver desde 0.24.0).
 _ADDENDUM_APPLIER = "erpnext_proposals.erpnext_proposals.utils.project.apply_addendum_to_project"
 _ADDENDUM_CREATOR = "erpnext_proposals.erpnext_proposals.utils.addendum.create_addendum_quotation"
+_LIVE_RESOLVER = "erpnext_proposals.erpnext_proposals.utils.proposal_versioning.get_live_proposal_for_group"
 
 
 def _resolve(path, contrato):
@@ -52,3 +53,13 @@ def apply_addendum_to_project(quotation: str, project: str):
 	el resumen del append. NO valida reglas comerciales ni escribe `proposal_project`."""
 	fn = _resolve(_ADDENDUM_APPLIER, "apply_addendum_to_project(quotation, project)")
 	return fn(quotation, project)
+
+
+def get_live_proposal_for_group(proposal_group: str) -> str | None:
+	"""Resuelve la **versión viva** (no superseded, no estado muerto, docstatus != 2) del `proposal_group`,
+	delegando en `erpnext_proposals` (>= 0.24.0). **Único punto de PMO** que consume este helper interno de
+	`erpnext_proposals`: el resto de `pmo` NO debe importarlo directamente (frontera de contrato). `pmo` NO
+	parsea `ROOT-ADD-NN` ni resuelve versiones por su cuenta; sobre el resultado, quien llame impone la
+	aserción de estado que necesite (`En Revisión` para aprobar; `Ganada` para aplicar — B5/B6)."""
+	fn = _resolve(_LIVE_RESOLVER, "get_live_proposal_for_group(proposal_group)")
+	return fn(proposal_group)
