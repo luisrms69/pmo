@@ -170,9 +170,10 @@ class PMOChangeRequest(Document):
 			self._gate_closed()
 
 	def _gate_implemented(self):
-		"""Gate Approved -> Implemented (flujo único, B4): responsable definido + Addenda existente
-		(`proposal_group`) + aplicada al Project (`applied_to_project`). No hay ruta "sin Addenda".
-		`impacts_commercial` es solo clasificación informativa y NO participa en este gate. `Mark
+		"""Gate Approved -> Implemented (flujo único, B8): exige la EVIDENCIA persistida de una aprobación
+		gobernada (B5) y una aplicación válida (B6). NO se reconsulta el estado `Ganada` ni se recalcula el
+		fingerprint aquí: B6 ya certificó, al aplicar, "Ganada vigente + fingerprint == aprobado → primitive →
+		applied_*". `Implemented` solo consume esa evidencia. `impacts_commercial` es informativo; `Mark
 		Implemented` sigue siendo la confirmación explícita del responsable."""
 		if not self.implementation_owner:
 			frappe.throw(frappe._("Set the Implementation Owner before marking the change as implemented."))
@@ -180,10 +181,18 @@ class PMOChangeRequest(Document):
 			frappe.throw(
 				frappe._("Create the Addendum for this Change Request before it can be implemented.")
 			)
-		if not self.applied_to_project:
+		# Evidencia de aprobación gobernada (B5).
+		if not (self.approved_addendum and self.approved_delta_fingerprint):
 			frappe.throw(
 				frappe._(
-					"Apply the Addendum to the Project (the Scope Items) before marking the change as implemented."
+					"The Change Request has no governed approval (approved addendum + fingerprint); it cannot be implemented."
+				)
+			)
+		# Evidencia de aplicación válida (B6): ambos campos, no solo el flag.
+		if not (self.applied_to_project and self.applied_quotation):
+			frappe.throw(
+				frappe._(
+					"Apply the Addendum to the Project before marking the change as implemented (a valid apply sets Applied to Project and the Applied quotation)."
 				)
 			)
 

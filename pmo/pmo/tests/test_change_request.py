@@ -163,6 +163,14 @@ class TestChangeRequest(IntegrationTestCase):
 		change_control.apply_addendum_to_project = _fake
 		return calls
 
+	def _do_valid_apply(self, cr, tasks_created=1):
+		"""Aplica realmente la Addenda (B6) sobre un CR Approved: fija applied_to_project + applied_quotation
+		vía el flujo real (no un atajo por DB). Requiere el estado mockeado en `Ganada`."""
+		self._won()
+		self._spy_apply({"tasks_created": tasks_created})
+		apply_addendum(cr.name)
+		cr.reload()
+
 	def _run(self, doc, action, user):
 		prev = frappe.session.user
 		frappe.set_user(user)
@@ -379,10 +387,10 @@ class TestChangeRequest(IntegrationTestCase):
 		cr = _cr(p, proposal_group="GRP-1", implementation_owner=emp)
 		self._run(cr, "Send for Review", owner)
 		self._run(cr, "Approve", owner)
-		# Marcar implementado sin aplicar la Addenda -> bloqueado (flujo único, B4)
+		# Marcar implementado sin aplicar la Addenda -> bloqueado (flujo único, B4/B8)
 		self._assert_action_raises(cr, "Mark Implemented", owner)
-		frappe.db.set_value("PMO Change Request", cr.name, "applied_to_project", 1)
-		cr.reload()
+		# Apply válido de B6 (fija applied_to_project + applied_quotation por el flujo real, no por DB).
+		self._do_valid_apply(cr)
 		self._run(cr, "Mark Implemented", owner)
 		self.assertEqual(cr.workflow_state, "Implemented")
 		# Cerrar sin baseline_after -> bloqueado
@@ -490,11 +498,14 @@ class TestChangeRequest(IntegrationTestCase):
 
 	# --- B5: aprobación gobernada + fingerprint + re-aprobación -------------------
 
-	def _approved(self, name):
+	def _approved(self, name, implementation_owner=None):
 		owner = _user(name.lower() + "@example.com", ["Projects User"])
 		p = _project(name, owner=owner)
 		_baseline(p, "BL-001")
-		cr = _cr(p, proposal_group="GRP-1")
+		kw = {"proposal_group": "GRP-1"}
+		if implementation_owner:
+			kw["implementation_owner"] = implementation_owner
+		cr = _cr(p, **kw)
 		self._run(cr, "Send for Review", owner)
 		self._run(cr, "Approve", owner)
 		return owner, cr
@@ -707,3 +718,49 @@ class TestChangeRequest(IntegrationTestCase):
 			frappe.set_user("Administrator")
 		cr.reload()
 		self.assertFalse(cr.applied_to_project)
+
+	# --- B8: gate de Implemented exige evidencia completa B5+B6 -------------------
+
+	def test_implemented_blocked_without_apply(self):
+		owner, cr = self._approved("CR-B8NOAPPLY")
+		# Aprobado (evidencia B5) pero SIN apply (B6) → no puede implementarse.
+		self._assert_action_raises(cr, "Mark Implemented", owner)
+
+	def test_implemented_blocked_with_flag_but_no_applied_quotation(self):
+		owner, cr = self._approved("CR-B8FLAG")
+		# Atajo inválido: solo el flag applied_to_project, sin applied_quotation → NO basta (B8).
+		frappe.db.set_value("PMO Change Request", cr.name, "applied_to_project", 1)
+		cr.reload()
+		self._assert_action_raises(cr, "Mark Implemented", owner)
+
+	def test_implemented_blocked_without_governed_approval(self):
+		owner, cr = self._approved("CR-B8NOAPPROVAL")
+		# Simula un apply presente pero sin evidencia de aprobación gobernada (B5) → bloqueado.
+		frappe.db.set_value(
+			"PMO Change Request",
+			cr.name,
+			{"applied_to_project": 1, "applied_quotation": self._addn, "approved_delta_fingerprint": ""},
+		)
+		cr.reload()
+		self._assert_action_raises(cr, "Mark Implemented", owner)
+
+	def test_implemented_allowed_with_full_evidence(self):
+		emp = _employee("Impl Owner B8OK")
+		owner, cr = self._approved("CR-B8OK", implementation_owner=emp)
+		self._do_valid_apply(cr)  # B6 real: applied_to_project + applied_quotation
+		self._run(cr, "Mark Implemented", owner)
+		self.assertEqual(cr.workflow_state, "Implemented")
+
+	def test_replan_does_not_close_change_request(self):
+		# D8: solo una Baseline `Approved Change` que referencia el CR fija baseline_after. Un Replan NO lo
+		# hace → el CR Implemented sigue sin poder cerrarse.
+		emp = _employee("Impl Owner B8REPLAN")
+		owner, cr = self._approved("CR-B8REPLAN", implementation_owner=emp)
+		p = cr.project
+		self._do_valid_apply(cr)
+		self._run(cr, "Mark Implemented", owner)
+		# Replan del Project (no referencia al CR): no fija baseline_after.
+		_baseline(p, "BL-RPL", btype="Replan", effective=today())
+		cr.reload()
+		self.assertFalse(cr.baseline_after)
+		self._assert_action_raises(cr, "Close", owner)  # sin baseline_after → cierre bloqueado

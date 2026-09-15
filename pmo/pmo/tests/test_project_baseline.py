@@ -137,9 +137,9 @@ def _implemented_cr(project, owner):
 	from frappe.model.workflow import apply_workflow
 
 	emp = _employee("CR Impl Owner", owner)
-	# Flujo único (ADR-0015 B4): toda CR formal tiene su Addenda (`proposal_group`). El apply real vive en
-	# erpnext_proposals (no instalado en el site de tests) → se marca `applied_to_project` vía DB para
-	# habilitar el gate de Implemented, igual que en test_change_request.
+	# Flujo único (ADR-0015 B4/B5/B6): toda CR formal tiene su Addenda (`proposal_group`); la aprobación
+	# captura approved_addendum + fingerprint (B5) y el apply real (B6) fija applied_to_project +
+	# applied_quotation. El contrato de erpnext_proposals (ausente en el site de tests) se mockea.
 	cr = frappe.get_doc(
 		{
 			"doctype": "PMO Change Request",
@@ -163,22 +163,27 @@ def _implemented_cr(project, owner):
 	orig_live = change_control.get_live_proposal_for_group
 	orig_fp = change_control.get_addendum_delta_fingerprint
 	orig_state = crmod._addendum_state
+	orig_apply = change_control.apply_addendum_to_project
 	change_control.get_live_proposal_for_group = lambda pg: addn
 	change_control.get_addendum_delta_fingerprint = lambda q: "FP-DEFAULT"
 	crmod._addendum_state = lambda q: frappe._dict(docstatus=1, workflow_state="En Revision")
+	change_control.apply_addendum_to_project = lambda quotation, project: {"tasks_created": 1}
 	prev = frappe.session.user
 	frappe.set_user(owner)
 	try:
 		apply_workflow(cr, "Send for Review")  # In Review: congela baseline_before = vigente
-		apply_workflow(cr, "Approve")  # Approved (Submit) → captura Addenda gobernada
-		frappe.db.set_value("PMO Change Request", cr.name, "applied_to_project", 1)
+		apply_workflow(cr, "Approve")  # Approved (Submit) → captura Addenda gobernada (B5)
+		# B6 real: pasa a Ganada y aplica → fija applied_to_project + applied_quotation (no atajo por DB).
+		crmod._addendum_state = lambda q: frappe._dict(docstatus=1, workflow_state="Ganada")
+		crmod.apply_addendum(cr.name)
 		cr.reload()
-		apply_workflow(cr, "Mark Implemented")  # Implemented (Addenda aplicada)
+		apply_workflow(cr, "Mark Implemented")  # Implemented (evidencia B5+B6 completa)
 	finally:
 		frappe.set_user(prev)
 		change_control.get_live_proposal_for_group = orig_live
 		change_control.get_addendum_delta_fingerprint = orig_fp
 		crmod._addendum_state = orig_state
+		change_control.apply_addendum_to_project = orig_apply
 	cr.reload()
 	return cr
 
