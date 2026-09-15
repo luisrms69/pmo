@@ -196,6 +196,14 @@ doc_events = {
 	"Task": {
 		"validate": "pmo.schedule_commit.validate_task_deadline",  # ADR-0007 D4 (warning)
 	},
+	# Change Control v2 D7 (B7): enforcement server-side del orden de la Addenda. Se engancha en los mismos
+	# dos eventos que usa erpnext_proposals para las transiciones (docstatus 0 y docstatus 1), que corren
+	# ANTES del write → un throw bloquea la transición. Solo permite/bloquea (no escribe). erpnext_proposals
+	# sigue sin conocer al CR (dependencia pmo → erpnext_proposals intacta).
+	"Quotation": {
+		"validate": "pmo.quotation_guard.enforce_change_control_order",
+		"before_update_after_submit": "pmo.quotation_guard.enforce_change_control_order",
+	},
 }
 
 # Fixtures: Custom Fields (Project-pmo_status_date, Project-pmo_committed_end_date, Project-pmo_operational_owner,

@@ -50,6 +50,7 @@ _TERMINAL_STATES = (REJECTED, CLOSED)
 # aplicarse al Project (B6).
 ADDENDUM_REVIEW_STATE = "En Revision"
 ADDENDUM_WON_STATE = "Ganada"
+ADDENDUM_REJECTED_STATE = "Rechazada"
 
 # Workflow Action labels (canónicos en inglés, definidos en workflow.json). Solo marcados para
 # extracción (N_ es no-op): el motor de Workflow compara estos valores; el es.po da el español visible.
