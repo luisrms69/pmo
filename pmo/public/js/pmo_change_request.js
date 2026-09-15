@@ -65,13 +65,14 @@ frappe.ui.form.on("PMO Change Request", {
 		// eliminada. El apply automático y gobernado (deriva la versión Ganada + guard de fingerprint) se
 		// añade en B6.
 
-		// B5: re-aprobar la versión vigente de la Addenda cuando cambió el delta (nueva versión En Revisión).
-		// Solo visible en CR Approved y no aplicado; toda la validación es server-side (owner-only + estado).
+		// B5/B6: acciones sobre CR Approved y no aplicado. Toda la validación crítica es server-side
+		// (owner-only + estado + fingerprint); el JS solo dispara la llamada, sin inputs manuales.
 		if (
 			frm.doc.docstatus === 1 &&
 			frm.doc.workflow_state === "Approved" &&
 			!frm.doc.applied_to_project
 		) {
+			// B5: re-aprobar la versión vigente cuando cambió el delta (nueva versión En Revisión).
 			frm.add_custom_button(__("Reapprove addendum version"), () => {
 				frappe
 					.call({
@@ -85,6 +86,25 @@ frappe.ui.form.on("PMO Change Request", {
 						frm.reload_doc();
 						frappe.show_alert({
 							message: __("Addendum version reapproved."),
+							indicator: "green",
+						});
+					});
+			});
+
+			// B6: aplicar la Addenda Ganada autorizada (deriva la versión server-side + guard de fingerprint).
+			frm.add_custom_button(__("Apply addendum to Project"), () => {
+				frappe
+					.call({
+						method: "pmo.pmo.doctype.pmo_change_request.pmo_change_request.apply_addendum",
+						args: { change_request: frm.doc.name },
+						freeze: true,
+						freeze_message: __("Applying addendum to Project…"),
+					})
+					.then((r) => {
+						if (r.exc) return;
+						frm.reload_doc();
+						frappe.show_alert({
+							message: __("Addendum applied to Project."),
 							indicator: "green",
 						});
 					});

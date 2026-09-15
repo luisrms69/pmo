@@ -11,6 +11,8 @@ aprobar/rechazar/implementar/cerrar; gates de `Implementado`/`Cerrado`; cancelac
 ruta exito mockeada).
 """
 
+import inspect
+
 import frappe
 from frappe.exceptions import ValidationError
 from frappe.model.workflow import apply_workflow
@@ -21,6 +23,7 @@ from pmo import change_control
 from pmo.permissions import has_permission_change_request
 from pmo.pmo.doctype.pmo_change_request import pmo_change_request as crmod
 from pmo.pmo.doctype.pmo_change_request.pmo_change_request import (
+	apply_addendum,
 	crear_addenda,
 	reapprove_addendum_version,
 )
@@ -133,6 +136,7 @@ class TestChangeRequest(IntegrationTestCase):
 		self._orig_live = change_control.get_live_proposal_for_group
 		self._orig_fp = change_control.get_addendum_delta_fingerprint
 		self._orig_state = crmod._addendum_state
+		self._orig_apply = change_control.apply_addendum_to_project
 		change_control.get_live_proposal_for_group = lambda pg: self._addn
 		change_control.get_addendum_delta_fingerprint = lambda q: "FP-DEFAULT"
 		crmod._addendum_state = lambda q: frappe._dict(docstatus=1, workflow_state="En Revision")
@@ -141,7 +145,23 @@ class TestChangeRequest(IntegrationTestCase):
 		change_control.get_live_proposal_for_group = self._orig_live
 		change_control.get_addendum_delta_fingerprint = self._orig_fp
 		crmod._addendum_state = self._orig_state
+		change_control.apply_addendum_to_project = self._orig_apply
 		frappe.set_user("Administrator")
+
+	def _won(self):
+		"""Cambia el estado mockeado de la Addenda a `Ganada` (para probar el apply de B6)."""
+		crmod._addendum_state = lambda q: frappe._dict(docstatus=1, workflow_state="Ganada")
+
+	def _spy_apply(self, result):
+		"""Instala un espía sobre la primitive de apply; devuelve la lista de llamadas (q, project)."""
+		calls = []
+
+		def _fake(quotation, project):
+			calls.append((quotation, project))
+			return dict(result)
+
+		change_control.apply_addendum_to_project = _fake
+		return calls
 
 	def _run(self, doc, action, user):
 		prev = frappe.session.user
@@ -580,3 +600,110 @@ class TestChangeRequest(IntegrationTestCase):
 		self.assertEqual(cr.approved_by, approved_by)  # no cambia la aprobación original
 		self.assertEqual(cr.approved_at, approved_at)
 		self.assertFalse(cr.applied_to_project)  # no toca applied_*
+
+	# --- B6: apply gobernado (Addenda Ganada + guard de fingerprint + atomicidad) ---
+
+	def test_apply_signature_has_no_user_quotation(self):
+		# El método de apply NO acepta una Quotation elegida por el usuario.
+		params = list(inspect.signature(apply_addendum).parameters)
+		self.assertEqual(params, ["change_request"])
+
+	def test_apply_blocked_without_approved_fingerprint(self):
+		_owner, cr = self._approved("CR-B6NOFP")
+		frappe.db.set_value("PMO Change Request", cr.name, "approved_delta_fingerprint", "")
+		self._won()
+		with self.assertRaises(ValidationError):
+			apply_addendum(cr.name)  # como Administrator (owner-only OK); falla por falta de fingerprint
+		cr.reload()
+		self.assertFalse(cr.applied_to_project)
+
+	def test_apply_blocked_without_live_version(self):
+		_owner, cr = self._approved("CR-B6NOLIVE")
+		self._won()
+		change_control.get_live_proposal_for_group = lambda pg: None
+		with self.assertRaises(ValidationError):
+			apply_addendum(cr.name)
+		cr.reload()
+		self.assertFalse(cr.applied_to_project)
+
+	def test_apply_blocked_when_not_won(self):
+		_owner, cr = self._approved("CR-B6NOTWON")
+		# _addendum_state sigue en "En Revision" (no Ganada) → bloqueado
+		with self.assertRaises(ValidationError):
+			apply_addendum(cr.name)
+		cr.reload()
+		self.assertFalse(cr.applied_to_project)
+
+	def test_apply_blocked_on_fingerprint_mismatch_and_primitive_not_called(self):
+		_owner, cr = self._approved("CR-B6MIS")
+		self._won()
+		change_control.get_addendum_delta_fingerprint = lambda q: "FP-OTHER"  # != FP-DEFAULT aprobado
+		calls = self._spy_apply({"tasks_created": 1})
+		with self.assertRaises(ValidationError):
+			apply_addendum(cr.name)
+		self.assertEqual(calls, [])  # la primitive NO se llamó
+		cr.reload()
+		self.assertFalse(cr.applied_to_project)
+
+	def test_apply_calls_primitive_with_derived_quotation_and_project(self):
+		_owner, cr = self._approved("CR-B6CALL")
+		self._won()
+		calls = self._spy_apply({"tasks_created": 2})
+		apply_addendum(cr.name)
+		self.assertEqual(calls, [(self._addn, cr.project)])
+
+	def test_apply_success_sets_applied_fields(self):
+		_owner, cr = self._approved("CR-B6OK")
+		self._won()
+		self._spy_apply({"tasks_created": 2})
+		apply_addendum(cr.name)
+		cr.reload()
+		self.assertTrue(cr.applied_to_project)
+		self.assertTrue(cr.applied_at)
+		self.assertEqual(cr.applied_quotation, self._addn)
+		self.assertEqual(cr.workflow_state, "Approved")  # apply NO mueve el workflow
+
+	def test_apply_tasks_created_zero_is_valid(self):
+		_owner, cr = self._approved("CR-B6ZERO")
+		self._won()
+		self._spy_apply({"tasks_created": 0})  # addenda economic-only / $0 / sin scope
+		apply_addendum(cr.name)
+		cr.reload()
+		self.assertTrue(cr.applied_to_project)
+
+	def test_apply_primitive_failure_keeps_unapplied(self):
+		_owner, cr = self._approved("CR-B6FAIL")
+		self._won()
+
+		def _boom(quotation, project):
+			frappe.throw(frappe._("external apply failed"))
+
+		change_control.apply_addendum_to_project = _boom
+		with self.assertRaises(ValidationError):
+			apply_addendum(cr.name)
+		cr.reload()
+		self.assertFalse(cr.applied_to_project)
+		self.assertFalse(cr.applied_quotation)
+
+	def test_apply_second_time_blocked(self):
+		_owner, cr = self._approved("CR-B6TWICE")
+		self._won()
+		calls = self._spy_apply({"tasks_created": 1})
+		apply_addendum(cr.name)
+		with self.assertRaises(ValidationError):
+			apply_addendum(cr.name)  # ya aplicado → bloqueado
+		self.assertEqual(len(calls), 1)  # la primitive se llamó una sola vez
+
+	def test_apply_owner_only(self):
+		stranger = _user("cr-b6-stranger@example.com", ["Projects User"])
+		_owner, cr = self._approved("CR-B6P4")
+		self._won()
+		self._spy_apply({"tasks_created": 1})
+		frappe.set_user(stranger)
+		try:
+			with self.assertRaises(frappe.PermissionError):
+				apply_addendum(cr.name)
+		finally:
+			frappe.set_user("Administrator")
+		cr.reload()
+		self.assertFalse(cr.applied_to_project)

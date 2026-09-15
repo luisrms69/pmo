@@ -22,7 +22,9 @@ Flujo único addenda-céntrico (ADR-0015):
   (`proposal_group`) + `applied_to_project`. `impacts_commercial` es solo clasificación informativa.
 - **Cerrar**: transición Implemented→Closed; gate: `baseline_after` (fijada por una Baseline `Approved
   Change` que referencia el CR) + `stakeholder_communication`.
-- El **apply** gobernado (deriva la versión Ganada + guard de fingerprint) es B6; no vive aquí todavía.
+- **Apply addendum to Project** (acción explícita, no transición, B6): deriva la versión viva `Ganada`,
+  exige que su fingerprint == `approved_delta_fingerprint` (guard) y, solo entonces, delega en
+  `apply_addendum_to_project` de forma transaccional; fija `applied_*`. No mueve el Workflow.
 """
 
 import frappe
@@ -43,9 +45,11 @@ IMPLEMENTED = N_("Implemented")
 CLOSED = N_("Closed")
 _TERMINAL_STATES = (REJECTED, CLOSED)
 
-# Estado del workflow "Propuesta Comercial" (erpnext_proposals) en el que la Addenda está congelada
-# (docstatus 1) y lista para gobernarse. Valor EXACTO del fixture (sin acento).
+# Estados del workflow "Propuesta Comercial" (erpnext_proposals). Valores EXACTOS del fixture (sin acento):
+# `En Revision` = congelada y lista para gobernarse (B5); `Ganada` = aceptación comercial, lista para
+# aplicarse al Project (B6).
 ADDENDUM_REVIEW_STATE = "En Revision"
+ADDENDUM_WON_STATE = "Ganada"
 
 # Workflow Action labels (canónicos en inglés, definidos en workflow.json). Solo marcados para
 # extracción (N_ es no-op): el motor de Workflow compara estos valores; el es.po da el español visible.
@@ -330,6 +334,67 @@ def reapprove_addendum_version(change_request: str):
 	doc.approved_delta_fingerprint = fingerprint
 	doc.save()  # solo campos allow_on_submit sobre el CR submitted
 	return {"approved_addendum": quotation, "approved_delta_fingerprint": fingerprint}
+
+
+# --- Aplicación gobernada de la Addenda al Project (B6) -----------------------------
+
+
+@frappe.whitelist()
+def apply_addendum(change_request: str):
+	"""Aplica la Addenda **Ganada** autorizada al Project del CR, verificando que su fingerprint coincida
+	EXACTAMENTE con el aprobado por gobernanza (B5). Owner-only (P4 `submit`). NO recibe Quotation del
+	cliente: PMO deriva la versión viva `Ganada` del `proposal_group`. Atómico con el request (el contrato
+	de `erpnext_proposals` no hace commit interno): si la primitive falla, la transacción revierte y el CR
+	NO queda aplicado. NO mueve el Workflow (sigue `Approved`); marcar Implementado es un paso posterior."""
+	doc = frappe.get_doc("PMO Change Request", change_request)
+	doc.check_permission("submit")  # owner-only (P4): aplicar es autoridad del Project Owner
+	if doc.docstatus != 1 or doc.get("workflow_state") != APPROVED:
+		frappe.throw(frappe._("The Addendum can only be applied from an Approved Change Request."))
+	if doc.applied_to_project:
+		frappe.throw(frappe._("The Addendum was already applied to this Change Request."))
+	if not doc.proposal_group:
+		frappe.throw(frappe._("This Change Request has no Addendum to apply."))
+	if not doc.approved_addendum or not doc.approved_delta_fingerprint:
+		frappe.throw(
+			frappe._("The Change Request has no governed approval (approved addendum / fingerprint).")
+		)
+
+	# Resolver la versión viva y exigir que sea Ganada (aceptación comercial). Fail-closed.
+	live = change_control.get_live_proposal_for_group(doc.proposal_group)
+	if not live:
+		frappe.throw(frappe._("No live Addendum version was found for this Change Request's Proposal Group."))
+	info = _addendum_state(live)
+	if not info or cint(info.docstatus) != 1 or info.workflow_state != ADDENDUM_WON_STATE:
+		frappe.throw(
+			frappe._(
+				"The Addendum must be Won (accepted) before it can be applied. Current version: {0}."
+			).format(live)
+		)
+
+	# Guard de fingerprint (B5/B6): la versión Ganada debe ser exactamente la que gobernanza aprobó. Si
+	# difiere → bloquear ANTES de llamar la primitive; no se toca `applied_*` (requiere re-aprobación).
+	current_fp = change_control.get_addendum_delta_fingerprint(live)
+	if not current_fp:
+		frappe.throw(frappe._("Could not obtain the Addendum's delta fingerprint (fail-closed)."))
+	if current_fp != doc.approved_delta_fingerprint:
+		frappe.throw(
+			frappe._(
+				"The Won Addendum's delta differs from the approved version. Reapprove the addendum version "
+				"before applying."
+			)
+		)
+
+	# Aplicación transaccional: el contrato valida (Ganada/single-live/…), escribe `proposal_project` y
+	# materializa Tasks SOLO si hay Scope ejecutable (tasks_created=0 es un éxito válido: addenda
+	# economic-only / Required Items-only / contractual / delta $0). Sin commit interno → si falla, revierte
+	# todo y el CR no queda aplicado.
+	result = change_control.apply_addendum_to_project(live, doc.project)
+
+	doc.applied_to_project = 1
+	doc.applied_at = now_datetime()
+	doc.applied_quotation = live
+	doc.save()  # campos allow_on_submit sobre el CR submitted; misma transacción del request
+	return result
 
 
 # --- Acción explícita: Crear addenda comercial (ADR-0015) --------------------------
