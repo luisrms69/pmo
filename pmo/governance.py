@@ -114,7 +114,7 @@ def _artifact(doctype: str, project: str, date_field: str) -> dict:
 
 def build_expediente(project: str) -> dict:
 	"""Índice del expediente de gobierno (ADR-0014 D8): existencia + referencias + fechas, sin duplicar
-	contenido. Handoff/Baseline reales; Closure/Review como pendientes hasta su bloque. Change Requests =
+	contenido. Handoff/Baseline/Closure/Review reales (todos implementados). Change Requests =
 	conteos (abiertos/total). Status/Control siempre disponible (el detalle vive en sus vistas)."""
 	baseline = frappe.db.get_value("Project", project, "pmo_status_date")  # marca de control disponible
 	from pmo.baseline import get_effective_baseline
@@ -142,8 +142,8 @@ def build_expediente(project: str) -> dict:
 			"total": len(crs),
 			"open": len([c for c in crs if _cr_is_open(c.get("workflow_state"), c.get("docstatus"))]),
 		},
-		"closure": _artifact("PMO Project Closure", project, "creation"),
-		"review": _artifact("PMO Post-Project Review", project, "creation"),
+		"closure": _artifact("PMO Project Closure", project, "closure_date"),
+		"review": _artifact("PMO Post-Project Review", project, "review_date"),
 	}
 
 

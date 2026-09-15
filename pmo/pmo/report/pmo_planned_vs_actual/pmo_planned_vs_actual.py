@@ -94,19 +94,19 @@ def _columns():
 		{"fieldname": "subject", "label": _("Description"), "fieldtype": "Data", "width": 300},
 		{
 			"fieldname": "planned_hours",
-			"label": _("Horas planificadas totales"),
+			"label": _("Total planned hours"),
 			"fieldtype": "Float",
 			"width": 160,
 		},
 		{
 			"fieldname": "actual_hours",
-			"label": _("Horas reales al corte"),
+			"label": _("Actual hours at cutoff"),
 			"fieldtype": "Float",
 			"width": 150,
 		},
 		{
 			"fieldname": "available_hours",
-			"label": _("Horas disponibles"),
+			"label": _("Available hours"),
 			"fieldtype": "Float",
 			"width": 140,
 		},
@@ -126,10 +126,10 @@ def _summary(project, status_date, planned, actual):
 			"value": str(status_date) if status_date else _("Total (native)"),
 			"datatype": "Data",
 		},
-		{"label": _("Horas planificadas totales"), "value": flt(planned, 2), "datatype": "Float"},
-		{"label": _("Horas reales al corte"), "value": flt(project_actual, 2), "datatype": "Float"},
+		{"label": _("Total planned hours"), "value": flt(planned, 2), "datatype": "Float"},
+		{"label": _("Actual hours at cutoff"), "value": flt(project_actual, 2), "datatype": "Float"},
 		{
-			"label": _("Horas disponibles"),
+			"label": _("Available hours"),
 			"value": available,
 			"datatype": "Float",
 			# Disponible negativo = real supera al plan (sobreconsumo) → Rojo; si no, Verde.

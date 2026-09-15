@@ -204,8 +204,8 @@ class TestPendingGovernanceActions(IntegrationTestCase):
 	def test_action_crear_handoff(self):
 		p = _project("PGA Handoff")  # sin Handoff
 		acts = _actions(p)
-		self.assertIn("Crear Handoff", acts)
-		self.assertNotIn("Crear línea base inicial", acts)  # no baseline si falta Handoff
+		self.assertIn("Create Handoff", acts)
+		self.assertNotIn("Create initial baseline", acts)  # no baseline si falta Handoff
 
 	def test_action_crear_baseline_after_handoff(self):
 		p = _project("PGA Baseline")
@@ -213,8 +213,8 @@ class TestPendingGovernanceActions(IntegrationTestCase):
 		f = governance_flags(p)
 		self.assertTrue(f["needs_baseline"])
 		acts = _actions(p)
-		self.assertIn("Crear línea base inicial", acts)
-		self.assertNotIn("Crear Handoff", acts)
+		self.assertIn("Create initial baseline", acts)
+		self.assertNotIn("Create Handoff", acts)
 
 	def test_no_baseline_action_when_baseline_exists(self):
 		p = _project("PGA HasBaseline")
@@ -222,23 +222,23 @@ class TestPendingGovernanceActions(IntegrationTestCase):
 		_baseline(p)
 		f = governance_flags(p)
 		self.assertFalse(f["needs_baseline"])
-		self.assertNotIn("Crear línea base inicial", _actions(p))
+		self.assertNotIn("Create initial baseline", _actions(p))
 
 	def test_change_request_action_count_and_plural(self):
 		p = _project("PGA CR")
 		_handoff(p)
 		_baseline(p)
 		_open_cr(p, "CR1")
-		self.assertIn("Atender 1 solicitud de cambio", _actions(p))
+		self.assertIn("Address 1 change request", _actions(p))
 		_open_cr(p, "CR2")
 		self.assertEqual(governance_flags(p)["open_change_requests"], 2)
-		self.assertIn("Atender 2 solicitudes de cambio", _actions(p))
+		self.assertIn("Address 2 change requests", _actions(p))
 
 	def test_terminal_without_closure_action(self):
 		p = _project("PGA Closure", status="Completed")
 		_handoff(p)
 		self.assertTrue(governance_flags(p)["needs_closure"])
-		self.assertIn("Emitir cierre", _actions(p))
+		self.assertIn("Issue closure", _actions(p))
 
 	def test_closure_without_review_action(self):
 		p = _project("PGA Review", status="Completed")
@@ -247,18 +247,18 @@ class TestPendingGovernanceActions(IntegrationTestCase):
 		f = governance_flags(p)
 		self.assertFalse(f["needs_closure"])
 		self.assertTrue(f["needs_review"])
-		self.assertIn("Realizar revisión post-proyecto", _actions(p))
+		self.assertIn("Perform post-project review", _actions(p))
 
 	def test_indicators_match_rows(self):
 		# El indicador superior refleja la fila: un Project sin Handoff cuenta en without_handoff y su fila
-		# muestra exactamente "Crear Handoff".
+		# muestra exactamente "Create Handoff".
 		p = _project("PGA Match")
 		frappe.cache().delete_value(f"pmo:dashboard:{frappe.session.user}")
 		gov = governance_block()["governance"]
 		self.assertGreaterEqual(gov["counts"]["without_handoff"], 1)
 		item = next((it for it in gov["items"] if it["project"] == p), None)
 		self.assertIsNotNone(item)
-		self.assertEqual(item["actions"], ["Crear Handoff"])
+		self.assertEqual(item["actions"], ["Create Handoff"])
 
 	def test_no_lifecycle_keys_exposed(self):
 		p = _project("PGA NoLifecycle")

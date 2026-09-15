@@ -2786,3 +2786,75 @@ msgstr "Vencida"
 #: pmo/pmo/report/pmo_continuous_improvement (Continuous Improvement)
 msgid "Post-Project Review"
 msgstr "Revisión Post-Proyecto"
+
+#: pmo/dashboard.py (Pending Governance Actions)
+msgid "Pending governance actions"
+msgstr "Acciones pendientes de gobernanza"
+
+#: pmo/dashboard.py (Pending Governance Actions)
+msgid "No pending governance actions."
+msgstr "No hay acciones de gobernanza pendientes."
+
+#: pmo/dashboard.py (Pending Governance Actions)
+msgid "Without Handoff"
+msgstr "Sin Handoff"
+
+#: pmo/dashboard.py (Pending Governance Actions)
+msgid "Require closure"
+msgstr "Requieren cierre"
+
+#: pmo/dashboard.py (Pending Governance Actions)
+msgid "Require review"
+msgstr "Requieren revisión"
+
+#: pmo/dashboard.py (Pending Governance Actions)
+msgid "Risk analysis"
+msgstr "Análisis de riesgo"
+
+#: pmo/dashboard.py (Pending Governance Actions)
+msgid "Pending implementation"
+msgstr "Pendiente de implementación"
+
+#: pmo/dashboard.py (Pending Governance Actions)
+msgid "Create Handoff"
+msgstr "Crear Handoff"
+
+#: pmo/dashboard.py (Pending Governance Actions)
+msgid "Create initial baseline"
+msgstr "Crear línea base inicial"
+
+#: pmo/dashboard.py (Pending Governance Actions)
+msgid "Address {0} change request"
+msgstr "Atender {0} solicitud de cambio"
+
+#: pmo/dashboard.py (Pending Governance Actions)
+msgid "Address {0} change requests"
+msgstr "Atender {0} solicitudes de cambio"
+
+#: pmo/dashboard.py (Pending Governance Actions)
+msgid "Issue closure"
+msgstr "Emitir cierre"
+
+#: pmo/dashboard.py (Pending Governance Actions)
+msgid "Perform post-project review"
+msgstr "Realizar revisión post-proyecto"
+
+#: pmo/pmo/report/pmo_status_report (Status Report)
+msgid "No committed date"
+msgstr "Sin fecha comprometida"
+
+#: pmo/pmo/report/pmo_status_report (Status Report)
+msgid "Tasks beyond commitment"
+msgstr "Tareas fuera de compromiso"
+
+#: pmo/pmo/report/pmo_planned_vs_actual (Planned vs Actual)
+msgid "Available hours"
+msgstr "Horas disponibles"
+
+#: pmo/pmo/report/pmo_planned_vs_actual (Planned vs Actual)
+msgid "Total planned hours"
+msgstr "Horas planificadas totales"
+
+#: pmo/pmo/report/pmo_planned_vs_actual (Planned vs Actual)
+msgid "Actual hours at cutoff"
+msgstr "Horas reales al corte"

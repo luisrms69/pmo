@@ -311,9 +311,9 @@ class TestPlannedVsActualReport(IntegrationTestCase):
 		self.assertEqual(rows[self.t2]["pct_consumed"], 0.0)
 		# Resumen: horas disponibles = plan total (14) - real al corte (6) = 8, no una variación negativa.
 		cards = {c["label"]: c for c in summary}
-		self.assertEqual(cards["Horas planificadas totales"]["value"], 14.0)
-		self.assertEqual(cards["Horas reales al corte"]["value"], 6.0)
-		self.assertEqual(cards["Horas disponibles"]["value"], 8.0)
+		self.assertEqual(cards["Total planned hours"]["value"], 14.0)
+		self.assertEqual(cards["Actual hours at cutoff"]["value"], 6.0)
+		self.assertEqual(cards["Available hours"]["value"], 8.0)
 
 	def test_execute_requires_project(self):
 		with self.assertRaises(frappe.ValidationError):

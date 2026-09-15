@@ -90,8 +90,8 @@ class TestStatusReportPresentation(unittest.TestCase):
 		self.assertEqual(cards["Slip vs Baseline (days)"]["indicator"], "Red")
 		self.assertEqual(cards["Slip vs commitment (days)"]["value"], 21)
 		self.assertEqual(cards["Slip vs commitment (days)"]["indicator"], "Red")
-		self.assertEqual(cards["Tareas fuera de compromiso"]["value"], 2)
-		self.assertEqual(cards["Tareas fuera de compromiso"]["indicator"], "Orange")
+		self.assertEqual(cards["Tasks beyond commitment"]["value"], 2)
+		self.assertEqual(cards["Tasks beyond commitment"]["indicator"], "Orange")
 		self.assertEqual(cards["Overdue unfinished tasks"]["value"], 1)
 		self.assertEqual(cards["Actual hours to date"]["value"], 40.0)
 		self.assertEqual(cards["Completed / due to date"]["value"], "1 / 2")
@@ -121,5 +121,5 @@ class TestStatusReportPresentation(unittest.TestCase):
 		report["committed_end_date"] = None
 		report["indicators"] = dict(_REPORT["indicators"], slip_vs_committed_days=None)
 		cards = {c["label"]: c for c in _summary(report)}
-		self.assertEqual(cards["Slip vs commitment (days)"]["value"], "Sin fecha comprometida")
+		self.assertEqual(cards["Slip vs commitment (days)"]["value"], "No committed date")
 		self.assertEqual(cards["Slip vs commitment (days)"]["indicator"], "Gray")

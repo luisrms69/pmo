@@ -64,22 +64,22 @@ _DASHBOARD_STRINGS = (
 	N_("No customer-linked projects."),
 	N_("Could not load this PMO panel."),
 	# Sección Project Governance (Custom HTML Block "PMO Governance"): indicadores + acciones humanas.
-	N_("Acciones pendientes de gobernanza"),
-	N_("No hay acciones de gobernanza pendientes."),
-	N_("Sin Handoff"),
-	N_("Sin línea base"),
-	N_("Solicitudes de cambio abiertas"),
-	N_("Requieren cierre"),
-	N_("Requieren revisión"),
-	N_("Análisis de riesgo"),
-	N_("Pendiente de implementación"),
+	N_("Pending governance actions"),
+	N_("No pending governance actions."),
+	N_("Without Handoff"),
+	N_("Without baseline"),
+	N_("Open change requests"),
+	N_("Require closure"),
+	N_("Require review"),
+	N_("Risk analysis"),
+	N_("Pending implementation"),
 	# Acciones por Project (se construyen server-side en _governance_actions).
-	N_("Crear Handoff"),
-	N_("Crear línea base inicial"),
-	N_("Atender {0} solicitud de cambio"),
-	N_("Atender {0} solicitudes de cambio"),
-	N_("Emitir cierre"),
-	N_("Realizar revisión post-proyecto"),
+	N_("Create Handoff"),
+	N_("Create initial baseline"),
+	N_("Address {0} change request"),
+	N_("Address {0} change requests"),
+	N_("Issue closure"),
+	N_("Perform post-project review"),
 )
 
 _KPI_METRICS = ("active", "requiring_attention", "overdue_tasks", "without_baseline", "clients")
@@ -255,21 +255,21 @@ def _governance_actions(f):
 	Handoff → Baseline → Cambios → Cierre → Revisión. Risk NO participa (reserva de UX)."""
 	actions = []
 	if not f["has_handoff"]:
-		actions.append(frappe._("Crear Handoff"))
+		actions.append(frappe._("Create Handoff"))
 	elif f["needs_baseline"]:
 		# Solo cuando ya hay Handoff (no se muestra si todavía falta el Handoff).
-		actions.append(frappe._("Crear línea base inicial"))
+		actions.append(frappe._("Create initial baseline"))
 	n = cint(f["open_change_requests"])
 	if n > 0:
 		actions.append(
-			frappe._("Atender {0} solicitud de cambio").format(n)
+			frappe._("Address {0} change request").format(n)
 			if n == 1
-			else frappe._("Atender {0} solicitudes de cambio").format(n)
+			else frappe._("Address {0} change requests").format(n)
 		)
 	if f["needs_closure"]:
-		actions.append(frappe._("Emitir cierre"))
+		actions.append(frappe._("Issue closure"))
 	if f["needs_review"]:
-		actions.append(frappe._("Realizar revisión post-proyecto"))
+		actions.append(frappe._("Perform post-project review"))
 	return actions
 
 

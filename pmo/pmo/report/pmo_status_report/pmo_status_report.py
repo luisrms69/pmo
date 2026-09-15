@@ -96,7 +96,7 @@ def _summary(report):
 		committed_value = slip_committed
 		committed_indicator = "Red" if slip_committed > 0 else "Green"
 	elif not committed:
-		committed_value = _("Sin fecha comprometida")
+		committed_value = _("No committed date")
 		committed_indicator = "Gray"
 	else:
 		committed_value = _("N/A")
@@ -132,7 +132,7 @@ def _summary(report):
 			"indicator": committed_indicator,
 		},
 		{
-			"label": _("Tareas fuera de compromiso"),
+			"label": _("Tasks beyond commitment"),
 			"value": exceeds,
 			"datatype": "Int",
 			"indicator": "Orange" if exceeds else "Green",
