@@ -120,6 +120,16 @@ Learned`** (`area` ∈ {planning, execution, change_control, resources, cost, go
 `recommended_action`). Solo la child se estructura (reporting futuro). Puede consultar información viva/
 histórica **mientras se prepara**; **al submit queda congelado** (D11). Sin cuestionario extenso.
 
+**Enmienda (Mejora continua).** Cada `PMO Lessons Learned` con `recommended_action` exige `action_owner` +
+`target_date` y, al submit del Review, genera un **ToDo nativo** (`reference_type = "PMO Post-Project
+Review"`, `reference_name` = el Review). Esas acciones pertenecen a **Continuous Improvement**, una capacidad
+**separada** de la gobernanza del ciclo: **no** forman parte de Pending Governance Actions (D9), **no**
+modifican el lifecycle del Project (D7) ni lo re-marcan como pendiente. El estado/cierre viven en el ToDo
+(Open/Closed/Cancelled); sin DocType de acciones, sin workflow, sin estados custom, sin scheduler. El
+seguimiento se presenta separado: un **Quick List** nativo ("Acciones de mejora continua") en el Workspace y
+el **Script Report `PMO Continuous Improvement`** (P4: acota por Reviews visibles; nunca revela Review/Project
+oculto). El snapshot v2 del Review congela `action_owner`/`target_date` (no el estado posterior del ToDo).
+
 ### D6 — Risk Analysis: diferido (fuera de alcance de esta implementación)
 Risk Analysis queda **diferido hasta terminar esta iniciativa**. Su diseño e integración con Handoff,
 Status/Control, Change Control, Closure y Post-Project Review se **decidirán posteriormente**. **No condiciona
@@ -162,6 +172,12 @@ revisión post-proyecto*), derivadas server-side de las señales. **No** se expo
 (dashboard) consumiendo `governance_flags` (fuente única), sin duplicar reglas en JS.
 
 (Señales de riesgo se añadirán con la capacidad de Risk, D6; hoy el indicador de riesgo es solo reserva de UX.)
+
+**Frontera con Mejora continua.** Pending Governance Actions cubre **exclusivamente** el ciclo del Project y
+**termina al emitir el Review** (`needs_review` pasa a `False`). Las acciones de Lessons Learned (ToDo) son
+**Continuous Improvement** (ver D5) y **no** se incluyen aquí, **no** re-marcan al Project como pendiente ni
+tocan `governance_flags`/`_governance_actions`. Su seguimiento es una sección separada del Workspace
+(Quick List) + el reporte `PMO Continuous Improvement`.
 
 ### D10 — P4 reutilizado (sin segunda política)
 Los artefactos heredan la visibilidad del Project vía `pmo.permissions` (`permission_query_conditions` +

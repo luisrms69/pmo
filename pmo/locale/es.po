@@ -2758,3 +2758,31 @@ msgstr "Responsable de la acción"
 #: pmo/pmo/doctype/pmo_lessons_learned (Lessons Learned)
 msgid "Target date"
 msgstr "Fecha objetivo"
+
+#: pmo/pmo/report/pmo_continuous_improvement (Continuous Improvement)
+msgid "Continuous improvement"
+msgstr "Mejora continua"
+
+#: pmo/pmo/report/pmo_continuous_improvement (Continuous Improvement)
+msgid "Continuous improvement actions"
+msgstr "Acciones de mejora continua"
+
+#: pmo/pmo/report/pmo_continuous_improvement (Continuous Improvement)
+msgid "PMO Continuous Improvement"
+msgstr "Mejora continua PMO"
+
+#: pmo/pmo/report/pmo_continuous_improvement (Continuous Improvement)
+msgid "Action"
+msgstr "Acción"
+
+#: pmo/pmo/report/pmo_continuous_improvement (Continuous Improvement)
+msgid "Responsible"
+msgstr "Responsable"
+
+#: pmo/pmo/report/pmo_continuous_improvement (Continuous Improvement)
+msgid "Overdue"
+msgstr "Vencida"
+
+#: pmo/pmo/report/pmo_continuous_improvement (Continuous Improvement)
+msgid "Post-Project Review"
+msgstr "Revisión Post-Proyecto"
