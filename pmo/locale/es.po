@@ -2666,3 +2666,95 @@ msgstr "La fecha de cierre no puede estar en el futuro."
 #: pmo/pmo/doctype/pmo_project_closure (cierre def.)
 msgid "Accepted on cannot be later than the Closure date."
 msgstr "La fecha de aceptación no puede ser posterior a la fecha de cierre."
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Review date"
+msgstr "Fecha de revisión"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Reviewed by"
+msgstr "Revisado por"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Evaluation (post-project)"
+msgstr "Evaluación (posterior al proyecto)"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Objectives achieved"
+msgstr "Objetivos alcanzados"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "What worked"
+msgstr "Qué funcionó"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "What did not work"
+msgstr "Qué no funcionó"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Causes"
+msgstr "Causas"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Recommendations"
+msgstr "Recomendaciones"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Lessons learned"
+msgstr "Lecciones aprendidas"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Review snapshot (frozen on submit)"
+msgstr "Snapshot de la revisión (congelado al emitir)"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Issued by"
+msgstr "Emitido por"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Issued at"
+msgstr "Emitido el"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Snapshot schema version"
+msgstr "Versión de esquema del snapshot"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Snapshot hash"
+msgstr "Hash del snapshot"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Frozen snapshot (JSON)"
+msgstr "Snapshot congelado (JSON)"
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "This Project already has an issued Post-Project Review ({0})."
+msgstr "Este Project ya tiene una Revisión Post-Proyecto emitida ({0})."
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Post-Project Review requires an issued Project Closure for this Project."
+msgstr "La Revisión Post-Proyecto requiere un Cierre de Project emitido para este Project."
+
+#: pmo/pmo/doctype/pmo_post_project_review (Post-Project Review)
+msgid "Lesson '{0}': a Recommended action requires an Action owner and a Target date."
+msgstr "Lección '{0}': una Acción recomendada requiere un Responsable de la acción y una Fecha objetivo."
+
+#: pmo/pmo/doctype/pmo_lessons_learned (Lessons Learned)
+msgid "Area"
+msgstr "Área"
+
+#: pmo/pmo/doctype/pmo_lessons_learned (Lessons Learned)
+msgid "Lesson"
+msgstr "Lección"
+
+#: pmo/pmo/doctype/pmo_lessons_learned (Lessons Learned)
+msgid "Recommended action"
+msgstr "Acción recomendada"
+
+#: pmo/pmo/doctype/pmo_lessons_learned (Lessons Learned)
+msgid "Action owner"
+msgstr "Responsable de la acción"
+
+#: pmo/pmo/doctype/pmo_lessons_learned (Lessons Learned)
+msgid "Target date"
+msgstr "Fecha objetivo"

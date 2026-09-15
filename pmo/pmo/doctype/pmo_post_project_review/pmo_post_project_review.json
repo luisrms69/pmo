@@ -9,7 +9,6 @@
  "is_submittable": 1,
  "field_order": [
   "project",
-  "title",
   "column_break_hdr",
   "review_date",
   "reviewed_by",
@@ -38,14 +37,9 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Project",
+   "link_filters": "[[\"Project\",\"status\",\"in\",[\"Completed\",\"Cancelled\"]]]",
    "options": "Project",
    "reqd": 1
-  },
-  {
-   "fieldname": "title",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Title"
   },
   {
    "fieldname": "column_break_hdr",
@@ -90,6 +84,7 @@
    "label": "Causes"
   },
   {
+   "description": "Executive summary of recommendations. Narrative only — it does NOT generate actions. Actionable items live per lesson (Recommended action + owner + target date), which produce native ToDos on submit.",
    "fieldname": "recommendations",
    "fieldtype": "Small Text",
    "label": "Recommendations"

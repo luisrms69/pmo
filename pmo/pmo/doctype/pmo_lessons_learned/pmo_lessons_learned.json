@@ -9,7 +9,9 @@
  "field_order": [
   "area",
   "lesson",
-  "recommended_action"
+  "recommended_action",
+  "action_owner",
+  "target_date"
  ],
  "fields": [
   {
@@ -22,7 +24,7 @@
    "reqd": 1
   },
   {
-   "columns": 5,
+   "columns": 3,
    "fieldname": "lesson",
    "fieldtype": "Small Text",
    "in_list_view": 1,
@@ -30,11 +32,29 @@
    "reqd": 1
   },
   {
-   "columns": 5,
+   "columns": 3,
    "fieldname": "recommended_action",
    "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "Recommended action"
+  },
+  {
+   "columns": 2,
+   "description": "Required when a Recommended action is set. Owner of the follow-up action (produces a native ToDo on submit).",
+   "fieldname": "action_owner",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Action owner",
+   "mandatory_depends_on": "eval:doc.recommended_action",
+   "options": "User"
+  },
+  {
+   "description": "Required when a Recommended action is set. Due date of the follow-up action (native ToDo date).",
+   "fieldname": "target_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Target date",
+   "mandatory_depends_on": "eval:doc.recommended_action"
   }
  ],
  "index_web_pages_for_search": 1,
