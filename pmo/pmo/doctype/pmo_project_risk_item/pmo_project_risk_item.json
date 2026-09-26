@@ -8,14 +8,17 @@
  "istable": 1,
  "field_order": [
   "question_code",
+  "section",
   "question",
   "applies",
+  "description",
   "column_break_a",
   "probability",
   "impact",
   "exposure",
   "may_affect_controlled",
-  "action"
+  "risk",
+  "is_manual"
  ],
  "fields": [
   {
@@ -26,7 +29,14 @@
    "in_list_view": 0
   },
   {
-   "columns": 4,
+   "description": "Section of the source question (snapshot). Empty for manually added risks.",
+   "fieldname": "section",
+   "fieldtype": "Data",
+   "label": "Section",
+   "read_only": 1
+  },
+  {
+   "columns": 5,
    "fieldname": "question",
    "fieldtype": "Small Text",
    "in_list_view": 1,
@@ -36,11 +46,22 @@
   {
    "columns": 1,
    "default": "No",
+   "description": "Identification decision (screening). Locked once the risk has been generated.",
    "fieldname": "applies",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Applies",
-   "options": "No\nYes"
+   "options": "No\nYes",
+   "read_only_depends_on": "eval:doc.risk"
+  },
+  {
+   "depends_on": "eval:doc.applies=='Yes'",
+   "mandatory_depends_on": "eval:doc.applies=='Yes'",
+   "description": "The concrete risk, as identified. Suggested form: because of <cause>, <uncertain event> may occur, which would lead to <effect>. Once the risk is generated, it evolves in the PMO Project Risk (this stays as the as-identified record).",
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Risk description",
+   "read_only_depends_on": "eval:doc.risk"
   },
   {
    "fieldname": "column_break_a",
@@ -49,44 +70,61 @@
   {
    "columns": 1,
    "depends_on": "eval:doc.applies=='Yes'",
+   "mandatory_depends_on": "eval:doc.applies=='Yes'",
+   "description": "As-identified probability.",
    "fieldname": "probability",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Probability",
-   "options": "\nLow\nMedium\nHigh"
+   "options": "\nLow likelihood\nMedium likelihood\nHigh likelihood",
+   "read_only_depends_on": "eval:doc.risk"
   },
   {
    "columns": 1,
    "depends_on": "eval:doc.applies=='Yes'",
+   "mandatory_depends_on": "eval:doc.applies=='Yes'",
+   "description": "As-identified impact.",
    "fieldname": "impact",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Impact",
-   "options": "\nLow\nMedium\nHigh"
+   "options": "\nLow\nMedium\nHigh",
+   "read_only_depends_on": "eval:doc.risk"
   },
   {
    "columns": 1,
-   "description": "Derived from probability x impact. Read-only.",
+   "description": "Derived from probability x impact (as identified). Read-only.",
    "fieldname": "exposure",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Exposure",
-   "options": "\nLow\nMedium\nHigh",
+   "options": "\nLow exposure\nMedium exposure\nHigh exposure",
    "read_only": 1
   },
   {
    "depends_on": "eval:doc.applies=='Yes'",
-   "description": "Could this potentially affect an authorized/controlled condition (scope, committed date, baseline, authorized economics)? Signal only.",
+   "description": "As-identified signal: could this affect an authorized/controlled condition? Signal only — it does not create a Change Request.",
    "fieldname": "may_affect_controlled",
    "fieldtype": "Select",
    "label": "May affect controlled condition",
-   "options": "\nYes\nNo\nUndetermined"
+   "options": "\nYes\nNo\nUndetermined",
+   "read_only_depends_on": "eval:doc.risk"
   },
   {
-   "depends_on": "eval:doc.applies=='Yes'",
-   "fieldname": "action",
-   "fieldtype": "Small Text",
-   "label": "Action"
+   "description": "Living risk generated from this identified item (its current state and history live there).",
+   "fieldname": "risk",
+   "fieldtype": "Link",
+   "label": "Risk",
+   "options": "PMO Project Risk",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Set automatically for risks added manually (not derived from the question catalog).",
+   "fieldname": "is_manual",
+   "fieldtype": "Check",
+   "label": "Manual risk",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,

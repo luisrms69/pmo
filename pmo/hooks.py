@@ -101,6 +101,8 @@ jinja = {
 		"pmo.print_status.pmo_project_status",
 		# ADR-0014 D4: gate económico reutilizado en el Print Format del Closure (aislamiento económico).
 		"pmo.project_economics.can_see_project_economics",
+		# ADR-0016: historia nativa (Version + Comment) del Risk para el Print Format (solo lectura, P4).
+		"pmo.risk_history.get_risk_history",
 	],
 }
 
@@ -172,6 +174,8 @@ permission_query_conditions = {
 	"PMO Post-Project Review": "pmo.permissions.get_permission_query_conditions_review",
 	# ADR-0014 Risk/D10: el Risk Assessment hereda la visibilidad del Project.
 	"PMO Project Risk Assessment": "pmo.permissions.get_permission_query_conditions_risk_assessment",
+	# ADR-0016: el Risk (registro vivo) hereda la visibilidad del Project.
+	"PMO Project Risk": "pmo.permissions.get_permission_query_conditions_risk",
 }
 
 has_permission = {
@@ -183,6 +187,7 @@ has_permission = {
 	"PMO Project Closure": "pmo.permissions.has_permission_closure",
 	"PMO Post-Project Review": "pmo.permissions.has_permission_review",
 	"PMO Project Risk Assessment": "pmo.permissions.has_permission_risk_assessment",
+	"PMO Project Risk": "pmo.permissions.has_permission_risk",
 }
 
 # ADR-0006 D2: la Status Date (Data Date) del Project solo puede ser hoy o pasada (no futura en v0.7.0).
@@ -196,6 +201,15 @@ doc_events = {
 	"Task": {
 		"validate": "pmo.schedule_commit.validate_task_deadline",  # ADR-0007 D4 (warning)
 	},
+	# ADR-0016 / auditoría de integridad: `project` inmutable tras crear en TODOS los DocTypes pmo con Link
+	# estructural a Project (un documento pertenece al Project en que se creó). Helper único compartido.
+	"PMO Project Risk": {"validate": "pmo.project_link.enforce_immutable_project"},
+	"PMO Project Risk Assessment": {"validate": "pmo.project_link.enforce_immutable_project"},
+	"PMO Project Baseline": {"validate": "pmo.project_link.enforce_immutable_project"},
+	"PMO Change Request": {"validate": "pmo.project_link.enforce_immutable_project"},
+	"PMO Project Closure": {"validate": "pmo.project_link.enforce_immutable_project"},
+	"PMO Project Handoff": {"validate": "pmo.project_link.enforce_immutable_project"},
+	"PMO Post-Project Review": {"validate": "pmo.project_link.enforce_immutable_project"},
 	# Change Control v2 D7 (B7): enforcement server-side del orden de la Addenda. Se engancha en los mismos
 	# dos eventos que usa erpnext_proposals para las transiciones (docstatus 0 y docstatus 1), que corren
 	# ANTES del write → un throw bloquea la transición. Solo permite/bloquea (no escribe). erpnext_proposals

@@ -23,7 +23,8 @@
    "label": "Project",
    "options": "Project",
    "reqd": 1,
-   "unique": 1
+   "unique": 1,
+   "set_only_once": 1
   },
   {
    "fieldname": "column_break_hdr",

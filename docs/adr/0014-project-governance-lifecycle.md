@@ -4,9 +4,9 @@
 ADR-0004 (Baseline), ADR-0005 (Change Control), ADR-0011 (Project Control canónico) · **No toca:** PHI
 (ADR-0013, bloqueado).
 
-> **Alcance:** **Risk Analysis queda FUERA del alcance de esta implementación** y se abordará
-> **posteriormente**, como iniciativa adicional, una vez terminado Project Governance & Lifecycle
-> Documentation (ver D6). Ningún artefacto de este ADR depende de Risk ni lo condiciona.
+> **Alcance:** Risk Analysis quedó FUERA del alcance de esta implementación (se difirió aquí). **Enmienda
+> (2026-09-25):** Risk Analysis fue implementado —ligero— como iniciativa posterior en **ADR-0016**; ver D6
+> enmendado. Ningún artefacto de este ADR depende de Risk ni lo condiciona.
 
 ## Contexto
 `pmo` cubre planeación, capacidad, baselines, control, cambios, economía y reporting, pero **falta el gobierno
@@ -130,12 +130,15 @@ seguimiento se presenta separado: un **Quick List** nativo ("Acciones de mejora 
 el **Script Report `PMO Continuous Improvement`** (P4: acota por Reviews visibles; nunca revela Review/Project
 oculto). El snapshot v2 del Review congela `action_owner`/`target_date` (no el estado posterior del ToDo).
 
-### D6 — Risk Analysis: diferido (fuera de alcance de esta implementación)
-Risk Analysis queda **diferido hasta terminar esta iniciativa**. Su diseño e integración con Handoff,
-Status/Control, Change Control, Closure y Post-Project Review se **decidirán posteriormente**. **No condiciona
-ni forma parte** de los bloques actuales de Project Governance & Lifecycle Documentation. En esta
-implementación **no se crea ningún artefacto de riesgo** (ni `PMO Project Risk`, ni child de riesgos iniciales
-en el Handoff) ni se añaden referencias de riesgo a Closure/Review/Dashboard/Project Control.
+### D6 — Risk Analysis: diferido en esta iniciativa → implementado en ADR-0016 (enmendado 2026-09-25)
+Risk Analysis se **difirió** durante esta iniciativa (no condicionó ni formó parte de sus bloques). **Enmienda:**
+posteriormente se implementó —**ligero**— en **ADR-0016** (cuestionario administrable `PMO Risk Question` +
+`PMO Project Risk Assessment`/`PMO Project Risk Item` como registro ligero, exposición cualitativa 3×3, owner,
+status, riesgos manuales, reporte `PMO Project Risk Register`). Notas de compatibilidad con este ADR: el
+**Handoff sigue siendo autosuficiente** (ADR-0016 **no** añade child de riesgos al Handoff) y **no** se añaden
+señales de riesgo a Closure/Review/Dashboard/Project Control (eso queda diferido en ADR-0016). El `PMO Project
+Risk` free-form original queda **descartado permanentemente** (el registro es la vista sobre los Risk Items).
+`may_affect_controlled` es **solo señal** (Risk ≠ Change Control). El PHI sigue **bloqueado** (ADR-0013).
 
 ### D7 — Estado de ciclo de vida derivado, no workflow
 Función pura (`pmo/governance.py`, patrón `health.py`) que deriva un estado documental desde hechos

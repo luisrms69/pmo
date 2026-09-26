@@ -256,4 +256,27 @@
 {% else %}
 <div class="muted">{{ _("No Change Requests for this Project.") }}</div>
 {% endif %}
+
+{%- if pc.risk is defined and pc.risk -%}
+{%- set r = pc.risk -%}
+<h2>{{ _("Risks") }}</h2>
+<p><b>{{ _("Risk assessment") }}:</b> {% if r.assessment_state == "assessed" %}{{ _("Assessed") }}{% else %}{{ _("Not assessed yet") }}{% endif %}</p>
+{%- if r.assessment_exists -%}
+<div class="pmo-pc-tablewrap"><table class="pmo-pc-table" style="max-width:480px">
+  <tr><td>{{ _("Open / managing") }}</td><td class="num">{{ r.open }}</td></tr>
+  <tr><td>{{ _("High-exposure risks") }}</td><td class="num">{{ r.high_exposure }}</td></tr>
+  <tr><td>{{ _("Without owner") }}</td><td class="num">{{ r.no_owner }}</td></tr>
+  <tr><td>{{ _("Without treatment") }}</td><td class="num">{{ r.no_response }}</td></tr>
+</table></div>
+{%- if not r.needs_attention %}<div class="muted">{{ _("No risks require attention.") }}</div>{% endif -%}
+{%- endif -%}
+<p>
+  {%- if r.assessment_exists -%}
+  <button class="btn btn-default btn-xs pmo-risk-assess" data-assessment="{{ r.assessment }}">{{ _("View risk assessment") }}</button>
+  <button class="btn btn-default btn-xs pmo-risk-manage">{{ _("Manage risks") }}</button>
+  {%- else -%}
+  <button class="btn btn-primary btn-xs pmo-risk-assess" data-assessment="">{{ _("Perform risk assessment") }}</button>
+  {%- endif -%}
+</p>
+{%- endif -%}
 </div>

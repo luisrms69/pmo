@@ -1,8 +1,14 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-09-12
-**Rama activa:** `feat/pmo-reporting-architecture` (base `version-16` @ v0.15.0 → objetivo PR **v0.16.0**)
-**Tarea actual:** PR #20 abierto contra `version-16` (v0.16.0). Verificando CI. DETENERSE antes de merge/tag/release.
+**Fecha:** 2026-09-26
+**Rama activa:** `feat/project-governance-lifecycle` (base `version-16` @ v0.16.0 → objetivo PR **v0.17.0**)
+**Tarea actual:** `/ship` de consolidación **v0.17.0**. La rama reúne, en un solo release, TODA la iniciativa
+Governance Lifecycle acumulada desde v0.16.0 (Governance/expediente, Handoff, Closure, Post-Project Review,
+Mejora continua, **Change Control v2 B4–B8** ADR-0015) **+ R1/Risk Analysis** (ADR-0016). Squash & Merge →
+tag `v0.17.0` sobre el merge commit → GitHub Release. **Siguiente bloque (no iniciado): rescate/replanteamiento
+integral de la UX global de PMO** (ver Nota en ADR-0016). Residuo conocido dev: tabla huérfana
+`tabPMO Project Risk Update` en `pmo-v16.dev` (no forma parte del repo; conservada). Vestigio menor:
+`last_reviewed_on/by` del Risk Assessment sin escritor (no se retiran en este cierre).
 
 ---
 

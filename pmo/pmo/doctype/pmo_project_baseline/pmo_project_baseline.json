@@ -35,7 +35,8 @@
    "in_standard_filter": 1,
    "label": "Proyecto",
    "options": "Project",
-   "reqd": 1
+   "reqd": 1,
+   "set_only_once": 1
   },
   {
    "description": "Identificador consecutivo generado automáticamente para ordenar el historial de líneas base del proyecto.",

@@ -204,9 +204,28 @@ class PMOProjectControl {
 				project: this.state.project,
 				cutoff: this.state.status_date || frappe.datetime.get_today(),
 			})
-			.then((html) => $v.html(html))
+			.then((html) => {
+				$v.html(html);
+				this._wire_risk_actions($v); // ADR-0016: acciones contextuales de la sección Riesgos
+			})
 			.catch(() => {
 				$v.html(`<div class="pmo-pc-empty">${__("Could not load the data.")}</div>`);
+			});
+	}
+
+	// ADR-0016: cablea las acciones de la sección Riesgos (route-agnóstico, sin hardcodear /desk|/app).
+	// "Realizar/Ver evaluación" = open-or-create del Assessment; "Gestionar riesgos" = lista PMO Project Risk
+	// FILTRADA por este Project (no global).
+	_wire_risk_actions($v) {
+		const project = this.state.project;
+		$v.off("click.pmorisk")
+			.on("click.pmorisk", ".pmo-risk-assess", (e) => {
+				const a = $(e.currentTarget).attr("data-assessment");
+				if (a) frappe.set_route("Form", "PMO Project Risk Assessment", a);
+				else frappe.new_doc("PMO Project Risk Assessment", { project });
+			})
+			.on("click.pmorisk", ".pmo-risk-manage", () => {
+				frappe.set_route("List", "PMO Project Risk", { project });
 			});
 	}
 

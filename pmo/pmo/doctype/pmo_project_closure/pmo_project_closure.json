@@ -48,7 +48,8 @@
    "label": "Project",
    "link_filters": "[[\"Project\",\"status\",\"in\",[\"Completed\",\"Cancelled\"]]]",
    "options": "Project",
-   "reqd": 1
+   "reqd": 1,
+   "set_only_once": 1
   },
   {
    "default": "Today",

@@ -71,8 +71,6 @@ _DASHBOARD_STRINGS = (
 	N_("Open change requests"),
 	N_("Require closure"),
 	N_("Require review"),
-	N_("Risk analysis"),
-	N_("Pending implementation"),
 	# Acciones por Project (se construyen server-side en _governance_actions).
 	N_("Create Handoff"),
 	N_("Create initial baseline"),
