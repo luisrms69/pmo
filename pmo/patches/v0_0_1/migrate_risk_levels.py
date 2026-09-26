@@ -30,8 +30,8 @@ def _remap(doctype: str, field: str, mapping: dict):
 	if not frappe.db.table_exists(doctype):
 		return
 	for old, new in mapping.items():
-		frappe.db.sql(
-			f"update `tab{doctype}` set `{field}` = %s where `{field}` = %s",  # nosemgrep
+		frappe.db.sql(  # nosemgrep: frappe-semgrep-rules.rules.security.frappe-sql-format-injection
+			f"update `tab{doctype}` set `{field}` = %s where `{field}` = %s",
 			(new, old),
 		)
 
