@@ -25,14 +25,14 @@
   "impacts_commercial",
   "impacts_risk",
   "impact_summary",
+  "impact_notes",
   "section_impact_qty",
   "impact_hours",
   "impact_days",
   "column_break_impact_qty",
   "currency",
   "impact_amount",
-  "section_impact_notes",
-  "impact_notes",
+  "section_evaluation",
   "evaluation_notes",
   "section_proposal",
   "proposal_group",
@@ -43,12 +43,16 @@
   "section_decision",
   "approved_by",
   "approved_at",
+  "approved_addendum",
+  "approved_delta_fingerprint",
   "column_break_decision",
   "decision_notes",
   "section_implementation",
+  "implementation_owner",
   "applied_to_project",
   "applied_at",
   "implementation_notes",
+  "stakeholder_communication",
   "amended_from"
  ],
  "fields": [
@@ -59,7 +63,8 @@
    "in_standard_filter": 1,
    "label": "Project",
    "options": "Project",
-   "reqd": 1
+   "reqd": 1,
+   "set_only_once": 1
   },
   {
    "fieldname": "title",
@@ -110,12 +115,14 @@
    "label": "Request"
   },
   {
+   "description": "Why the change is requested (the driver/justification).",
    "fieldname": "reason",
    "fieldtype": "Small Text",
    "label": "Reason",
    "reqd": 1
   },
   {
+   "description": "Detailed description of the requested change.",
    "fieldname": "description",
    "fieldtype": "Text Editor",
    "label": "Description"
@@ -149,6 +156,7 @@
   },
   {
    "default": "0",
+   "description": "The change affects the commercial agreement. If checked, it must go through a Quotation/Addendum applied to the Project before it can be implemented.",
    "fieldname": "impacts_commercial",
    "fieldtype": "Check",
    "label": "Commercial"
@@ -166,6 +174,12 @@
    "in_list_view": 1,
    "label": "Impact summary",
    "read_only": 1
+  },
+  {
+   "description": "Free-text notes on the impact of the change.",
+   "fieldname": "impact_notes",
+   "fieldtype": "Small Text",
+   "label": "Impact notes"
   },
   {
    "fieldname": "section_impact_qty",
@@ -202,13 +216,9 @@
    "options": "currency"
   },
   {
-   "fieldname": "section_impact_notes",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "impact_notes",
-   "fieldtype": "Small Text",
-   "label": "Impact notes"
+   "fieldname": "section_evaluation",
+   "fieldtype": "Section Break",
+   "label": "Evaluation"
   },
   {
    "description": "Technical/PM evaluation of the change. Multi-party discussion uses native Comments.",
@@ -218,15 +228,17 @@
   },
   {
    "collapsible": 1,
+   "description": "Commercial thread of the change. The commercial acceptance lives in the Quotation/Addendum workflow, not here.",
    "fieldname": "section_proposal",
    "fieldtype": "Section Break",
-   "label": "Proposal (Quotation)"
+   "label": "Commercial"
   },
   {
-   "description": "Logical thread (Proposal Group) of the Quotation-addendum. Preserves the version history.",
+   "description": "Logical thread (Proposal Group) of the Quotation-addendum. Set only by the system when the Addendum is created; preserves the version history.",
    "fieldname": "proposal_group",
    "fieldtype": "Data",
-   "label": "Proposal group"
+   "label": "Proposal group",
+   "read_only": 1
   },
   {
    "description": "Won version actually applied to the Project. Set on apply.",
@@ -251,11 +263,12 @@
    "read_only": 1
   },
   {
-   "description": "Baseline that incorporates the change. Linked by the owner (explicit selection) before closing.",
+   "description": "Baseline that incorporates the change. Set automatically when a PMO Project Baseline of type 'Approved Change' referencing this Change Request is submitted; it is not selected manually.",
    "fieldname": "baseline_after",
    "fieldtype": "Link",
    "label": "After baseline",
    "options": "PMO Project Baseline",
+   "read_only": 1,
    "allow_on_submit": 1
   },
   {
@@ -278,10 +291,28 @@
    "read_only": 1
   },
   {
+   "description": "Exact Addendum version (Quotation) that governance approved. Captured server-side when the change is Approved; updated by 'Reapprove addendum version' if a divergent new version is issued.",
+   "fieldname": "approved_addendum",
+   "fieldtype": "Link",
+   "label": "Approved addendum",
+   "options": "Quotation",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "description": "Canonical delta fingerprint (from erpnext_proposals) of the approved Addendum version. The apply guard (B6) compares the Won version's fingerprint against this value.",
+   "fieldname": "approved_delta_fingerprint",
+   "fieldtype": "Data",
+   "label": "Approved delta fingerprint",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
    "fieldname": "column_break_decision",
    "fieldtype": "Column Break"
   },
   {
+   "description": "Governance decision notes. Mandatory when the change is rejected: state clearly why it was rejected.",
    "fieldname": "decision_notes",
    "fieldtype": "Small Text",
    "label": "Decision notes"
@@ -290,6 +321,13 @@
    "fieldname": "section_implementation",
    "fieldtype": "Section Break",
    "label": "Implementation"
+  },
+  {
+   "description": "Person responsible for coordinating/confirming that the approved change was incorporated into the Current Plan. Defaults to the Project's operational owner but is owned by this change and can be edited while the CR is editable. It does not modify the Project.",
+   "fieldname": "implementation_owner",
+   "fieldtype": "Link",
+   "label": "Implementation Owner",
+   "options": "Employee"
   },
   {
    "description": "The Quotation's Scope Items were materialized as Tasks. Does not imply the Implemented state.",
@@ -308,9 +346,17 @@
    "allow_on_submit": 1
   },
   {
+   "description": "Document the adjustments made, the plan updates needed, and any implementation considerations.",
    "fieldname": "implementation_notes",
    "fieldtype": "Small Text",
    "label": "Implementation notes",
+   "allow_on_submit": 1
+  },
+  {
+   "description": "What communication was done to stakeholders, or where the corresponding evidence is. Native Comments/Communication/Files remain the complementary evidence. Write 'N/A' when it genuinely does not apply. Required before closing an implemented change.",
+   "fieldname": "stakeholder_communication",
+   "fieldtype": "Small Text",
+   "label": "Stakeholder Communication",
    "allow_on_submit": 1
   },
   {

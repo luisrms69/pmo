@@ -240,3 +240,173 @@ def has_permission_change_request(doc, ptype=None, user=None):
 			return _is_project_writer(project, user)  # owner o DocShare(write) del Project
 		return False
 	return is_project_visible(project, user)  # read
+
+
+# --- PMO Project Handoff (ADR-0014 D3/D10): P4 heredado del Project ---------------
+
+
+def get_permission_query_conditions_handoff(user=None):
+	"""Listados: solo Handoffs cuyo Project es visible (owner/DocShare-read). Executive/Admin: sin condición."""
+	user = user or frappe.session.user
+	if _is_global_reader(user):
+		return ""
+	return f"`tabPMO Project Handoff`.project in ({_member_projects_subquery(user)})"
+
+
+def has_permission_handoff(doc, ptype=None, user=None):
+	"""READ = visibilidad del Project. WRITE/CREATE/SUBMIT/CANCEL/AMEND = solo el owner del Project
+	(documento de gobierno). Executive read-only; SHARE denegado. Siempre True/False."""
+	user = user or frappe.session.user
+	if user == "Administrator":
+		return True
+	project = doc.get("project") if hasattr(doc, "get") else getattr(doc, "project", None)
+	if not project:
+		return False  # fail-closed
+	if ptype == "share":
+		return False
+	if ptype in _WRITE_PTYPES or ptype in ("submit", "cancel", "amend"):
+		return frappe.db.get_value("Project", project, "owner") == user
+	return is_project_visible(project, user)  # read
+
+
+# --- Equipo derivado del Project (fuentes P4 canónicas; ADR-0002/ADR-0014 D3) ----
+
+
+def get_project_team(project):
+	"""Equipo/participación del Project **derivado** de las fuentes P4 canónicas (no persistido):
+	owner + DocShare(Project, read) de usuarios + ToDo activo sobre Tasks del Project. Devuelve una lista de
+	usuarios **ordenada y deduplicada** (determinista, apta para snapshots/hash). NO introduce otro modelo de
+	membresía; reutiliza exactamente las fuentes de la política P4 vigente."""
+	if not project:
+		return []
+	members = set()
+	owner = frappe.db.get_value("Project", project, "owner")
+	if owner:
+		members.add(owner)
+	for ds in frappe.get_all(
+		"DocShare",
+		filters={"share_doctype": "Project", "share_name": project, "read": 1},
+		fields=["user"],
+	):
+		if ds.get("user"):
+			members.add(ds["user"])
+	rows = frappe.db.sql(
+		"""select distinct td.allocated_to
+			from `tabToDo` td
+			inner join `tabTask` t on td.reference_type = 'Task' and td.reference_name = t.name
+			where t.project = %(project)s and td.status != 'Cancelled'
+				and td.allocated_to is not null and td.allocated_to != ''""",
+		{"project": project},
+	)
+	members.update(r[0] for r in rows if r[0])
+	return sorted(members)
+
+
+# --- PMO Project Closure (ADR-0014 D4/D10): P4 heredado del Project --------------
+
+
+def get_permission_query_conditions_closure(user=None):
+	"""Listados: solo Closures cuyo Project es visible (owner/DocShare-read). Executive/Admin: sin condición."""
+	user = user or frappe.session.user
+	if _is_global_reader(user):
+		return ""
+	return f"`tabPMO Project Closure`.project in ({_member_projects_subquery(user)})"
+
+
+def has_permission_closure(doc, ptype=None, user=None):
+	"""READ = visibilidad del Project. WRITE/CREATE/SUBMIT/CANCEL/AMEND = solo el owner del Project
+	(documento de gobierno). Executive read-only; SHARE denegado. Siempre True/False."""
+	user = user or frappe.session.user
+	if user == "Administrator":
+		return True
+	project = doc.get("project") if hasattr(doc, "get") else getattr(doc, "project", None)
+	if not project:
+		return False  # fail-closed
+	if ptype == "share":
+		return False
+	if ptype in _WRITE_PTYPES:
+		return frappe.db.get_value("Project", project, "owner") == user
+	return is_project_visible(project, user)  # read
+
+
+# --- PMO Post-Project Review (ADR-0014 D5/D10): P4 heredado del Project ----------
+
+
+def get_permission_query_conditions_review(user=None):
+	"""Listados: solo Reviews cuyo Project es visible (owner/DocShare-read). Executive/Admin: sin condición."""
+	user = user or frappe.session.user
+	if _is_global_reader(user):
+		return ""
+	return f"`tabPMO Post-Project Review`.project in ({_member_projects_subquery(user)})"
+
+
+def has_permission_review(doc, ptype=None, user=None):
+	"""READ = visibilidad del Project. WRITE/CREATE/SUBMIT/CANCEL/AMEND = solo el owner del Project
+	(documento de gobierno). Executive read-only; SHARE denegado. Siempre True/False."""
+	user = user or frappe.session.user
+	if user == "Administrator":
+		return True
+	project = doc.get("project") if hasattr(doc, "get") else getattr(doc, "project", None)
+	if not project:
+		return False  # fail-closed
+	if ptype == "share":
+		return False
+	if ptype in _WRITE_PTYPES:
+		return frappe.db.get_value("Project", project, "owner") == user
+	return is_project_visible(project, user)  # read
+
+
+# --- PMO Project Risk Assessment (ADR-0014 Risk): P4 heredado del Project --------
+
+
+def get_permission_query_conditions_risk_assessment(user=None):
+	"""Listados: solo assessments cuyo Project es visible (owner/DocShare-read). Executive/Admin: sin condición."""
+	user = user or frappe.session.user
+	if _is_global_reader(user):
+		return ""
+	return f"`tabPMO Project Risk Assessment`.project in ({_member_projects_subquery(user)})"
+
+
+def has_permission_risk_assessment(doc, ptype=None, user=None):
+	"""READ = visibilidad del Project. CREATE/WRITE/DELETE = project writer (owner o DocShare-write): es un
+	cuestionario vivo mantenido por el equipo (no submittable). Executive read-only; SHARE denegado.
+	Fail-closed si falta Project. Siempre True/False."""
+	user = user or frappe.session.user
+	if user == "Administrator":
+		return True
+	project = doc.get("project") if hasattr(doc, "get") else getattr(doc, "project", None)
+	if not project:
+		return False  # fail-closed
+	if ptype == "share":
+		return False
+	if ptype in ("write", "create", "delete"):
+		return _is_project_writer(project, user)  # owner o DocShare(write) del Project
+	return is_project_visible(project, user)  # read
+
+
+# --- PMO Project Risk (ADR-0016): registro vivo, P4 heredado del Project ----------
+
+
+def get_permission_query_conditions_risk(user=None):
+	"""Listados: solo riesgos cuyo Project es visible (owner/DocShare-read). Executive/Admin: sin condición."""
+	user = user or frappe.session.user
+	if _is_global_reader(user):
+		return ""
+	return f"`tabPMO Project Risk`.project in ({_member_projects_subquery(user)})"
+
+
+def has_permission_risk(doc, ptype=None, user=None):
+	"""READ = visibilidad del Project. CREATE/WRITE/DELETE = project writer (owner o DocShare-write): es un
+	registro vivo mantenido por el equipo (no submittable). Executive read-only; SHARE denegado.
+	Fail-closed si falta Project. Siempre True/False."""
+	user = user or frappe.session.user
+	if user == "Administrator":
+		return True
+	project = doc.get("project") if hasattr(doc, "get") else getattr(doc, "project", None)
+	if not project:
+		return False  # fail-closed
+	if ptype == "share":
+		return False
+	if ptype in ("write", "create", "delete"):
+		return _is_project_writer(project, user)  # owner o DocShare(write) del Project
+	return is_project_visible(project, user)  # read

@@ -16,8 +16,10 @@ from frappe.exceptions import ValidationError
 from frappe.tests import IntegrationTestCase
 from frappe.utils import today
 
+from pmo import change_control
 from pmo.baseline import build_snapshot, get_effective_baseline, run_preflight, snapshot_hash
 from pmo.permissions import has_permission_baseline
+from pmo.pmo.doctype.pmo_change_request import pmo_change_request as crmod
 
 
 def _user(email, roles=()):
@@ -101,20 +103,89 @@ def _assign(task, user, override=None):
 	return td.name
 
 
-def _baseline(project, revision, btype="Original", supersedes=None, effective=None, submit=False):
+def _baseline(
+	project,
+	revision=None,
+	btype="Original",
+	supersedes=None,
+	effective=None,
+	submit=False,
+	reason="Motivo",
+	change_request=None,
+):
 	doc = frappe.get_doc(
 		{
 			"doctype": "PMO Project Baseline",
 			"project": project,
-			"revision": revision,
+			"revision": revision,  # None -> autogenerada por el controlador (BL-NNN)
 			"baseline_type": btype,
 			"supersedes_baseline": supersedes,
 			"effective_date": effective or today(),
+			"reason": reason,
+			"change_request": change_request,
 		}
 	).insert(ignore_permissions=True)
 	if submit:
 		doc.submit()
 	return doc
+
+
+def _implemented_cr(project, owner):
+	"""Crea un PMO Change Request y lo lleva por su Workflow real hasta `Implemented` (aprobado + aplicado,
+	a la espera de su nueva baseline). Requiere una baseline vigente en el Project (gate de `In Review`).
+	El gate de Implemented exige responsable de implementación y aceptación del cliente documentada."""
+	from frappe.model.workflow import apply_workflow
+
+	emp = _employee("CR Impl Owner", owner)
+	# Flujo único (ADR-0015 B4/B5/B6): toda CR formal tiene su Addenda (`proposal_group`); la aprobación
+	# captura approved_addendum + fingerprint (B5) y el apply real (B6) fija applied_to_project +
+	# applied_quotation. El contrato de erpnext_proposals (ausente en el site de tests) se mockea.
+	cr = frappe.get_doc(
+		{
+			"doctype": "PMO Change Request",
+			"project": project,
+			"title": "Cambio",
+			"reason": "Motivo",
+			"implementation_owner": emp,
+			"proposal_group": "GRP-1",
+		}
+	).insert(ignore_permissions=True)
+	# B5: la captura al aprobar consulta el contrato de erpnext_proposals (ausente en el site de tests).
+	# Se mockean los seams para que la captura tenga éxito (versión viva En Revision + fingerprint).
+	cust = frappe.db.exists("Customer", {"customer_name": "BL-B5-Cust"})
+	if not cust:
+		c = frappe.get_doc({"doctype": "Customer", "customer_name": "BL-B5-Cust"})
+		c.flags.ignore_validate = True
+		cust = c.insert(ignore_permissions=True, ignore_mandatory=True).name
+	_q = frappe.get_doc({"doctype": "Quotation", "quotation_to": "Customer", "party_name": cust})
+	_q.flags.ignore_validate = True
+	addn = _q.insert(ignore_permissions=True, ignore_mandatory=True).name
+	orig_live = change_control.get_live_proposal_for_group
+	orig_fp = change_control.get_addendum_delta_fingerprint
+	orig_state = crmod._addendum_state
+	orig_apply = change_control.apply_addendum_to_project
+	change_control.get_live_proposal_for_group = lambda pg: addn
+	change_control.get_addendum_delta_fingerprint = lambda q: "FP-DEFAULT"
+	crmod._addendum_state = lambda q: frappe._dict(docstatus=1, workflow_state="En Revision")
+	change_control.apply_addendum_to_project = lambda quotation, project: {"tasks_created": 1}
+	prev = frappe.session.user
+	frappe.set_user(owner)
+	try:
+		apply_workflow(cr, "Send for Review")  # In Review: congela baseline_before = vigente
+		apply_workflow(cr, "Approve")  # Approved (Submit) → captura Addenda gobernada (B5)
+		# B6 real: pasa a Ganada y aplica → fija applied_to_project + applied_quotation (no atajo por DB).
+		crmod._addendum_state = lambda q: frappe._dict(docstatus=1, workflow_state="Ganada")
+		crmod.apply_addendum(cr.name)
+		cr.reload()
+		apply_workflow(cr, "Mark Implemented")  # Implemented (evidencia B5+B6 completa)
+	finally:
+		frappe.set_user(prev)
+		change_control.get_live_proposal_for_group = orig_live
+		change_control.get_addendum_delta_fingerprint = orig_fp
+		crmod._addendum_state = orig_state
+		change_control.apply_addendum_to_project = orig_apply
+	cr.reload()
+	return cr
 
 
 class TestProjectBaseline(IntegrationTestCase):
@@ -146,11 +217,12 @@ class TestProjectBaseline(IntegrationTestCase):
 				),
 			)
 
-	def test_nonoriginal_requires_supersedes(self):
+	def test_nonoriginal_without_effective_baseline_is_rejected(self):
+		# Una baseline no-Original necesita una vigente que sustituir; sin Original previa, se rechaza
+		# (supersedes se autodetermina y queda vacía → error claro).
 		p = _project("BL-P4")
-		_baseline(p, "BL-001", submit=True)
 		with self.assertRaises(ValidationError):
-			_baseline(p, "BL-002", btype="Approved Change")
+			_baseline(p, btype="Replan")
 
 	def test_supersedes_must_be_submitted(self):
 		p = _project("BL-P5")
@@ -161,7 +233,7 @@ class TestProjectBaseline(IntegrationTestCase):
 	def test_no_fork(self):
 		p = _project("BL-P6")
 		orig = _baseline(p, "BL-001", submit=True)
-		_baseline(p, "BL-002", btype="Approved Change", supersedes=orig.name, submit=True)
+		_baseline(p, "BL-002", btype="Replan", supersedes=orig.name, submit=True)
 		# BL-003 intenta sustituir de nuevo BL-001 (cabeza ya sustituida) -> bifurcacion
 		with self.assertRaises(ValidationError):
 			_baseline(p, "BL-003", btype="Replan", supersedes=orig.name)
@@ -262,7 +334,7 @@ class TestProjectBaseline(IntegrationTestCase):
 	def test_cannot_cancel_intermediate_with_successor(self):
 		p = _project("BL-P13")
 		b1 = _baseline(p, "BL-001", submit=True)
-		b2 = _baseline(p, "BL-002", btype="Approved Change", supersedes=b1.name, submit=True)
+		b2 = _baseline(p, "BL-002", btype="Replan", supersedes=b1.name, submit=True)
 		# cancelar la intermedia (con sucesor no-cancelado) -> bloqueado
 		with self.assertRaises(ValidationError):
 			b1.cancel()
@@ -280,3 +352,88 @@ class TestProjectBaseline(IntegrationTestCase):
 		# igual fecha -> permitido
 		b2 = _baseline(p, "BL-002", btype="Replan", supersedes=b1.name, effective="2026-02-01")
 		self.assertTrue(b2.name)
+
+
+class TestBaselineRevisionAndTypes(IntegrationTestCase):
+	"""Autogeneración de revision, autodeterminación de la línea base sustituida, obligatoriedad del motivo,
+	y reglas del tipo Cambio aprobado (Change Request válido + relación consistente con baseline_after)."""
+
+	def setUp(self):
+		frappe.set_user("Administrator")
+
+	def tearDown(self):
+		frappe.set_user("Administrator")
+
+	def test_revision_autogenerated_per_project(self):
+		p = _project("BL-RV1")
+		b1 = _baseline(p, submit=True)  # sin revision -> BL-001
+		self.assertEqual(b1.revision, "BL-001")
+		b2 = _baseline(p, btype="Replan", submit=True)  # -> BL-002 (supersedes autodeterminado)
+		self.assertEqual(b2.revision, "BL-002")
+		# otro Project reinicia el consecutivo
+		p2 = _project("BL-RV2")
+		self.assertEqual(_baseline(p2, submit=True).revision, "BL-001")
+
+	def test_supersedes_autodetermined_from_effective(self):
+		p = _project("BL-SD1")
+		b1 = _baseline(p, submit=True)
+		b2 = _baseline(p, btype="Replan", submit=True)  # sin supersedes explícito
+		self.assertEqual(b2.supersedes_baseline, b1.name)
+
+	def test_reason_mandatory_for_nonoriginal(self):
+		p = _project("BL-RM1")
+		_baseline(p, submit=True)
+		with self.assertRaises(ValidationError):  # MandatoryError hereda de ValidationError
+			_baseline(p, btype="Replan", reason=None)
+
+	def test_original_reason_optional(self):
+		p = _project("BL-RM2")
+		b = _baseline(p, reason=None, submit=True)  # Original no exige motivo
+		self.assertEqual(b.baseline_type, "Original")
+
+	def test_replan_does_not_require_change_request(self):
+		p = _project("BL-RP1")
+		_baseline(p, submit=True)
+		b2 = _baseline(p, btype="Replan", submit=True)
+		self.assertEqual(b2.baseline_type, "Replan")
+		self.assertFalse(b2.change_request)
+
+	def test_approved_change_requires_change_request(self):
+		p = _project("BL-AC1")
+		_baseline(p, submit=True)
+		with self.assertRaises(ValidationError):
+			_baseline(p, btype="Approved Change")  # sin Solicitud de cambio
+
+	def test_approved_change_rejects_draft_cr(self):
+		p = _project("BL-AC2")
+		_baseline(p, submit=True)
+		cr = frappe.get_doc(
+			{"doctype": "PMO Change Request", "project": p, "title": "Cambio", "reason": "Motivo"}
+		).insert(ignore_permissions=True)  # Draft: no válido
+		with self.assertRaises(ValidationError):
+			_baseline(p, btype="Approved Change", change_request=cr.name)
+
+	def test_approved_change_rejects_cr_of_other_project(self):
+		owner = _user("bl-ac3-owner@example.com", ["Projects User"])
+		p1 = _project("BL-AC3a", owner=owner)
+		_baseline(p1, submit=True)
+		cr = _implemented_cr(p1, owner)
+		p2 = _project("BL-AC3b", owner=owner)
+		_baseline(p2, submit=True)
+		with self.assertRaises(ValidationError):
+			_baseline(p2, btype="Approved Change", change_request=cr.name)  # CR de otro Project
+
+	def test_approved_change_links_and_blocks_reuse(self):
+		owner = _user("bl-ac4-owner@example.com", ["Projects User"])
+		p = _project("BL-AC4", owner=owner)
+		b1 = _baseline(p, submit=True)
+		cr = _implemented_cr(p, owner)
+		self.assertFalse(cr.baseline_after)
+		# Cambio aprobado: relación consistente con baseline_after y supersedes autodeterminado.
+		b2 = _baseline(p, btype="Approved Change", change_request=cr.name, submit=True)
+		cr.reload()
+		self.assertEqual(cr.baseline_after, b2.name)
+		self.assertEqual(b2.supersedes_baseline, b1.name)
+		# reutilizar el mismo CR (ya con baseline_after) en otra baseline -> bloqueado
+		with self.assertRaises(ValidationError):
+			_baseline(p, btype="Approved Change", change_request=cr.name)

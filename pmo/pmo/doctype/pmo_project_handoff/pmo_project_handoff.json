@@ -1,0 +1,244 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "PMO-HOF-.#####",
+ "creation": "2026-09-13 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "is_submittable": 1,
+ "field_order": [
+  "project",
+  "handoff_date",
+  "column_break_hdr",
+  "project_manager",
+  "section_parties",
+  "operational_owner",
+  "customer_contact",
+  "section_summary",
+  "handoff_summary",
+  "contractual_legal_ready",
+  "section_snapshot",
+  "customer",
+  "company",
+  "committed_end_date",
+  "proposal_reference",
+  "column_break_snap",
+  "issued_by",
+  "issued_at",
+  "snapshot_schema_version",
+  "snapshot_hash",
+  "section_snapshot_data",
+  "snapshot",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Project",
+   "options": "Project",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "handoff_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Fecha de handoff",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_hdr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Responsable interno de la gestión del proyecto.",
+   "fieldname": "project_manager",
+   "fieldtype": "Link",
+   "label": "Project Manager",
+   "options": "User"
+  },
+  {
+   "fieldname": "section_parties",
+   "fieldtype": "Section Break",
+   "label": "Responsables"
+  },
+  {
+   "description": "Se toma del Project (Responsable operativo interno) y se congela al emitir (Submit).",
+   "fetch_from": "project.pmo_operational_owner",
+   "fieldname": "operational_owner",
+   "fieldtype": "Link",
+   "label": "Responsable operativo interno",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "description": "Se toma del Project (Contacto principal del cliente) y se congela al emitir (Submit).",
+   "fetch_from": "project.pmo_customer_contact",
+   "fieldname": "customer_contact",
+   "fieldtype": "Link",
+   "label": "Contacto principal del cliente",
+   "options": "Contact",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_summary",
+   "fieldtype": "Section Break",
+   "label": "Resumen de handoff"
+  },
+  {
+   "description": "Resume qué se transfiere al equipo de ejecución: contexto relevante del proyecto, acuerdos de arranque, pendientes conocidos, dependencias inmediatas y cualquier consideración que el responsable operativo deba conocer antes de iniciar.\n\nIncluye, cuando aplique: acuerdos relevantes del kickoff, pendientes abiertos, dependencias con cliente o terceros, decisiones ya tomadas y consideraciones operativas importantes.",
+   "fieldname": "handoff_summary",
+   "fieldtype": "Small Text",
+   "label": "Resumen de handoff",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "PMO confirms that, where applicable, the requirements needed to start execution were verified (e.g. contracts, NDAs, orders/authorizations, commercial terms or other contractual/legal requirements needed to begin). This is not a legal approval of the documents, nor a capture of contracts; only a readiness confirmation before starting execution. Required before issuing the Handoff.",
+   "fieldname": "contractual_legal_ready",
+   "fieldtype": "Check",
+   "label": "Contractual / Legal Readiness Verified"
+  },
+  {
+   "collapsible": 1,
+   "description": "Datos canónicos referenciados del Project al emitir. Se congelan en el Submit; no se capturan a mano.",
+   "fieldname": "section_snapshot",
+   "fieldtype": "Section Break",
+   "label": "Evidencia de handoff (congelada al emitir)"
+  },
+  {
+   "fetch_from": "project.customer",
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Cliente",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "project.company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Empresa",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "committed_end_date",
+   "fieldtype": "Date",
+   "label": "Fecha comprometida",
+   "read_only": 1
+  },
+  {
+   "description": "Quotation ganada ligada al Project (proposal_project), si existe.",
+   "fieldname": "proposal_reference",
+   "fieldtype": "Link",
+   "label": "Propuesta (Quotation)",
+   "options": "Quotation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_snap",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "issued_by",
+   "fieldtype": "Link",
+   "label": "Emitido por",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issued_at",
+   "fieldtype": "Datetime",
+   "label": "Emitido el",
+   "read_only": 1
+  },
+  {
+   "fieldname": "snapshot_schema_version",
+   "fieldtype": "Int",
+   "label": "Versión de esquema del snapshot",
+   "read_only": 1
+  },
+  {
+   "fieldname": "snapshot_hash",
+   "fieldtype": "Data",
+   "label": "Hash del snapshot",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_snapshot_data",
+   "fieldtype": "Section Break",
+   "label": "Snapshot (JSON)"
+  },
+  {
+   "description": "Snapshot canónico inmutable al emitir (la misma forma que se hashea).",
+   "fieldname": "snapshot",
+   "fieldtype": "Code",
+   "label": "Snapshot",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PMO Project Handoff",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "module": "PMO",
+ "name": "PMO Project Handoff",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PMO Executive Access"
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

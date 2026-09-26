@@ -58,6 +58,9 @@ doctype_calendar_js = {"Task": "public/js/task_calendar_pmo.js"}
 doctype_js = {
 	"PMO Change Request": "public/js/pmo_change_request.js",
 	"PMO Project Baseline": "public/js/pmo_project_baseline.js",
+	# Handoff: refleja read-only el responsable operativo / contacto del cliente desde el Project y avisa si
+	# faltan antes del Submit (fuente única = Project; no se editan ni se escriben desde el Handoff).
+	"PMO Project Handoff": "public/js/pmo_project_handoff.js",
 	# Solo navegación: botón "PMO Project Control" en el form nativo de Project (no toca core).
 	"Project": "public/js/project_pmo.js",
 }
@@ -94,7 +97,13 @@ doctype_js = {
 # `pmo_project_status(project, status_date=None)` alimenta el Print Format "PMO Project Status"
 # (reutiliza build_status_report; P4 lo impone esa función).
 jinja = {
-	"methods": ["pmo.print_status.pmo_project_status"],
+	"methods": [
+		"pmo.print_status.pmo_project_status",
+		# ADR-0014 D4: gate económico reutilizado en el Print Format del Closure (aislamiento económico).
+		"pmo.project_economics.can_see_project_economics",
+		# ADR-0016: historia nativa (Version + Comment) del Risk para el Print Format (solo lectura, P4).
+		"pmo.risk_history.get_risk_history",
+	],
 }
 
 # Installation
@@ -157,6 +166,16 @@ permission_query_conditions = {
 	"PMO Project Baseline": "pmo.permissions.get_permission_query_conditions_baseline",
 	# ADR-0005 D13: el Change Request hereda la visibilidad del Project.
 	"PMO Change Request": "pmo.permissions.get_permission_query_conditions_change_request",
+	# ADR-0014 D3/D10: el Handoff hereda la visibilidad del Project.
+	"PMO Project Handoff": "pmo.permissions.get_permission_query_conditions_handoff",
+	# ADR-0014 D4/D10: el Closure hereda la visibilidad del Project.
+	"PMO Project Closure": "pmo.permissions.get_permission_query_conditions_closure",
+	# ADR-0014 D5/D10: el Post-Project Review hereda la visibilidad del Project.
+	"PMO Post-Project Review": "pmo.permissions.get_permission_query_conditions_review",
+	# ADR-0014 Risk/D10: el Risk Assessment hereda la visibilidad del Project.
+	"PMO Project Risk Assessment": "pmo.permissions.get_permission_query_conditions_risk_assessment",
+	# ADR-0016: el Risk (registro vivo) hereda la visibilidad del Project.
+	"PMO Project Risk": "pmo.permissions.get_permission_query_conditions_risk",
 }
 
 has_permission = {
@@ -164,6 +183,11 @@ has_permission = {
 	"Task": "pmo.permissions.has_permission_task",
 	"PMO Project Baseline": "pmo.permissions.has_permission_baseline",
 	"PMO Change Request": "pmo.permissions.has_permission_change_request",
+	"PMO Project Handoff": "pmo.permissions.has_permission_handoff",
+	"PMO Project Closure": "pmo.permissions.has_permission_closure",
+	"PMO Post-Project Review": "pmo.permissions.has_permission_review",
+	"PMO Project Risk Assessment": "pmo.permissions.has_permission_risk_assessment",
+	"PMO Project Risk": "pmo.permissions.has_permission_risk",
 }
 
 # ADR-0006 D2: la Status Date (Data Date) del Project solo puede ser hoy o pasada (no futura en v0.7.0).
@@ -177,10 +201,27 @@ doc_events = {
 	"Task": {
 		"validate": "pmo.schedule_commit.validate_task_deadline",  # ADR-0007 D4 (warning)
 	},
+	# ADR-0016 / auditoría de integridad: `project` inmutable tras crear en TODOS los DocTypes pmo con Link
+	# estructural a Project (un documento pertenece al Project en que se creó). Helper único compartido.
+	"PMO Project Risk": {"validate": "pmo.project_link.enforce_immutable_project"},
+	"PMO Project Risk Assessment": {"validate": "pmo.project_link.enforce_immutable_project"},
+	"PMO Project Baseline": {"validate": "pmo.project_link.enforce_immutable_project"},
+	"PMO Change Request": {"validate": "pmo.project_link.enforce_immutable_project"},
+	"PMO Project Closure": {"validate": "pmo.project_link.enforce_immutable_project"},
+	"PMO Project Handoff": {"validate": "pmo.project_link.enforce_immutable_project"},
+	"PMO Post-Project Review": {"validate": "pmo.project_link.enforce_immutable_project"},
+	# Change Control v2 D7 (B7): enforcement server-side del orden de la Addenda. Se engancha en los mismos
+	# dos eventos que usa erpnext_proposals para las transiciones (docstatus 0 y docstatus 1), que corren
+	# ANTES del write → un throw bloquea la transición. Solo permite/bloquea (no escribe). erpnext_proposals
+	# sigue sin conocer al CR (dependencia pmo → erpnext_proposals intacta).
+	"Quotation": {
+		"validate": "pmo.quotation_guard.enforce_change_control_order",
+		"before_update_after_submit": "pmo.quotation_guard.enforce_change_control_order",
+	},
 }
 
-# Fixtures: Custom Fields (Project-pmo_status_date, Project-pmo_committed_end_date, Task-pmo_deadline,
-# ToDo-pmo_planned_hours) + roles PMO + Custom Role de reports.
+# Fixtures: Custom Fields (Project-pmo_status_date, Project-pmo_committed_end_date, Project-pmo_operational_owner,
+# Project-pmo_customer_contact, Task-pmo_deadline, ToDo-pmo_planned_hours) + roles PMO + Custom Role de reports.
 # (La membresía de Project ya NO usa un Custom Field/child: se deriva de owner + DocShare + ToDo; ADR-0002.)
 # Los Custom Role restringen 3 Script Reports de ERPNext (que ignoran pqc vía get_all/db.sql) a
 # `PMO Executive Access`/`Administrator`. Viven en doctype aparte (el sync del Report no los pisa) y el
@@ -195,6 +236,8 @@ fixtures = [
 				[
 					"Project-pmo_status_date",
 					"Project-pmo_committed_end_date",
+					"Project-pmo_operational_owner",
+					"Project-pmo_customer_contact",
 					"Task-pmo_deadline",
 					"ToDo-pmo_planned_hours",
 				],
@@ -227,7 +270,10 @@ fixtures = [
 	# Custom HTML Blocks del Workspace PMO (native-first: solo lo derivado sin equivalente nativo).
 	# No se sincronizan por migrate como doc estándar → se envían por fixture. Datos server-side
 	# P4-safe (pmo.dashboard.attention_block / customers_block); caché por-usuario, nunca global.
-	{"dt": "Custom HTML Block", "filters": [["name", "in", ["PMO Attention", "PMO Customers"]]]},
+	{
+		"dt": "Custom HTML Block",
+		"filters": [["name", "in", ["PMO Attention", "PMO Customers", "PMO Governance"]]],
+	},
 ]
 
 # Document Events

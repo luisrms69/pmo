@@ -8,21 +8,28 @@ Quotation-addendum y a las baselines before/after.
 Semántica de estados (Workflow `PMO Change Request`):
     Draft → In Review → Approved / Rejected → Implemented → Closed
 
-- Al pasar a **In Review** (formalizar): gate duro de baseline vigente + congelado de `baseline_before`.
-- **Aprobar/Rechazar** = Submit (autoridad owner-only sellada por P4 sobre `submit` + condición del
-  Workflow). `before_submit` fija `approved_by`/`approved_at` y actúa como **red de seguridad** del gate
-  de baseline (cubre cualquier ruta a `docstatus=1`).
-- **Aplicar Quotation al Project** (acción explícita, no transición): materializa los Scope Items vía el
-  contrato `erpnext_proposals.apply_addendum_to_project` y fija `applied_*`. **No** mueve el Workflow.
-- **Marcar Implementado**: transición Approved→Implemented; gate: si hay `proposal_group`, exige
-  `applied_to_project`.
-- **Cerrar**: transición Implemented→Closed; gate: exige `baseline_after`.
+Flujo único addenda-céntrico (ADR-0015):
+- Al pasar a **In Review** (formalizar): gate duro de baseline vigente + congelado de `baseline_before`
+  **y** Addenda ya creada (`proposal_group`); no existe ruta paralela "sin Addenda" (B4).
+- **Aprobar** = Submit que aterriza en `Approved`: captura server-side `approved_addendum` +
+  `approved_delta_fingerprint` (versión viva `En Revision` + huella canónica de `erpnext_proposals`),
+  fail-closed, y fija `approved_by`/`approved_at` (B5). **Rechazar** también es Submit pero NO es
+  aprobación: no captura ni marca aprobación. `before_submit` es además red de seguridad de los gates.
+- **Reapprove addendum version** (acción explícita, no transición): cuando se emite una versión divergente,
+  el Project Owner re-aprueba y se actualiza `approved_addendum`/`approved_delta_fingerprint` sin cambiar
+  el workflow ni `applied_*` (B5).
+- **Marcar Implementado**: transición Approved→Implemented; gate: `implementation_owner` + Addenda
+  (`proposal_group`) + `applied_to_project`. `impacts_commercial` es solo clasificación informativa.
+- **Cerrar**: transición Implemented→Closed; gate: `baseline_after` (fijada por una Baseline `Approved
+  Change` que referencia el CR) + `stakeholder_communication`.
+- **Apply addendum to Project** (acción explícita, no transición, B6): deriva la versión viva `Ganada`,
+  exige que su fingerprint == `approved_delta_fingerprint` (guard) y, solo entonces, delega en
+  `apply_addendum_to_project` de forma transaccional; fija `applied_*`. No mueve el Workflow.
 """
 
 import frappe
 from frappe import N_
 from frappe.model.document import Document
-from frappe.query_builder import Order
 from frappe.utils import cint, getdate, now_datetime, today
 
 from pmo import change_control
@@ -37,6 +44,13 @@ REJECTED = N_("Rejected")
 IMPLEMENTED = N_("Implemented")
 CLOSED = N_("Closed")
 _TERMINAL_STATES = (REJECTED, CLOSED)
+
+# Estados del workflow "Propuesta Comercial" (erpnext_proposals). Valores EXACTOS del fixture (sin acento):
+# `En Revision` = congelada y lista para gobernarse (B5); `Ganada` = aceptación comercial, lista para
+# aplicarse al Project (B6).
+ADDENDUM_REVIEW_STATE = "En Revision"
+ADDENDUM_WON_STATE = "Ganada"
+ADDENDUM_REJECTED_STATE = "Rechazada"
 
 # Workflow Action labels (canónicos en inglés, definidos en workflow.json). Solo marcados para
 # extracción (N_ es no-op): el motor de Workflow compara estos valores; el es.po da el español visible.
@@ -60,6 +74,12 @@ _IMPACT_LABELS = (
 
 
 class PMOChangeRequest(Document):
+	def before_insert(self):
+		# Default inicial del responsable de implementación desde el Project (dato propio del cambio; editable
+		# mientras el CR sea editable). NO modifica el Project.
+		if not self.implementation_owner and self.project:
+			self.implementation_owner = frappe.db.get_value("Project", self.project, "pmo_operational_owner")
+
 	def validate(self):
 		self._set_defaults()
 		self._compute_impact_summary()
@@ -138,18 +158,70 @@ class PMOChangeRequest(Document):
 			return
 		if new_state == IN_REVIEW:
 			self._ensure_baseline_before()  # gate duro + congelado
+			self._ensure_addendum()  # flujo único: toda CR formal tiene su Addenda (B4)
+		elif new_state == REJECTED:
+			if not (self.decision_notes and self.decision_notes.strip()):
+				frappe.throw(
+					frappe._("Provide Decision notes explaining why the Change Request is rejected.")
+				)
 		elif new_state == IMPLEMENTED:
-			if self.proposal_group and not self.applied_to_project:
-				frappe.throw(
-					frappe._(
-						"Apply the Quotation to the Project (the Scope Items) before marking the change as implemented."
-					)
-				)
+			self._gate_implemented()
 		elif new_state == CLOSED:
-			if not self.baseline_after:
-				frappe.throw(
-					frappe._("Link the new baseline (Baseline After) before closing the Change Request.")
+			self._gate_closed()
+
+	def _gate_implemented(self):
+		"""Gate Approved -> Implemented (flujo único, B8): exige la EVIDENCIA persistida de una aprobación
+		gobernada (B5) y una aplicación válida (B6). NO se reconsulta el estado `Ganada` ni se recalcula el
+		fingerprint aquí: B6 ya certificó, al aplicar, "Ganada vigente + fingerprint == aprobado → primitive →
+		applied_*". `Implemented` solo consume esa evidencia. `impacts_commercial` es informativo; `Mark
+		Implemented` sigue siendo la confirmación explícita del responsable."""
+		if not self.implementation_owner:
+			frappe.throw(frappe._("Set the Implementation Owner before marking the change as implemented."))
+		if not self.proposal_group:
+			frappe.throw(
+				frappe._("Create the Addendum for this Change Request before it can be implemented.")
+			)
+		# Evidencia de aprobación gobernada (B5).
+		if not (self.approved_addendum and self.approved_delta_fingerprint):
+			frappe.throw(
+				frappe._(
+					"The Change Request has no governed approval (approved addendum + fingerprint); it cannot be implemented."
 				)
+			)
+		# Evidencia de aplicación válida (B6): ambos campos, no solo el flag.
+		if not (self.applied_to_project and self.applied_quotation):
+			frappe.throw(
+				frappe._(
+					"Apply the Addendum to the Project before marking the change as implemented (a valid apply sets Applied to Project and the Applied quotation)."
+				)
+			)
+
+	def _gate_closed(self):
+		"""Gate Implemented -> Closed: baseline_after (fijada por una Baseline `Approved Change` que referencia
+		este CR) y comunicación a interesados informada."""
+		if not self.baseline_after:
+			frappe.throw(
+				frappe._(
+					"Link the new baseline before closing: submit a PMO Project Baseline of type 'Approved Change' that references this Change Request."
+				)
+			)
+		if not (self.stakeholder_communication and self.stakeholder_communication.strip()):
+			frappe.throw(
+				frappe._(
+					"Record the Stakeholder Communication before closing the implemented change (use 'N/A' if it genuinely does not apply)."
+				)
+			)
+
+	def _ensure_addendum(self):
+		"""Flujo único (ADR-0015 B4): una CR no puede pasar a `In Review` sin su Addenda canónica ya creada
+		(`proposal_group` fijado por el sistema al crearla). No existe ruta paralela "sin Addenda"."""
+		if not self.proposal_group:
+			frappe.throw(
+				frappe._(
+					"Create the Addendum before sending the Change Request for review "
+					"(every formal change goes through exactly one Addendum)."
+				)
+			)
 
 	def _ensure_baseline_before(self):
 		"""Gate duro (ADR-0005 D4): sin baseline vigente no hay Change Control. Congela `baseline_before`
@@ -175,10 +247,26 @@ class PMOChangeRequest(Document):
 		incluido un submit directo que se salte 'En Revision'). El contenido de la solicitud queda inmutable
 		(no `allow_on_submit`)."""
 		self._ensure_baseline_before()
+		self._ensure_addendum()  # red de seguridad del flujo único: ni un submit directo aprueba sin Addenda
+		# Rechazar también es un Submit (docstatus 0→1): NO es una aprobación → no registra aprobación ni
+		# captura la Addenda gobernada (B5). Solo el aterrizaje en `Approved` es aprobación real.
+		if self.get("workflow_state") == REJECTED:
+			return
+		# Aprobación gobernada (B5): fija la versión exacta de Addenda aprobada + su fingerprint canónico.
+		self._capture_approved_addendum()
 		if not self.approved_by:
 			self.approved_by = frappe.session.user
 		if not self.approved_at:
 			self.approved_at = now_datetime()
+
+	def _capture_approved_addendum(self):
+		"""Al aprobar (In Review → Approved / submit directo): resuelve la versión viva de la Addenda del
+		grupo, exige que esté congelada y `En Revision`, y persiste `approved_addendum` +
+		`approved_delta_fingerprint` (huella canónica de `erpnext_proposals`). Fail-closed ante
+		ausencia/inconsistencia/error. `pmo` NO calcula la huella ni resuelve versiones por su cuenta."""
+		quotation, fingerprint = _resolve_live_addendum_in_review(self.proposal_group)
+		self.approved_addendum = quotation
+		self.approved_delta_fingerprint = fingerprint
 
 	# --- cancel: escape controlado (D10) -------------------------------------------
 
@@ -205,34 +293,124 @@ class PMOChangeRequest(Document):
 			)
 
 
-# --- Acción explícita: Aplicar Quotation al Project (ADR-0005 D7) -------------------
+# --- Aprobación gobernada de la Addenda (B5) ---------------------------------------
+
+
+def _addendum_state(quotation: str):
+	"""Estado congelado de la Quotation-addenda (docstatus + workflow_state). Seam aislado de la lectura de
+	esquema de `erpnext_proposals` (Quotation.workflow_state) para poder verificar el estado sin reimplementar
+	nada. Devuelve un `_dict` o `None`."""
+	return frappe.db.get_value("Quotation", quotation, ["docstatus", "workflow_state"], as_dict=True)
+
+
+def _resolve_live_addendum_in_review(proposal_group: str):
+	"""Resuelve la versión VIVA de la Addenda del grupo y su fingerprint canónico, exigiendo que esté
+	congelada y `En Revision`. Devuelve `(quotation, fingerprint)`. Fail-closed ante ausencia/estado
+	inválido/error del contrato. `pmo` NO parsea grupos, NO calcula la huella y NO resuelve versiones: todo
+	proviene de `erpnext_proposals` (vía `change_control`)."""
+	if not proposal_group:
+		frappe.throw(frappe._("The Change Request has no Addendum to approve."))
+	quotation = change_control.get_live_proposal_for_group(proposal_group)
+	if not quotation:
+		frappe.throw(frappe._("No live Addendum version was found for this Change Request's Proposal Group."))
+	info = _addendum_state(quotation)
+	if not info or cint(info.docstatus) != 1 or info.workflow_state != ADDENDUM_REVIEW_STATE:
+		frappe.throw(
+			frappe._(
+				"The Addendum must be frozen and In Review (submitted) before the change can be approved. "
+				"Current version: {0}."
+			).format(quotation)
+		)
+	fingerprint = change_control.get_addendum_delta_fingerprint(quotation)
+	if not fingerprint:
+		frappe.throw(frappe._("Could not obtain the Addendum's delta fingerprint (fail-closed)."))
+	return quotation, fingerprint
 
 
 @frappe.whitelist()
-def aplicar_quotation_al_project(change_request: str, quotation: str):
-	"""Aplica los Scope Items de la Quotation-addendum al Project EXISTENTE del CR, delegando en el
-	contrato de `erpnext_proposals` (`apply_addendum_to_project`). Owner-only (P4 sobre write del CR
-	submitted). NO mueve el Workflow: solo fija `applied_to_project`/`applied_at`/`applied_quotation`. La
-	transición a `Implemented` es un paso explícito posterior ("Mark Implemented")."""
+def reapprove_addendum_version(change_request: str):
+	"""Re-aprueba la versión vigente de la Addenda cuando se emitió una nueva versión del mismo grupo
+	(rechazo del cliente → nueva versión). Owner-only (P4 `submit` == owner). Actualiza `approved_addendum`
+	y `approved_delta_fingerprint` con la versión viva `En Revision`. NO cambia `workflow_state`,
+	`approved_by`/`approved_at` ni `applied_*`; la trazabilidad queda en Version/track_changes."""
 	doc = frappe.get_doc("PMO Change Request", change_request)
-	doc.check_permission("write")  # sobre un CR submitted → owner-only por P4
+	doc.check_permission("submit")  # owner-only (P4): aprobar/re-aprobar es autoridad del Project Owner
 	if doc.docstatus != 1 or doc.get("workflow_state") != APPROVED:
-		frappe.throw(
-			frappe._("A Quotation can only be applied from a Change Request in the 'Approved' state.")
-		)
+		frappe.throw(frappe._("Re-approval is only possible for an Approved Change Request."))
 	if doc.applied_to_project:
-		frappe.throw(frappe._("The Quotation was already applied to this Change Request."))
-	if not quotation:
-		frappe.throw(frappe._("Specify the (Won) Quotation to apply."))
+		frappe.throw(frappe._("The change was already applied; re-approval no longer applies."))
+	quotation, fingerprint = _resolve_live_addendum_in_review(doc.proposal_group)
+	doc.approved_addendum = quotation
+	doc.approved_delta_fingerprint = fingerprint
+	doc.save()  # solo campos allow_on_submit sobre el CR submitted
+	return {"approved_addendum": quotation, "approved_delta_fingerprint": fingerprint}
 
-	# Delegación: erpnext_proposals valida (Ganada/single-live/…), escribe proposal_project y anexa Tasks.
-	result = change_control.apply_addendum_to_project(quotation, doc.project)
+
+# --- Aplicación gobernada de la Addenda al Project (B6) -----------------------------
+
+
+@frappe.whitelist()
+def apply_addendum(change_request: str):
+	"""Aplica la Addenda **Ganada** autorizada al Project del CR, verificando que su fingerprint coincida
+	EXACTAMENTE con el aprobado por gobernanza (B5). Owner-only (P4 `submit`). NO recibe Quotation del
+	cliente: PMO deriva la versión viva `Ganada` del `proposal_group`. Atómico con el request (el contrato
+	de `erpnext_proposals` no hace commit interno): si la primitive falla, la transacción revierte y el CR
+	NO queda aplicado. NO mueve el Workflow (sigue `Approved`); marcar Implementado es un paso posterior."""
+	doc = frappe.get_doc("PMO Change Request", change_request)
+	doc.check_permission("submit")  # owner-only (P4): aplicar es autoridad del Project Owner
+	if doc.docstatus != 1 or doc.get("workflow_state") != APPROVED:
+		frappe.throw(frappe._("The Addendum can only be applied from an Approved Change Request."))
+	if doc.applied_to_project:
+		frappe.throw(frappe._("The Addendum was already applied to this Change Request."))
+	if not doc.proposal_group:
+		frappe.throw(frappe._("This Change Request has no Addendum to apply."))
+	if not doc.approved_addendum or not doc.approved_delta_fingerprint:
+		frappe.throw(
+			frappe._("The Change Request has no governed approval (approved addendum / fingerprint).")
+		)
+
+	# Resolver la versión viva y exigir que sea Ganada (aceptación comercial). Fail-closed.
+	live = change_control.get_live_proposal_for_group(doc.proposal_group)
+	if not live:
+		frappe.throw(frappe._("No live Addendum version was found for this Change Request's Proposal Group."))
+	info = _addendum_state(live)
+	if not info or cint(info.docstatus) != 1 or info.workflow_state != ADDENDUM_WON_STATE:
+		frappe.throw(
+			frappe._(
+				"The Addendum must be Won (accepted) before it can be applied. Current version: {0}."
+			).format(live)
+		)
+
+	# Guard de fingerprint (B5/B6): la versión Ganada debe ser exactamente la que gobernanza aprobó. Si
+	# difiere → bloquear ANTES de llamar la primitive; no se toca `applied_*` (requiere re-aprobación).
+	current_fp = change_control.get_addendum_delta_fingerprint(live)
+	if not current_fp:
+		frappe.throw(frappe._("Could not obtain the Addendum's delta fingerprint (fail-closed)."))
+	if current_fp != doc.approved_delta_fingerprint:
+		frappe.throw(
+			frappe._(
+				"The Won Addendum's delta differs from the approved version. Reapprove the addendum version "
+				"before applying."
+			)
+		)
+
+	# Aplicación transaccional: el contrato valida (Ganada/single-live/…), escribe `proposal_project` y
+	# materializa Tasks SOLO si hay Scope ejecutable (tasks_created=0 es un éxito válido: addenda
+	# economic-only / Required Items-only / contractual / delta $0). Sin commit interno → si falla, revierte
+	# todo y el CR no queda aplicado.
+	result = change_control.apply_addendum_to_project(live, doc.project)
 
 	doc.applied_to_project = 1
 	doc.applied_at = now_datetime()
-	doc.applied_quotation = quotation
-	doc.save()  # solo campos allow_on_submit sobre el CR submitted
+	doc.applied_quotation = live
+	doc.save()  # campos allow_on_submit sobre el CR submitted; misma transacción del request
 	return result
+
+
+# --- Acción explícita: Crear addenda comercial (ADR-0015) --------------------------
+# NOTA (B4): la acción de "Aplicar Quotation al Project" con Quotation seleccionada por el usuario fue
+# ELIMINADA. El apply automático y gobernado (deriva la versión Ganada + guard de fingerprint) se
+# implementa en B6; entre B4 y B6 no existe ruta de apply.
 
 
 @frappe.whitelist()
@@ -279,58 +457,3 @@ def crear_addenda(change_request: str):
 		doc.proposal_group = group
 		doc.save()
 	return new_quotation
-
-
-# --- UX de baseline_after: selección explícita, más guiada (ADR-0005 D5) -----------
-
-
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
-def baseline_after_query(
-	doctype: str,
-	txt: str,
-	searchfield: str,
-	start: int,
-	page_len: int,
-	filters: dict | None = None,
-):
-	"""Link query para `baseline_after`: baselines Submitted del mismo Project, distintas de
-	`baseline_before` y compatibles temporalmente (`effective_date >= baseline_before.effective_date`).
-	Reduce fricción sin automatizar la relación (que es de negocio, no "la vigente al instante").
-
-	Construido con Query Builder (`frappe.qb`): sin SQL por f-string; los valores viajan como parámetros."""
-	filters = filters or {}
-	like = f"%{txt or ''}%"
-	b = frappe.qb.DocType("PMO Project Baseline")
-	query = (
-		frappe.qb.from_(b)
-		.select(b.name, b.revision)
-		.where(b.docstatus == 1)
-		.where(b.project == filters.get("project"))
-		.where(b.name.like(like) | b.revision.like(like))
-		.orderby(b.effective_date, order=Order.desc)
-		.orderby(b.creation, order=Order.desc)
-		.limit(cint(page_len))
-		.offset(cint(start))
-	)
-	before = filters.get("baseline_before")
-	if before:
-		query = query.where(b.name != before)
-		eff = frappe.db.get_value("PMO Project Baseline", before, "effective_date")
-		if eff:
-			query = query.where(b.effective_date >= eff)
-	return query.run()
-
-
-@frappe.whitelist()
-def get_current_baseline(project: str):
-	"""Conveniencia para el botón 'Usar línea base vigente': devuelve la baseline vigente del Project si es
-	visible para el usuario (P4). NO fija nada; el usuario puede escoger otra."""
-	if not project:
-		return None
-	from pmo.baseline import get_effective_baseline
-	from pmo.permissions import is_project_visible
-
-	if not is_project_visible(project, frappe.session.user):
-		frappe.throw(frappe._("You do not have access to this Project."), frappe.PermissionError)
-	return get_effective_baseline(project)

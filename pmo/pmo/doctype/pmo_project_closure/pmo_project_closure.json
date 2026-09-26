@@ -1,0 +1,307 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "PMO-CLS-.#####",
+ "creation": "2026-09-13 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "is_submittable": 1,
+ "field_order": [
+  "project",
+  "closure_date",
+  "column_break_hdr",
+  "accepted_by",
+  "accepted_on",
+  "section_checklist",
+  "chk_pending_items",
+  "chk_ops_handover",
+  "chk_contractual_legal",
+  "chk_admin_financial",
+  "column_break_chk",
+  "chk_documentation",
+  "chk_communicated",
+  "chk_resources_released",
+  "section_result",
+  "final_result",
+  "pending_items_transferred",
+  "closure_observations",
+  "section_snapshot",
+  "issued_by",
+  "issued_at",
+  "column_break_snap",
+  "snapshot_schema_version",
+  "snapshot_hash",
+  "section_snapshot_data",
+  "snapshot",
+  "section_economics",
+  "economics_snapshot_hash",
+  "economics_snapshot",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Project",
+   "link_filters": "[[\"Project\",\"status\",\"in\",[\"Completed\",\"Cancelled\"]]]",
+   "options": "Project",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "default": "Today",
+   "description": "Formal date used to close the Project and freeze the Closure's operational evidence.",
+   "fieldname": "closure_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Closure date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_hdr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Who formally accepts the closure (name or role; may be the client). Required for a Completed Project.",
+   "fieldname": "accepted_by",
+   "fieldtype": "Data",
+   "label": "Accepted by"
+  },
+  {
+   "description": "Date of the formal acceptance of the closure. Required for a Completed Project.",
+   "fieldname": "accepted_on",
+   "fieldtype": "Date",
+   "label": "Accepted on"
+  },
+  {
+   "description": "Closure confirmations: each item states that it was reviewed/completed and that no closure action is left unattended. All must be confirmed before closing. An item may be confirmed even when the specific case does not require a complex operation.",
+   "fieldname": "section_checklist",
+   "fieldtype": "Section Break",
+   "label": "Closure Checklist"
+  },
+  {
+   "default": "0",
+   "description": "No pending items are left without an owner, and any post-project pending item was transferred/documented. Does not replace 'Pending items transferred', which holds the detail when there are pending items.",
+   "fieldname": "chk_pending_items",
+   "fieldtype": "Check",
+   "label": "Pending items resolved or transferred"
+  },
+  {
+   "default": "0",
+   "description": "Where applicable, operations, support, knowledge, accesses and operational documentation were handed over to the post-project owner. Can be marked as reviewed/completed even without a complex operational transition.",
+   "fieldname": "chk_ops_handover",
+   "fieldtype": "Check",
+   "label": "Operations / support handover completed"
+  },
+  {
+   "default": "0",
+   "description": "PMO reviewed that no relevant contractual/legal obligations were overlooked, and that warranties, SLAs, post-project support or other later commitments were identified/transferred. Not a legal review; only evidence that this front was reviewed before closing.",
+   "fieldname": "chk_contractual_legal",
+   "fieldtype": "Check",
+   "label": "Contractual / legal obligations reviewed"
+  },
+  {
+   "default": "0",
+   "description": "Where applicable, pending billing/collections, purchases/suppliers, orders and other administrative items related to the Project were reviewed. A review confirmation, not new financial logic.",
+   "fieldname": "chk_admin_financial",
+   "fieldtype": "Check",
+   "label": "Administrative / financial close reviewed"
+  },
+  {
+   "fieldname": "column_break_chk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "The Project's file/documentation is sufficiently complete and available.",
+   "fieldname": "chk_documentation",
+   "fieldtype": "Check",
+   "label": "Project documentation completed"
+  },
+  {
+   "default": "0",
+   "description": "The relevant stakeholders were informed of the closure.",
+   "fieldname": "chk_communicated",
+   "fieldtype": "Check",
+   "label": "Closure communicated to stakeholders"
+  },
+  {
+   "default": "0",
+   "description": "The project's resources were released, reassigned or reviewed as appropriate. Does not modify Capacity Planning or assignments.",
+   "fieldname": "chk_resources_released",
+   "fieldtype": "Check",
+   "label": "Resources released / reassigned"
+  },
+  {
+   "fieldname": "section_result",
+   "fieldtype": "Section Break",
+   "label": "Closure"
+  },
+  {
+   "description": "Executive summary of how the Project ended versus what was committed, and the final outcome.",
+   "fieldname": "final_result",
+   "fieldtype": "Small Text",
+   "label": "Final result",
+   "reqd": 1
+  },
+  {
+   "description": "Pending items that do not disappear with the closure and were transferred to operations, support, the client or another owner. May stay empty if there are none.",
+   "fieldname": "pending_items_transferred",
+   "fieldtype": "Small Text",
+   "label": "Pending items transferred"
+  },
+  {
+   "fieldname": "closure_observations",
+   "fieldtype": "Small Text",
+   "label": "Closure observations"
+  },
+  {
+   "collapsible": 1,
+   "description": "Non-economic metrics frozen from build_project_control at submit (cutoff = closure date). Not editable.",
+   "fieldname": "section_snapshot",
+   "fieldtype": "Section Break",
+   "label": "Closure snapshot (frozen on submit)"
+  },
+  {
+   "fieldname": "issued_by",
+   "fieldtype": "Link",
+   "label": "Issued by",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issued_at",
+   "fieldtype": "Datetime",
+   "label": "Issued at",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_snap",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "snapshot_schema_version",
+   "fieldtype": "Int",
+   "label": "Snapshot schema version",
+   "read_only": 1
+  },
+  {
+   "fieldname": "snapshot_hash",
+   "fieldtype": "Data",
+   "label": "Snapshot hash",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_snapshot_data",
+   "fieldtype": "Section Break",
+   "label": "Frozen snapshot (JSON)"
+  },
+  {
+   "description": "Immutable non-economic snapshot at closure (schedule/effort/changes). The Print Format is rebuilt only from here, never from live data.",
+   "fieldname": "snapshot",
+   "fieldtype": "Code",
+   "label": "Snapshot",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "description": "Economic evidence — permlevel 1: readable only by economic roles (economic gate). Not exposed to plain Project READ.",
+   "fieldname": "section_economics",
+   "fieldtype": "Section Break",
+   "label": "Economic evidence (restricted)",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "economics_snapshot_hash",
+   "fieldtype": "Data",
+   "label": "Economics snapshot hash",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "description": "Immutable economic snapshot frozen at issuance (current_at_issuance). Restricted by permlevel 1 to economic roles.",
+   "fieldname": "economics_snapshot",
+   "fieldtype": "Code",
+   "label": "Economics snapshot",
+   "options": "JSON",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PMO Project Closure",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "module": "PMO",
+ "name": "PMO Project Closure",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PMO Executive Access"
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "PMO Manager"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "PMO Executive Access"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

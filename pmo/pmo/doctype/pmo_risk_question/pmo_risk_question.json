@@ -1,0 +1,121 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:code",
+ "creation": "2026-09-25 00:00:00.000000",
+ "description": "Administrable catalog of risk identification prompts (ADR-0016). Questions are grouped by section (generic + specialized). The Project Risk Assessment prefills its questionnaire from the ACTIVE questions and snapshots them, so later catalog edits never alter existing assessments.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "code",
+  "active",
+  "column_break_hdr",
+  "section",
+  "sort_order",
+  "section_question",
+  "question"
+ ],
+ "fields": [
+  {
+   "description": "Stable identifier (used for i18n and as the snapshot reference on each assessment). Renaming a question's text never changes its code.",
+   "fieldname": "code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "1",
+   "description": "Inactive questions are not prefilled into new assessments (existing assessments keep their snapshot).",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  },
+  {
+   "fieldname": "column_break_hdr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Generic sections apply to any project; specialized sections (e.g. Information Technology) group domain prompts. New sections are added through the app's normal versioned mechanism (never a Property Setter).",
+   "fieldname": "section",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Section",
+   "options": "External dependencies\nScope & requirements\nSchedule\nCost / economic\nResources & team\nStakeholders & governance\nInformation Technology",
+   "reqd": 1
+  },
+  {
+   "description": "Display order within the section (ascending). Left blank on new questions, the next value in steps of 10 within the section is generated automatically; you can set it manually to reorder.",
+   "fieldname": "sort_order",
+   "fieldtype": "Int",
+   "label": "Sort order"
+  },
+  {
+   "fieldname": "section_question",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Identification prompt. It is a yes/no applicability question, not the risk itself: when it applies, the team writes the concrete risk statement on the assessment. Stored in the working language; translatable to other languages via Frappe's translation mechanism.",
+   "fieldname": "question",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Question",
+   "reqd": 1,
+   "translatable": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "module": "PMO",
+ "name": "PMO Risk Question",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PMO Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects User"
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PMO Executive Access"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

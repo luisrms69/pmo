@@ -96,8 +96,16 @@ Baseline completa; ver D5 y gaps).
   vacio; toda posterior -> sustituye la **cabeza vigente** de la cadena del **mismo Project**, que debe
   estar **Submitted** y **no Cancelled**; no self-supersede; **sin ciclos**; **cadena lineal** (sin
   bifurcaciones); **max. una `Original` valida por Project**. **Sin `is_current`** (se deriva).
-  `revision` (Data) = **etiqueta humana unica por Project** (p. ej. `BL-001`); la identidad interna la da
-  el `name` (naming series, p. ej. `PMO-BL-.#####`); sin campo de secuencia numerica extra.
+  `revision` (Data) = **etiqueta humana unica por Project** (`BL-001`, `BL-002`, ...); la identidad interna
+  la da el `name` (naming series `PMO-BL-.#####`).
+- **Refinamiento UX (Punto 4):** `revision` se **autogenera** server-side (`BL-NNN` = max+1 por Project),
+  read-only, consecutiva, determinista e independiente de la fecha; el usuario no la captura.
+  `supersedes_baseline` (label **Línea base sustituida**) es **read-only y se autodetermina** con la vigente
+  del Project (cadena lineal). `reason` (label **Motivo**) es **obligatorio para Approved Change y Replan**,
+  opcional para Original. `effective_date` (label **Fecha de vigencia**) tiene default hoy y descripción
+  funcional (sin textos técnicos). Los campos técnicos (snapshot/hash/preflight/timestamps) van en una
+  sección colapsada read-only. Los valores canónicos de `baseline_type` siguen en inglés; el es.po da el
+  display en español (*Original / Cambio aprobado / Replaneación aprobada*).
 - **Vigencia (Opcion B — sin future-effective en v0.5.0):** `effective_date <= approved_at`. Baseline
   **vigente = cabeza de la cadena** (ultima Submitted/no-Cancelled del Project); la consulta historica
   "efectiva as-of una fecha" se resuelve por `effective_date` + lineage, sin sucesores pendientes.
@@ -117,8 +125,12 @@ Baseline completa; ver D5 y gaps).
     el snapshot sin romper P4).
   - **Separacion de funciones (proponente != aprobador) / Sponsor / CCB / Workflow -> v0.6.0**, con
     visibilidad+autoridad otorgadas explicitamente.
-- Otros campos: `project` (Link), `reason`. **Sin `change_request`** en v0.5.0 (el Link se anade en
-  v0.6.0).
+- Otros campos: `project` (Link), `reason` (Motivo). `change_request` (Link `PMO Change Request`, label
+  **Solicitud de cambio**) — **obligatorio y solo aplica para `Approved Change`**: debe ser del **mismo
+  Project**, estar en estado **Implemented** del Workflow (aprobado y aplicado, a la espera de su nueva
+  baseline) y **no estar reutilizado** (sin otro `baseline_after`). Al Submit de la baseline se fija
+  `PMO Change Request.baseline_after` a esta baseline, **reutilizando el vínculo existente** (sin segunda
+  semántica). Consistente con la frontera de Change Control (ADR-0005 D9/D11).
 
 ### D5 — Snapshot canonico + ciclo de captura
 

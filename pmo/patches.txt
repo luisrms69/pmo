@@ -4,3 +4,6 @@
 
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
+pmo.patches.v0_0_1.seed_risk_questions
+pmo.patches.v0_0_1.normalize_risk_question_es
+pmo.patches.v0_0_1.migrate_risk_levels

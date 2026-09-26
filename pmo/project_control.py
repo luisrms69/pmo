@@ -22,6 +22,7 @@ import frappe
 from frappe import N_
 from frappe.utils import flt, getdate, today
 
+from pmo.governance import build_expediente
 from pmo.health import HEALTH_LABELS, _health
 from pmo.project_economics import can_see_project_economics, get_authorized_economics
 from pmo.status_date import build_status_report
@@ -35,6 +36,11 @@ SECTION_SCOPE_CHANGES = "scope_changes"
 # Print Format/PDF (Q2: la economía no viaja en un documento potencialmente compartible). Además el gate
 # económico se aplica antes de componerla.
 SECTION_COSTS = "costs"
+# Gobierno (ADR-0014 D8): índice de expediente + estado de ciclo de vida derivado. Opt-in (NO en
+# DEFAULT_SECTIONS): solo lo solicita la Page de Project Control; no viaja en el Print Format por defecto.
+SECTION_GOVERNANCE = "governance"
+# Riesgos (ADR-0016): señales DERIVADAS del Project (fuente única: pmo.risk_signals). Opt-in (solo la Page).
+SECTION_RISK = "risk"
 DEFAULT_SECTIONS = (
 	SECTION_PROJECT,
 	SECTION_EXECUTIVE,
@@ -164,6 +170,19 @@ _TEMPLATE_STRINGS = (
 	N_("Applied addenda"),
 	N_("Pending changes"),
 	N_("Proposal group"),  # pmo-propio: evita "Group"→"Agrupar"
+	# Sección Riesgos (ADR-0016).
+	N_("Risks"),
+	N_("Risk assessment"),
+	N_("Not assessed yet"),
+	N_("Assessed"),
+	N_("Open / managing"),
+	N_("High-exposure risks"),
+	N_("Without owner"),
+	N_("Without treatment"),
+	N_("Perform risk assessment"),
+	N_("View risk assessment"),
+	N_("Manage risks"),
+	N_("No risks require attention."),
 )
 
 
@@ -195,6 +214,16 @@ def build_project_control(project: str, cutoff=None, sections=None, audience: st
 	# compone ni aparece en el payload (nunca llega a template/JS/PDF). El gate va ANTES de componer.
 	if SECTION_COSTS in wanted and audience == "internal" and can_see_project_economics(project):
 		ctx[SECTION_COSTS] = _costs_section(project)
+	# Gobierno (ADR-0014 D8): índice de expediente + estado de ciclo de vida derivado. Solo referencias/
+	# existencia/fechas (no duplica contenido). Opt-in; P4 ya impuesta por build_status_report arriba.
+	if SECTION_GOVERNANCE in wanted:
+		ctx[SECTION_GOVERNANCE] = build_expediente(project)
+	# Riesgos (ADR-0016): mismas señales derivadas que consume el form de Project (fuente única de cálculo).
+	# P4 ya impuesta por build_status_report arriba (chokepoint).
+	if SECTION_RISK in wanted:
+		from pmo.risk_signals import compute_risk_signals
+
+		ctx[SECTION_RISK] = compute_risk_signals(project)
 	# Devolver frappe._dict en profundidad: garantiza acceso por atributo en cualquier entorno Jinja
 	# (el template canónico se renderiza tanto por render_template como por el Print Format/printview).
 	return _deep_dict(ctx)
@@ -588,7 +617,10 @@ def get_executive_html(project: str, cutoff: str | None = None, audience: str = 
 	Solicita además la sección económica (`costs`): el builder la compone solo si audience=interno y el
 	usuario pasa el gate económico (rol + READ). El Print Format NO la solicita (Q2)."""
 	ctx = build_project_control(
-		project, cutoff=cutoff, audience=audience, sections=[*DEFAULT_SECTIONS, SECTION_COSTS]
+		project,
+		cutoff=cutoff,
+		audience=audience,
+		sections=[*DEFAULT_SECTIONS, SECTION_COSTS, SECTION_RISK],
 	)
 	# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti -- ruta de plantilla literal propia (no input de usuario)
 	return frappe.render_template("pmo/templates/project_control/executive.html", {"pc": ctx})
