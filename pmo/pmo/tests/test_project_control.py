@@ -25,6 +25,7 @@ from pmo.project_control import (
 	build_project_control,
 	get_executive_html,
 	get_financial_html,
+	get_summary_html,
 )
 
 KPI_KEYS = {
@@ -460,6 +461,130 @@ class TestRenderer(IntegrationTestCase):
 		# `_()` sigue viva tras construir los bits: se renderizan encabezados traducibles posteriores.
 		self.assertIn("Change Requests", html)
 		self.assertIn("Planning quality", html)
+
+
+class TestSummaryView(IntegrationTestCase):
+	"""Pestaña Resumen (get_summary_html → resumen.html): reusa motores, es-MX, 4 bloques, drill-down.
+	No toca executive.html/get_executive_html (Print Format intactos)."""
+
+	def _ctx(self, with_derived=False):
+		ctx = frappe._dict(
+			{
+				"audience": "internal",
+				"cutoff": "2026-09-11",
+				"note": None,
+				"project": {
+					"name": "PROJ-X",
+					"project_name": "Proyecto X",
+					"status": "Open",
+					"customer_name": "Cliente Demo",
+					"start_date": "2026-09-01",
+					"committed_end": "2026-10-15",
+					"forecast_end": "2026-10-30",
+					"has_baseline": True,
+					"baseline_end": "2026-10-01",
+				},
+				"executive": {
+					"kpis": {
+						"health": "on_track",
+						"health_label": "On track",
+						"percent_complete": 68,
+						"overdue_tasks": 3,
+						"planned_hours": 120.0,
+						"actual_hours": 96.0,
+						"slip_baseline_days": -2,
+						"slip_committed_days": -2,
+					}
+				},
+				"schedule": {
+					"counts": {"overdue_at_cutoff": 3},
+					"milestones": [{"slip_days": 3}, {"slip_days": 0}, {"slip_days": None}],
+				},
+				"risk": {
+					"assessment_exists": True,
+					"assessment": "PMO-RA-1",
+					"assessment_state": "assessed",
+					"open": 2,
+					"high_exposure": 1,
+					"no_owner": 0,
+					"no_response": 1,
+				},
+				"governance": {
+					"handoff": {"available": True, "reference": "PMO-HOF-1", "date": "2026-09-05"},
+					"baseline": {"available": True, "reference": "BL-002", "date": "2026-09-06"},
+					"closure": {"available": False, "reference": None, "date": None},
+					"review": {"available": False, "reference": None, "date": None},
+					"change_requests": {"total": 3, "open": 1},
+					"lifecycle_state": "execution",
+				},
+			}
+		)
+		if with_derived:
+			ctx["milestones_with_deviation"] = 1
+			ctx["milestones_total"] = 3
+			ctx["governance_flags"] = {
+				"has_handoff": True,
+				"needs_baseline": False,
+				"needs_closure": False,
+				"needs_review": False,
+				"open_change_requests": 1,
+			}
+		return ctx
+
+	def _render(self, pc):
+		return frappe.render_template("pmo/templates/project_control/resumen.html", {"pc": pc})
+
+	def test_endpoint_composition_and_derivation(self):
+		flags = {
+			"has_handoff": True,
+			"needs_baseline": False,
+			"needs_closure": False,
+			"needs_review": False,
+			"open_change_requests": 1,
+		}
+		with (
+			patch("pmo.project_control.build_project_control", return_value=self._ctx()) as b,
+			patch("pmo.project_control.governance_flags", return_value=flags),
+		):
+			html = get_summary_html("PROJ-X", cutoff="2026-09-11")
+		_, kw = b.call_args
+		# Resumen pide gobernanza + riesgo + cronograma; NUNCA economía (Financiera tiene su pestaña).
+		self.assertIn("governance", kw["sections"])
+		self.assertIn("risk", kw["sections"])
+		self.assertIn("schedule", kw["sections"])
+		self.assertNotIn("costs", kw["sections"])
+		# Derivación de presentación: hitos con desviación = milestones con slip>0 (1 de 3).
+		self.assertIn("1 / 3", html)
+		self.assertIn("Avance del proyecto", html)
+		self.assertIn("Gobernanza del proyecto", html)
+
+	def test_render_blocks_and_semantics_es_mx(self):
+		html = self._render(self._ctx(with_derived=True))
+		# 1) Identidad y estado + 2) Avance + 3) Excepciones + 4) Gobernanza (es-MX)
+		self.assertIn("Proyecto X", html)
+		self.assertIn("Cliente Demo", html)
+		self.assertIn("En plan", html)  # salud mapeada es-MX (no "On track")
+		self.assertIn("68%", html)  # progreso
+		self.assertIn("120 h", html)  # horas planificadas
+		# Riesgos: señales existentes (sin agregado artificial de "requieren atención")
+		self.assertIn("Sin responsable", html)
+		self.assertIn("Sin tratamiento", html)
+		self.assertNotIn("Requieren atención", html)
+		self.assertNotIn("Requiere atención", html)
+		# Cambios: solo totales / abiertas
+		self.assertIn("Solicitudes totales", html)
+		self.assertIn("Solicitudes abiertas", html)
+		# Gobernanza: Acta de transferencia (NO "Charter"); Cierre/Revisión "No requerido"
+		self.assertIn("Acta de transferencia", html)
+		self.assertNotIn("Charter", html)
+		self.assertIn("BL-002", html)  # línea base vigente
+		self.assertIn("No requerido", html)  # closure/review no requeridos
+
+	def test_no_costs_block_in_summary(self):
+		# Economía vive en la pestaña Financiera: el Resumen no la muestra aunque el gate pasara.
+		html = self._render(self._ctx(with_derived=True))
+		for token in ("Situación económica", "Valor autorizado", "Facturado", "Costo real", "economics"):
+			self.assertNotIn(token, html)
 
 
 class TestCostsSection(IntegrationTestCase):

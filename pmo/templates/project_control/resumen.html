@@ -1,0 +1,202 @@
+{#-
+  Project Control > Resumen — 2ª pasada visual (SOLO presentación).
+  Mismo contexto `pc` de get_summary_html(); mismas variables, semántica y drill-down (pmo-sum-goto /
+  pmo-sum-doc / pmo-risk-*). NO cambia datos, endpoints, motores ni navegación. Jerarquía:
+  Proyecto/Salud → Avance → Excepciones → Gobernanza. Texto es-MX. Separado de executive.html (Print Format).
+-#}
+{%- set pr = pc.project -%}
+{%- set kp = pc.executive.kpis -%}
+{%- set g = pc.governance -%}
+{%- set gf = pc.governance_flags -%}
+{%- set r = pc.risk -%}
+{%- macro d(x) -%}{% if x %}{{ x }}{% else %}—{% endif %}{%- endmacro -%}
+{%- macro slip(x) -%}{% if x is none %}—{% else %}{{ x }} d{% endif %}{%- endmacro -%}
+{%- macro hrs(x) -%}{% if x is none %}—{% else %}{{ x|int if x == x|int else x }} h{% endif %}{%- endmacro -%}
+{%- set hc = {'on_track':'#1f9d55','at_risk':'#d97706','deviated':'#c02b2b'} -%}
+{%- set hl = {'on_track':'En plan','at_risk':'En riesgo','deviated':'Desviado'} -%}
+{%- set worst = [kp.slip_committed_days or 0, kp.slip_baseline_days or 0] | max -%}
+<div class="pmo-sum">
+<style>
+.pmo-sum{--acc:#2b3a67;color:var(--text-color);font-size:13px}
+.pmo-sum *{box-sizing:border-box}
+
+/* A. Cabecera de control — franja dominante */
+.pmo-sum .ctl{display:flex;justify-content:space-between;align-items:stretch;gap:20px;flex-wrap:wrap;
+  border-radius:10px;border:1px solid var(--border-color);border-left:5px solid var(--acc);
+  background:linear-gradient(90deg,var(--subtle-fg,var(--gray-50)),var(--card-bg));padding:16px 20px}
+.pmo-sum .ctl-id h1{font-size:24px;line-height:1.1;margin:0 0 4px}
+.pmo-sum .ctl-id .meta{color:var(--text-muted);font-size:12px}
+.pmo-sum .ctl-id .meta b{color:var(--text-color);font-weight:600}
+.pmo-sum .ctl-stats{display:flex;align-items:center;gap:0;flex-wrap:wrap}
+.pmo-sum .ctl-stat{padding:0 18px;text-align:right;border-left:1px solid var(--border-color)}
+.pmo-sum .ctl-stat:first-child{border-left:none}
+.pmo-sum .ctl-stat .l{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted)}
+.pmo-sum .ctl-stat .v{font-size:17px;font-weight:700;margin-top:3px}
+.pmo-sum .ctl-stat .v.bad{color:var(--red-600)}
+.pmo-sum .hpill{display:inline-block;padding:5px 14px;border-radius:14px;color:#fff;font-weight:700;font-size:13px}
+
+/* Encabezados de sección */
+.pmo-sum .sec{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);
+  margin:22px 0 10px;display:flex;align-items:center;gap:10px}
+.pmo-sum .sec:before{content:"";width:4px;height:14px;border-radius:2px;background:var(--acc)}
+
+/* B. Avance — bloque hero: valores dominan sobre labels */
+.pmo-sum .adv{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:14px}
+.pmo-sum .adv .a{border:1px solid var(--border-color);border-radius:10px;padding:16px 18px;background:var(--card-bg)}
+.pmo-sum .adv .a .l{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted)}
+.pmo-sum .adv .a .n{font-size:34px;font-weight:800;line-height:1.05;margin-top:4px;letter-spacing:-.5px}
+.pmo-sum .adv .a .n small{font-size:16px;font-weight:700;color:var(--text-muted)}
+.pmo-sum .adv .a .n.bad{color:var(--red-600)}
+.pmo-sum .adv .prog .bar{background:var(--gray-200);border-radius:6px;height:12px;overflow:hidden;margin-top:12px}
+.pmo-sum .adv .prog .bar>span{display:block;height:100%;background:var(--acc)}
+
+/* C. Excepciones — paneles de control */
+.pmo-sum .panels{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.pmo-sum .cp{border:1px solid var(--border-color);border-radius:10px;background:var(--card-bg);overflow:hidden;display:flex;flex-direction:column}
+.pmo-sum .cp .cphd{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border-color);background:var(--subtle-fg,var(--gray-50))}
+.pmo-sum .cp .cphd .t{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-color)}
+.pmo-sum .cp .cphd .drill{font-size:11px;cursor:pointer;color:var(--acc);opacity:.85}
+.pmo-sum .cp .cphd .drill:hover{opacity:1;text-decoration:underline}
+.pmo-sum .cp .lead{padding:14px 14px 10px;display:flex;align-items:baseline;gap:8px}
+.pmo-sum .cp .lead .big{font-size:30px;font-weight:800;line-height:1;letter-spacing:-.5px}
+.pmo-sum .cp .lead .big.ok{color:var(--green-600)}.pmo-sum .cp .lead .big.bad{color:var(--red-600)}.pmo-sum .cp .lead .big.warn{color:var(--orange-600)}
+.pmo-sum .cp .lead .cap{font-size:12px;color:var(--text-muted)}
+.pmo-sum .cp .subs{padding:0 14px 12px;display:flex;flex-direction:column;gap:0}
+.pmo-sum .cp .sub{display:flex;justify-content:space-between;padding:5px 0;border-top:1px dashed var(--border-color);font-size:12px}
+.pmo-sum .cp .sub .k{color:var(--text-muted)}
+.pmo-sum .cp .sub .val{font-weight:700;font-variant-numeric:tabular-nums}
+.pmo-sum .cp .sub .val.bad{color:var(--red-600)}
+.pmo-sum .cp .act{padding:0 14px 12px}
+.pmo-sum .cp .act .btn{font-size:11px}
+
+/* D. Gobernanza — franja compacta secundaria */
+.pmo-sum .gov{display:flex;flex-wrap:wrap;gap:10px}
+.pmo-sum .gov .gi{flex:1;min-width:160px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border:1px solid var(--border-color);border-radius:8px;padding:8px 12px;background:var(--subtle-fg,var(--gray-50))}
+.pmo-sum .gov .gi .gl{font-size:11px;color:var(--text-muted)}
+.pmo-sum .gov .gi .gr{text-align:right}
+.pmo-sum .gov .gi .st{font-size:12px;font-weight:700}
+.pmo-sum .gov .gi .st.ok{color:var(--green-600)}.pmo-sum .gov .gi .st.warn{color:var(--orange-600)}.pmo-sum .gov .gi .st.muted{color:var(--text-muted)}
+.pmo-sum .gov .gi .ref{font-size:10px;color:var(--text-muted)}
+.pmo-sum .gov .gi .ref a{cursor:pointer;color:var(--acc)}
+
+@media (max-width:900px){
+  .pmo-sum .adv{grid-template-columns:1fr 1fr}
+  .pmo-sum .panels{grid-template-columns:1fr}
+  .pmo-sum .ctl-stat{padding:0 12px}
+}
+</style>
+
+{#- A. CABECERA DE CONTROL -#}
+<div class="ctl">
+  <div class="ctl-id">
+    <h1>{{ pr.project_name or pr.name }}</h1>
+    <div class="meta"><b>{{ d(pr.customer_name) }}</b> · {{ pr.name }} · {{ d(pr.status) }} · Inicio {{ d(pr.start_date) }}</div>
+  </div>
+  <div class="ctl-stats">
+    <div class="ctl-stat">
+      <div class="l">Salud</div>
+      <div class="v"><span class="hpill" style="background:{{ hc.get(kp.health, '#666') }}">{{ hl.get(kp.health, kp.health) }}</span></div>
+    </div>
+    <div class="ctl-stat"><div class="l">Fecha compromiso</div><div class="v">{{ d(pr.committed_end) }}</div></div>
+    <div class="ctl-stat"><div class="l">Fin pronosticado</div><div class="v">{{ d(pr.forecast_end) }}</div></div>
+    <div class="ctl-stat"><div class="l">Desvío vs compromiso</div><div class="v {% if (kp.slip_committed_days or 0) > 0 %}bad{% endif %}">{{ slip(kp.slip_committed_days) }}</div></div>
+  </div>
+</div>
+
+{#- B. AVANCE DEL PROYECTO -#}
+<div class="sec">Avance del proyecto</div>
+<div class="adv">
+  <div class="a prog">
+    <div class="l">Progreso</div>
+    <div class="n">{{ kp.percent_complete }}%</div>
+    <div class="bar"><span style="width:{{ kp.percent_complete }}%"></span></div>
+  </div>
+  <div class="a"><div class="l">Horas planificadas</div><div class="n">{{ hrs(kp.planned_hours) }}</div></div>
+  <div class="a"><div class="l">Horas reales al corte</div><div class="n">{{ hrs(kp.actual_hours) }}</div></div>
+  <div class="a"><div class="l">Tareas vencidas</div><div class="n {% if pc.schedule.counts.overdue_at_cutoff %}bad{% endif %}">{{ d(pc.schedule.counts.overdue_at_cutoff) }}</div></div>
+</div>
+
+{#- C. EXCEPCIONES Y ELEMENTOS CLAVE — paneles de control -#}
+<div class="sec">Excepciones y elementos clave</div>
+<div class="panels">
+  {#- Cronograma -#}
+  <div class="cp">
+    <div class="cphd"><span class="t">Cronograma</span><a class="drill pmo-sum-goto" data-view="status">Ver detalle</a></div>
+    <div class="lead">
+      {%- if not pr.has_baseline -%}
+        <span class="big warn">Sin línea base</span>
+      {%- elif worst > 0 -%}
+        <span class="big bad">+{{ worst }} d</span><span class="cap">de atraso</span>
+      {%- else -%}
+        <span class="big ok">En plazo</span>
+      {%- endif -%}
+    </div>
+    <div class="subs">
+      <div class="sub"><span class="k">Desvío vs línea base</span><span class="val {% if (kp.slip_baseline_days or 0) > 0 %}bad{% endif %}">{{ slip(kp.slip_baseline_days) }}</span></div>
+      <div class="sub"><span class="k">Desvío vs compromiso</span><span class="val {% if (kp.slip_committed_days or 0) > 0 %}bad{% endif %}">{{ slip(kp.slip_committed_days) }}</span></div>
+      <div class="sub"><span class="k">Hitos con desviación</span><span class="val {% if pc.milestones_with_deviation %}bad{% endif %}">{{ pc.milestones_with_deviation }}{% if pc.milestones_total %} / {{ pc.milestones_total }}{% endif %}</span></div>
+    </div>
+  </div>
+
+  {#- Riesgos -#}
+  <div class="cp">
+    <div class="cphd"><span class="t">Riesgos</span>{% if r.assessment_exists %}<a class="drill pmo-risk-manage">Ver riesgos</a>{% endif %}</div>
+    {%- if r.assessment_exists -%}
+    <div class="lead"><span class="big {% if r.open %}bad{% else %}ok{% endif %}">{{ r.open }}</span><span class="cap">abiertos</span></div>
+    <div class="subs">
+      <div class="sub"><span class="k">Alta exposición</span><span class="val {% if r.high_exposure %}bad{% endif %}">{{ r.high_exposure }}</span></div>
+      <div class="sub"><span class="k">Sin responsable</span><span class="val {% if r.no_owner %}bad{% endif %}">{{ r.no_owner }}</span></div>
+      <div class="sub"><span class="k">Sin tratamiento</span><span class="val {% if r.no_response %}bad{% endif %}">{{ r.no_response }}</span></div>
+    </div>
+    {%- else -%}
+    <div class="lead"><span class="big muted" style="color:var(--text-muted)">Sin evaluar</span></div>
+    <div class="act"><button class="btn btn-primary btn-xs pmo-risk-assess" data-assessment="">Realizar evaluación</button></div>
+    {%- endif -%}
+  </div>
+
+  {#- Solicitudes de cambio -#}
+  <div class="cp">
+    <div class="cphd"><span class="t">Solicitudes de cambio</span><a class="drill pmo-sum-goto" data-view="change">Ver detalle</a></div>
+    <div class="lead"><span class="big {% if g.change_requests.open %}bad{% else %}ok{% endif %}">{{ g.change_requests.open }}</span><span class="cap">Solicitudes abiertas</span></div>
+    <div class="subs">
+      <div class="sub"><span class="k">Solicitudes totales</span><span class="val">{{ g.change_requests.total }}</span></div>
+    </div>
+  </div>
+</div>
+
+{#- D. GOBERNANZA — franja compacta secundaria -#}
+<div class="sec">Gobernanza del proyecto</div>
+<div class="gov">
+  <div class="gi">
+    <span class="gl">Acta de transferencia</span>
+    <span class="gr">
+      {%- if g.handoff.available -%}<span class="st ok">Emitida</span><div class="ref"><a class="pmo-sum-doc" data-doctype="PMO Project Handoff" data-name="{{ g.handoff.reference }}">{{ g.handoff.reference }}</a></div>
+      {%- else -%}<span class="st warn">Pendiente</span>{%- endif -%}
+    </span>
+  </div>
+  <div class="gi">
+    <span class="gl">Línea base vigente</span>
+    <span class="gr">
+      {%- if g.baseline.available -%}<span class="st ok">Vigente</span><div class="ref"><a class="pmo-sum-doc" data-doctype="PMO Project Baseline" data-name="{{ g.baseline.reference }}">{{ g.baseline.reference }}</a></div>
+      {%- else -%}<span class="st warn">Sin línea base</span>{%- endif -%}
+    </span>
+  </div>
+  <div class="gi">
+    <span class="gl">Cierre</span>
+    <span class="gr">
+      {%- if g.closure.available -%}<span class="st ok">Emitido</span><div class="ref"><a class="pmo-sum-doc" data-doctype="PMO Project Closure" data-name="{{ g.closure.reference }}">{{ g.closure.reference }}</a></div>
+      {%- elif gf.needs_closure -%}<span class="st warn">Pendiente</span>
+      {%- else -%}<span class="st muted">No requerido</span>{%- endif -%}
+    </span>
+  </div>
+  <div class="gi">
+    <span class="gl">Revisión</span>
+    <span class="gr">
+      {%- if g.review.available -%}<span class="st ok">Emitida</span><div class="ref"><a class="pmo-sum-doc" data-doctype="PMO Post-Project Review" data-name="{{ g.review.reference }}">{{ g.review.reference }}</a></div>
+      {%- elif gf.needs_review -%}<span class="st warn">Pendiente</span>
+      {%- else -%}<span class="st muted">No requerido</span>{%- endif -%}
+    </span>
+  </div>
+</div>
+</div>

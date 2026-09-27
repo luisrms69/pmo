@@ -272,7 +272,20 @@ fixtures = [
 	# P4-safe (pmo.dashboard.attention_block / customers_block); caché por-usuario, nunca global.
 	{
 		"dt": "Custom HTML Block",
-		"filters": [["name", "in", ["PMO Attention", "PMO Customers", "PMO Governance"]]],
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"PMO Resumen Ejecutivo",
+					"PMO Situación Económica",
+					"PMO Panorama Operativo",
+					"PMO Customers",
+					"PMO Attention",
+					"PMO Governance",
+				],
+			]
+		],
 	},
 ]
 

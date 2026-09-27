@@ -39,7 +39,7 @@ const CR_DOCTYPE = "PMO Change Request";
 const BASELINE_DT = "PMO Project Baseline";
 
 const VIEWS = [
-	{ key: "executive", label: __("Executive report") },
+	{ key: "executive", label: __("Summary") },
 	{ key: "status", label: __("Status / Schedule") },
 	{ key: "pva", label: __("Planned vs Actual") },
 	{ key: "baseline", label: __("Baseline Comparison") },
@@ -195,21 +195,42 @@ class PMOProjectControl {
 		};
 	}
 
-	// --- Vista Reporte Ejecutivo: HTML renderizado server-side (ADR-0011). La Page solo inyecta. ---
-	// Contexto y KPIs los compone build_project_control() y los renderiza el template canónico
-	// executive.html; el cliente NO recalcula nada. P4 la impone el builder (build_status_report).
+	// --- Vista Resumen: HTML renderizado server-side (get_summary_html → resumen.html). La Page solo
+	// inyecta; todo lo compone build_project_control (+ build_expediente/governance_flags/risk_signals).
+	// El cliente NO recalcula nada. P4 la impone el builder. executive.html/get_executive_html quedan
+	// intactos para el Print Format. ---
 	_view_executive($v) {
 		frappe
-			.xcall("pmo.project_control.get_executive_html", {
+			.xcall("pmo.project_control.get_summary_html", {
 				project: this.state.project,
 				cutoff: this.state.status_date || frappe.datetime.get_today(),
 			})
 			.then((html) => {
 				$v.html(html);
-				this._wire_risk_actions($v); // ADR-0016: acciones contextuales de la sección Riesgos
+				this._wire_risk_actions($v); // acciones contextuales de la sección Riesgos
+				this._wire_summary_actions($v); // drill-down: gobernanza (Form) + saltos a otras pestañas
 			})
 			.catch(() => {
 				$v.html(`<div class="pmo-pc-empty">${__("Could not load the data.")}</div>`);
+			});
+	}
+
+	// Drill-down del Resumen hacia rutas/artefactos EXISTENTES: documentos de gobernanza (Form) y saltos
+	// a otras pestañas ya presentes (Estado/Cronograma, Control de cambios). No crea rutas nuevas.
+	_wire_summary_actions($v) {
+		$v.off("click.pmosum")
+			.on("click.pmosum", ".pmo-sum-doc", (e) => {
+				const dt = $(e.currentTarget).attr("data-doctype");
+				const name = $(e.currentTarget).attr("data-name");
+				if (dt && name) frappe.set_route("Form", dt, name);
+			})
+			.on("click.pmosum", ".pmo-sum-goto", (e) => {
+				const view = $(e.currentTarget).attr("data-view");
+				if (view) {
+					this.state.view = view;
+					this._render_tabs();
+					this._render_view();
+				}
 			});
 	}
 

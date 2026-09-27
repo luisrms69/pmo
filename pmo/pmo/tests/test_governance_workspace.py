@@ -43,10 +43,17 @@ class TestGovernanceWorkspace(IntegrationTestCase):
 		page_links = {link.link_to for link in ws.links if link.link_type == "Page"}
 		self.assertIn("pmo_project_control", page_links)
 
-	def test_sidebar_has_governance_item(self):
+	def test_sidebar_excludes_governance_but_workspace_preserved(self):
+		# Rescate BLOQUE 1 (2ª pasada): Gobernanza se retira SOLO de la navegación visible; el Workspace
+		# y sus capacidades se preservan íntegros.
 		sb = frappe.get_doc("Workspace Sidebar", "PMO")
-		items = [(i.label, i.link_type, i.link_to) for i in sb.items]
-		self.assertIn(("PMO Governance", "Workspace", "PMO Governance"), items)
+		labels = [i.label for i in sb.items]
+		self.assertNotIn("PMO Governance", labels)
+		self.assertNotIn("Gobernanza PMO", labels)
+		# Sidebar es-MX objetivo (solo navegación principal, sin duplicar en Home).
+		self.assertEqual(labels, ["PMO", "Portafolio", "Control de Proyecto", "Planificación de capacidad"])
+		# Preservación: el Workspace de gobierno sigue existiendo.
+		self.assertTrue(frappe.db.exists("Workspace", "PMO Governance"))
 
 	def test_main_workspace_no_longer_embeds_panel(self):
 		# El panel completo vive solo en su landing; el Workspace PMO no lo duplica como custom_block.

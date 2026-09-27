@@ -78,7 +78,7 @@ def _visible_projects(user, filters):
 
 def _project_row(project):
 	meta = frappe.db.get_value(
-		"Project", project, ["project_name", "status", "pmo_status_date"], as_dict=True
+		"Project", project, ["project_name", "status", "customer", "pmo_status_date"], as_dict=True
 	)
 	# build_status_report es whitelisted (type-check): status_date debe ser str. Usa la del Project o hoy.
 	sd = meta.get("pmo_status_date")
@@ -98,6 +98,7 @@ def _project_row(project):
 		"project": project,
 		"project_name": meta.get("project_name"),
 		"status": meta.get("status"),
+		"customer": meta.get("customer"),  # inventario del portafolio (sin dimensión económica)
 		"forecast_end": (report.get("current") or {}).get("expected_end_date"),
 		"slip_baseline": slip_baseline,
 		"slip_committed": slip_committed,
@@ -137,6 +138,7 @@ def _columns():
 	return [
 		col("project", N_("Project"), "Link", 150, options="Project"),
 		col("project_name", N_("Name"), "Data", 200),
+		col("customer", N_("Customer"), "Link", 160, options="Customer"),
 		col("status", N_("Status"), "Data", 90),
 		col("health", N_("Health"), "Data", 100),
 		col("forecast_end", N_("Forecast end"), "Date", 120),

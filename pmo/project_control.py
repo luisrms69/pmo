@@ -22,7 +22,7 @@ import frappe
 from frappe import N_
 from frappe.utils import flt, getdate, today
 
-from pmo.governance import build_expediente
+from pmo.governance import build_expediente, governance_flags
 from pmo.health import HEALTH_LABELS, _health
 from pmo.project_economics import can_see_project_economics, get_authorized_economics
 from pmo.status_date import build_status_report
@@ -242,7 +242,10 @@ def _project_section(project: str, sr: dict) -> dict:
 	"""Identidad y fechas del proyecto (encabezado). Sin cálculo de negocio."""
 	meta = (
 		frappe.db.get_value(
-			"Project", project, ["project_name", "status", "company", "customer"], as_dict=True
+			"Project",
+			project,
+			["project_name", "status", "company", "customer", "expected_start_date"],
+			as_dict=True,
 		)
 		or frappe._dict()
 	)
@@ -256,6 +259,7 @@ def _project_section(project: str, sr: dict) -> dict:
 		"company": meta.get("company"),
 		"customer": meta.get("customer"),
 		"customer_name": customer_name,
+		"start_date": meta.get("expected_start_date"),  # Fecha de inicio planeada (nativo ERPNext)
 		"cutoff": sr.get("status_date"),
 		"has_baseline": sr.get("baseline") is not None,
 		"forecast_end": (sr.get("current") or {}).get("expected_end_date"),
@@ -624,6 +628,32 @@ def get_executive_html(project: str, cutoff: str | None = None, audience: str = 
 	)
 	# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti -- ruta de plantilla literal propia (no input de usuario)
 	return frappe.render_template("pmo/templates/project_control/executive.html", {"pc": ctx})
+
+
+@frappe.whitelist()
+def get_summary_html(project: str, cutoff: str | None = None) -> str:
+	"""Endpoint de la pestaña **Resumen** de Project Control. Compacta: identidad+estado, avance (síntesis),
+	excepciones (cronograma/riesgos/cambios) y gobernanza. **Reusa** los mismos motores (build_status_report,
+	risk_signals, build_expediente/governance_flags); NO recalcula ni introduce métricas/persistencia.
+
+	Composición (superficie de consulta): NO incluye economía (pestaña Financiera), ni Gantt, ni tablas
+	completas de tareas/riesgos/CR (esas viven en sus pestañas). `executive.html`/`get_executive_html`
+	quedan intactos para el Print Format; esta pestaña usa su propio template `resumen.html`."""
+	ctx = build_project_control(
+		project,
+		cutoff=cutoff,
+		audience="internal",
+		sections=[SECTION_PROJECT, SECTION_EXECUTIVE, SECTION_SCHEDULE, SECTION_RISK, SECTION_GOVERNANCE],
+	)
+	# Derivación de PRESENTACIÓN (sin semántica nueva): hitos con desviación = milestones con slip > 0
+	# (reusa el `slip_days` ya calculado por el motor de cronograma).
+	ms = (ctx.get("schedule") or {}).get("milestones") or []
+	ctx["milestones_with_deviation"] = sum(1 for m in ms if (m.get("slip_days") or 0) > 0)
+	ctx["milestones_total"] = len(ms)
+	# Señales de gobierno (fuente única) para etiquetar Cierre/Revisión como Pendiente/No requerido.
+	ctx["governance_flags"] = governance_flags(project)
+	# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti -- ruta de plantilla literal propia (no input de usuario)
+	return frappe.render_template("pmo/templates/project_control/resumen.html", {"pc": ctx})
 
 
 @frappe.whitelist()

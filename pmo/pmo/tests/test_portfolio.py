@@ -116,6 +116,16 @@ class TestPortfolioP4(IntegrationTestCase):
 		self.assertNotIn(done, {r["project"] for r in self._run(obs)})
 		self.assertIn(done, {r["project"] for r in self._run(obs, include_completed=1)})
 
+	def test_inventory_exposes_customer(self):
+		# Mejora puntual: el inventario del portafolio expone Cliente (columna + dato). Sin economía.
+		from pmo.pmo.report.pmo_portfolio.pmo_portfolio import _columns
+
+		self.assertIn("customer", [c["fieldname"] for c in _columns()])
+		obs = _user("pf-obs@example.com", ["Projects User"])
+		p = _project("PF-CUST", owner=obs)
+		row = next(r for r in self._run(obs) if r["project"] == p)
+		self.assertIn("customer", row)  # valor puede ser None si el Project no tiene cliente
+
 	def test_row_shape_effort_and_health(self):
 		obs = _user("pf-obs@example.com", ["Projects User"])
 		p = _project("PF-EFFORT", owner=obs)

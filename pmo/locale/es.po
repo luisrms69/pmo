@@ -3806,3 +3806,17 @@ msgstr "— (sin línea base a la fecha)"
 # --- Override manual de término heredado de frappe/erpnext (estado del riesgo) ---
 msgid "Open"
 msgstr "Abierto"
+
+# --- PMO Portfolio (mejora puntual): columna Cliente + resumen "Proyectos por cliente" ---
+msgid "Customer"
+msgstr "Cliente"
+
+# --- Project Control > pestaña Resumen ---
+msgid "Summary"
+msgstr "Resumen"
+
+msgid "Projects by customer"
+msgstr "Proyectos por cliente"
+
+msgid "No customer"
+msgstr "Sin cliente"

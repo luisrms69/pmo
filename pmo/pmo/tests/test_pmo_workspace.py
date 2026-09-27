@@ -1,39 +1,32 @@
 # Copyright (c) 2026, Consultoria en Negocios y Aplicaciones and contributors
 # For license information, please see license.txt
 
-"""Tests — Workspace landing "PMO" (arquitectura híbrida native-first).
+"""Tests — Workspace landing "PMO" (rescate BLOQUE 1, 2ª pasada de presentación).
 
-Nativo por defecto: Number Cards (KPIs + recursos), un Dashboard Chart **Report-type** (seguro para
-P4, sin cache_source global), Quick List de cambios, Shortcuts y Cards (Governance/Reports). Custom
-Blocks solo para lo derivado sin equivalente nativo: "PMO Attention" y "PMO Customers"."""
+Composición ejecutiva coherente (autorizada): Custom HTML Blocks de composición + un Dashboard Chart
+nativo. La Home tiene SOLO, en este orden:
+1. Encabezado.
+2. Resumen ejecutivo (Custom Block): Proyectos activos · Valor autorizado · Facturado · Costo real.
+3. Resumen visual: Salud del portafolio (Dashboard Chart nativo) + Situación económica (Custom Block).
+4. Panorama operativo (Custom Block): En riesgo/desviados · Tareas vencidas · Utilización.
+5. Cartera por cliente (Custom Block): salud + económicos gateados.
+
+Nada más: SIN number cards sueltos, SIN shortcuts, SIN quick lists, SIN links (reportes) y SIN
+Gobernanza en la Home (la navegación vive en el Workspace Sidebar). Solo presentación: las fuentes,
+métricas y endpoints (portfolio_kpi / resource_kpi / economics_block / customers_block) no cambian."""
+
+import json
 
 import frappe
 from frappe.tests import IntegrationTestCase
 
-HERO_PAGE_SHORTCUTS = {"pmo_portfolio", "pmo_project_control", "capacity_planning"}
-NUMBER_CARDS = {
-	"PMO Active Projects",
-	"PMO Active Tasks",
-	"PMO People Involved",
-	"PMO Requiring Attention",
-	"PMO Overdue Tasks",
-	"PMO Active Clients",
-	"PMO Projects Without Baseline",
+HOME_BLOCKS = {
+	"PMO Resumen Ejecutivo",
+	"PMO Situación Económica",
+	"PMO Panorama Operativo",
+	"PMO Customers",
 }
-CHARTS = {"PMO Portfolio Health", "PMO Capacity Snapshot", "PMO Top Projects by Effort"}
-CUSTOM_BLOCKS = {"PMO Attention", "PMO Customers"}
-REPORT_LINKS = {
-	"PMO Portfolio",
-	"PMO Status Report",
-	"PMO Planned vs Actual",
-	"PMO Baseline Comparison",
-	"PMO Change Register",
-	"PMO Capacity Planning",
-	"PMO Resource Capacity",
-	"PMO Resource Usage by Project",
-	"PMO Work by Resource",
-}
-GOVERNANCE_LINKS = {"PMO Project Baseline", "PMO Change Request", "PMO Capacity"}
+CHARTS = {"PMO Portfolio Health"}
 ROLES = {"Projects User", "Employee", "PMO Manager", "PMO Executive Access", "System Manager"}
 
 
@@ -45,57 +38,58 @@ class TestPMOWorkspace(IntegrationTestCase):
 		self.assertEqual({r.role for r in ws.roles}, ROLES)
 		self.assertLess(ws.sequence_id, 20)
 
-	def test_hero_shortcuts_are_the_three_experiences(self):
+	def test_home_is_only_composition_blocks_and_health_chart(self):
 		ws = frappe.get_doc("Workspace", "PMO")
-		self.assertEqual({s.link_to for s in ws.shortcuts if s.type == "Report"}, set())
-		self.assertEqual({s.link_to for s in ws.shortcuts if s.type == "Page"}, HERO_PAGE_SHORTCUTS)
-
-	def test_native_number_cards(self):
-		ws = frappe.get_doc("Workspace", "PMO")
-		self.assertEqual({c.number_card_name for c in ws.number_cards}, NUMBER_CARDS)
-		pqc = frappe.get_hooks("permission_query_conditions") or {}
-		for nc in NUMBER_CARDS:
-			self.assertTrue(frappe.db.exists("Number Card", nc), f"Number Card inexistente: {nc}")
-			doc = frappe.get_doc("Number Card", nc)
-			if doc.type == "Custom":
-				# KPI derivado via método server-side P4 (nunca get_all/ignore_permissions).
-				self.assertIn(doc.method, ("pmo.dashboard.portfolio_kpi", "pmo.dashboard.resource_kpi"))
-				# document_type declarado (legible por roles PMO) para pasar el pqc del widget.
-				self.assertIn(doc.document_type, pqc, f"{nc}: Custom sin document_type con P4")
-			else:
-				# Document Type nativo → cuenta directa con permission_query_conditions.
-				self.assertEqual(doc.type, "Document Type")
-				self.assertIn(doc.document_type, pqc, f"{nc}: DocType sin P4")
-
-	def test_charts_are_report_type_p4_safe(self):
-		# Todos los charts son Report-type (query_report.run, sin cache_source global). No Group By/Count.
-		ws = frappe.get_doc("Workspace", "PMO")
+		self.assertEqual({c.custom_block_name for c in ws.custom_blocks}, HOME_BLOCKS)
 		self.assertEqual({c.chart_name for c in ws.charts}, CHARTS)
-		for name in CHARTS:
-			chart = frappe.get_doc("Dashboard Chart", name)
-			self.assertEqual(chart.chart_type, "Report", f"{name} no es Report-type")
-			self.assertTrue(frappe.db.exists("Report", chart.report_name), f"{name}: report inexistente")
+		for cb in HOME_BLOCKS:
+			self.assertTrue(frappe.db.exists("Custom HTML Block", cb), f"bloque inexistente: {cb}")
 
-	def test_custom_blocks_are_the_two_justified(self):
-		ws = frappe.get_doc("Workspace", "PMO")
-		self.assertEqual({c.custom_block_name for c in ws.custom_blocks}, CUSTOM_BLOCKS)
-		for cb in CUSTOM_BLOCKS:
-			self.assertTrue(frappe.db.exists("Custom HTML Block", cb))
+	def test_health_chart_is_report_type(self):
+		chart = frappe.get_doc("Dashboard Chart", "PMO Portfolio Health")
+		self.assertEqual(chart.chart_type, "Report")
+		self.assertTrue(frappe.db.exists("Report", chart.report_name))
 
-	def test_open_changes_is_native_quick_list(self):
+	def test_home_has_no_native_widgets_or_nav(self):
+		# La Home termina después de Cartera: sin cards sueltos, shortcuts, quick lists ni links (reportes).
 		ws = frappe.get_doc("Workspace", "PMO")
-		self.assertIn("PMO Change Request", {q.document_type for q in ws.quick_lists})
+		self.assertEqual(list(ws.number_cards), [])
+		self.assertEqual(list(ws.shortcuts), [])
+		self.assertEqual(list(ws.quick_lists), [])
+		self.assertEqual(list(ws.links), [])
 
-	def test_links_group_reports_and_governance(self):
+	def test_content_sections_order_and_composition(self):
+		# El content refleja exactamente las 5 secciones (headers + widgets), sin nada más.
 		ws = frappe.get_doc("Workspace", "PMO")
-		report_links = {li.link_to for li in ws.links if li.type == "Link" and li.link_type == "Report"}
-		doctype_links = {li.link_to for li in ws.links if li.type == "Link" and li.link_type == "DocType"}
-		self.assertEqual(report_links, REPORT_LINKS)
-		self.assertEqual(doctype_links, GOVERNANCE_LINKS)
-		page_links = {li.link_to for li in ws.links if li.type == "Link" and li.link_type == "Page"}
-		self.assertIn("tag_import", page_links)
-		cards = {li.label for li in ws.links if li.type == "Card Break"}
-		self.assertEqual(cards, {"PMO Governance", "Reports"})
+		content = json.loads(ws.content)
+		types = [c["type"] for c in content]
+		self.assertEqual(
+			types,
+			[
+				"header",  # PMO — Oficina de proyectos
+				"header",  # Resumen ejecutivo
+				"custom_block",  # PMO Resumen Ejecutivo
+				"header",  # Resumen visual
+				"chart",  # Salud del portafolio
+				"custom_block",  # PMO Situación Económica
+				"header",  # Panorama operativo
+				"custom_block",  # PMO Panorama Operativo
+				"header",  # Cartera por cliente
+				"custom_block",  # PMO Customers
+			],
+		)
+		blocks = [c["data"].get("custom_block_name") for c in content if c["type"] == "custom_block"]
+		self.assertEqual(
+			blocks,
+			["PMO Resumen Ejecutivo", "PMO Situación Económica", "PMO Panorama Operativo", "PMO Customers"],
+		)
+
+	def test_reusable_endpoints_preserved(self):
+		# Solo presentación: los endpoints reutilizables siguen existiendo y son invocables.
+		from pmo import dashboard
+
+		for fn in ("portfolio_kpi", "resource_kpi", "economic_kpi", "economics_block", "customers_block"):
+			self.assertTrue(callable(getattr(dashboard, fn, None)), f"endpoint faltante: {fn}")
 
 	def test_existing_workspaces_untouched(self):
 		cap = {s.link_to for s in frappe.get_doc("Workspace", "PMO Capacity").shortcuts if s.type == "Report"}
