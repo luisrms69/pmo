@@ -43,17 +43,47 @@ class TestGovernanceWorkspace(IntegrationTestCase):
 		page_links = {link.link_to for link in ws.links if link.link_type == "Page"}
 		self.assertIn("pmo_project_control", page_links)
 
-	def test_sidebar_excludes_governance_but_workspace_preserved(self):
-		# Rescate BLOQUE 1 (2ª pasada): Gobernanza se retira SOLO de la navegación visible; el Workspace
-		# y sus capacidades se preservan íntegros.
+	def test_sidebar_includes_governance(self):
+		# Gobernanza PMO debe estar en el sidebar local PMO (dejó de estar huérfana). Enlaza al Workspace.
 		sb = frappe.get_doc("Workspace Sidebar", "PMO")
 		labels = [i.label for i in sb.items]
-		self.assertNotIn("PMO Governance", labels)
-		self.assertNotIn("Gobernanza PMO", labels)
-		# Sidebar es-MX objetivo (solo navegación principal, sin duplicar en Home).
-		self.assertEqual(labels, ["PMO", "Portafolio", "Control de Proyecto", "Planificación de capacidad"])
-		# Preservación: el Workspace de gobierno sigue existiendo.
+		self.assertIn("Gobernanza PMO", labels)
+		gov = next(i for i in sb.items if i.label == "Gobernanza PMO")
+		self.assertEqual(gov.link_type, "Workspace")
+		self.assertEqual(gov.link_to, "PMO Governance")
+		# No se rompen los accesos existentes del sidebar.
+		for expected in ["PMO", "Portafolio", "Control de Proyecto", "Planificación de capacidad"]:
+			self.assertIn(expected, labels)
 		self.assertTrue(frappe.db.exists("Workspace", "PMO Governance"))
+
+	def test_legacy_sections_removed_from_content(self):
+		# El dashboard no debe volver a parecer un Workspace genérico: el `content` deja solo header + bloque.
+		ws = frappe.get_doc("Workspace", "PMO Governance")
+		content = json.loads(ws.content)
+		types = [c.get("type") for c in content]
+		self.assertEqual(types, ["header", "custom_block"])
+		raw = ws.content
+		for legacy in [
+			"Governance documents",
+			"Project file",
+			"Risk management",
+			"Risk configuration",
+			"Continuous improvement",
+		]:
+			self.assertNotIn(legacy, raw)
+
+	def test_dashboard_cards_hide_not_applicable_but_engine_keeps_it(self):
+		# Decisión de presentación: las tarjetas muestran solo Completos/Pendientes; "No aplica" se retira de
+		# la UI pero el motor lo sigue calculando (contrato interno intacto).
+		blk = frappe.get_doc("Custom HTML Block", "PMO Governance")
+		self.assertIn("Complete", blk.script)
+		self.assertIn("Pending", blk.script)
+		self.assertNotIn("Not applicable", blk.script)
+		# El motor conserva no_aplica en el payload agregado.
+		from pmo.governance_inbox import governance_board
+
+		stages = governance_board()["stages"]
+		self.assertTrue(all("no_aplica" in s for s in stages))
 
 	def test_main_workspace_no_longer_embeds_panel(self):
 		# El panel completo vive solo en su landing; el Workspace PMO no lo duplica como custom_block.

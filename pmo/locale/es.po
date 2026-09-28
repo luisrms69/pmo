@@ -2455,6 +2455,9 @@ msgstr "Indica las Notas de la decisión que expliquen por qué se rechaza la So
 msgid "Provide a Reason (Motivo) for an Approved Change or an approved Replan baseline."
 msgstr "Indica un Motivo para una línea base de Cambio aprobado o de Replaneación aprobada."
 
+msgid "Provide a Reason (Motivo) for the baseline."
+msgstr "Indica un Motivo para la línea base."
+
 #: pmo/status_date.py:55
 msgid "Provide a Status Date (or set `PMO Status Date` on the Project) for cutoff-date control."
 msgstr "Indica una Status Date (o fija `PMO Status Date` en el Project) para el control a fecha de corte."
@@ -3815,8 +3818,178 @@ msgstr "Cliente"
 msgid "Summary"
 msgstr "Resumen"
 
+# --- Project Control > pestaña Estado / Cronograma ---
+msgid "Status / Schedule"
+msgstr "Estado / Cronograma"
+
+# --- Operación de línea base desde Project (menú PMO) ---
+msgid "Project control"
+msgstr "Control del proyecto"
+
+msgid "No baseline"
+msgstr "Sin línea base"
+
+msgid "Baseline: {0} · {1}"
+msgstr "Línea base: {0} · {1}"
+
+msgid "Set baseline"
+msgstr "Establecer línea base"
+
+msgid "New baseline"
+msgstr "Nueva línea base"
+
+msgid "Baseline history"
+msgstr "Historial de líneas base"
+
+msgid "Reason (optional)"
+msgstr "Motivo (opcional)"
+
+msgid "Reason (justification)"
+msgstr "Motivo (justificación)"
+
+msgid "Backing Change Request (optional)"
+msgstr "Solicitud de cambio que respalda (opcional)"
+
+msgid "Backing Change Request"
+msgstr "Solicitud de cambio que respalda"
+
+msgid "A formal substitution needs an approved, implemented Change Request. A PMO replan (without a Change Request) requires an authorized PMO role."
+msgstr "Una sustitución formal requiere una Solicitud de Cambio aprobada e implementada. Una replaneación PMO (sin Solicitud de Cambio) requiere un rol PMO autorizado."
+
+msgid "Leave empty for a PMO replan (management decision)."
+msgstr "Dejar vacío para una replaneación PMO (decisión de gestión)."
+
+msgid "Baseline set: {0}"
+msgstr "Línea base establecida: {0}"
+
+msgid "New baseline created: {0}"
+msgstr "Nueva línea base creada: {0}"
+
 msgid "Projects by customer"
 msgstr "Proyectos por cliente"
 
 msgid "No customer"
 msgstr "Sin cliente"
+
+# Gobernanza V1 — tablero (Custom Block "PMO Governance"), menú Project y reporte de excluidos (es-MX).
+msgid "Requires PMO action"
+msgstr "Requiere acción PMO"
+
+msgid "Requires PM action"
+msgstr "Requiere acción PM"
+
+msgid "Active projects excluded"
+msgstr "Proyectos activos excluidos"
+
+msgid "Governance exceptions"
+msgstr "Excepciones de gobernanza"
+
+msgid "Compliance summary by control"
+msgstr "Resumen de cumplimiento por control"
+
+msgid "Cross-project supervision: projects that require a governance action, why, and who must act next."
+msgstr "Supervisión transversal: proyectos que requieren una acción de gobernanza, por qué y quién debe actuar."
+
+msgid "Project"
+msgstr "Proyecto"
+
+msgid "Project name"
+msgstr "Nombre del proyecto"
+
+msgid "Project Manager"
+msgstr "Responsable del proyecto"
+
+msgid "Situation"
+msgstr "Situación"
+
+msgid "Age / Date"
+msgstr "Antigüedad / Fecha"
+
+msgid "Owner"
+msgstr "Responsable"
+
+msgid "Review"
+msgstr "Revisar"
+
+msgid "Control"
+msgstr "Control"
+
+msgid "Complete"
+msgstr "Completos"
+
+msgid "Pending"
+msgstr "Pendientes"
+
+msgid "Not applicable"
+msgstr "No aplica"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "Projects with pending"
+msgstr "Proyectos con pendientes"
+
+msgid "View active projects excluded from governance"
+msgstr "Ver proyectos activos excluidos de gobernanza"
+
+msgid "Start record"
+msgstr "Acta de inicio"
+
+msgid "Governance deviations"
+msgstr "Desviaciones de gobernanza"
+
+msgid "Governance: excluded"
+msgstr "Gobernanza: excluido"
+
+msgid "Excluded from PMO governance"
+msgstr "Excluido de gobernanza PMO"
+
+msgid "Status"
+msgstr "Estado"
+
+msgid "Authorized by"
+msgstr "Autorizado por"
+
+msgid "Exclusion reason"
+msgstr "Motivo de exclusión"
+
+msgid "Exclusion date"
+msgstr "Fecha de exclusión"
+
+# Gobernanza PMO — dashboard v2 (ciclo + KPIs + atención + excluidos) y menú Project (es-MX).
+msgid "Supervision of the project governance cycle compliance: what is missing, why, and who must act."
+msgstr "Supervisión del cumplimiento del ciclo de gobernanza de proyectos: qué falta, por qué y quién debe actuar."
+
+msgid "Governance cycle of the project"
+msgstr "Ciclo de gobernanza del proyecto"
+
+msgid "Require attention"
+msgstr "Requieren atención"
+
+msgid "Projects not subject to governance"
+msgstr "Proyectos no sujetos a gobernanza"
+
+msgid "No projects excluded from governance."
+msgstr "Sin proyectos excluidos de gobernanza."
+
+msgid "Date"
+msgstr "Fecha"
+
+msgid "Change requests"
+msgstr "Solicitudes de cambio"
+
+# Gobernanza PMO — dashboard v3 (subtítulos KPI, bandeja y excluidos) (es-MX).
+msgid "Items requiring PMO review or decision."
+msgstr "Elementos que requieren revisión o decisión del PMO."
+
+msgid "Items requiring the Project Manager's attention."
+msgstr "Elementos que requieren atención del Project Manager."
+
+msgid "Projects with pending or in-review governance items."
+msgstr "Proyectos con elementos de gobernanza pendientes o en revisión."
+
+msgid "Active projects formally excluded from PMO governance."
+msgstr "Proyectos activos formalmente excluidos de la gobernanza PMO."
+
+msgid "Projects not subject to governance."
+msgstr "Proyectos no sujetos a gobernanza."

@@ -246,11 +246,162 @@ sin try/except → los fallos propagan); P4 intacta (`build_status_report` choke
 
 ---
 
+## BLOQUE — Project Control > Estado / Cronograma (nueva pestaña)
+
+Responsabilidad: **¿cumplimos el cronograma y dónde se separa el plan vigente de la línea base?** Solo
+lectura/drill-down. Template/endpoint dedicados (`estado.html` + `get_schedule_html`); `executive.html`
+intacto (Print Format). Reutiliza `build_status_report`, `get_effective_baseline` (baseline **efectiva al
+corte**), `build_snapshot`, `compare_snapshots`, `_annotate/_relevant`; **sin segundo motor**.
+- 4 bloques: Estado del cronograma · Gantt **línea base vs plan vigente** (barras + progreso + línea de
+  corte + hitos) · Estado de ejecución (Completadas/En curso/Pendientes/Vencidas) · Excepciones.
+- **Semántica final de desviaciones (2.1):** cada excepción indica su **referencia** — `+N d vs línea base`
+  (slip) o `+N d vs compromiso` (`current_exp_end − pmo_deadline` para «Excede compromiso»). Se eliminó el
+  «0 d» ambiguo.
+- **Añadida vs Retirada (2.2):** diferenciadas por **identidad de Task (ID estable)**, nunca por subject/
+  posición: **«Fuera de línea base»** (en plan vigente, no en baseline) vs **«Retirada del plan»** (en
+  baseline, no en plan vigente) — leyenda, Gantt y excepciones. Detección fiable vía `compare_snapshots`.
+- **Fin plan vigente** ≠ pronóstico calculado (no hay forecast predictivo): es el plan vivo (`exp_end_date`).
+- Fuera de esta pestaña: horas/esfuerzo (→ Planificado vs Real, sin tocar), economía, riesgos, CR,
+  gobernanza. No hay ruta crítica ni bitácora de salud (no existen).
+
+## BLOQUE — Operación de Línea Base desde Project (native-first)
+
+El PM opera la baseline desde el **form nativo de Project** (menú «PMO»), sin abrir el DocType.
+- Endpoints (reutilizan el controlador `PMO Project Baseline`: snapshot + submit): `get_baseline_state`,
+  `establish_baseline` (Original), `new_baseline` (Replan / Approved Change). Inmutable; sin overwrite;
+  conserva la cadena; sin rebaseline parcial.
+- Estado compacto en Project: «Sin línea base» o «Línea base: {revisión} · {fecha}».
+- **Autoridad de Replan (gap corregido):** un PM normal (owner) **no** puede rebaselinar libremente. El
+  tipo **Replan** (excepción PMO sin CR) exige rol **PMO Manager** (guard server-side en el controlador,
+  aplica a endpoint y a creación manual del DocType). **Approved Change** (owner + CR **Implemented**) y
+  **Original** siguen gobernados por el owner. Sin ampliar Change Control ni inventar estados de CR.
+- **Gap pendiente reportado:** el write/submit de baseline sigue **owner-bound** (`has_permission_baseline`);
+  un PMO Manager que **no** es owner del Project no puede escribir baselines. Si el PMO debe replanear
+  proyectos ajenos, requeriría extender `has_permission_baseline`/permisos del DocType — **no** hecho en
+  este bloque (cambio de modelo de permisos).
+
+## BLOQUE — Correcciones QA (Baseline UX + Desviaciones del cronograma)
+
+Correcciones puntuales tras QA; **sin rediseño** (el menú PMO no se rediseña en este bloque).
+
+**1. Baseline UX (form nativo de Project):**
+- **Estado visible (causa + fix).** El estado se intentaba pintar con `frm.dashboard.add_indicator`,
+  pero el dashboard del Project se **vacía** en cada `dashboard.refresh()` (`reset()`), por lo que un
+  indicador añadido de forma asíncrona (tras el `xcall`) desaparecía en re-renders. Se cambió a
+  **`frm.set_intro`** (banner nativo del form que **persiste** a través de esos refrescos): naranja
+  «Sin línea base» / azul «Línea base: {revisión} · {fecha}». No es una superficie nueva: es el
+  mecanismo nativo correcto para estado a nivel form.
+- **Motivo OBLIGATORIO.** Ahora obligatorio para **toda** baseline (incl. Original): `reqd:1` en el
+  diálogo, `reqd:1` en el DocType, y **enforcement server-side** — `establish_baseline` rechaza la
+  primera baseline sin motivo (`ValidationError` antes de crear) y `_validate_reason` exige motivo en
+  todos los tipos. Semántica de Replan/Approved Change intacta (ya lo exigían).
+- **Historial condicionado.** `get_baseline_state` expone `baseline_count`; el botón «Historial de
+  líneas base» solo aparece si `baseline_count > 0`. No se elimina ni modifica el historial.
+
+**2. Project Control > Estado / Cronograma — bloque «Desviaciones del cronograma»:**
+- **Renombrado** «Excepciones del cronograma» → **«Desviaciones del cronograma»**. Responde solo
+  **¿dónde está desviado el cronograma?**.
+- **Filtro desviación-only.** Aparecen únicamente desviaciones temporales reales: **Vencida** al corte,
+  **Excede compromiso** (vs fecha comprometida) y **diferencia material vs línea base** (`slip≠0`).
+  **NO** aparecen por su sola clasificación: hito sin desviación, «Fuera de línea base» solo por ser
+  nueva, ni «Retirada del plan» solo por retirarse (viven en el **Gantt**). Una añadida entra solo si
+  **excede el compromiso**, etiquetada por ESA razón. No se toca `_relevant` (lo usa la vista Resumen /
+  Print Format): el filtro vive en `_schedule_deviations`.
+- **Detección intacta.** El Gantt sigue diferenciando añadidas/retiradas/hitos (leyenda + barras).
+- **Validado en PROJ-0008 (corte 2026-09-11, baseline R1-replan):** DESVIACIONES = exactamente
+  `Despliegue — Excede compromiso (+42 d vs compromiso)` y `Pruebas — Vencida`. Desaparecen el hito
+  «Entrega a cliente» (0 d) y «Soporte extra» (fuera de LB); el Gantt conserva `added=1`.
+
 ## Estado global del rescate (a la fecha)
 | Bloque | Estado |
 |---|---|
 | PMO Home | APROBADO (cerrado) |
 | Portafolio (mejora puntual) | APROBADO |
 | Project Control > Resumen | APROBADO (cierre visual/funcional/técnico) |
-| Otras pestañas de Project Control (Estado/Cronograma, Planificado vs Real, Comparación baseline, Control de cambios, Financiera) | **Intactas** — no tocadas |
+| Project Control > Estado / Cronograma | Implementado + semántica (2.1 · 2.2) + **QA: rename «Desviaciones» y filtro desviación-only** — validado en PROJ-0008 |
+| Operación de Línea Base desde Project | Implementado + guard Replan PMO + **QA: estado visible (set_intro), motivo obligatorio server-side, historial condicionado** — validado en 8412 |
+| Otras pestañas de Project Control (Planificado vs Real, Comparación baseline, Control de cambios, Financiera) | **Intactas** — no tocadas |
+| Governance PMO (Gobernanza V1) | **Implementado** — modelo Project + contrato de desviaciones + exclusión gobernada + tablero + reporte + UX Project; 562 tests OK. Ver bloque abajo |
+| Menú PMO (rediseño) | **Pendiente** — no rediseñado; Gobernanza V1 añadió solo acciones condicionales |
 | Trabajo git | **Sin commit/push** (rama `feat/pmo-home-rescate`) |
+
+## BLOQUE — Gobernanza V1 (contrato + tablero + exclusión)
+
+Gobernanza ligera native-first: `Project → Acta/Handoff → Baseline → Ejecución+Riesgos → Cambios/rebaseline →
+Cierre → Revisión`. Sin DocType/policy/scheduler/SLA/stage-gates nuevos. La antigua Governance (Workspace,
+`governance.py.governance_flags`, expediente en Resumen, bloque previo) **se conserva**; el nuevo motor la
+complementa como fuente del tablero.
+
+- **Modelo en Project (Custom Fields, fixtures):** `pmo_project_manager` (Link User — ERPNext v16 no trae PM
+  nativo); exclusión gobernada `pmo_governance_exempt` + `pmo_exempt_reason`/`_by`/`_on`. Enforcement
+  server-side en `pmo.governance_project.guard_governance_exemption` (Project `validate`): el PM **no** puede
+  autoexcluir (exige PMO Manager/System Manager), motivo obligatorio, auditoría sellada server-side; al
+  re-incluir se limpia y Version conserva el histórico.
+- **`is_project_started(project)`** (fuente única, `pmo.governance`): terminal ∨ `actual_start_date` ∨
+  `percent_complete>0`. Determinista, sin fases.
+- **Motor único read-only `pmo.governance_inbox`:** `_evaluate(project)` → estado por control
+  (completo/pendiente/no_aplica) del que se derivan **bandeja** (`compute_deviations`/`governance_board`) y
+  **resumen de cumplimiento** (misma regla). `get_project_governance` para el form. Reutiliza
+  `governance_flags`-adyacentes, `risk_signals`, workflow del CR, `get_effective_baseline`. Exentos fuera de
+  numerador/denominador.
+- **Riesgos:** desviación **solo** por deficiencia de gestión (`no_owner`/`no_response`), y **solo tras la
+  primera baseline**. Riesgo alto bien gestionado NO es desviación.
+- **Cambios:** In Review → PMO; Draft/Approved/Implemented(sin `baseline_after`) → PM. Implemented con
+  `baseline_after` = rebaseline hecho ⇒ sin desviación.
+- **Responsable siguiente acción (convención semántica; el workflow del CR no separa por rol):** PMO = CR In
+  Review + Revisión posterior; PM = el resto.
+- **Tablero:** Custom Block "PMO Governance" reconstruido (KPIs Requiere PMO/PM/Excluidos + bandeja + resumen
+  + link al reporte). "Revisar" → contexto (form del CR / Project Control / new del artefacto); **no** aprueba
+  inline. es-MX.
+- **Reporte:** Script Report `PMO Projects Without Governance` (activos excluidos: Proyecto·PM·Motivo·
+  Autorizado por·Fecha). P4 vía `get_list`.
+- **UX Project:** `pmo_governance_menu` añade **solo cuando aplica** «Acta de inicio» (crea Handoff) y
+  «Gobernanza (n)» (resumen). Sin reorganizar baseline/riesgo/control.
+
+**Correcciones post-revisión (4 puntos del usuario):**
+1. **Riesgos:** con la primera baseline, la evaluación de riesgos es obligatoria → **baseline sin ningún
+   Risk Assessment = desviación** («Proyecto con línea base sin evaluación de riesgos», PM), además de los
+   riesgos activos con carencia (sin responsable/respuesta). Reutiliza `risk_signals.assessment_exists`.
+2. **Revisión posterior = PMO (resuelto):** se añadió el rol **PMO Manager** a los permisos del DocType
+   `PMO Post-Project Review` **y** `has_permission_review` ahora permite WRITE/CREATE/SUBMIT/CANCEL a la
+   autoridad PMO (`_has_pmo_authority`) en cualquier proyecto, manteniendo P4 de **lectura**. El owner del
+   Project conserva su capacidad previa.
+3. **Rebaseline solo si afecta el compromiso:** un CR `Implemented` exige nueva baseline **solo** si declara
+   `impacts_scope`/`impacts_schedule`/`impacts_effort` (el plan congelado del snapshot ADR-0004). Un cambio
+   solo comercial/riesgo **no** exige rebaseline. Reutiliza flags de impacto existentes del CR.
+4. **PM canónico:** `pmo_project_manager` es la única fuente de PM en motor/tablero/reporte; **ningún**
+   código de gobernanza usa `owner` como sustituto (owner/membresía solo gobierna P4 de visibilidad,
+   ADR-0002). No se migran proyectos históricos.
+
+**Gaps de fecha deliberados:** antigüedad de CR *In Review* usa `request_date` (edad del cambio, no de la
+entrada a revisión); Cierre de proyecto *Cancelled* puede no tener fecha de terminal (`actual_end_date`
+vacío) → antigüedad "—"; carencia de Riesgo sin fecha canónica → "—".
+
+**Definición APROBADA de «proyecto iniciado» (DEFINITIVA):** `is_project_started(project) := Project.status
+in {"Open", "On hold"}` (valor nativo ERPNext «On hold», h minúscula; constante `STARTED_STATUSES`). Punto.
+NO depende de `actual_start_date`, `percent_complete`, Baseline ni Handoff (el Handoff es un control, no
+puede decidir su propia exigibilidad). Reemplaza la inferencia previa (fechas/%) introducida sin fundamento.
+`On hold` = proyecto ya iniciado y **pausado**; la pausa NO exime de obligaciones → sigue sujeto a Acta/Línea
+base. Consecuencia en `_evaluate` (único cambio en el motor, sin tocar los otros 4 controles): `Open`/`On
+hold` sin Handoff → **Acta pendiente (PM)**; sin baseline → **Línea base pendiente (PM)** (independientes).
+`Completed`/`Cancelled` (terminales) no son «iniciados» → Acta/Baseline `not_applicable` (se gobiernan por
+Cierre/Revisión). `not_applicable` sigue en el motor pero **no** se muestra en tarjetas. Indicadores 8412:
+Acta 11/19/1, Línea base 24/6/1 (sin proyectos On hold actualmente → sin cambio respecto al paso anterior).
+
+**PENDIENTE (registrado, NO implementado):** *Reporte / señal de Proyectos On Hold* → destinado a **Portafolio
+PMO** (no a Gobernanza). Debe permitir revisar proyectos pausados y **cuánto tiempo** llevan en ese estado.
+
+**Presentación V2 del dashboard (según `gobernanzapmo.png`):** el tablero pasó a: encabezado *Gobernanza PMO* +
+**ciclo de 6 etapas** (Acta→Baseline→Riesgos→Cambios→Cierre→Revisión, cada una con descripción breve +
+Completos/Pendientes/No aplica) + **KPIs** (Requiere PMO rojo · Requiere PM azul · Excluidos gris) + bandeja
+**Requieren atención (N)** completa + tabla **Proyectos no sujetos a gobernanza (N)** en la misma página. Se
+retiró la *tabla de cumplimiento por control* (dato interno preservado en el payload) y el *shell legacy* del
+workspace (documentos/expediente/riesgo/mejora continua) — capacidades intactas, solo fuera de esta composición.
+Números 100 % del motor (`governance_board.stages` = agregación pura de `_evaluate`: `completo+pendiente+no_aplica
+= gobernados`, nunca `total−completos`). **Gobernanza PMO** volvió al **sidebar PMO** (2º ítem). Botón PMO en
+Project: añadidos accesos faltantes (Cierre y Revisión contextuales por lifecycle; *Solicitudes de cambio*
+persistente). 572 tests OK.
+
+**Tests (`test_governance_contract`, 20):** iniciado; sin/ con Acta; baseline; riesgo (n/a antes de baseline,
+bien vs mal gestionado); CR PM/PMO/rebaseline; cierre; revisión; gobernanza limpia; exento; PM no autoexcluye;
+PMO sí; motivo obligatorio; resumen==bandeja. Suite completa **562 OK**.
