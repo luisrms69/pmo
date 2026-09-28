@@ -20,11 +20,22 @@ interna, pero primero se aplica P4.
 
 import frappe
 from frappe import N_
-from frappe.utils import flt, getdate, today
+from frappe.utils import cint, flt, getdate, today
 
 from pmo.baseline import build_snapshot, get_effective_baseline
 from pmo.compare import compare_snapshots
-from pmo.governance import build_expediente, governance_flags
+from pmo.governance import build_expediente, count_open_change_requests, governance_flags
+from pmo.governance_inbox import (
+	CONTROL_DESCRIPTIONS,
+	CONTROL_ICONS,
+	CONTROL_LABELS,
+	CONTROL_ORDER,
+	STATE_NO_APLICA,
+	STATE_PENDIENTE,
+	_evaluate,
+	_facts,
+)
+from pmo.governance_project import is_governance_exempt
 from pmo.health import HEALTH_LABELS, _health
 from pmo.project_economics import can_see_project_economics, get_authorized_economics
 from pmo.status_date import build_status_report
@@ -1011,3 +1022,123 @@ def get_financial_html(project: str, cutoff: str | None = None) -> str:
 	)
 	# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti -- ruta de plantilla literal propia (no input de usuario)
 	return frappe.render_template("pmo/templates/project_control/financial.html", {"pc": ctx})
+
+
+# ---------------------------------------------------------------------------
+# Panel PMO del Project — CONTRATO CONTEXTUAL (backend natural de la Page pmo_project_control).
+# Estado PMO de UN Project: reutiliza el MISMO motor transversal (`_evaluate`/`_facts` de
+# pmo.governance_inbox); NO duplica reglas de gobernanza ni amplía el dashboard de portafolio.
+# ---------------------------------------------------------------------------
+
+# Microcopy instructivo (es-MX): «por qué todavía no corresponde» cuando el control está not_applicable.
+# Solo orientación de presentación; la clasificación real la produce el motor (_evaluate).
+CONTROL_NA_REASON = {
+	"acta": "Aplica mientras el proyecto está en ejecución (Open/On hold).",
+	"baseline": "Aplica mientras el proyecto está en ejecución (Open/On hold).",
+	"risk": "Se habilita al establecer la primera línea base.",
+	"change": "Sin solicitudes de cambio registradas todavía.",
+	"closure": "Se habilita cuando el proyecto termina (Completed/Cancelled).",
+	"review": "Se habilita después de emitir el cierre.",
+}
+_CONTROL_CREATE_DT = {
+	"acta": "PMO Project Handoff",
+	"baseline": "PMO Project Baseline",
+	"risk": "PMO Project Risk Assessment",
+	"change": "PMO Change Request",
+	"closure": "PMO Project Closure",
+	"review": "PMO Post-Project Review",
+}
+
+
+def _can_create(doctype: str, project: str) -> bool:
+	"""¿El usuario puede CREAR este artefacto de gobierno para el Project? Usa los gates reales
+	(has_permission_* por DocType); la UI solo refleja, el backend sigue siendo la autoridad."""
+	try:
+		doc = frappe.get_doc({"doctype": doctype, "project": project})
+		return bool(frappe.has_permission(doctype, "create", doc=doc))
+	except Exception:
+		return False
+
+
+@frappe.whitelist()
+def project_governance_state(project: str) -> dict:
+	"""CONTRATO CONTEXTUAL de UN Project para el Panel PMO (P4: READ del Project). Reutiliza el MISMO motor
+	que el dashboard transversal: `_evaluate(project)` clasifica cada control; aquí se enriquece con lo mínimo
+	que la UI necesita para PRESENTAR y OPERAR el ciclo (documento existente, conteos de Riesgos/Cambios,
+	acción disponible y capacidad real de actuar). NO duplica reglas de gobernanza ni toca governance_board."""
+	from pmo.pmo.doctype.pmo_project_baseline.pmo_project_baseline import get_baseline_state
+
+	frappe.has_permission("Project", ptype="read", doc=project, throw=True)
+	f = _facts(project)
+	exempt = is_governance_exempt(project)
+	controls = _evaluate(f)
+	risk = f["risk"]
+	crs = f["crs"]
+	open_crs = count_open_change_requests(project)
+	in_review = sum(
+		1 for c in crs if (c.get("workflow_state") or "") == "In Review" and cint(c.get("docstatus")) != 2
+	)
+	bl = get_baseline_state(project)
+
+	# Documento existente «para abrir» por control (si aplica).
+	existing = {
+		"acta": (f["handoff"] or {}).get("name")
+		and {"doctype": "PMO Project Handoff", "name": f["handoff"]["name"]},
+		"baseline": f["baseline"] and {"doctype": "PMO Project Baseline", "name": f["baseline"]},
+		"risk": risk.get("assessment")
+		and {"doctype": "PMO Project Risk Assessment", "name": risk.get("assessment")},
+		"change": None,
+		"closure": (f["closure"] or {}).get("name")
+		and {"doctype": "PMO Project Closure", "name": f["closure"]["name"]},
+		"review": (f["review"] or {}).get("name")
+		and {"doctype": "PMO Post-Project Review", "name": f["review"]["name"]},
+	}
+	counts = {
+		"risk": {
+			"assessment_exists": bool(risk.get("assessment_exists")),
+			"open": cint(risk.get("open")),
+			"needs_attention": cint(risk.get("no_owner")) + cint(risk.get("no_response")),
+		},
+		"change": {"open": open_crs, "in_review": in_review, "total": len(crs)},
+	}
+
+	out = []
+	for key in CONTROL_ORDER:
+		c = controls.get(key, {})
+		state = c.get("state", STATE_NO_APLICA)
+		out.append(
+			{
+				"control": key,
+				"label": CONTROL_LABELS[key],
+				"description": CONTROL_DESCRIPTIONS[key],
+				"icon": CONTROL_ICONS[key],
+				"state": state,
+				"situation": c.get("situation"),
+				"action_owner": c.get("action_owner"),
+				"na_reason": CONTROL_NA_REASON[key] if state == STATE_NO_APLICA else None,
+				"existing": existing.get(key) or None,
+				"counts": counts.get(key),
+				"can_create": _can_create(_CONTROL_CREATE_DT[key], project),
+			}
+		)
+
+	return {
+		"project": project,
+		"project_name": f["project_name"],
+		"project_manager": f["project_manager"],
+		"status": f["status"],
+		"started": f["started"],
+		"exempt": exempt,
+		"exempt_reason": frappe.db.get_value("Project", project, "pmo_exempt_reason") if exempt else None,
+		"pending_count": 0 if exempt else sum(1 for r in out if r["state"] == STATE_PENDIENTE),
+		"controls": out,
+		# Datos para operar la etapa Línea base con el flujo REAL existente (establecer/nueva/historial).
+		"baseline": {
+			"has_baseline": bool(bl.get("has_baseline")),
+			"revision": bl.get("revision"),
+			"effective_date": bl.get("effective_date"),
+			"baseline_count": bl.get("baseline_count"),
+			"eligible_crs": bl.get("eligible_crs"),
+			"can_replan": bl.get("can_replan"),
+		},
+	}

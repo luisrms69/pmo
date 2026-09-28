@@ -23,14 +23,13 @@ from pmo.governance_inbox import (
 	CONTROL_REVIEW,
 	CONTROL_RISK,
 	STATE_PENDIENTE,
-	_can_create,
 	_evaluate,
 	_facts,
 	compute_deviations,
 	get_project_governance,
 	governance_board,
-	project_governance_state,
 )
+from pmo.project_control import _can_create, project_governance_state
 
 
 def _user(email, roles=()):
