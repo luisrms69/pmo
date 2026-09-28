@@ -3993,3 +3993,64 @@ msgstr "Proyectos activos formalmente excluidos de la gobernanza PMO."
 
 msgid "Projects not subject to governance."
 msgstr "Proyectos no sujetos a gobernanza."
+
+# Panel PMO — Page pmo_project_control: pestaña Gobernanza (consola del ciclo) (es-MX).
+msgid "PMO Panel"
+msgstr "Panel PMO"
+
+msgid "Project governance"
+msgstr "Gobernanza del proyecto"
+
+msgid "Where this project stands, what is missing, and who must act."
+msgstr "En qué punto está este proyecto, qué falta y quién debe actuar."
+
+msgid "Up to date"
+msgstr "Al día"
+
+msgid "Next step"
+msgstr "Siguiente paso"
+
+msgid "Not applicable yet"
+msgstr "No corresponde todavía"
+
+msgid "Requires the appropriate role/permission"
+msgstr "Requiere el rol/permiso adecuado"
+
+msgid "History"
+msgstr "Historial"
+
+msgid "Assess risks"
+msgstr "Evaluar riesgos"
+
+msgid "View changes"
+msgstr "Ver cambios"
+
+msgid "New request"
+msgstr "Nueva solicitud"
+
+msgid "Create record"
+msgstr "Crear acta"
+
+msgid "Create closure"
+msgstr "Crear cierre"
+
+msgid "Create review"
+msgstr "Crear revisión"
+
+msgid "Risk assessment pending"
+msgstr "Evaluación de riesgos pendiente"
+
+msgid "need attention"
+msgstr "requieren atención"
+
+msgid "No change requests"
+msgstr "Sin solicitudes de cambio"
+
+msgid "open"
+msgstr "abiertas"
+
+msgid "awaiting PMO"
+msgstr "espera decisión PMO"
+
+msgid "Could not load the PMO panel."
+msgstr "No se pudo cargar el panel PMO."
