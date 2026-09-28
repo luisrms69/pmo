@@ -31,7 +31,7 @@
   "fieldname": "pmo_status_date",
   "label": "PMO Status Date",
   "fieldtype": "Date",
-  "insert_after": "expected_end_date",
+  "insert_after": "pmo_committed_end_date",
   "no_copy": 1,
   "description": "Cutoff date (Data Date) of the Project's as-of control (ADR-0006). Only today or past; no future date allowed. It is the default value of the cutoff-date status report."
  },
@@ -44,8 +44,8 @@
   "label": "Responsable operativo interno",
   "fieldtype": "Link",
   "options": "Employee",
-  "insert_after": "company",
-  "description": "Persona interna responsable de la operación/ejecución diaria del proyecto, distinta del Project Manager. El PMO Project Handoff toma este valor y lo congela al emitir."
+  "insert_after": "pmo_project_manager",
+  "description": "Responsable interno de la ejecución diaria (distinto del PM). El Acta de inicio lo congela al emitir."
  },
  {
   "doctype": "Custom Field",
@@ -56,8 +56,8 @@
   "label": "Contacto principal del cliente",
   "fieldtype": "Link",
   "options": "Contact",
-  "insert_after": "pmo_operational_owner",
-  "description": "Contacto principal del cliente para este proyecto. El PMO Project Handoff toma este valor y lo congela al emitir."
+  "insert_after": "pmo_col_resp",
+  "description": "Contacto principal del cliente. El Acta de inicio lo congela al emitir."
  },
  {
   "doctype": "Custom Field",
@@ -80,8 +80,8 @@
   "label": "Project Manager / Responsable del proyecto",
   "fieldtype": "Link",
   "options": "User",
-  "insert_after": "pmo_customer_contact",
-  "description": "Fuente canónica del Project Manager (responsable de administrar este proyecto concreto). ERPNext v16 no provee un campo nativo de PM. Distinto de `owner` (creador del documento) y de `pmo_operational_owner` (responsable operativo interno). Usado por Gobernanza para atribuir la siguiente acción."
+  "insert_after": "pmo_sec_resp",
+  "description": "Responsable de administrar este proyecto. Usado por Gobernanza para atribuir la siguiente acción."
  },
  {
   "doctype": "Custom Field",
@@ -92,7 +92,7 @@
   "label": "Excluido de gobernanza PMO",
   "fieldtype": "Check",
   "default": "0",
-  "insert_after": "pmo_project_manager",
+  "insert_after": "pmo_sec_gov",
   "no_copy": 1,
   "description": "Declaración explícita de que este proyecto NO está sujeto al proceso de gobernanza PMO. Default: No (sujeto). Solo PMO Manager o System Manager pueden cambiarlo (enforcement server-side). Un proyecto excluido no genera desviaciones de gobernanza pero sigue siendo visible para la PMO."
  },
@@ -138,5 +138,85 @@
   "read_only": 1,
   "no_copy": 1,
   "description": "Fecha/hora en que se autorizó la exclusión de gobernanza. Se fija server-side al activar la exclusión."
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_tab",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_tab",
+  "fieldtype": "Tab Break",
+  "insert_after": "subject",
+  "label": "PMO"
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_sec_resp",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_sec_resp",
+  "fieldtype": "Section Break",
+  "insert_after": "pmo_exempt_on",
+  "label": "Responsables y contexto"
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_sec_gov",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_sec_gov",
+  "fieldtype": "Section Break",
+  "insert_after": "pmo_tab",
+  "label": ""
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_col_resp",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_col_resp",
+  "fieldtype": "Column Break",
+  "insert_after": "pmo_operational_owner"
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_sec_ctrl",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_sec_ctrl",
+  "fieldtype": "Section Break",
+  "insert_after": "pmo_access_html",
+  "label": "Control del proyecto",
+  "hidden": 1
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_sec_access",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_sec_access",
+  "fieldtype": "Section Break",
+  "insert_after": "pmo_committed_html",
+  "label": "Ciclo de Gobernanza"
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_access_html",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_access_html",
+  "fieldtype": "HTML",
+  "insert_after": "pmo_sec_access",
+  "depends_on": "eval:!doc.__islocal"
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_committed_html",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_committed_html",
+  "fieldtype": "HTML",
+  "insert_after": "pmo_customer_contact",
+  "depends_on": "eval:!doc.__islocal"
  }
 ]

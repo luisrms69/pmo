@@ -24,8 +24,256 @@ frappe.ui.form.on("Project", {
 
 		pmo_governance_group(frm);
 		pmo_risk_indicators(frm);
+		pmo_governance_cycle(frm);
+		pmo_committed_display(frm);
+	},
+
+	// Solo re-pinta el display de lectura; NO establece ni valida el compromiso (eso vive fuera de esta
+	// pestaña y se implementará desde el Handoff en el siguiente bloque).
+	pmo_committed_end_date(frm) {
+		pmo_committed_display(frm);
 	},
 });
+
+// --- FIN COMPROMETIDO (pestaña PMO → sección Responsables): dato material del Project, mostrado de forma
+// compacta y de SOLO LECTURA. No es configuración de esta pestaña: sin diálogo, sin acción, sin escribir el
+// campo. El compromiso se establecerá desde el Handoff (bloque siguiente). El campo editable sigue viviendo
+// en el formulario nativo del Project (comportamiento backend intacto). ------------------------------------
+function pmo_committed_display(frm) {
+	const fld = frm.fields_dict && frm.fields_dict.pmo_committed_html;
+	if (!fld) return;
+	const raw = frm.doc.pmo_committed_end_date;
+	let val = "No establecido";
+	if (raw) {
+		const d = frappe.datetime.str_to_obj(raw);
+		val = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(
+			2,
+			"0"
+		)}/${d.getFullYear()}`;
+	}
+	fld.$wrapper.html(
+		`<div class="small" style="margin-top:4px"><span class="text-muted">Fin comprometido:</span> <strong>${frappe.utils.escape_html(
+			val
+		)}</strong></div>`
+	);
+}
+
+// --- CICLO DE GOBERNANZA (pestaña PMO → sección "Ciclo de Gobernanza"): render operable de las 6 etapas.
+// Reutiliza EXACTAMENTE el contrato `project_governance_state` (mismo motor `_evaluate`) para clasificar y
+// los flujos existentes (crear/abrir + diálogos de baseline). NO lifecycle en JS, NO segundo motor, NO
+// dashboard nuevo: solo presenta el estado del backend y dispara acciones ya gobernadas por sus gates.
+const GOV_STAGE_BADGE = {
+	completo: ["green", "Completo"],
+	pendiente: ["orange", "Pendiente"],
+	no_aplica: ["gray", "No aplica"],
+};
+
+// Microcopy SOLO de presentación para el estado interno `not_applicable`. El backend sigue devolviendo
+// exactamente `completo | pendiente | no_aplica`; aquí NO se reconstruye lifecycle: se traduce ese estado
+// a una etiqueta/mensaje contextual por control para no confundir "aplicabilidad del control" con
+// "disponibilidad de la funcionalidad". Si un control no tiene override, cae al genérico + `na_reason`
+// que el propio backend provee (causa real).
+const GOV_NA_COPY = {
+	risk: {
+		label: "Aún no requerido",
+		color: "blue",
+		note: "La evaluación de riesgos será requerida por Gobernanza a partir de la primera línea base. Puedes evaluar y gestionar riesgos desde ahora.",
+	},
+	change: {
+		label: "Sin pendientes",
+		color: "gray",
+		note: "Sin cambios pendientes. Crea o gestiona solicitudes cuando lo necesites.",
+	},
+	closure: {
+		label: "Aún no requerido",
+		color: "blue",
+		note: "El cierre formal será requerido cuando corresponda cerrar el proyecto.",
+	},
+	review: {
+		label: "Aún no requerido",
+		color: "blue",
+		note: "La revisión posterior será requerida después del cierre formal.",
+	},
+	// Acta y Línea base: `not_applicable` solo ocurre en estados terminales (proyecto fuera de ejecución).
+	// Se expresa la causa real, no un "No aplica" ambiguo. No cambia ninguna regla del motor.
+	acta: {
+		label: "No aplica",
+		color: "gray",
+		note: "Solo aplica con el proyecto en ejecución (Open/On hold).",
+	},
+	baseline: {
+		label: "No aplica",
+		color: "gray",
+		note: "Solo aplica con el proyecto en ejecución (Open/On hold).",
+	},
+};
+
+function pmo_governance_cycle(frm) {
+	const fld = frm.fields_dict && frm.fields_dict.pmo_access_html;
+	if (!fld) return; // el campo aún no existe (fixture no migrado)
+	fld.$wrapper.html('<div class="text-muted small">Cargando ciclo de Gobernanza…</div>');
+	frappe
+		.xcall(PGS, { project: frm.doc.name })
+		.then((d) => {
+			if (!d) {
+				fld.$wrapper.empty();
+				return;
+			}
+			if (d.exempt) {
+				fld.$wrapper.html(pmo_exclusion_banner(d));
+				return;
+			}
+			const built = pmo_cycle_grid(frm, d);
+			fld.$wrapper.html(built.html);
+			fld.$wrapper.off("click.gov").on("click.gov", "button[data-act]", function () {
+				const h = built.handlers[$(this).attr("data-act")];
+				if (h) h();
+			});
+		})
+		.catch(() => fld.$wrapper.empty());
+}
+
+// Proyecto excluido: mensaje claro de que NO está sujeto al ciclo (el motivo/autorización viven en los
+// campos nativos de la sección Gobernanza; aquí solo se refuerza visualmente el estado).
+function pmo_exclusion_banner(d) {
+	const reason = d.exempt_reason
+		? `<div class="small text-muted" style="margin-top:4px">Motivo: ${frappe.utils.escape_html(
+				d.exempt_reason
+		  )}</div>`
+		: "";
+	return `<div style="border:1px solid var(--border-color);border-left:3px solid var(--blue-500);border-radius:var(--border-radius);padding:10px 12px;background:var(--bg-blue,#f0f7ff)">
+		<div style="font-weight:600">Proyecto excluido del ciclo de Gobernanza PMO</div>
+		<div class="small text-muted">Este Project no está sujeto al ciclo de Gobernanza y no genera desviaciones.</div>
+		${reason}
+	</div>`;
+}
+
+// Rejilla de 6 etapas (2 columnas × 3 filas) sobre el Project abierto. Devuelve HTML + mapa de handlers.
+function pmo_cycle_grid(frm, d) {
+	const open = (e) => frappe.set_route("Form", e.doctype, e.name);
+	const create = (dt) => frappe.new_doc(dt, { project: frm.doc.name });
+	const listFor = (dt) => frappe.set_route("List", dt, { project: frm.doc.name });
+	const c = {};
+	(d.controls || []).forEach((x) => (c[x.control] = x));
+	const bl = d.baseline || {};
+	const handlers = {};
+	let seq = 0;
+	// Registra un handler y devuelve el markup del botón (delegación por data-act).
+	const btn = (label, fn, primary) => {
+		const id = "a" + seq++;
+		handlers[id] = fn;
+		return `<button class="btn btn-${
+			primary ? "primary" : "default"
+		} btn-xs" data-act="${id}" style="margin-right:6px;margin-top:6px">${frappe.utils.escape_html(
+			label
+		)}</button>`;
+	};
+
+	// Acciones por etapa, reutilizando los gates del contrato (existing / can_create / estado).
+	const actions = {
+		acta: () => {
+			const x = c.acta || {};
+			if (x.existing) return btn("Abrir", () => open(x.existing), true);
+			if (x.can_create) return btn("Crear", () => create("PMO Project Handoff"), true);
+			return "";
+		},
+		baseline: () => {
+			let out = "";
+			if (!bl.has_baseline) {
+				out += btn("Establecer", () => pmo_establish_baseline(frm), true);
+			} else {
+				out += btn(
+					"Nueva",
+					() => pmo_new_baseline(frm, bl.eligible_crs || [], !!bl.can_replan),
+					true
+				);
+				if (bl.baseline_count > 0)
+					out += btn("Historial", () => listFor("PMO Project Baseline"));
+			}
+			return out;
+		},
+		risk: () => {
+			const x = c.risk || {};
+			let out = "";
+			if (x.existing) out += btn("Abrir", () => open(x.existing), true);
+			else if (x.can_create)
+				out += btn("Evaluar", () => create("PMO Project Risk Assessment"), true);
+			out += btn("Gestionar", () => listFor("PMO Project Risk"));
+			return out;
+		},
+		change: () => {
+			let out = btn("Gestionar", () => listFor("PMO Change Request"), true);
+			out += btn("Crear", () => create("PMO Change Request"));
+			return out;
+		},
+		closure: () => {
+			const x = c.closure || {};
+			if (x.existing) return btn("Abrir", () => open(x.existing), true);
+			if (x.state === "pendiente" && x.can_create)
+				return btn("Crear", () => create("PMO Project Closure"), true);
+			return "";
+		},
+		review: () => {
+			const x = c.review || {};
+			if (x.existing) return btn("Abrir", () => open(x.existing), true);
+			if (x.state === "pendiente" && x.can_create)
+				return btn("Crear", () => create("PMO Post-Project Review"), true);
+			return "";
+		},
+	};
+
+	// Complemento breve por etapa (conteos útiles del contrato). Solo presentación.
+	const extra = {
+		risk: () => {
+			const k = (c.risk && c.risk.counts) || {};
+			return k.open ? `Riesgos abiertos: ${k.open}` : "";
+		},
+		change: () => {
+			const k = (c.change && c.change.counts) || {};
+			const bits = [];
+			if (k.open) bits.push(`${k.open} abiertas`);
+			if (k.in_review) bits.push(`${k.in_review} en revisión`);
+			return bits.join(" · ");
+		},
+	};
+
+	const cards = (d.controls || [])
+		.map((x, i) => {
+			// `no_aplica` se re-etiqueta por control (microcopy contextual); complete/pending intactos.
+			const na = x.state === "no_aplica" ? GOV_NA_COPY[x.control] : null;
+			const base = GOV_STAGE_BADGE[x.state] || GOV_STAGE_BADGE.no_aplica;
+			const badge = na ? [na.color, na.label] : base;
+			const owner =
+				x.action_owner && x.state === "pendiente"
+					? `<span class="text-muted small" style="margin-left:6px">· Responsable: ${frappe.utils.escape_html(
+							x.action_owner
+					  )}</span>`
+					: "";
+			// Explicación breve: situación cuando hay pendiente; microcopy contextual (o `na_reason` del
+			// backend) cuando no aplica; la descripción de la etapa en el resto.
+			let note = "";
+			if (x.state === "pendiente" && x.situation)
+				note = frappe.utils.escape_html(x.situation);
+			else if (x.state === "no_aplica")
+				note = frappe.utils.escape_html((na && na.note) || x.na_reason || "");
+			else note = frappe.utils.escape_html(x.description || "");
+			const xtra = extra[x.control] ? extra[x.control]() : "";
+			const acts = actions[x.control] ? actions[x.control]() : "";
+			return `<div style="border:1px solid var(--border-color);border-radius:var(--border-radius);padding:10px 12px">
+				<div style="display:flex;align-items:center;justify-content:space-between">
+					<div style="font-weight:600">${i + 1}. ${frappe.utils.escape_html(x.label)}${owner}</div>
+					<span class="indicator-pill ${badge[0]}">${badge[1]}</span>
+				</div>
+				<div class="small text-muted" style="margin-top:2px">${note}</div>
+				${xtra ? `<div class="small text-muted" style="margin-top:2px">${xtra}</div>` : ""}
+				<div>${acts}</div>
+			</div>`;
+		})
+		.join("");
+
+	const html = `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${cards}</div>`;
+	return { html, handlers };
+}
 
 // --- GOBERNANZA: grupo único de acciones del ciclo, sobre el Project actual (crear/abrir según estado) ---
 function pmo_governance_group(frm) {
