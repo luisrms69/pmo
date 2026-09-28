@@ -23,11 +23,13 @@ from pmo.governance_inbox import (
 	CONTROL_REVIEW,
 	CONTROL_RISK,
 	STATE_PENDIENTE,
+	_can_create,
 	_evaluate,
 	_facts,
 	compute_deviations,
 	get_project_governance,
 	governance_board,
+	project_governance_state,
 )
 
 
@@ -517,6 +519,83 @@ class TestGovernanceBoard(IntegrationTestCase):
 		b = governance_board()
 		mine = [it for it in b["items"] if it["project"] == p]
 		self.assertEqual({it["control"] for it in mine}, {CONTROL_ACTA, CONTROL_BASELINE})
+
+
+class TestProjectGovernanceState(IntegrationTestCase):
+	"""Contrato contextual del Panel PMO: reutiliza `_evaluate` (misma fuente que el dashboard) y expone lo
+	mínimo para presentar/operar el ciclo de UN Project. Los permisos backend siguen siendo la autoridad."""
+
+	def setUp(self):
+		frappe.set_user("Administrator")
+
+	def test_six_controls_ordered_and_states_match_engine(self):
+		p = _project("PGS-STATES")
+		_handoff(p)  # acta completa; baseline pendiente
+		state = project_governance_state(p)
+		self.assertEqual([c["control"] for c in state["controls"]], list(CONTROL_ORDER))
+		engine = _evaluate(_facts(p))
+		for c in state["controls"]:
+			self.assertEqual(c["state"], engine[c["control"]]["state"])  # sin reglas nuevas: refleja el motor
+
+	def test_existing_doc_exposed_when_complete(self):
+		p = _project("PGS-EXIST")
+		h = _handoff(p)
+		acta = next(c for c in project_governance_state(p)["controls"] if c["control"] == CONTROL_ACTA)
+		self.assertEqual(acta["state"], "completo")
+		self.assertEqual(acta["existing"], {"doctype": "PMO Project Handoff", "name": h})
+
+	def test_counts_for_change_and_risk(self):
+		p = _project("PGS-COUNTS")
+		_baseline(p)
+		_assessment(p)
+		_risk(p, owner=None, response=None)  # 1 activo con carencia
+		_cr(p, "In Review", docstatus=0)
+		_cr(p, "Draft", docstatus=0)
+		cmap = {c["control"]: c for c in project_governance_state(p)["controls"]}
+		self.assertEqual(cmap[CONTROL_CHANGE]["counts"]["open"], 2)
+		self.assertEqual(cmap[CONTROL_CHANGE]["counts"]["in_review"], 1)
+		self.assertGreaterEqual(cmap[CONTROL_RISK]["counts"]["needs_attention"], 1)
+		self.assertTrue(cmap[CONTROL_RISK]["counts"]["assessment_exists"])
+
+	def test_pending_count_matches_deviations(self):
+		p = _project("PGS-PENDING")  # Open sin nada → acta + baseline pendientes
+		state = project_governance_state(p)
+		self.assertEqual(state["pending_count"], len(compute_deviations(p)))
+		self.assertGreaterEqual(state["pending_count"], 2)
+
+	def test_na_reason_only_when_not_applicable(self):
+		p = _project("PGS-NA")  # Open, no terminal → closure/review not_applicable
+		cmap = {c["control"]: c for c in project_governance_state(p)["controls"]}
+		self.assertEqual(cmap[CONTROL_CLOSURE]["state"], "no_aplica")
+		self.assertTrue(cmap[CONTROL_CLOSURE]["na_reason"])  # microcopy presente
+		self.assertIsNone(cmap[CONTROL_ACTA]["na_reason"])  # acta aplica (Open) → sin na_reason
+
+	def test_exempt_short_circuits(self):
+		p = _project("PGS-EXEMPT")
+		frappe.db.set_value(
+			"Project", p, {"pmo_governance_exempt": 1, "pmo_exempt_reason": "piloto"}, update_modified=False
+		)
+		state = project_governance_state(p)
+		self.assertTrue(state["exempt"])
+		self.assertEqual(state["pending_count"], 0)
+		self.assertEqual(state["exempt_reason"], "piloto")
+
+	def test_can_create_reflects_backend_gate(self):
+		# La autoridad es el backend (has_permission_*). El owner del Project puede crear baseline; un no-owner
+		# sin autoridad, no. La UI solo refleja esta capacidad.
+		owner = _user("pgs-owner@example.com", ["Projects User"])
+		other = _user("pgs-other@example.com", ["Projects User"])
+		p = _project("PGS-PERM", owner=owner)
+		frappe.set_user(owner)
+		try:
+			self.assertTrue(_can_create("PMO Project Baseline", p))
+		finally:
+			frappe.set_user("Administrator")
+		frappe.set_user(other)
+		try:
+			self.assertFalse(_can_create("PMO Project Baseline", p))
+		finally:
+			frappe.set_user("Administrator")
 
 
 class TestReviewPermissions(IntegrationTestCase):
