@@ -52,13 +52,13 @@ const GOV_PAL = {
 };
 
 const VIEWS = [
-	{ key: "governance", label: __("Governance") },
 	{ key: "executive", label: __("Summary") },
 	{ key: "status", label: __("Status / Schedule") },
 	{ key: "pva", label: __("Planned vs Actual") },
 	{ key: "baseline", label: __("Baseline Comparison") },
 	{ key: "change", label: __("Change Control") },
 	{ key: "financial", label: __("Financial") },
+	{ key: "governance", label: __("Governance") }, // al FINAL, después de Financiero
 ];
 
 const WF_COLOR = {
@@ -73,7 +73,7 @@ const WF_COLOR = {
 class PMOProjectControl {
 	constructor(page) {
 		this.page = page;
-		this.state = { project: null, status_date: null, view: "governance", baselines: null };
+		this.state = { project: null, status_date: null, view: "executive", baselines: null };
 
 		this._inject_styles();
 		this._build_filters(); // Project + Status Date en .page-form (hijo de page.body)
@@ -118,10 +118,16 @@ class PMOProjectControl {
 	on_show() {
 		const route = frappe.get_route() || [];
 		const routed = route.length > 1 ? decodeURIComponent(route[1]) : null;
+		// Pestaña inicial opcional por ruta (…/pmo_project_control/<project>/<view>). Sin ella, landing = Resumen.
+		const wantedView = route.length > 2 ? route[2] : null;
+		if (wantedView && VIEWS.some((v) => v.key === wantedView)) {
+			this.state.view = wantedView;
+			this._render_tabs();
+		}
 		if (routed && routed !== this.state.project) {
-			this.project_field.set_value(routed); // dispara _on_project_change
-		} else if (!this.state.project) {
-			this._render_view(); // muestra el estado "elige un Project"
+			this.project_field.set_value(routed); // dispara _on_project_change → _render_view (usa state.view)
+		} else if (!this.state.project || wantedView) {
+			this._render_view();
 		}
 	}
 
