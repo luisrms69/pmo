@@ -579,6 +579,17 @@ class TestProjectGovernanceState(IntegrationTestCase):
 		self.assertEqual(state["pending_count"], 0)
 		self.assertEqual(state["exempt_reason"], "piloto")
 
+	def test_panel_exposes_actionable_path_for_all_controls(self):
+		# Migración del botón PMO: cada control debe ser operable desde el Panel (crear si falta / abrir si
+		# existe / listar-crear en Cambios). Ninguna capacidad retirada del dropdown queda inaccesible.
+		p = _project("PGS-COVER")
+		_handoff(p)  # acta existente → abrir
+		cmap = {c["control"]: c for c in project_governance_state(p)["controls"]}
+		for k in CONTROL_ORDER:
+			c = cmap[k]
+			actionable = bool(c["existing"]) or c["can_create"] or k == CONTROL_CHANGE
+			self.assertTrue(actionable, f"{k} sin acción disponible en el Panel")
+
 	def test_can_create_reflects_backend_gate(self):
 		# La autoridad es el backend (has_permission_*). El owner del Project puede crear baseline; un no-owner
 		# sin autoridad, no. La UI solo refleja esta capacidad.

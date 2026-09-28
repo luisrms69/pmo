@@ -405,3 +405,26 @@ persistente). 572 tests OK.
 **Tests (`test_governance_contract`, 20):** iniciado; sin/ con Acta; baseline; riesgo (n/a antes de baseline,
 bien vs mal gestionado); CR PM/PMO/rebaseline; cierre; revisión; gobernanza limpia; exento; PM no autoexcluye;
 PMO sí; motivo obligatorio; resumen==bandeja. Suite completa **562 OK**.
+
+## BLOQUE — Panel PMO del Project (consola única en pmo_project_control)
+
+La Page existente `pmo_project_control` evoluciona a **Panel PMO** del Project (una sola superficie; sin
+Dialog/Page/DocType nuevos). Separación conceptual mantenida: **Gobernanza transversal/portafolio**
+(`governance_inbox.governance_board`, dashboard `/desk/pmo-governance` — INTACTO) vs **estado PMO contextual
+de UN Project** (nuevo).
+
+- **Contrato contextual** `pmo.project_control.project_governance_state(project)` (backend natural de la Page):
+  reutiliza por import el motor único `_evaluate`/`_facts`; expone por control label/description/state/
+  situation/action_owner + doc existente + conteos (Riesgos/Cambios) + `na_reason` (microcopy) + `can_create`
+  (gates reales `has_permission_*`). NO duplica reglas ni toca `governance_board`.
+- **Pestaña Gobernanza** (primera/landing) en la Page: ciclo de 6 etapas compacto (número, icono/color por
+  etapa, descripción, estado, responsable PM/PMO, microcopy + siguiente paso) con acciones contextuales que
+  nacen **siempre vinculadas al Project actual**: Acta (crear/abrir), Línea base (establecer/nueva/historial,
+  reusando los endpoints reales), Riesgos (evaluar/gestionar), Cambios (ver/nueva), Cierre y Revisión (crear/
+  abrir según lifecycle). Habilitación por `can_create`; el backend sigue siendo la autoridad. Las pestañas de
+  control existentes (Resumen/Estado/PvA/Baseline/Cambios/Financiera) **intactas**.
+- **Botón PMO del Project** simplificado a un **acceso único "Panel PMO · N"** (N = desviaciones del mismo
+  motor; señal discreta, sin mini-dashboard). Se retiró el dropdown saturado; cada capacidad quedó verificada
+  como accesible desde el Panel antes de eliminar redundancias.
+- **Higiene Git:** el trabajo previo (Estado/Cronograma, Baseline, Gobernanza V1 motor + dashboard) se cortó
+  en commits locales coherentes ANTES del Panel; el Panel se implementó en commits propios. Sin push.
