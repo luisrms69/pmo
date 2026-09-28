@@ -4054,3 +4054,22 @@ msgstr "espera decisión PMO"
 
 msgid "Could not load the PMO panel."
 msgstr "No se pudo cargar el panel PMO."
+
+# Menú PMO del Project — grupo Gobernanza (variantes abrir + ver estado) (es-MX).
+msgid "Start record: open"
+msgstr "Acta de inicio: abrir"
+
+msgid "Risk assessment: open"
+msgstr "Evaluación de riesgos: abrir"
+
+msgid "Issue closure: open"
+msgstr "Cierre del proyecto: abrir"
+
+msgid "Perform post-project review: open"
+msgstr "Revisión posterior: abrir"
+
+msgid "View governance status"
+msgstr "Ver estado de gobernanza"
+
+msgid "PROJECT CONTROL"
+msgstr "CONTROL DE PROYECTO"
