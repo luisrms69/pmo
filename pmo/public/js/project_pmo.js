@@ -28,8 +28,8 @@ frappe.ui.form.on("Project", {
 		pmo_committed_display(frm);
 	},
 
-	// Solo re-pinta el display de lectura; NO establece ni valida el compromiso (eso vive fuera de esta
-	// pestaña y se implementará desde el Handoff en el siguiente bloque).
+	// Solo re-pinta el display de lectura; el compromiso inicial se fija desde el Handoff y el cambio
+	// posterior por la acción "Cambiar" (endpoint gobernado). Este handler no escribe el campo.
 	pmo_committed_end_date(frm) {
 		pmo_committed_display(frm);
 	},
@@ -51,11 +51,65 @@ function pmo_committed_display(frm) {
 			"0"
 		)}/${d.getFullYear()}`;
 	}
+	// Acción discreta "Cambiar": solo si hay compromiso vigente Y el usuario tiene autoridad PMO. La
+	// autoridad REAL la valida el backend; esto solo decide mostrar el enlace (no es control de permisos).
+	const change_link =
+		raw && pmo_can_change_committed()
+			? ` · <a class="pmo-change-committed" style="cursor:pointer">Cambiar</a>`
+			: "";
 	fld.$wrapper.html(
 		`<div class="small" style="margin-top:4px"><span class="text-muted">Fin comprometido:</span> <strong>${frappe.utils.escape_html(
 			val
-		)}</strong></div>`
+		)}</strong>${change_link}</div>`
 	);
+	fld.$wrapper
+		.off("click.chg")
+		.on("click.chg", ".pmo-change-committed", () => pmo_change_committed_dialog(frm));
+}
+
+// Autoridad PMO en cliente (solo para mostrar el enlace; el gate real es server-side en el endpoint).
+function pmo_can_change_committed() {
+	return (
+		frappe.session.user === "Administrator" ||
+		frappe.user.has_role("PMO Manager") ||
+		frappe.user.has_role("System Manager")
+	);
+}
+
+// Diálogo mínimo para el cambio posterior del compromiso vigente (sin CR/baseline/rebaseline/Handoff nuevo).
+function pmo_change_committed_dialog(frm) {
+	const d = new frappe.ui.Dialog({
+		title: "Cambiar Fin comprometido",
+		fields: [
+			{
+				fieldtype: "Date",
+				fieldname: "current",
+				label: "Fin comprometido actual",
+				read_only: 1,
+				default: frm.doc.pmo_committed_end_date,
+			},
+			{ fieldtype: "Date", fieldname: "new_date", label: "Nuevo fin comprometido", reqd: 1 },
+			{ fieldtype: "Small Text", fieldname: "reason", label: "Motivo del cambio", reqd: 1 },
+		],
+		primary_action_label: "Guardar",
+		primary_action(values) {
+			frappe
+				.xcall("pmo.schedule_commit.change_committed_end_date", {
+					project: frm.doc.name,
+					new_date: values.new_date,
+					reason: values.reason,
+				})
+				.then(() => {
+					d.hide();
+					frappe.show_alert({
+						message: "Fin comprometido actualizado",
+						indicator: "green",
+					});
+					frm.reload_doc(); // refresca el dato (y re-renderiza el display) sin recargar la página
+				});
+		},
+	});
+	d.show();
 }
 
 // --- CICLO DE GOBERNANZA (pestaña PMO → sección "Ciclo de Gobernanza"): render operable de las 6 etapas.
