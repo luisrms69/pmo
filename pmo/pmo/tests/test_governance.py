@@ -62,7 +62,15 @@ def _handoff(project):
 			"doctype": "PMO Project Handoff",
 			"project": project,
 			"handoff_summary": "Transferencia X",
+			"project_objective": "Objetivo del proyecto X.",
+			"scope_high_level": "Alcance de alto nivel del proyecto X.",
+			"committed_end_date": "2026-03-31",
+			"authorized_by": "Sponsor del cliente",
+			"pm_informed_coordinated": 1,
+			"internal_team_informed": 1,
+			"startup_conditions_reviewed": 1,
 			"contractual_legal_ready": 1,
+			"start_authorization_confirmed": 1,
 		}
 	)
 	doc.insert(ignore_permissions=True)

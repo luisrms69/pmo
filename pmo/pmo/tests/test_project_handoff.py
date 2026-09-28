@@ -18,7 +18,10 @@ from frappe.tests import IntegrationTestCase
 
 from pmo.baseline import snapshot_hash
 from pmo.permissions import has_permission_handoff
-from pmo.pmo.doctype.pmo_project_handoff.pmo_project_handoff import build_handoff_snapshot
+from pmo.pmo.doctype.pmo_project_handoff.pmo_project_handoff import (
+	HANDOFF_SNAPSHOT_SCHEMA_VERSION,
+	build_handoff_snapshot,
+)
 
 
 def _user(email, roles=()):
@@ -85,16 +88,37 @@ def _ready_project(name, owner="Administrator", committed=None):
 	return p, emp, ct
 
 
+def _handoff_data(project, **kw):
+	"""Datos completos de un Acta emitible (Charter + Handoff mínimo)."""
+	return {
+		"doctype": "PMO Project Handoff",
+		"project": project,
+		"handoff_summary": kw.get("handoff_summary", "Se transfiere a ejecución con kickoff acordado."),
+		"project_objective": kw.get("project_objective", "Poner en operación el sistema X para el cliente."),
+		"scope_high_level": kw.get(
+			"scope_high_level", "Implementación base, migración inicial y capacitación."
+		),
+		"committed_end_date": kw.get("committed_end_date", "2026-03-31"),
+		"authorized_by": kw.get("authorized_by", "Sponsor del cliente (Dirección de Operaciones)"),
+		"pm_informed_coordinated": kw.get("pm_informed_coordinated", 1),
+		"internal_team_informed": kw.get("internal_team_informed", 1),
+		"startup_conditions_reviewed": kw.get("startup_conditions_reviewed", 1),
+		"contractual_legal_ready": kw.get("contractual_legal_ready", 1),
+		"start_authorization_confirmed": kw.get("start_authorization_confirmed", 1),
+	}
+
+
 def _handoff(project, **kw):
-	doc = frappe.get_doc(
-		{
-			"doctype": "PMO Project Handoff",
-			"project": project,
-			"handoff_summary": kw.get("handoff_summary", "Se transfiere a ejecución con kickoff acordado."),
-			"contractual_legal_ready": kw.get("contractual_legal_ready", 1),
-		}
-	)
+	doc = frappe.get_doc(_handoff_data(project, **kw))
 	doc.insert(ignore_permissions=True)
+	return doc
+
+
+def _handoff_bypass(project, **kw):
+	"""Inserta un borrador saltando `reqd` del formulario (ignore_mandatory) para poder ejercitar el gate
+	SERVER-SIDE en Submit — demuestra que la obligatoriedad no depende solo de `reqd` (punto 7)."""
+	doc = frappe.get_doc(_handoff_data(project, **kw))
+	doc.insert(ignore_permissions=True, ignore_mandatory=True)
 	return doc
 
 
@@ -106,8 +130,8 @@ class TestProjectHandoff(IntegrationTestCase):
 		frappe.set_user("Administrator")
 
 	def test_is_submittable_and_freezes_snapshot(self):
-		p, _emp, _ct = _ready_project("HOF Freeze", committed="2026-03-31")
-		doc = _handoff(p)
+		p, _emp, _ct = _ready_project("HOF Freeze")
+		doc = _handoff(p, committed_end_date="2026-03-31")
 		self.assertEqual(doc.docstatus, 0)
 		self.assertFalse(doc.snapshot_hash)  # nada congelado antes del submit
 		doc.submit()
@@ -116,7 +140,7 @@ class TestProjectHandoff(IntegrationTestCase):
 		self.assertEqual(doc.issued_by, "Administrator")
 		self.assertTrue(doc.issued_at)
 		snap = json.loads(doc.snapshot)
-		self.assertEqual(snap["snapshot_schema_version"], 1)
+		self.assertEqual(snap["snapshot_schema_version"], HANDOFF_SNAPSHOT_SCHEMA_VERSION)
 		self.assertEqual(snap["project"]["name"], p)
 		self.assertEqual(str(doc.committed_end_date), "2026-03-31")
 
@@ -243,12 +267,13 @@ class TestProjectHandoff(IntegrationTestCase):
 	def test_snapshot_hash_matches_frozen_json_not_live(self):
 		import hashlib
 
-		p, _emp, _ct = _ready_project("HOF Hash", committed="2026-03-31")
-		doc = _handoff(p)
+		p, _emp, _ct = _ready_project("HOF Hash")
+		doc = _handoff(p, committed_end_date="2026-03-31")
 		doc.submit()
 		self.assertEqual(doc.snapshot_hash, hashlib.sha256(doc.snapshot.encode("utf-8")).hexdigest())
 		frozen = doc.snapshot
-		# Cambiar el Project no altera el snapshot congelado (evidencia histórica, no vivo).
+		# Cambiar el Project no altera el snapshot congelado (evidencia histórica, no vivo). La fecha del
+		# snapshot es la AUTORIZADA en el Acta (2026-03-31), no la vigente en el Project.
 		frappe.db.set_value("Project", p, "pmo_committed_end_date", "2027-12-31", update_modified=False)
 		doc.reload()
 		self.assertEqual(doc.snapshot, frozen)
@@ -288,3 +313,87 @@ class TestProjectHandoff(IntegrationTestCase):
 		m = frappe.get_meta("PMO Project Handoff")
 		self.assertTrue(m.get_field("operational_owner").read_only)
 		self.assertTrue(m.get_field("customer_contact").read_only)
+
+	# --- Charter mínimo: obligatoriedades SERVER-SIDE al emitir (punto 7) ---------------------------------
+	def test_project_objective_required_to_submit(self):
+		p, _emp, _ct = _ready_project("HOF ReqObjective")
+		doc = _handoff_bypass(p, project_objective="")
+		with self.assertRaises(ValidationError):
+			doc.submit()
+
+	def test_scope_required_to_submit(self):
+		p, _emp, _ct = _ready_project("HOF ReqScope")
+		doc = _handoff_bypass(p, scope_high_level="")
+		with self.assertRaises(ValidationError):
+			doc.submit()
+
+	def test_committed_end_date_required_to_submit(self):
+		p, _emp, _ct = _ready_project("HOF ReqCommitted")
+		doc = _handoff_bypass(p, committed_end_date=None)
+		with self.assertRaises(ValidationError):
+			doc.submit()
+
+	def test_authorized_by_required_to_submit(self):
+		p, _emp, _ct = _ready_project("HOF ReqAuthBy")
+		doc = _handoff_bypass(p, authorized_by="")
+		with self.assertRaises(ValidationError):
+			doc.submit()
+
+	def test_start_authorization_confirmed_required_to_submit(self):
+		p, _emp, _ct = _ready_project("HOF ReqAuthConfirm")
+		doc = _handoff(p, start_authorization_confirmed=0)
+		with self.assertRaises(ValidationError):
+			doc.submit()
+
+	def test_coordination_checks_required_to_submit(self):
+		# Cada check de coordinación debe estar marcado para emitir (validación server-side).
+		for i, field in enumerate(
+			("pm_informed_coordinated", "internal_team_informed", "startup_conditions_reviewed")
+		):
+			p, _emp, _ct = _ready_project(f"HOF ReqCoord {i}")
+			doc = _handoff(p, **{field: 0})
+			with self.assertRaises(ValidationError):
+				doc.submit()
+
+	# --- Fuente formal del compromiso inicial: Handoff → Project ------------------------------------------
+	def test_committed_end_date_propagates_to_project_on_submit(self):
+		# Al emitir, la fecha autorizada del Acta se copia a Project.pmo_committed_end_date.
+		p, _emp, _ct = _ready_project("HOF Propagate")
+		doc = _handoff(p, committed_end_date="2026-06-30")
+		doc.submit()
+		self.assertEqual(str(frappe.db.get_value("Project", p, "pmo_committed_end_date")), "2026-06-30")
+
+	def test_committed_end_date_does_not_depend_on_project_having_value(self):
+		# El Acta puede fijar el compromiso aunque el Project no tuviera ninguna fecha previa.
+		p, _emp, _ct = _ready_project("HOF NoPriorCommit")
+		self.assertIsNone(frappe.db.get_value("Project", p, "pmo_committed_end_date"))
+		doc = _handoff(p, committed_end_date="2026-05-15")
+		doc.submit()
+		self.assertEqual(str(doc.committed_end_date), "2026-05-15")
+		self.assertEqual(str(frappe.db.get_value("Project", p, "pmo_committed_end_date")), "2026-05-15")
+
+	def test_committed_end_date_overwrites_project_value(self):
+		# La fecha autorizada del Acta prevalece: sobrescribe cualquier valor previo del Project.
+		p, _emp, _ct = _ready_project("HOF Overwrite", committed="2026-01-01")
+		doc = _handoff(p, committed_end_date="2026-09-30")
+		doc.submit()
+		self.assertEqual(str(frappe.db.get_value("Project", p, "pmo_committed_end_date")), "2026-09-30")
+
+	# --- Autorización formal: evidencia inequívoca congelada ----------------------------------------------
+	def test_authorization_evidence_frozen_in_snapshot(self):
+		p, _emp, _ct = _ready_project("HOF AuthEvidence")
+		doc = _handoff(p, authorized_by="Cliente — Director General")
+		doc.submit()
+		cap = json.loads(doc.snapshot)["captured"]
+		# Quién autorizó + autorización explícita confirmada + cuándo se formalizó (issued_at).
+		self.assertEqual(cap["authorized_by"], "Cliente — Director General")
+		self.assertTrue(cap["start_authorization_confirmed"])
+		self.assertTrue(cap["issued_at"])
+		# El hash cubre la evidencia de autorización: cambiar quién autorizó cambia el snapshot/hash.
+		h1 = snapshot_hash(
+			build_handoff_snapshot(p, True, {"authorized_by": "A"}, committed_end_date="2026-03-31")
+		)
+		h2 = snapshot_hash(
+			build_handoff_snapshot(p, True, {"authorized_by": "B"}, committed_end_date="2026-03-31")
+		)
+		self.assertNotEqual(h1, h2)
