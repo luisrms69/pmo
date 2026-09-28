@@ -38,6 +38,11 @@ REPLAN = "Replan"
 # Estado del Workflow del Change Request en el que ya fue aprobado/aplicado y aun necesita su nueva baseline
 # para poder cerrarse (valor canonico en ingles; coincide con workflow.json / PMOChangeRequest).
 CR_IMPLEMENTED = "Implemented"
+# Autoridad para una Replaneacion PMO (sustitucion formal SIN Change Request). Un PM normal (owner del
+# Project) NO puede rebaselinar libremente durante la ejecucion: debe usar el mecanismo formal (Approved
+# Change, respaldado por un CR Implemented) o poseer este rol PMO. Reutiliza roles existentes (no crea un
+# sistema de permisos nuevo). Original y Approved Change siguen gobernados por el owner (P4 existente).
+REPLAN_AUTHORITY_ROLES = ("PMO Manager", "System Manager")
 
 
 class PMOProjectBaseline(Document):
@@ -51,7 +56,28 @@ class PMOProjectBaseline(Document):
 		self._validate_effective_date()
 		self._validate_reason()
 		self._validate_change_request()
+		self._validate_replan_authority()
 		self._validate_lineage()
+
+	# --- autoridad de Replaneacion (excepcion PMO sin Change Request) ---------------
+
+	def _validate_replan_authority(self):
+		"""Solo un rol PMO autorizado (o System Manager/Administrator) puede crear una baseline `Replan`
+		(sustitucion formal SIN Change Request). El owner de un Project (PM normal) no puede rebaselinar
+		libremente; ese caso debe ir por Approved Change (CR Implemented). Gobierno, no un permiso nuevo."""
+		if self.baseline_type != REPLAN:
+			return
+		user = frappe.session.user
+		if user == "Administrator":
+			return
+		if not (set(frappe.get_roles(user)) & set(REPLAN_AUTHORITY_ROLES)):
+			frappe.throw(
+				frappe._(
+					"A Replan baseline (PMO exception without a Change Request) requires an authorized PMO role. "
+					"A change during execution must go through an approved, implemented Change Request."
+				),
+				frappe.PermissionError,
+			)
 
 	def on_submit(self):
 		self._link_change_request_baseline_after()
@@ -86,12 +112,12 @@ class PMOProjectBaseline(Document):
 	# --- motivo obligatorio para baselines posteriores a Original ------------------
 
 	def _validate_reason(self):
-		"""Original: motivo opcional. Cambio aprobado / Replaneación aprobada: obligatorio (explica por qué se
-		sustituye la vigente). Autoritativo en el servidor; `mandatory_depends_on` solo guía la UI."""
-		if self.baseline_type != ORIGINAL and not (self.reason and self.reason.strip()):
-			frappe.throw(
-				frappe._("Provide a Reason (Motivo) for an Approved Change or an approved Replan baseline.")
-			)
+		"""Motivo OBLIGATORIO para toda baseline, incluida la Original: la línea base es un compromiso formal
+		y debe registrar evidencia de por qué se estableció. Autoritativo en el servidor; `mandatory_depends_on`
+		solo guía la UI. (Cambio aprobado / Replaneación aprobada ya lo exigían; ahora también la Original,
+		por consistencia.)"""
+		if not (self.reason and self.reason.strip()):
+			frappe.throw(frappe._("Provide a Reason (Motivo) for the baseline."))
 
 	# --- vigencia (Opcion B: sin future-effective) ---------------------------------
 
@@ -289,6 +315,120 @@ class PMOProjectBaseline(Document):
 			self.effective_date = today()
 		if getdate(self.effective_date) > getdate(self.approved_at):
 			frappe.throw(frappe._("Effective Date cannot be later than the approval date."))
+
+
+# --- Operación de baseline desde Project (native-first): el PM no abre el DocType manualmente ---------
+# Reutilizan el controlador (before_insert/validate/before_submit/on_submit) creando el doc + insert +
+# submit con permisos normales (P4: READ del Project + create/submit del DocType). NO elevan permisos,
+# NO crean un segundo motor, NO sobrescriben baselines (la submitted es inmutable; siempre se crea una
+# nueva y se conserva la cadena). No amplían Change Control (reutilizan `Implemented` + `baseline_after`).
+
+
+def _guard_project_has_tasks(project: str):
+	if not frappe.db.exists("Task", {"project": project, "is_group": 0}):
+		frappe.throw(frappe._("The Project has no tasks to freeze into a baseline."))
+
+
+def _guard_preflight(project: str):
+	pf = run_preflight(project)
+	if pf["blocking"]:
+		frappe.throw(
+			frappe._("Cannot freeze the baseline (fix the plan first): {0}").format(
+				json.dumps(pf["blocking"], ensure_ascii=False)
+			)
+		)
+
+
+@frappe.whitelist()
+def get_baseline_state(project: str) -> dict:
+	"""Estado de línea base del Project para el form nativo (P4: READ del Project). Compacto: existencia +
+	revisión/fecha de la baseline vigente + Change Requests elegibles (Implemented sin baseline posterior)
+	para ofrecer «Cambio aprobado». No calcula nada nuevo: reutiliza `get_effective_baseline`."""
+	frappe.has_permission("Project", ptype="read", doc=project, throw=True)
+	eff = get_effective_baseline(project)
+	rev = date = None
+	if eff:
+		d = frappe.db.get_value("PMO Project Baseline", eff, ["revision", "effective_date"], as_dict=True)
+		rev = d.revision
+		date = str(d.effective_date) if d.effective_date else None
+	eligible = frappe.get_all(
+		"PMO Change Request",
+		filters={
+			"project": project,
+			"docstatus": 1,
+			"workflow_state": CR_IMPLEMENTED,
+			"baseline_after": ["in", (None, "")],
+		},
+		fields=["name", "title"],
+	)
+	user = frappe.session.user
+	can_replan = user == "Administrator" or bool(set(frappe.get_roles(user)) & set(REPLAN_AUTHORITY_ROLES))
+	# baseline_count = TODAS las líneas base del Project (cualquier docstatus). Gobierna la visibilidad del
+	# «Historial de líneas base»: si es 0, no hay nada que mostrar y el botón no debe aparecer.
+	baseline_count = frappe.db.count("PMO Project Baseline", {"project": project})
+	return {
+		"has_baseline": bool(eff),
+		"baseline": eff,
+		"revision": rev,
+		"effective_date": date,
+		"eligible_crs": eligible,
+		"can_replan": can_replan,  # rol PMO autorizado para replaneación sin CR (excepción)
+		"baseline_count": baseline_count,
+	}
+
+
+@frappe.whitelist()
+def establish_baseline(project: str, reason: str | None = None) -> dict:
+	"""«Establecer línea base» (Original) desde Project. Solo si aún no hay baseline vigente. Congela el
+	plan/Tasks actuales con el motor canónico (snapshot + submit). Inmutable tras el submit. El motivo es
+	OBLIGATORIO: se rechaza server-side antes de crear el documento (además de `reqd` en el diálogo)."""
+	frappe.has_permission("Project", ptype="read", doc=project, throw=True)
+	if get_effective_baseline(project):
+		frappe.throw(
+			frappe._("This Project already has an effective baseline. Use «New baseline» to supersede it.")
+		)
+	if not (reason and reason.strip()):
+		frappe.throw(frappe._("Provide a Reason (Motivo) for the baseline."))
+	_guard_project_has_tasks(project)
+	_guard_preflight(project)
+	doc = frappe.get_doc(
+		{
+			"doctype": "PMO Project Baseline",
+			"project": project,
+			"baseline_type": ORIGINAL,
+			"reason": reason.strip(),
+		}
+	)
+	doc.insert()  # permisos normales (create); before_insert autogenera la revisión
+	doc.submit()  # before_submit congela snapshot+hash; on_submit no aplica (Original)
+	return {"name": doc.name, "revision": doc.revision, "effective_date": str(doc.effective_date)}
+
+
+@frappe.whitelist()
+def new_baseline(project: str, reason: str, change_request: str | None = None) -> dict:
+	"""«Nueva línea base» (sustitución formal) desde Project. Requiere baseline vigente. Con `change_request`
+	→ tipo Cambio aprobado (el CR debe estar Implemented y sin baseline posterior; el controlador lo valida
+	y fija `baseline_after`). Sin CR → Replaneación (excepción PMO, motivo obligatorio). Conserva las
+	baselines anteriores (cadena lineal); no borra desviaciones ni hace rebaseline parcial."""
+	frappe.has_permission("Project", ptype="read", doc=project, throw=True)
+	if not get_effective_baseline(project):
+		frappe.throw(frappe._("This Project has no baseline yet. Use «Set baseline» first."))
+	if not (reason and reason.strip()):
+		frappe.throw(frappe._("Provide a reason (justification) for the new baseline."))
+	_guard_project_has_tasks(project)
+	_guard_preflight(project)
+	doc = frappe.get_doc(
+		{
+			"doctype": "PMO Project Baseline",
+			"project": project,
+			"baseline_type": APPROVED_CHANGE if change_request else REPLAN,
+			"reason": reason.strip(),
+			"change_request": change_request or None,
+		}
+	)
+	doc.insert()
+	doc.submit()
+	return {"name": doc.name, "revision": doc.revision, "effective_date": str(doc.effective_date)}
 
 
 # --- UX de change_request: seleccion explicita, filtrada (mismo Project, Implemented, no reutilizada) ---

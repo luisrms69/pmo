@@ -90,11 +90,11 @@
    "reqd": 1
   },
   {
-   "description": "Explica por qué se sustituye la línea base vigente. En una replaneación, describe la desviación o la decisión de gestión que justifica establecer una nueva referencia.",
+   "description": "Explica por qué se establece o sustituye la línea base. La línea base es un compromiso formal y el motivo es obligatorio: en la Original registra por qué se congela el plan; en una replaneación, la desviación o decisión de gestión que justifica una nueva referencia.",
    "fieldname": "reason",
    "fieldtype": "Small Text",
    "label": "Motivo",
-   "mandatory_depends_on": "eval:doc.baseline_type!='Original'"
+   "reqd": 1
   },
   {
    "description": "Al enviar (Submit) la línea base, el usuario que realiza el Submit queda registrado como su aprobador.",

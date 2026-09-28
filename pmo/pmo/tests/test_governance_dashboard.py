@@ -33,6 +33,7 @@ def _baseline(project):
 			"project": project,
 			"baseline_type": "Original",
 			"effective_date": today(),
+			"reason": "Compromiso inicial",  # motivo obligatorio para toda línea base (incl. Original)
 		}
 	).insert(ignore_permissions=True)
 	doc.submit()

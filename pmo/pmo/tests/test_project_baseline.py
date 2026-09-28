@@ -20,6 +20,11 @@ from pmo import change_control
 from pmo.baseline import build_snapshot, get_effective_baseline, run_preflight, snapshot_hash
 from pmo.permissions import has_permission_baseline
 from pmo.pmo.doctype.pmo_change_request import pmo_change_request as crmod
+from pmo.pmo.doctype.pmo_project_baseline.pmo_project_baseline import (
+	establish_baseline,
+	get_baseline_state,
+	new_baseline,
+)
 
 
 def _user(email, roles=()):
@@ -186,6 +191,134 @@ def _implemented_cr(project, owner):
 		change_control.apply_addendum_to_project = orig_apply
 	cr.reload()
 	return cr
+
+
+class TestBaselineFromProject(IntegrationTestCase):
+	"""Operación de línea base desde Project (endpoints native-first: establecer / nueva / estado).
+	Reutiliza el controlador (snapshot + submit); baseline inmutable; sin overwrite; conserva la cadena;
+	sin ampliar Change Control (usa `Implemented` + `baseline_after`)."""
+
+	def setUp(self):
+		frappe.set_user("Administrator")
+
+	def _proj_with_tasks(self, name):
+		p = _project(name)
+		_task(f"{name}-T1", p, exp_start="2026-01-05", exp_end="2026-01-20")
+		_task(f"{name}-T2", p, exp_start="2026-01-21", exp_end="2026-02-10")
+		return p
+
+	def test_state_no_baseline(self):
+		p = self._proj_with_tasks("BLP-STATE0")
+		st = get_baseline_state(p)
+		self.assertFalse(st["has_baseline"])
+		self.assertIsNone(st["revision"])
+		# Sin línea base → sin historial: baseline_count == 0 (la UI no muestra «Historial de líneas base»).
+		self.assertEqual(st["baseline_count"], 0)
+
+	def test_establish_creates_submitted_original(self):
+		p = self._proj_with_tasks("BLP-EST")
+		r = establish_baseline(p, reason="Compromiso inicial")
+		self.assertTrue(r["revision"])
+		bl = frappe.get_doc("PMO Project Baseline", r["name"])
+		self.assertEqual(bl.docstatus, 1)  # submitted (inmutable)
+		self.assertEqual(bl.baseline_type, "Original")
+		self.assertEqual(get_effective_baseline(p), r["name"])
+		st = get_baseline_state(p)
+		self.assertTrue(st["has_baseline"])
+		self.assertEqual(st["revision"], bl.revision)
+		# Con una línea base establecida → historial visible: baseline_count >= 1.
+		self.assertGreaterEqual(st["baseline_count"], 1)
+
+	def test_establish_requires_reason_server_side(self):
+		# El motivo es OBLIGATORIO también server-side: el endpoint rechaza la PRIMERA baseline sin motivo,
+		# no basta el `reqd` del diálogo. Con motivo, procede.
+		p = self._proj_with_tasks("BLP-REASON")
+		with self.assertRaises(ValidationError):
+			establish_baseline(p, reason="   ")
+		with self.assertRaises(ValidationError):
+			establish_baseline(p)  # sin argumento de motivo
+		self.assertIsNone(get_effective_baseline(p))  # nada se creó
+		r = establish_baseline(p, reason="Compromiso formal inicial")
+		self.assertEqual(get_effective_baseline(p), r["name"])
+
+	def test_establish_rejected_if_baseline_exists(self):
+		# No overwrite: con baseline vigente, «Establecer» se rechaza (usar «Nueva línea base»).
+		p = self._proj_with_tasks("BLP-EST2")
+		establish_baseline(p, reason="Compromiso inicial")
+		with self.assertRaises(ValidationError):
+			establish_baseline(p, reason="Segundo intento")
+
+	def test_establish_rejected_without_tasks(self):
+		p = _project("BLP-NOTASK")
+		with self.assertRaises(ValidationError):
+			establish_baseline(p, reason="Motivo")
+
+	def test_new_baseline_replan_supersedes_and_preserves_chain(self):
+		p = self._proj_with_tasks("BLP-REPLAN")
+		first = establish_baseline(p, reason="Compromiso inicial")
+		second = new_baseline(p, reason="Replaneación por desviaciones acumuladas")
+		self.assertNotEqual(first["name"], second["name"])
+		self.assertEqual(get_effective_baseline(p), second["name"])  # vigente = nueva
+		self.assertEqual(
+			frappe.db.get_value("PMO Project Baseline", first["name"], "docstatus"), 1
+		)  # se conserva
+		self.assertEqual(frappe.get_doc("PMO Project Baseline", second["name"]).baseline_type, "Replan")
+
+	def test_new_baseline_requires_reason(self):
+		p = self._proj_with_tasks("BLP-NOREASON")
+		establish_baseline(p, reason="Compromiso inicial")
+		with self.assertRaises(ValidationError):
+			new_baseline(p, reason="   ")
+
+	def test_new_baseline_requires_existing_baseline(self):
+		p = self._proj_with_tasks("BLP-NOEXIST")
+		with self.assertRaises(ValidationError):
+			new_baseline(p, reason="motivo")
+
+	def test_replan_rejected_for_normal_pm(self):
+		# PM normal (owner, Projects User, sin rol PMO): puede establecer la primera baseline, pero NO
+		# puede rebaselinar libremente (Replan sin CR). Debe ir por el mecanismo formal (Approved Change).
+		pm = _user("bl-pm@example.com", ["Projects User"])
+		p = self._proj_with_tasks("BLP-PM-REPLAN")
+		frappe.db.set_value("Project", p, "owner", pm)
+		frappe.set_user(pm)
+		try:
+			establish_baseline(p, reason="Compromiso inicial")  # Original permitido para el owner
+			with self.assertRaises(frappe.PermissionError):
+				new_baseline(p, reason="Rebaseline libre no autorizado")
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_replan_allowed_for_authorized_pmo(self):
+		# Rol PMO autorizado (PMO Manager) + owner: Replan excepcional permitido, con motivo/trazabilidad.
+		mgr = _user("bl-mgr@example.com", ["Projects User", "PMO Manager"])
+		p = self._proj_with_tasks("BLP-MGR-REPLAN")
+		frappe.db.set_value("Project", p, "owner", mgr)
+		frappe.set_user(mgr)
+		try:
+			establish_baseline(p, reason="Compromiso inicial")
+			r = new_baseline(p, reason="Replaneación autorizada por PMO")
+			self.assertEqual(frappe.get_doc("PMO Project Baseline", r["name"]).baseline_type, "Replan")
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_state_exposes_can_replan(self):
+		p = self._proj_with_tasks("BLP-CANREPLAN")
+		self.assertTrue(get_baseline_state(p)["can_replan"])  # Administrator (System Manager)
+
+	def test_new_baseline_approved_change_links_cr(self):
+		# Integración real con Change Control (sin ampliarlo): CR Implemented + baseline_after.
+		p = self._proj_with_tasks("BLP-APPR")
+		establish_baseline(
+			p, reason="Compromiso inicial"
+		)  # el gate «In Review» del CR exige baseline vigente
+		cr = _implemented_cr(p, "Administrator")
+		st = get_baseline_state(p)
+		self.assertIn(cr.name, [c["name"] for c in st["eligible_crs"]])
+		second = new_baseline(p, reason="Cambio aprobado aplicado", change_request=cr.name)
+		bl = frappe.get_doc("PMO Project Baseline", second["name"])
+		self.assertEqual(bl.baseline_type, "Approved Change")
+		self.assertEqual(frappe.db.get_value("PMO Change Request", cr.name, "baseline_after"), second["name"])
 
 
 class TestProjectBaseline(IntegrationTestCase):
@@ -386,9 +519,13 @@ class TestBaselineRevisionAndTypes(IntegrationTestCase):
 		with self.assertRaises(ValidationError):  # MandatoryError hereda de ValidationError
 			_baseline(p, btype="Replan", reason=None)
 
-	def test_original_reason_optional(self):
+	def test_original_reason_mandatory(self):
+		# La línea base es un compromiso formal: el motivo es OBLIGATORIO también para la Original.
 		p = _project("BL-RM2")
-		b = _baseline(p, reason=None, submit=True)  # Original no exige motivo
+		with self.assertRaises(ValidationError):  # MandatoryError / ValidationError
+			_baseline(p, reason=None, submit=True)
+		# Con motivo, la Original procede con normalidad.
+		b = _baseline(p, reason="Compromiso formal inicial", submit=True)
 		self.assertEqual(b.baseline_type, "Original")
 
 	def test_replan_does_not_require_change_request(self):
