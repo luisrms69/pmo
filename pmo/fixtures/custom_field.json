@@ -70,5 +70,73 @@
   "insert_after": "priority",
   "no_copy": 1,
   "description": "Planned hours of this assignee for the Task (Capacity Planning). Empty = uniform split of Task.expected_time among assignees."
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_project_manager",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_project_manager",
+  "label": "Project Manager / Responsable del proyecto",
+  "fieldtype": "Link",
+  "options": "User",
+  "insert_after": "pmo_customer_contact",
+  "description": "Fuente canónica del Project Manager (responsable de administrar este proyecto concreto). ERPNext v16 no provee un campo nativo de PM. Distinto de `owner` (creador del documento) y de `pmo_operational_owner` (responsable operativo interno). Usado por Gobernanza para atribuir la siguiente acción."
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_governance_exempt",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_governance_exempt",
+  "label": "Excluido de gobernanza PMO",
+  "fieldtype": "Check",
+  "default": "0",
+  "insert_after": "pmo_project_manager",
+  "no_copy": 1,
+  "description": "Declaración explícita de que este proyecto NO está sujeto al proceso de gobernanza PMO. Default: No (sujeto). Solo PMO Manager o System Manager pueden cambiarlo (enforcement server-side). Un proyecto excluido no genera desviaciones de gobernanza pero sigue siendo visible para la PMO."
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_exempt_reason",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_exempt_reason",
+  "label": "Motivo de exclusión de gobernanza",
+  "fieldtype": "Small Text",
+  "insert_after": "pmo_governance_exempt",
+  "depends_on": "eval:doc.pmo_governance_exempt",
+  "mandatory_depends_on": "eval:doc.pmo_governance_exempt",
+  "no_copy": 1,
+  "description": "Justificación obligatoria de por qué el proyecto se excluye de la gobernanza PMO. Requerido cuando 'Excluido de gobernanza PMO' está activo."
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_exempt_by",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_exempt_by",
+  "label": "Exclusión autorizada por",
+  "fieldtype": "Link",
+  "options": "User",
+  "insert_after": "pmo_exempt_reason",
+  "depends_on": "eval:doc.pmo_governance_exempt",
+  "read_only": 1,
+  "no_copy": 1,
+  "description": "Usuario (autoridad PMO) que autorizó la exclusión. Se fija server-side al activar la exclusión; no se confía en el valor enviado por el cliente."
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Project-pmo_exempt_on",
+  "dt": "Project",
+  "module": "PMO",
+  "fieldname": "pmo_exempt_on",
+  "label": "Fecha de exclusión",
+  "fieldtype": "Datetime",
+  "insert_after": "pmo_exempt_by",
+  "depends_on": "eval:doc.pmo_governance_exempt",
+  "read_only": 1,
+  "no_copy": 1,
+  "description": "Fecha/hora en que se autorizó la exclusión de gobernanza. Se fija server-side al activar la exclusión."
  }
 ]

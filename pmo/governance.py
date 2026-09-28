@@ -66,6 +66,25 @@ def _has_submitted(doctype: str, project: str) -> bool:
 	return bool(frappe.db.exists(doctype, {"project": project, "docstatus": 1}))
 
 
+STARTED_STATUSES = ("Open", "On hold")
+
+
+def is_project_started(project: str) -> bool:
+	"""FUENTE ÚNICA DE VERDAD de "proyecto iniciado" para gobernanza. REGLA FUNCIONAL APROBADA (definitiva):
+
+	  is_project_started(project) := Project.status in {"Open", "On hold"}
+
+	Un Project `Open` está iniciado; `On hold` es un proyecto YA iniciado y temporalmente pausado (la pausa no
+	elimina obligaciones de gobernanza) → también iniciado. NO depende de `actual_start_date`,
+	`percent_complete`, existencia de Baseline ni de Handoff: el Handoff es un CONTROL de gobernanza y no puede
+	decidir su propia exigibilidad (necesitamos detectar «iniciado + Handoff faltante»).
+
+	`Completed`/`Cancelled` (terminales) NO son «iniciados» para estos controles de entrada; su gobierno
+	continúa por Cierre/Revisión (que usan `status` directamente, no esta señal). El valor nativo de ERPNext es
+	«On hold» (h minúscula)."""
+	return frappe.db.get_value("Project", project, "status") in STARTED_STATUSES
+
+
 def derive_lifecycle_state(project: str) -> str:
 	"""Estado documental derivado (precedencia: el más avanzado gana). No modifica nada.
 

@@ -195,6 +195,7 @@ doc_events = {
 	"Project": {
 		"validate": [
 			"pmo.status_date.validate_project_status_date",  # ADR-0006 D2
+			"pmo.governance_project.guard_governance_exemption",  # Gobernanza V1: exclusión gobernada + auditoría
 			"pmo.schedule_commit.validate_project_committed_end",  # ADR-0007 D4 (warning)
 		],
 	},
