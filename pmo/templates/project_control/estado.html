@@ -1,0 +1,200 @@
+{#-
+  Project Control > Estado / Cronograma (rescate). SOLO lectura / control.
+  Contexto `sv` de get_schedule_html(): header + gantt (línea base vs plan vigente) + execution + deviations.
+  Reutiliza motores existentes (build_status_report / snapshots / compare_snapshots). NO calcula fechas ni
+  slips; NO muestra horas/economía/riesgos/CR/gobernanza. Texto es-MX. Drill: clic en Task → Task nativo.
+-#}
+{%- set h = sv.header -%}
+{%- set g = sv.gantt -%}
+{%- set ex = sv.execution -%}
+{%- macro d(x) -%}{% if x %}{{ x }}{% else %}—{% endif %}{%- endmacro -%}
+{%- macro slip(x) -%}{% if x is none %}—{% elif x > 0 %}+{{ x }} d{% else %}{{ x }} d{% endif %}{%- endmacro -%}
+<div class="pmo-sch">
+<style>
+.pmo-sch{--acc:#2b3a67;--bl:#9aa3bd;--cur:#2490ef;color:var(--text-color);font-size:13px}
+.pmo-sch *{box-sizing:border-box}
+.pmo-sch .band{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;
+  border-radius:10px;border:1px solid var(--border-color);border-left:5px solid var(--acc);
+  background:linear-gradient(90deg,var(--subtle-fg,var(--gray-50)),var(--card-bg));padding:12px 18px}
+.pmo-sch .band h1{font-size:20px;line-height:1.1;margin:0 0 3px}
+.pmo-sch .band .sub{color:var(--text-muted);font-size:12px}
+.pmo-sch .sbadge{padding:5px 13px;border-radius:13px;font-weight:700;font-size:12px;color:#fff;white-space:nowrap}
+.pmo-sch .sbadge.ok{background:#1f9d55}.pmo-sch .sbadge.bad{background:#c02b2b}.pmo-sch .sbadge.warn{background:#d97706}
+.pmo-sch .sec{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:20px 0 10px;display:flex;align-items:center;gap:10px}
+.pmo-sch .sec:before{content:"";width:4px;height:14px;border-radius:2px;background:var(--acc)}
+/* 1. celdas de estado */
+.pmo-sch .cells{display:flex;flex-wrap:wrap;gap:8px}
+.pmo-sch .cell{flex:1;min-width:120px;border:1px solid var(--border-color);border-radius:8px;padding:8px 12px;background:var(--card-bg)}
+.pmo-sch .cell .l{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--text-muted)}
+.pmo-sch .cell .v{font-size:15px;font-weight:700;margin-top:3px}
+.pmo-sch .cell .v.bad{color:var(--red-600)}.pmo-sch .cell .v.ok{color:var(--green-600)}
+/* 2. gantt */
+.pmo-sch .legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:8px;font-size:11px;color:var(--text-muted)}
+.pmo-sch .legend i{display:inline-block;width:16px;height:8px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.pmo-sch .legend i.base{background:var(--bl)}.pmo-sch .legend i.cur{background:var(--cur)}
+.pmo-sch .legend i.ms{width:9px;height:9px;transform:rotate(45deg);border-radius:1px;background:var(--acc)}
+.pmo-sch .legend i.ov{background:var(--red-500,#e24c4c)}.pmo-sch .legend i.add{background:transparent;border:1px dashed var(--cur)}
+.pmo-sch .legend i.rmv{background:repeating-linear-gradient(45deg,var(--bl),var(--bl) 2px,transparent 2px,transparent 4px);border:1px solid var(--bl)}
+.pmo-sch .gwrap{overflow-x:auto;border:1px solid var(--border-color);border-radius:8px}
+.pmo-sch table.g{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;min-width:720px}
+.pmo-sch table.g th,.pmo-sch table.g td{padding:5px 8px;border-bottom:1px solid var(--border-color);text-align:left;vertical-align:middle}
+.pmo-sch table.g thead th{background:var(--subtle-fg,var(--gray-100));color:var(--text-muted);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.03em}
+.pmo-sch table.g col.c-task{width:32%}.pmo-sch table.g col.c-date{width:11%}.pmo-sch table.g col.c-lane{width:46%}
+.pmo-sch td.tname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmo-sch td.tname a{cursor:pointer;color:var(--text-color)}
+.pmo-sch td.tname a:hover{color:var(--acc);text-decoration:underline}
+.pmo-sch td.tname.grp a{font-weight:700}
+.pmo-sch td.tname .rm{text-decoration:line-through;color:var(--text-muted)}
+.pmo-sch td.num{text-align:right;color:var(--text-muted);white-space:nowrap;font-size:11px}
+.pmo-sch .lane{position:relative;height:18px;background:var(--subtle-fg,var(--gray-50));border-radius:3px}
+.pmo-sch .lane .cutoff{position:absolute;top:-2px;bottom:-2px;width:0;border-left:2px dashed var(--orange-500,#f0a020);z-index:3}
+.pmo-sch .bbar{position:absolute;top:3px;height:4px;background:var(--bl);border-radius:2px}
+.pmo-sch .bbar.rmv{height:6px;top:6px;background:repeating-linear-gradient(45deg,var(--bl),var(--bl) 3px,transparent 3px,transparent 6px)}
+.pmo-sch .cbar{position:absolute;top:8px;height:8px;background:var(--cur);border-radius:2px;overflow:hidden}
+.pmo-sch .cbar .fill{display:block;height:100%;background:#1f9d55;opacity:.85}
+.pmo-sch .cbar.ov{background:var(--red-500,#e24c4c)}
+.pmo-sch .cbar.add{background:transparent;border:1px dashed var(--cur)}
+.pmo-sch .ms{position:absolute;width:9px;height:9px;transform:translateX(-50%) rotate(45deg);border-radius:1px}
+.pmo-sch .ms.base{top:3px;background:var(--bl)}.pmo-sch .ms.cur{top:6px;background:var(--acc)}.pmo-sch .ms.cur.ov{background:var(--red-500,#e24c4c)}
+.pmo-sch .gnote{color:var(--text-muted);font-size:12px;padding:8px 2px}
+/* 3. ejecución */
+.pmo-sch .exec{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.pmo-sch .segbar{flex:1;min-width:280px;display:flex;height:26px;border-radius:6px;overflow:hidden;border:1px solid var(--border-color)}
+.pmo-sch .segbar .s{display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;min-width:0}
+.pmo-sch .segbar .s.done{background:#1f9d55}.pmo-sch .segbar .s.wip{background:var(--cur)}.pmo-sch .segbar .s.pend{background:var(--gray-400,#98a2b3)}.pmo-sch .segbar .s.over{background:#c02b2b}
+.pmo-sch .exec .tot{font-size:13px;color:var(--text-muted)}.pmo-sch .exec .tot b{font-size:20px;color:var(--text-color)}
+.pmo-sch .exleg{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:11px;color:var(--text-muted)}
+.pmo-sch .exleg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.pmo-sch .exleg i.done{background:#1f9d55}.pmo-sch .exleg i.wip{background:var(--cur)}.pmo-sch .exleg i.pend{background:var(--gray-400,#98a2b3)}.pmo-sch .exleg i.over{background:#c02b2b}
+/* 4. desviaciones */
+.pmo-sch .xwrap{overflow-x:auto;border:1px solid var(--border-color);border-radius:8px}
+.pmo-sch table.x{width:100%;border-collapse:collapse;font-size:12px;min-width:640px}
+.pmo-sch table.x th,.pmo-sch table.x td{padding:7px 10px;border-bottom:1px solid var(--border-color);text-align:left;white-space:nowrap}
+.pmo-sch table.x thead th{background:var(--subtle-fg,var(--gray-100));color:var(--text-muted);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.03em}
+.pmo-sch table.x td.num{text-align:right;font-variant-numeric:tabular-nums}
+.pmo-sch table.x td.num.bad{color:var(--red-600);font-weight:700}
+.pmo-sch table.x .typ{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.pmo-sch table.x .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.pmo-sch table.x .dot.over{background:#c02b2b}.pmo-sch table.x .dot.shift{background:#d97706}.pmo-sch table.x .dot.ms{background:var(--acc)}.pmo-sch table.x .dot.add{background:var(--cur)}.pmo-sch table.x .dot.rm{background:var(--gray-400,#98a2b3)}.pmo-sch table.x .dot.ok{background:#1f9d55}
+.pmo-sch table.x .tlink{cursor:pointer;color:var(--text-color);font-weight:600}
+.pmo-sch table.x .tlink:hover{color:var(--acc);text-decoration:underline}
+.pmo-sch .empty{padding:10px 2px;color:var(--text-muted);font-size:12px}
+</style>
+
+{#- Cabecera + badge de estado del cronograma (derivado de slip vs línea base) -#}
+<div class="band">
+  <div>
+    <h1>{{ h.project_name or h.name }}</h1>
+    <div class="sub">{{ d(h.customer_name) }} · {{ h.name }} · {{ d(h.status) }} · Corte {{ d(h.cutoff) }}</div>
+  </div>
+  {%- if not h.has_baseline -%}<span class="sbadge warn">Sin línea base</span>
+  {%- elif (h.slip_baseline or 0) > 0 -%}<span class="sbadge bad">Atrasado +{{ h.slip_baseline }} d</span>
+  {%- else -%}<span class="sbadge ok">En plan</span>{%- endif -%}
+</div>
+
+{#- 1. Estado del cronograma -#}
+<div class="sec">1. Estado del cronograma</div>
+<div class="cells">
+  <div class="cell"><div class="l">Inicio</div><div class="v">{{ d(h.start_date) }}</div></div>
+  <div class="cell"><div class="l">Fin línea base</div><div class="v">{% if h.has_baseline %}{{ d(h.baseline_end) }}{% else %}—{% endif %}</div></div>
+  <div class="cell"><div class="l">Fin plan vigente</div><div class="v">{{ d(h.current_end) }}</div></div>
+  <div class="cell"><div class="l">Desvío línea base</div><div class="v {% if (h.slip_baseline or 0) > 0 %}bad{% endif %}">{{ slip(h.slip_baseline) }}</div></div>
+  <div class="cell"><div class="l">Fecha compromiso</div><div class="v">{{ d(h.committed_end) }}</div></div>
+  <div class="cell"><div class="l">Desvío compromiso</div><div class="v {% if (h.slip_committed or 0) > 0 %}bad{% endif %}">{{ slip(h.slip_committed) }}</div></div>
+</div>
+
+{#- 2. Gantt comparativo -#}
+<div class="sec">2. Cronograma — línea base vs plan vigente</div>
+<div class="legend">
+  <span><i class="base"></i>Línea base</span>
+  <span><i class="cur"></i>Plan vigente</span>
+  <span><i class="ms"></i>Hito</span>
+  <span><i class="ov"></i>Vencida</span>
+  <span><i class="add"></i>Fuera de línea base</span>
+  <span><i class="rmv"></i>Retirada del plan</span>
+</div>
+{% if not h.has_baseline %}<div class="gnote">Sin línea base vigente al corte: se muestra solo el plan vigente (sin comparación).</div>{% endif %}
+{% if g.tasks %}
+<div class="gwrap">
+<table class="g">
+  <colgroup><col class="c-task"><col class="c-date"><col class="c-date"><col class="c-lane"></colgroup>
+  <thead><tr><th>Tarea</th><th>Inicio</th><th>Fin</th><th>Cronograma</th></tr></thead>
+  <tbody>
+  {% for t in g.tasks %}
+    <tr>
+      <td class="tname {% if t.is_group %}grp{% endif %}" style="padding-left:{{ 8 + t.depth * 14 }}px">
+        {% if t.is_milestone %}&#9670; {% endif %}
+        {% if t.removed %}<span class="rm">{{ t.subject }}</span>{% else %}<a data-task="{{ t.name }}">{{ t.subject }}</a>{% endif %}
+      </td>
+      <td class="num">{{ d(t.start) }}</td>
+      <td class="num">{{ d(t.end) }}</td>
+      <td>
+        <div class="lane">
+          {% if g.cutoff_pct is not none %}<div class="cutoff" style="left:{{ g.cutoff_pct }}%"></div>{% endif %}
+          {% if t.is_milestone %}
+            {% if t.baseline_bar %}<div class="ms base" style="left:{{ t.baseline_bar.offset }}%"></div>{% endif %}
+            {% if t.current_bar %}<div class="ms cur {% if t.overdue %}ov{% endif %}" style="left:{{ t.current_bar.offset }}%"></div>{% endif %}
+          {% else %}
+            {% if t.baseline_bar %}<div class="bbar {% if t.removed %}rmv{% endif %}" style="left:{{ t.baseline_bar.offset }}%;width:{{ t.baseline_bar.width }}%"></div>{% endif %}
+            {% if t.current_bar %}<div class="cbar {% if t.overdue %}ov{% elif t.added %}add{% endif %}" style="left:{{ t.current_bar.offset }}%;width:{{ t.current_bar.width }}%">{% if t.progress and not t.added %}<span class="fill" style="width:{{ t.progress }}%"></span>{% endif %}</div>{% endif %}
+          {% endif %}
+        </div>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="gnote">Sin tareas con fechas para graficar.</div>
+{% endif %}
+
+{#- 3. Estado de ejecución (tareas) -#}
+<div class="sec">3. Estado de ejecución (tareas)</div>
+{% if ex.total %}
+{%- set tot = ex.total -%}
+<div class="exec">
+  <div class="segbar">
+    {% if ex.completadas %}<div class="s done" style="width:{{ (ex.completadas / tot * 100) }}%" title="Completadas">{{ ex.completadas }}</div>{% endif %}
+    {% if ex.en_curso %}<div class="s wip" style="width:{{ (ex.en_curso / tot * 100) }}%" title="En curso">{{ ex.en_curso }}</div>{% endif %}
+    {% if ex.pendientes %}<div class="s pend" style="width:{{ (ex.pendientes / tot * 100) }}%" title="Pendientes">{{ ex.pendientes }}</div>{% endif %}
+    {% if ex.vencidas %}<div class="s over" style="width:{{ (ex.vencidas / tot * 100) }}%" title="Vencidas">{{ ex.vencidas }}</div>{% endif %}
+  </div>
+  <div class="tot">Total tareas <b>{{ ex.total }}</b></div>
+</div>
+<div class="exleg">
+  <span><i class="done"></i>Completadas {{ ex.completadas }}</span>
+  <span><i class="wip"></i>En curso {{ ex.en_curso }}</span>
+  <span><i class="pend"></i>Pendientes {{ ex.pendientes }}</span>
+  <span><i class="over"></i>Vencidas {{ ex.vencidas }}</span>
+</div>
+{% else %}
+<div class="empty">Sin tareas hoja para evaluar.</div>
+{% endif %}
+
+{#- 4. Desviaciones del cronograma -#}
+<div class="sec">4. Desviaciones del cronograma</div>
+{% if sv.deviations %}
+<div class="xwrap">
+<table class="x">
+  <thead><tr><th>Tipo</th><th>Tarea / Hito</th><th>Responsable</th><th>Fin línea base</th><th>Fin plan vigente</th><th class="num">Desviación</th><th>Estado</th></tr></thead>
+  <tbody>
+  {% for r in sv.deviations %}
+    {%- set cls = ('over' if r.type == 'Vencida' else ('ms' if 'Hito' in r.type else ('shift' if r.type in ('Desplazada','Excede compromiso') else 'ok'))) -%}
+    <tr>
+      <td><span class="typ"><span class="dot {{ cls }}"></span>{{ r.type }}</span></td>
+      <td>{% if r.is_milestone %}&#9670; {% endif %}<span class="tlink" data-task="{{ r.name }}">{{ r.subject }}</span></td>
+      <td>{{ d(r.owner) }}</td>
+      <td>{{ d(r.baseline_exp_end_date) }}</td>
+      <td>{{ d(r.current_exp_end_date) }}</td>
+      <td class="num {% if (r.dev_days or 0) > 0 %}bad{% endif %}">{% if r.dev_days is none %}—{% else %}{% if r.dev_days > 0 %}+{% endif %}{{ r.dev_days }} d vs {{ r.dev_ref }}{% endif %}</td>
+      <td>{{ d(r.status) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty">Sin desviaciones en el cronograma al corte.</div>
+{% endif %}
+</div>

@@ -179,8 +179,7 @@ class PMOProjectControl {
 		$v.html(`<div class="pmo-pc-loading">${__("Loading...")}</div>`);
 		if (this.state.view === "executive") return this._view_executive($v);
 		if (this.state.view === "financial") return this._view_financial($v);
-		if (this.state.view === "status")
-			return this._view_report($v, REP_STATUS, this._status_filters(), true);
+		if (this.state.view === "status") return this._view_schedule($v);
 		if (this.state.view === "pva")
 			return this._view_report($v, REP_PVA, this._status_filters(), false);
 		if (this.state.view === "baseline") return this._view_baseline($v);
@@ -262,6 +261,32 @@ class PMOProjectControl {
 			.catch(() => {
 				$v.html(`<div class="pmo-pc-empty">${__("Could not load the data.")}</div>`);
 			});
+	}
+
+	// --- Vista Estado / Cronograma: HTML server-side (get_schedule_html → estado.html). Gantt comparativo
+	// (línea base vs plan vigente) + estado de ejecución + excepciones. La Page solo inyecta; el cliente NO
+	// recalcula fechas/slips (los compone build_status_report + snapshots + compare_snapshots). P4 en el motor. ---
+	_view_schedule($v) {
+		frappe
+			.xcall("pmo.project_control.get_schedule_html", {
+				project: this.state.project,
+				cutoff: this.state.status_date || frappe.datetime.get_today(),
+			})
+			.then((html) => {
+				$v.html(html);
+				this._wire_task_drill($v); // clic en Task/hito → Task nativo
+			})
+			.catch(() => {
+				$v.html(`<div class="pmo-pc-empty">${__("Could not load the data.")}</div>`);
+			});
+	}
+
+	// Drill-down de cronograma: clic en cualquier elemento con data-task → Form Task nativo (ruta existente).
+	_wire_task_drill($v) {
+		$v.off("click.pmotask").on("click.pmotask", "[data-task]", (e) => {
+			const t = $(e.currentTarget).attr("data-task");
+			if (t) frappe.set_route("Form", "Task", t);
+		});
 	}
 
 	// --- Vistas 1 y 2: Script Report vía query_report.run (P4 en el motor) ---
