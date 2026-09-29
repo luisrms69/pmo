@@ -1,34 +1,33 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-09-26
-**Rama activa:** `feat/project-governance-lifecycle` (base `version-16` @ v0.16.0 → objetivo PR **v0.17.0**)
-**Tarea actual:** `/ship` de consolidación **v0.17.0**. La rama reúne, en un solo release, TODA la iniciativa
-Governance Lifecycle acumulada desde v0.16.0 (Governance/expediente, Handoff, Closure, Post-Project Review,
-Mejora continua, **Change Control v2 B4–B8** ADR-0015) **+ R1/Risk Analysis** (ADR-0016). Squash & Merge →
-tag `v0.17.0` sobre el merge commit → GitHub Release. **Siguiente bloque (no iniciado): rescate/replanteamiento
-integral de la UX global de PMO** (ver Nota en ADR-0016). Residuo conocido dev: tabla huérfana
-`tabPMO Project Risk Update` en `pmo-v16.dev` (no forma parte del repo; conservada). Vestigio menor:
-`last_reviewed_on/by` del Risk Assessment sin escritor (no se retiran en este cierre).
+**Fecha:** 2026-09-28
+**Rama activa:** `feat/pmo-home-rescate` (base `version-16` @ v0.17.0 → objetivo PR **v0.18.0**, MINOR)
+**Tarea actual:** `/ship` de cierre **v0.18.0**. La rama reúne (un solo release, 18 commits sobre v0.17.0):
+**rescate UX de PMO** (Home, Portafolio, Project Control/Resumen), **Panel PMO / Ciclo de Gobernanza** en el
+Project (pestaña PMO nativa), **Handoff = Acta de Inicio / Charter** con autorización + sync Handoff→Project
+(ADR-0014 D3 enmendado, snapshot v2), **PM canónico** read-only, **cambio gobernado de Fin comprometido**
+(ADR-0007 D6, endpoint + Version/Comment), **fusión de "Planificado vs Real"** en Estado/Cronograma
+(sección aditiva "Consumo de esfuerzo por tarea") con retiro de esa pestaña, y **actualización documental**
+(ADRs 0007/0008/0011/0014 + arquitectura + guías de usuario). Squash & Merge → tag `v0.18.0` sobre el merge
+commit → GitHub Release. **Siguiente frente (no iniciado): Reportes PMO.**
 
 ---
 
 ## Recuperación rápida
 
 Estoy trabajando en:
-El **PR de arquitectura de reporting canónica** de Project Control. La rama reúne (un solo PR):
-ADR-0011 (contexto canónico) + Reporte Ejecutivo v1 + Calidad de Planeación + **bloque económico
-(ADR-0012)**. El bloque económico añade la sección `costs` a `build_project_control` consumiendo el
-contrato de `erpnext_proposals` (`get_project_authorized_economics`), sin recalcular economía.
+El **cierre `/ship` de la rama `feat/pmo-home-rescate`** hacia `version-16` (v0.18.0). Todo implementado y con
+QA visual aprobado; suite completa verde (597 tests / 51 módulos).
 
 Plan que estoy siguiendo:
-ADR-0011 + ADR-0012 + spec económica del usuario (BLOQUE 0–5, MVP aceptado). Flujo `/ship pr` autorizado
-de corrido: commit → bump/CHANGELOG → gates → push → PR. DETENERSE antes de merge/tag/release.
+`/ship` completo: preflight (limpio) → bump 0.18.0 + CHANGELOG + CONTINUITY → push → PR a `version-16` →
+`/ship comentario-pr` → `/ship merge` (Squash) → `/ship release` (tag v0.18.0 + GitHub Release) → limpieza.
 
 Objetivo inmediato:
-Crear/actualizar el PR contra `version-16` con bump **0.16.0** (MINOR) y verificar CI.
+Push + PR contra `version-16` con `__version__` **0.18.0** y verificar CI.
 
 Criterio de avance:
-PR abierto contra `version-16`, working tree limpio, CI verde (o solo fallos ajenos al cambio).
+PR abierto contra `version-16`, working tree limpio, CI verde; luego merge + release + limpieza.
 
 ---
 

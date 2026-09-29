@@ -1,9 +1,9 @@
 # Changelog — pmo
 
-## [Unreleased] — feat/project-governance-lifecycle
+## [0.18.0] — 2026-09-28
 
-Rescate UX de PMO + evolución del Handoff a **Acta de Inicio / Charter** con autorización, y gobierno del
-**Fin comprometido**. Aún sin bump de versión (se calculará al abrir el PR).
+Rescate UX de PMO + evolución del Handoff a **Acta de Inicio / Charter** con autorización, gobierno del
+**Fin comprometido**, y fusión de "Planificado vs Real" dentro de Estado/Cronograma.
 
 ### Added
 - **Panel PMO / Ciclo de Gobernanza en Project** — pestaña "PMO" nativa en el form del Project: "Responsables
@@ -19,10 +19,17 @@ Rescate UX de PMO + evolución del Handoff a **Acta de Inicio / Charter** con au
 - **Cambio gobernado de Fin comprometido (ADR-0007 D6)** — endpoint `pmo.schedule_commit.change_committed_end_date`
   (autoridad PMO + motivo obligatorio); registra Version + Comment; el campo del Project es read-only.
 
+- **Estado/Cronograma — sección "Consumo de esfuerzo por tarea"** (aditiva; secciones 1–4 intactas):
+  por tarea hoja, estimado TOTAL (`Task.expected_time`) vs real ACUMULADO al corte
+  (`get_actual_hours_by_task_asof`) + % consumido con barra. Funciona con o sin baseline; NO calcula
+  "planificado al corte" ni prorratea `expected_time`.
+
 ### Changed
+- Retirada la pestaña **"Planned vs Actual"** de Project Control (absorbida por Estado/Cronograma); el
+  Script Report `PMO Planned vs Actual` y su shortcut de Workspace se conservan.
 - Retirado el JS legado del flujo Project→Handoff (`public/js/pmo_project_handoff.js`) y su `doctype_js`.
 - Docs actualizadas: ADR-0007, ADR-0008, ADR-0011, ADR-0014, `arquitectura.md`, `fechas-comprometidas.md`,
-  `planificado-vs-real.md`, `change-control.md`.
+  `planificado-vs-real.md`, `change-control.md`; nuevas guías `acta-de-inicio.md` y `cierre-y-revision.md`.
 
 ## [0.17.0] — 2026-09-25
 
