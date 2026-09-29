@@ -1,6 +1,6 @@
 # ADR-0007: Fecha comprometida de cronograma (Task deadline / Project committed end)
 
-**App:** pmo · **Rama protegida:** version-16 · **Estado:** Accepted · **Ciclo:** v0.8.0 (Gobierno avanzado del cronograma — fase 1)
+**App:** pmo · **Rama protegida:** version-16 · **Estado:** Accepted (enmendado — ver D6: valor inicial vía Handoff + cambio gobernado con Version/Comment) · **Ciclo:** v0.8.0 (Gobierno avanzado del cronograma — fase 1)
 
 ## Aceptación (2026-09-09)
 
@@ -36,8 +36,9 @@ Sin esa distinción no se puede responder "el cronograma calcula el 15, pero el 
   reprogramación y edición. Siguen siendo forecast no vinculante (ADR-0004).
 - **Comprometido (nuevo):** una fecha de referencia fijada por **decisión de negocio/acuerdo** (puede ser
   contractual, pero también un compromiso interno o acordado). **No se desplaza automáticamente** con la
-  reprogramación del cronograma; **no es inmutable**: puede modificarse **explícitamente** por una decisión
-  autorizada (edición deliberada del campo). Es un **compromiso**, no una restricción que altere el cálculo.
+  reprogramación del cronograma; **no es inmutable**: para el Project se **establece inicialmente** al emitir
+  el Acta de Inicio (PMO Project Handoff) y se cambia después **solo** por un flujo gobernado (ver D6), no por
+  edición libre del campo. Es un **compromiso**, no una restricción que altere el cálculo.
 
 ### D2 — `Task.pmo_deadline` (Date)
 Fecha límite/comprometida de la **tarea**. **No** mueve la tarea, **no** dispara reprogramación, **no**
@@ -45,7 +46,9 @@ bloquea la ejecución real (Timesheet/Actual). Es referencia para comparar contr
 
 ### D3 — `Project.pmo_committed_end_date` (Date)
 Fecha **comprometida** de terminación del **proyecto**, distinta de `expected_end_date` (calculada). Mismo
-carácter de referencia; no altera el cálculo.
+carácter de referencia; no altera el cálculo. Su **valor inicial** proviene del Acta de Inicio (Handoff) y sus
+**cambios posteriores** están gobernados (ver D6). El Custom Field es **`read_only`** (fixture
+`custom_field.json`) y se presenta en la pestaña PMO del Project ("Responsables y contexto").
 
 ### D4 — Validaciones suaves (warnings, nunca bloqueantes)
 Coherente con ADR-0004 (fechas no vinculantes; el Actual nunca se bloquea):
@@ -59,7 +62,25 @@ Coherente con ADR-0004 (fechas no vinculantes; el Actual nunca se bloquea):
 - **NO** se modifica el reporte ni la lógica de Status Date (ADR-0006).
 - **ADR-0004 y ADR-0006 no se modifican**; ADR-0007 solo los referencia.
 - Implementación: **Custom Fields por fixture** (requiere `bench migrate` para sincronizar metadata; sin
-  data/migration patch). Sin DocTypes nuevos.
+  data/migration patch). El compromiso inicial lo establece el DocType **PMO Project Handoff** (ADR-0014) al
+  emitir; el cambio posterior lo realiza el endpoint whitelisted `pmo.schedule_commit.change_committed_end_date`.
+  No se introducen DocTypes nuevos **por este ADR** (el Handoff pertenece a ADR-0014).
+
+### D6 — Origen del valor y cambio gobernado del compromiso del Project (enmienda)
+- **Valor inicial:** lo establece el Acta de Inicio (PMO Project Handoff) al emitir (`on_submit` →
+  `frappe.db.set_value` de `pmo_committed_end_date`); el Handoff conserva una copia congelada en su snapshot.
+- **Cambio posterior:** únicamente por el endpoint whitelisted
+  `pmo.schedule_commit.change_committed_end_date(project, new_date, reason)`. Validaciones server-side: el
+  Project existe; permiso de lectura del Project; **autoridad PMO** (`pmo.permissions._has_pmo_authority` — PMO
+  Manager / System Manager / Administrator); debe existir un compromiso vigente; `new_date` presente; `reason`
+  no vacío; `new_date` ≠ actual.
+- **Trazabilidad:** el Project tiene `track_changes=0`, por lo que el endpoint registra un **Version** explícito
+  (`changed: [["pmo_committed_end_date", old, new]]`) y un **Comment** en el timeline ("Fin comprometido
+  actualizado: old → new. Motivo: reason").
+- **UI:** campo `read_only`; acción "Cambiar fin comprometido" en el dropdown **PMO** del form del Project
+  (`project_pmo.js`), visible solo con compromiso vigente + autoridad PMO. Ocultar el botón **no** es control de
+  permisos; el gate real es server-side.
+- **Task deadline (`pmo_deadline`) sin cambios:** sigue siendo un Date editable libremente (solo avisa, D4).
 
 ## Fuera de alcance (diferido)
 - **Constraints tipados** `pmo_constraint_type`/`pmo_constraint_date` y los tipos MS Project
@@ -86,7 +107,8 @@ Coherente con ADR-0004 (fechas no vinculantes; el Actual nunca se bloquea):
 - **Baselinar** el compromiso (snapshot v2) → descartado en este ciclo para no tocar el esquema de Baseline.
 - Hacer la validación **bloqueante** → contradice ADR-0004 (fechas no vinculantes).
 - Describir la fecha comprometida como **inmutable** → descartado: no se mueve con el cálculo, pero sí puede
-  cambiarse por decisión autorizada.
+  cambiarse por **decisión autorizada gobernada** (endpoint `change_committed_end_date`, no edición libre del
+  campo; ver D6).
 
 ## Criterios de aceptación
 - Existen `Task.pmo_deadline` y `Project.pmo_committed_end_date` (Date, por fixture).

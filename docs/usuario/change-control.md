@@ -5,10 +5,10 @@ por qué se pide, qué impacto se prevé, quién lo decide y cómo se implementa
 su precio (eso vive en la Cotización/Proposal), **no** ejecuta el trabajo (eso son las Tasks del Project) y
 **no** congela el plan (eso es la Baseline). El CR es la **capa de gobernanza** que conecta todo.
 
-> **Estado (v0.6.0 en construcción):** disponibles el documento, sus permisos y el **flujo de aprobación
-> (Workflow) con la acción "Aplicar Cotización al Project"**. La comparación de baselines y el registro de
-> cambios se habilitan en las siguientes entregas del mismo release. La ruta comercial (aplicar una
-> Cotización) requiere además la versión compatible de `erpnext_proposals` (ver nota al final).
+> **Estado:** implementado. Documento, permisos, flujo de aprobación (Workflow), comparación de baselines y
+> registro de cambios disponibles. La evolución **Change Control v2 (Addenda-céntrico)** — flujo único
+> CR → Addenda, apply gobernado y evidencia — se documenta en **ADR-0015**. La ruta comercial (crear/aplicar
+> la addenda) requiere la versión compatible de `erpnext_proposals` (ver nota al final).
 
 ## Qué captura
 

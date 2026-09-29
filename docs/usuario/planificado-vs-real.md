@@ -29,17 +29,24 @@ acceso ejecutivo) — la misma regla de privacidad P4 del resto de PMO.
 
 **Detalle (tabla), una fila por tarea hoja:**
 
-- **Task** y **Subject**.
-- **Planned Hours** — el esfuerzo esperado de la tarea (`expected_time`).
-- **Actual Hours** — el esfuerzo real consumido (ver "Cómo se calcula el Real").
-- **Variance Hours** — `Actual - Planned`. Positivo = te pasaste del plan; negativo = aún por debajo.
+- **Task** y **Description**.
+- **Total planned hours** — el esfuerzo esperado **total** de la tarea (`expected_time`). Es el plan completo
+  de la tarea, **no** el plan que "tocaba" a la fecha de corte.
+- **Actual hours at cutoff** — el esfuerzo real consumido hasta el corte (ver "Cómo se calcula el Real").
+- **Available hours** — `Planned − Actual`. Es el **remanente** (plan total menos real al corte); negativo =
+  el real ya superó al plan total (sobreconsumo). No es una "variación al corte".
 - **% Consumed** — `Actual / Planned`. Vacío si la tarea no tiene horas planificadas (no se divide por 0).
 
 Las **tareas de grupo (resumen)** no aparecen como fila propia: sus horas ya están en las tareas hoja, así
 que incluirlas duplicaría el total.
 
-**Resumen (tarjetas):** fecha de corte usada, total **Planned**, total **Actual**, **Variance** (roja si te
-pasaste, verde si no) y **% Consumed** del proyecto.
+**Resumen (tarjetas):** fecha de corte usada, total **Total planned hours**, total **Actual hours at cutoff**,
+**Available hours** (roja si es negativa = sobreconsumo, verde si no) y **% Consumed** del proyecto.
+
+> **Nota de comparabilidad:** el reporte pone lado a lado el **plan TOTAL** y el **real al corte**; no compara
+> "plan que tocaba a la fecha" contra "real a la fecha". Una tarea aún no vencida puede verse "subconsumida"
+> solo porque su plan todavía no vencía. El análisis temporalmente correcto (contra la línea base a la fecha)
+> vive en el **PMO Status Report**.
 
 ## Cómo se calcula el Real
 
@@ -53,7 +60,7 @@ Solo cuentan los Timesheets **confirmados**; los borradores no suman.
 
 ## Cómo interpretarlo
 
-- **Variance > 0**: la tarea/proyecto ya consumió más horas de las planificadas.
+- **Available hours < 0**: la tarea/proyecto ya consumió más horas de las planificadas (sobreconsumo).
 - **% Consumed cercano al 100 %** con la tarea aún abierta: probable riesgo de sobre-esfuerzo.
 - **% Consumed vacío**: la tarea no tenía horas planificadas; compara solo el Real.
 - El Real depende de que las horas se registren vía **Timesheet**. Trabajo no capturado en Timesheet no

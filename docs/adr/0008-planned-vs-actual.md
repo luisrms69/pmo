@@ -40,8 +40,13 @@ Se implementa **un Script Report estándar** `PMO Planned vs Actual`. **No** hay
   `status_date` → Σ `Timesheet Detail.hours` **submitted** (docstatus=1) con `date(from_time) <= status_date`
   (semántica ADR-0003; único bit custom, SQL estática parametrizada; reutiliza el patrón de
   `_actual_hours_to_date` extendido a Task).
-- **Indicadores:** `Planned Hours`, `Actual Hours`, `Variance Hours` (= Actual − Planned), `% Consumed`
-  (= Actual / Planned, con guarda de división por 0).
+- **Indicadores:** `Total planned hours` (plan **total**, no acumulado al corte), `Actual hours at cutoff`,
+  `Available hours` (= **Planned − Actual**, remanente; negativo = sobreconsumo) y `% Consumed` (= Actual /
+  Planned, con guarda de división por 0).
+  > **Enmienda (implementación):** la columna de contraste quedó como **`Available hours` = Planned − Actual**
+  > (remanente/horas disponibles), no como `Variance = Actual − Planned`. El reporte pone lado a lado **plan
+  > TOTAL** vs **real al corte** (no plan-al-corte vs real-al-corte); el análisis temporal correcto vive en
+  > `PMO Status Report`.
 - **Nivel:** detalle por **Task** + **total por Project** excluyendo `is_group` del rollup (evita doble
   conteo; los grupos son envelope).
 
@@ -94,7 +99,8 @@ asignado, y Number Cards/charts de resumen en el Workspace.
 - Number Cards de resumen → no soportan as-of y duplicarían lógica; diferido.
 
 ## Criterios de aceptación
-- Existe el Script Report `PMO Planned vs Actual` (P4) con columnas Planned/Actual/Variance/% Consumed, por
-  Task y total de Project (excluye `is_group`), con `status_date` opcional (default `pmo_status_date`).
+- Existe el Script Report `PMO Planned vs Actual` (P4) con columnas Total planned hours / Actual hours at
+  cutoff / Available hours / % Consumed, por Task y total de Project (excluye `is_group`), con `status_date`
+  opcional (default `pmo_status_date`).
 - Existe el Workspace público `PMO Control` con shortcuts a los 4 reportes; `PMO Capacity` intacto.
 - Sin DocTypes/Custom Fields nuevos; `snapshot_schema_version` sigue en 1; ADR-0003/0004/0006/0007 sin cambios.

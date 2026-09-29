@@ -1,6 +1,6 @@
 # ADR-0014: Project Governance & Lifecycle Documentation
 
-**App:** pmo · **Rama protegida:** version-16 · **Estado:** Proposed · **Depende de:** ADR-0002 (P4),
+**App:** pmo · **Rama protegida:** version-16 · **Estado:** Accepted (implementado) · **Depende de:** ADR-0002 (P4),
 ADR-0004 (Baseline), ADR-0005 (Change Control), ADR-0011 (Project Control canónico) · **No toca:** PHI
 (ADR-0013, bloqueado).
 
@@ -36,39 +36,57 @@ Artefactos de gobierno (todos submittable, evidencia congelada al emitir): **Han
 **detalle de implementación, no una restricción arquitectónica**. Derivado/generado (sin artefacto propio):
 estado de ciclo de vida, índice de expediente, cuerpo del Closure (Print Format), señales de dashboard.
 
-### D3 — Handoff mínimo (transferencia formal a ejecución); **autosuficiente**
-`PMO Project Handoff` (reemplaza al anterior Charter) existe **únicamente** para dejar evidencia formal de la
-**transferencia del Project hacia ejecución** y marcar el hito de gobierno **"handoff completado"** (Handoff
-submitted = arranque completado). Flujo: `Proposal ganada → Project + WBS inicial → Project Handoff →
-Baseline`. **No** recaptura planeación: la Proposal ganada ya representa la autorización comercial, el Project
-el trabajo operativo y el Baseline el plan autorizado. Es un **acta corta**, no otro formulario de planeación.
-El Handoff **no contiene estructura de Risk Analysis** y no depende de ningún registro de riesgos.
-- **Capturado (mínimo):** `handoff_date`, `project_manager` (única fuente hoy en el modelo) y `handoff_summary`
-  (obligatorio: qué se transfiere al equipo de ejecución — contexto, acuerdos de arranque, pendientes,
-  dependencias y consideraciones operativas).
-- **Se toma del Project y se congela al submit:** `pmo_operational_owner` (responsable operativo interno, Link
-  Employee) y `pmo_customer_contact` (contacto principal del cliente, Link Contact) — ambos custom fields del
-  Project; cambios posteriores en el Project no alteran un Handoff ya emitido. **Ambos son obligatorios para
-  emitir** (guard en `before_submit`): sin ellos no hay transferencia formal. La `handoff_date` también es
-  obligatoria. **UX (Draft):** un `doctype_js` **read-only** consulta el Project al elegirlo y en cada refresh,
-  refleja los valores vigentes y —si falta alguno— muestra un aviso antes del Submit y un botón *Abrir Project
-  para completar datos*. Los campos **nunca** se editan ni se escriben hacia el Project desde el Handoff (fuente
-  única = Project); solo se consultan, se muestran y se congelan al Submit.
-- **Derivado + snapshot al submit** (patrón `snapshot`+`snapshot_hash` del Baseline): customer/company,
-  `pmo_committed_end_date`, referencia a Proposal/Quotation, hitos/equipo iniciales. **Toda la evidencia
-  capturada del Handoff entra al `snapshot`/`snapshot_hash`:** `handoff_date`, `project_manager`,
-  `handoff_summary`, responsable operativo/contacto del cliente, `contractual_legal_ready` y la metadata de
-  emisión (`issued_by`/`issued_at`, fijados **antes** de construir el snapshot).
-- **Sin economía en el snapshot (política P4):** el Handoff **no** guarda economía autorizada. La economía está
-  sujeta a `can_see_project_economics` (permlevel 1, D4); persistirla en un snapshot legible por cualquiera con
-  READ del Project/Handoff la filtraría. La economía vive en su frontera canónica y en el Closure (permlevel 1).
-- **NO se reintroducen** objetivo, alcance, entregables, supuestos ni restricciones como captura del usuario.
-- **Verificación contractual/legal de readiness (`contractual_legal_ready`, Check obligatorio antes del
-  Submit):** PMO confirma que, cuando aplica, los requisitos para iniciar ejecución (contratos, NDA, órdenes/
-  autorizaciones, términos comerciales u otros) fueron verificados. Es el punto correcto del ciclo
-  (`Proposal/Quotation autorizada → Project → Handoff verifica readiness → ejecución`). **Entra al `snapshot`/
-  `snapshot_hash` del Handoff** (evidencia congelada). **No** es aprobación
-  jurídica, **no** crea workflow Legal, **no** captura contratos ni Links, **no** toca `erpnext_proposals`.
+### D3 — Handoff = Acta de Inicio / Charter (transferencia + autorización formal a ejecución); **autosuficiente**
+
+> **Enmienda (Charter + Autorización, 2026-09).** El Handoff evolucionó de "acta corta de transferencia" a
+> **Acta de Inicio / Charter** con **gate de autorización** y **propiedad de campos Handoff→Project** (snapshot
+> schema v2). El texto de este D3 refleja el estado implementado; la redacción original ("acta corta, sin
+> recaptura, campos tomados del Project") queda superada por esta enmienda.
+
+`PMO Project Handoff` (reemplaza al anterior Charter) es la **Acta de Inicio / Charter** del proyecto: deja
+evidencia formal de la **transferencia a ejecución**, del **compromiso inicial**, de la **readiness
+contractual/legal** y de la **autorización explícita para iniciar**, y marca el hito de gobierno "handoff
+completado" (Handoff submitted = arranque completado). Flujo: `Proposal ganada → Project + WBS inicial →
+Project Handoff → Baseline`. Sigue siendo **autosuficiente** (no depende de riesgos ni de otro artefacto) y
+**no** duplica el detalle de WBS/planeación de Proposal/Project: captura objetivo y alcance **de alto nivel**,
+no un segundo plan. El Handoff **no contiene estructura de Risk Analysis**.
+
+- **Capturado en el Acta (obligatorio, validado server-side en `before_submit`):**
+  - `handoff_date` (obligatoria) y `handoff_summary` (qué se transfiere: contexto, acuerdos de arranque,
+    pendientes, dependencias, consideraciones operativas).
+  - `project_objective` (Small Text) y `scope_high_level` (Small Text) — **alto nivel, no WBS**.
+  - `committed_end_date` ("Fin comprometido", obligatoria): **fuente formal del compromiso inicial**; al emitir
+    se copia a `Project.pmo_committed_end_date` (ADR-0007 D6).
+  - `operational_owner` (Link Employee) y `customer_contact` (Link Contact) — **capturados en el Acta** (ya no
+    se toman del Project). El contacto se filtra por el `Customer` del Project vía la relación **nativa**
+    `Contact.links → Dynamic Link` (client `set_query` con `contact_query`; validación server-side contra el
+    Customer del Project). **Sin `Customer` en el Project no puede emitirse.**
+  - Checks de coordinación de transferencia: `pm_informed_coordinated`, `internal_team_informed`,
+    `startup_conditions_reviewed` (todos obligatorios).
+  - `contractual_legal_ready` (readiness contractual/legal; obligatorio). No es aprobación jurídica ni captura
+    contratos ni Links; no toca `erpnext_proposals`.
+  - **Autorización formal:** `authorized_by` (**Data libre** — nombre y cargo/rol de quien autorizó el inicio,
+    interno o externo: cliente, sponsor, dirección) + `start_authorization_confirmed` (Check de confirmación
+    explícita). Ambos obligatorios. Evidencia de "quién autorizó + confirmación explícita + cuándo se
+    formalizó" (`issued_at`).
+- **Project Manager — fuente única = `Project.pmo_project_manager`:** `Handoff.project_manager` es **read-only
+  `fetch_from project.pmo_project_manager`**, se **sella server-side** en `before_submit`, se congela como
+  evidencia y **NO** se sincroniza de vuelta. Si el Project no tiene PM, el **Submit se bloquea**; la UX del
+  form de Project impide crear el Acta sin PM (gate preventivo).
+- **Sincronización Handoff → Project al emitir (`on_submit`):** `pmo_committed_end_date`, `pmo_operational_owner`
+  y `pmo_customer_contact` se escriben al Project (única escritura del Handoff hacia el Project; los tres son
+  **read-only** en el Project). El Handoff conserva su copia congelada como evidencia.
+- **Derivado + snapshot al submit (schema v2; patrón `canonical_json`+`snapshot_hash` del Baseline):**
+  customer/company, referencia a Proposal/Quotation ganada, hitos (`Task.is_milestone`) y equipo inicial
+  derivado de las fuentes P4 (owner + DocShare + ToDo). **Toda la evidencia humana capturada entra al `captured`
+  del snapshot** (cubierta por el hash): `handoff_date`, `project_manager` (sellado), `handoff_summary`,
+  `project_objective`, `scope_high_level`, `committed_end_date`, `operational_owner`, `customer_contact`, los
+  tres checks de coordinación, `contractual_legal_ready`, `authorized_by`, `start_authorization_confirmed` y la
+  metadata de emisión (`issued_by`/`issued_at`, fijados **antes** de construir el snapshot).
+- **Sin economía en el snapshot (política P4):** el Handoff **no** guarda economía autorizada (sujeta a
+  `can_see_project_economics`, permlevel 1, D4). La economía vive en su frontera canónica y en el Closure.
+- Captura **objetivo** y **alcance de alto nivel** (breves, no WBS); **NO** reintroduce entregables, supuestos
+  ni restricciones como captura estructurada (eso vive en Proposal/Project/Baseline).
 - Submittable → evidencia histórica inmutable del arranque; snapshot/hash/timestamps quedan en sección técnica
   read-only, fuera de la captura normal.
 
@@ -226,17 +244,19 @@ engine; KPIs de reporting; cualquier cambio al PHI.
 - **Implementar Risk primero / Handoff dependiente de un registro de riesgos** → invierte la prioridad de la
   iniciativa y obliga a construir un sistema de riesgos antes del arranque; se rechaza. Risk queda diferido
   (D6) y el Handoff es autosuficiente (D3).
-- **Mantener el Charter como acta de planeación (objetivo/alcance/entregables/supuestos/restricciones)** → la
-  prueba funcional demostró que genera recaptura administrativa y duplica Proposal/Project/Baseline; se rechaza
-  en favor de un Handoff mínimo de transferencia (D3).
+- **Mantener el Charter como formulario de planeación completo (objetivo/alcance/entregables/supuestos/
+  restricciones)** → genera recaptura administrativa y duplica Proposal/Project/Baseline; se rechaza. El Acta
+  de Inicio actual recupera **solo** objetivo y alcance **de alto nivel** (no entregables/supuestos/
+  restricciones) y añade la **autorización formal de inicio** (ver D3, enmienda Charter + Autorización).
 - **Workflow de ciclo de vida en Project** → status paralelo; se rechaza (D7 derivado).
 
 ## Criterios de aceptación
 - Existen **3 artefactos persistentes principales** (Handoff/Closure/Review submittable); los child DocTypes de
   soporte no cuentan como restricción; el resto es derivado/snapshot/Print Format/sección.
 - **Ningún artefacto ni referencia de riesgo** se implementa en esta capacidad (D6/Fuera de alcance).
-- El Handoff es **autosuficiente** (no depende de riesgos ni de otro artefacto para emitirse) y **no** recaptura
-  objetivo/alcance/entregables/supuestos/restricciones.
+- El Handoff es **autosuficiente** (no depende de riesgos ni de otro artefacto para emitirse); captura objetivo
+  y alcance **de alto nivel** + autorización formal de inicio, y **no** recaptura entregables/supuestos/
+  restricciones ni el detalle de WBS.
 - Handoff, Closure y Review congelan **toda** su evidencia por snapshot+hash al submit; el Print Format del
   Closure se reconstruye **solo** desde su snapshot, nunca desde datos vivos.
 - Estado de ciclo de vida es función derivada; no hay workflow nuevo en Project.

@@ -1,5 +1,48 @@
 # Changelog — pmo
 
+## [Unreleased] — feat/project-governance-lifecycle
+
+Rescate UX de PMO + evolución del Handoff a **Acta de Inicio / Charter** con autorización, y gobierno del
+**Fin comprometido**. Aún sin bump de versión (se calculará al abrir el PR).
+
+### Added
+- **Panel PMO / Ciclo de Gobernanza en Project** — pestaña "PMO" nativa en el form del Project: "Responsables
+  y contexto" (PM editable + responsable operativo / contacto / Fin comprometido como campos **nativos
+  read-only**, visibles con `depends_on`) y **"Ciclo de Gobernanza"** operable 2×3
+  (Acta→Línea base→Riesgos→Cambios→Cierre→Revisión), reutilizando `project_governance_state` (mismo motor
+  `_evaluate`). Dropdown **PMO** con acciones + "Cambiar fin comprometido".
+- **PMO Project Handoff = Acta de Inicio / Charter (ADR-0014 D3 enmendado, snapshot v2)** — captura server-side
+  de objetivo, alcance de alto nivel, Fin comprometido (obligatorio), checks de coordinación, readiness
+  contractual/legal y **autorización formal** (`authorized_by` + confirmación explícita). PM canónico
+  (`Project.pmo_project_manager`) read-only/sellado; `operational_owner`/`customer_contact` capturados en el
+  Acta (contacto filtrado por Customer vía Dynamic Link) y **sincronizados al Project** en `on_submit`.
+- **Cambio gobernado de Fin comprometido (ADR-0007 D6)** — endpoint `pmo.schedule_commit.change_committed_end_date`
+  (autoridad PMO + motivo obligatorio); registra Version + Comment; el campo del Project es read-only.
+
+### Changed
+- Retirado el JS legado del flujo Project→Handoff (`public/js/pmo_project_handoff.js`) y su `doctype_js`.
+- Docs actualizadas: ADR-0007, ADR-0008, ADR-0011, ADR-0014, `arquitectura.md`, `fechas-comprometidas.md`,
+  `planificado-vs-real.md`, `change-control.md`.
+
+## [0.17.0] — 2026-09-25
+
+Governance Lifecycle completo (ADR-0014) + Risk Analysis ligero (ADR-0016). Ciclo documental de gobierno del
+Project reutilizando lo existente, sin motores/aprobaciones/workflows paralelos.
+
+### Added
+- **Ciclo de Gobernanza (ADR-0014)** — `PMO Project Handoff` (transferencia), `PMO Project Closure`
+  (snapshot-only, guard terminal + CR abiertos + aceptación), `PMO Post-Project Review` + child
+  `PMO Lessons Learned` (mejora continua vía ToDo). Motor único `pmo/governance_inbox.py` (`_evaluate`/
+  `_facts`); estado de ciclo derivado (`pmo/governance.py`, sin workflow); exclusión de gobernanza con
+  autoridad PMO server-side. Dashboard transversal (`governance_board` + Custom HTML Block) e índice de
+  expediente en Project Control.
+- **Risk Analysis ligero (ADR-0016)** — `PMO Project Risk Assessment` + `PMO Project Risk Item` (cuestionario
+  administrable `PMO Risk Question`, exposición 3×3, owner/status, reporte `PMO Project Risk Register`).
+
+### Notes
+- Residuo de BD registrado: `tabPMO Project Charter` huérfano tras reemplazar Charter por Handoff (sin impacto
+  funcional; reconciliación diferida).
+
 ## [0.16.0] — 2026-09-12
 
 Arquitectura de reporting canónica de Project Control: una fuente, muchas vistas. Introduce el contexto
