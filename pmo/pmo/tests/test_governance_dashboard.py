@@ -57,23 +57,31 @@ def _block_item(project):
 
 
 def _handoff(project):
-	# El Handoff exige responsable operativo interno + contacto del cliente en el Project para emitirse.
+	# El Handoff captura responsable operativo + contacto en el Acta; el contacto se filtra por el Customer
+	# del Project (Dynamic Link). Prepara Customer + Contact relacionado + Employee y los captura en el Acta.
 	emp = frappe.db.exists("Employee", {"employee_name": "GD Op Owner"}) or (
 		frappe.get_doc({"doctype": "Employee", "employee_name": "GD Op Owner", "first_name": "GD"})
 		.insert(ignore_permissions=True, ignore_mandatory=True)
 		.name
 	)
-	ct = frappe.db.exists("Contact", {"first_name": "GD Contact"}) or (
-		frappe.get_doc({"doctype": "Contact", "first_name": "GD Contact"})
+	cust = frappe.db.exists("Customer", {"customer_name": "GD Customer"}) or (
+		frappe.get_doc({"doctype": "Customer", "customer_name": "GD Customer"})
 		.insert(ignore_permissions=True, ignore_mandatory=True)
 		.name
 	)
-	frappe.db.set_value("Project", project, "pmo_operational_owner", emp, update_modified=False)
-	frappe.db.set_value("Project", project, "pmo_customer_contact", ct, update_modified=False)
+	ct = frappe.db.exists("Contact", {"first_name": "GD Contact"})
+	if not ct:
+		cdoc = frappe.get_doc({"doctype": "Contact", "first_name": "GD Contact"})
+		cdoc.append("links", {"link_doctype": "Customer", "link_name": cust})
+		ct = cdoc.insert(ignore_permissions=True, ignore_mandatory=True).name
+	frappe.db.set_value("Project", project, "customer", cust, update_modified=False)
+	frappe.db.set_value("Project", project, "pmo_project_manager", "Administrator", update_modified=False)
 	d = frappe.get_doc(
 		{
 			"doctype": "PMO Project Handoff",
 			"project": project,
+			"operational_owner": emp,
+			"customer_contact": ct,
 			"handoff_summary": "Transferencia X",
 			"project_objective": "Objetivo del proyecto.",
 			"scope_high_level": "Alcance de alto nivel del proyecto.",

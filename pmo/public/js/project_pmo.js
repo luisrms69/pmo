@@ -25,46 +25,40 @@ frappe.ui.form.on("Project", {
 		pmo_governance_group(frm);
 		pmo_risk_indicators(frm);
 		pmo_governance_cycle(frm);
-		pmo_committed_display(frm);
-	},
-
-	// Solo re-pinta el display de lectura; el compromiso inicial se fija desde el Handoff y el cambio
-	// posterior por la acción "Cambiar" (endpoint gobernado). Este handler no escribe el campo.
-	pmo_committed_end_date(frm) {
-		pmo_committed_display(frm);
+		pmo_committed_change_button(frm);
 	},
 });
 
-// --- FIN COMPROMETIDO (pestaña PMO → sección Responsables): dato material del Project, mostrado de forma
-// compacta y de SOLO LECTURA. No es configuración de esta pestaña: sin diálogo, sin acción, sin escribir el
-// campo. El compromiso se establecerá desde el Handoff (bloque siguiente). El campo editable sigue viviendo
-// en el formulario nativo del Project (comportamiento backend intacto). ------------------------------------
-function pmo_committed_display(frm) {
-	const fld = frm.fields_dict && frm.fields_dict.pmo_committed_html;
-	if (!fld) return;
-	const raw = frm.doc.pmo_committed_end_date;
-	let val = "No establecido";
-	if (raw) {
-		const d = frappe.datetime.str_to_obj(raw);
-		val = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(
-			2,
-			"0"
-		)}/${d.getFullYear()}`;
+// --- FIN COMPROMETIDO: la fecha se muestra con el campo NATIVO read-only `pmo_committed_end_date` (no HTML).
+// La acción de cambio vive dentro del dropdown "PMO" (junto a las demás acciones), reutilizando el
+// diálogo/endpoint gobernado. Se muestra solo si hay compromiso vigente y el usuario tiene autoridad PMO
+// (el gate real es server-side).
+function pmo_committed_change_button(frm) {
+	if (frm.doc.pmo_committed_end_date && pmo_can_change_committed()) {
+		frm.add_custom_button(
+			__("Cambiar fin comprometido"),
+			() => pmo_change_committed_dialog(frm),
+			__("PMO")
+		);
 	}
-	// Acción discreta "Cambiar": solo si hay compromiso vigente Y el usuario tiene autoridad PMO. La
-	// autoridad REAL la valida el backend; esto solo decide mostrar el enlace (no es control de permisos).
-	const change_link =
-		raw && pmo_can_change_committed()
-			? ` · <a class="pmo-change-committed" style="cursor:pointer">Cambiar</a>`
-			: "";
-	fld.$wrapper.html(
-		`<div class="small" style="margin-top:4px"><span class="text-muted">Fin comprometido:</span> <strong>${frappe.utils.escape_html(
-			val
-		)}</strong>${change_link}</div>`
-	);
-	fld.$wrapper
-		.off("click.chg")
-		.on("click.chg", ".pmo-change-committed", () => pmo_change_committed_dialog(frm));
+}
+
+// Gate UX PREVENTIVO del Acta de inicio: el Project Manager (Project.pmo_project_manager) es requisito previo.
+// Si falta, NO se abre/crea el Handoff y se informa claramente. Complementa —no sustituye— la validación
+// server-side de `before_submit` (que sigue impidiendo EMITIR sin PM canónico).
+function pmo_create_acta(frm) {
+	if (!frm.doc.pmo_project_manager) {
+		frappe.msgprint({
+			title: __("Falta el Project Manager"),
+			indicator: "orange",
+			message:
+				__("Define el Project Manager antes de crear el Acta de inicio.") +
+				"<br>" +
+				__("El Project Manager se define en Project → PMO."),
+		});
+		return;
+	}
+	frappe.new_doc("PMO Project Handoff", { project: frm.doc.name });
 }
 
 // Autoridad PMO en cliente (solo para mostrar el enlace; el gate real es server-side en el endpoint).
@@ -228,7 +222,7 @@ function pmo_cycle_grid(frm, d) {
 		acta: () => {
 			const x = c.acta || {};
 			if (x.existing) return btn("Abrir", () => open(x.existing), true);
-			if (x.can_create) return btn("Crear", () => create("PMO Project Handoff"), true);
+			if (x.can_create) return btn("Crear", () => pmo_create_acta(frm), true);
 			return "";
 		},
 		baseline: () => {
@@ -360,7 +354,7 @@ function pmo_governance_group(frm) {
 			if (c.acta && c.acta.existing)
 				frm.add_custom_button(__("Start record: open"), () => open(c.acta.existing), G);
 			else if (c.acta && c.acta.can_create)
-				frm.add_custom_button(__("Start record"), () => create("PMO Project Handoff"), G);
+				frm.add_custom_button(__("Start record"), () => pmo_create_acta(frm), G);
 
 			// Línea base: reutiliza los flujos existentes (establecer / nueva / historial) según el estado.
 			if (!bl.has_baseline) {

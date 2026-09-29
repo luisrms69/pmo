@@ -67,11 +67,13 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Responsable interno de la gestión del proyecto.",
+   "description": "Project Manager canónico, tomado de Project.pmo_project_manager (fuente única). Read-only en el Acta: no se captura ni se elige aquí. Al emitir se congela como evidencia histórica en el snapshot; NO se sincroniza de vuelta al Project.",
+   "fetch_from": "project.pmo_project_manager",
    "fieldname": "project_manager",
    "fieldtype": "Link",
    "label": "Project Manager",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "description": "Fecha comprometida de terminación autorizada en el Acta. Es la fuente formal del compromiso inicial; al emitir (Submit) se copia a Project (pmo_committed_end_date). No depende de que el Project ya tenga una fecha cargada.",
@@ -87,22 +89,20 @@
    "label": "Responsables"
   },
   {
-   "description": "Se toma del Project (Responsable operativo interno) y se congela al emitir (Submit).",
-   "fetch_from": "project.pmo_operational_owner",
+   "description": "Responsable interno de la ejecución diaria. Se captura en el Acta; al emitir se sincroniza a Project.pmo_operational_owner y queda congelado en el Handoff.",
    "fieldname": "operational_owner",
    "fieldtype": "Link",
    "label": "Responsable operativo interno",
    "options": "Employee",
-   "read_only": 1
+   "reqd": 1
   },
   {
-   "description": "Se toma del Project (Contacto principal del cliente) y se congela al emitir (Submit).",
-   "fetch_from": "project.pmo_customer_contact",
+   "description": "Contacto principal del cliente. El selector muestra solo contactos del Customer del Project (define el Customer en el Project primero). Al emitir se sincroniza a Project.pmo_customer_contact y queda congelado en el Handoff.",
    "fieldname": "customer_contact",
    "fieldtype": "Link",
    "label": "Contacto principal del cliente",
    "options": "Contact",
-   "read_only": 1
+   "reqd": 1
   },
   {
    "fieldname": "section_scope",

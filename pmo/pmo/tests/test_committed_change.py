@@ -146,18 +146,25 @@ class TestCommittedChange(IntegrationTestCase):
 			.insert(ignore_permissions=True, ignore_mandatory=True)
 			.name
 		)
-		ct = frappe.db.exists("Contact", {"first_name": "CC Contact"}) or (
-			frappe.get_doc({"doctype": "Contact", "first_name": "CC Contact"})
+		cust = frappe.db.exists("Customer", {"customer_name": "CC Customer"}) or (
+			frappe.get_doc({"doctype": "Customer", "customer_name": "CC Customer"})
 			.insert(ignore_permissions=True, ignore_mandatory=True)
 			.name
 		)
+		ct = frappe.db.exists("Contact", {"first_name": "CC Contact"})
+		if not ct:
+			cdoc = frappe.get_doc({"doctype": "Contact", "first_name": "CC Contact"})
+			cdoc.append("links", {"link_doctype": "Customer", "link_name": cust})
+			ct = cdoc.insert(ignore_permissions=True, ignore_mandatory=True).name
 		p = _project("CC Handoff Immutable", committed=None)
-		frappe.db.set_value("Project", p, "pmo_operational_owner", emp, update_modified=False)
-		frappe.db.set_value("Project", p, "pmo_customer_contact", ct, update_modified=False)
+		frappe.db.set_value("Project", p, "customer", cust, update_modified=False)
+		frappe.db.set_value("Project", p, "pmo_project_manager", "Administrator", update_modified=False)
 		hof = frappe.get_doc(
 			{
 				"doctype": "PMO Project Handoff",
 				"project": p,
+				"operational_owner": emp,
+				"customer_contact": ct,
 				"handoff_summary": "Transferencia",
 				"project_objective": "Objetivo.",
 				"scope_high_level": "Alcance.",

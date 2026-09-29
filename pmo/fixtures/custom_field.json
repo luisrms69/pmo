@@ -17,11 +17,13 @@
   "dt": "Project",
   "module": "PMO",
   "fieldname": "pmo_committed_end_date",
-  "label": "PMO — Committed end",
+  "label": "Fin comprometido",
   "fieldtype": "Date",
-  "insert_after": "expected_end_date",
+  "insert_after": "pmo_customer_contact",
   "no_copy": 1,
-  "description": "Committed completion date of the project (business or agreed commitment). Different from the Expected End Date, which is the calculated date. It does not shift automatically with the schedule (can be changed manually). It does not block saving; if the calculated end exceeds it, only a warning is shown. Empty = no commitment."
+  "read_only": 1,
+  "depends_on": "eval:doc.pmo_committed_end_date",
+  "description": "Fecha comprometida de terminación (compromiso vigente). Se establece desde el Acta/Handoff y se modifica solo por la acción gobernada 'Cambiar fin comprometido'. Read-only en el formulario; visible cuando tiene valor."
  },
  {
   "doctype": "Custom Field",
@@ -31,7 +33,7 @@
   "fieldname": "pmo_status_date",
   "label": "PMO Status Date",
   "fieldtype": "Date",
-  "insert_after": "pmo_committed_end_date",
+  "insert_after": "expected_end_date",
   "no_copy": 1,
   "description": "Cutoff date (Data Date) of the Project's as-of control (ADR-0006). Only today or past; no future date allowed. It is the default value of the cutoff-date status report."
  },
@@ -45,7 +47,9 @@
   "fieldtype": "Link",
   "options": "Employee",
   "insert_after": "pmo_project_manager",
-  "description": "Responsable interno de la ejecución diaria (distinto del PM). El Acta de inicio lo congela al emitir."
+  "read_only": 1,
+  "depends_on": "eval:doc.pmo_operational_owner",
+  "description": "Valor vigente sincronizado desde el Acta/Handoff. Read-only en Project (se captura al crear el Acta); visible cuando tiene valor."
  },
  {
   "doctype": "Custom Field",
@@ -57,7 +61,9 @@
   "fieldtype": "Link",
   "options": "Contact",
   "insert_after": "pmo_col_resp",
-  "description": "Contacto principal del cliente. El Acta de inicio lo congela al emitir."
+  "read_only": 1,
+  "depends_on": "eval:doc.pmo_customer_contact",
+  "description": "Valor vigente sincronizado desde el Acta/Handoff. Read-only en Project (se captura al crear el Acta, filtrado por el Customer); visible cuando tiene valor."
  },
  {
   "doctype": "Custom Field",
@@ -216,7 +222,7 @@
   "module": "PMO",
   "fieldname": "pmo_committed_html",
   "fieldtype": "HTML",
-  "insert_after": "pmo_customer_contact",
-  "depends_on": "eval:!doc.__islocal"
+  "insert_after": "pmo_committed_end_date",
+  "hidden": 1
  }
 ]
