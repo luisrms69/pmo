@@ -932,7 +932,7 @@ class TestScheduleView(IntegrationTestCase):
 			}
 		)
 
-	def test_render_es_mx_and_no_effort_or_economics(self):
+	def test_render_es_mx_effort_and_no_economics(self):
 		with patch("pmo.project_control._schedule_view", return_value=dict(self._sv())):
 			html = get_schedule_html("PROJ-X", cutoff="2026-09-30")
 		# 4 bloques es-MX
@@ -957,11 +957,12 @@ class TestScheduleView(IntegrationTestCase):
 		self.assertIn("Retirada del plan", html)
 		# ejecución (barra segmentada) + total
 		self.assertIn("Total tareas", html)
-		# NADA de esfuerzo/economía/riesgos/CR/gobernanza
+		# Sección 5 (consumo de esfuerzo por tarea) SÍ aparece en Estado/Cronograma (rescate de PvA).
+		self.assertIn("Consumo de esfuerzo por tarea", html)
+		# Pero NO se etiqueta como "planificado al corte": expected_time es presupuesto TOTAL, no plan a la
+		# fecha. Economía / riesgos / gobernanza siguen FUERA de esta pestaña.
 		for token in (
 			"Horas planificadas",
-			"Horas reales",
-			"% consumido",
 			"Costo real",
 			"Situación económica",
 			"Riesgos",

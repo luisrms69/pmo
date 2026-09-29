@@ -22,6 +22,7 @@ import frappe
 from frappe import N_
 from frappe.utils import cint, flt, getdate, today
 
+from pmo.actual import get_actual_hours_by_task_asof
 from pmo.baseline import build_snapshot, get_effective_baseline
 from pmo.compare import compare_snapshots
 from pmo.governance import build_expediente, count_open_change_requests, governance_flags
@@ -946,6 +947,35 @@ def _schedule_deviations(project: str, ind: dict, baseline_snap, current_snap) -
 	return out
 
 
+def _effort_by_task(project: str, cutoff) -> list:
+	"""Consumo de esfuerzo por tarea hoja (sección 5, rescatado de Planned vs Actual, ADR-0008): estimado
+	TOTAL (`Task.expected_time`) vs real ACUMULADO al corte (`get_actual_hours_by_task_asof`, Timesheet
+	submitted ≤ corte). `% consumido = real / estimado_total`. NO es plan-al-corte: `expected_time` es el
+	presupuesto total, no esfuerzo esperado a la fecha. Funciona **con o sin baseline** (no depende de ella)."""
+	leaves = frappe.get_all(
+		"Task",
+		filters={"project": project, "is_group": 0},
+		fields=["name", "subject", "expected_time"],
+		order_by="lft asc",
+		limit=0,
+	)
+	actual_map = get_actual_hours_by_task_asof(project, cutoff) if cutoff else {}
+	rows = []
+	for t in leaves:
+		est = flt(t.get("expected_time"))
+		real = flt(actual_map.get(t.name, 0))
+		rows.append(
+			{
+				"name": t.name,
+				"subject": t.subject or t.name,
+				"estimated": flt(est, 1),
+				"actual": flt(real, 2),
+				"pct": round(real / est * 100) if est else None,
+			}
+		)
+	return rows
+
+
 def _schedule_view(project: str, cutoff=None) -> dict:
 	"""Contexto de la pestaña Estado / Cronograma. Compone motores existentes; sin recálculo."""
 	# Corte por defecto = `Project.pmo_status_date` o hoy (misma resolución que build_project_control).
@@ -996,6 +1026,8 @@ def _schedule_view(project: str, cutoff=None) -> dict:
 		"gantt": _comparative_gantt(project, baseline_snap, current_snap, sd, tvb_map),
 		"execution": _execution_state(project, tvb_map, baseline_snap is not None),
 		"deviations": _schedule_deviations(project, ind, baseline_snap, current_snap),
+		# Sección 5 (aditiva): consumo de esfuerzo por tarea hoja (real acumulado ≤ corte vs estimado total).
+		"effort": _effort_by_task(project, sd),
 	}
 
 

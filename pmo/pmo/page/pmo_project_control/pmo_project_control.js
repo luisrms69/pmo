@@ -54,7 +54,6 @@ const GOV_PAL = {
 const VIEWS = [
 	{ key: "executive", label: __("Summary") },
 	{ key: "status", label: __("Status / Schedule") },
-	{ key: "pva", label: __("Planned vs Actual") },
 	{ key: "baseline", label: __("Baseline Comparison") },
 	{ key: "change", label: __("Change Control") },
 	{ key: "financial", label: __("Financial") },
@@ -96,7 +95,7 @@ class PMOProjectControl {
 			fieldtype: "Date",
 			change: () => {
 				this.state.status_date = this.status_date_field.get_value() || null;
-				if (["executive", "status", "pva"].includes(this.state.view)) this._render_view();
+				if (["executive", "status"].includes(this.state.view)) this._render_view();
 			},
 		});
 		this.page.set_primary_action(__("Refresh"), () => this._render_view(), "refresh");
@@ -201,8 +200,6 @@ class PMOProjectControl {
 		if (this.state.view === "executive") return this._view_executive($v);
 		if (this.state.view === "financial") return this._view_financial($v);
 		if (this.state.view === "status") return this._view_schedule($v);
-		if (this.state.view === "pva")
-			return this._view_report($v, REP_PVA, this._status_filters(), false);
 		if (this.state.view === "baseline") return this._view_baseline($v);
 		if (this.state.view === "change") return this._view_change($v);
 	}

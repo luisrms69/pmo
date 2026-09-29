@@ -79,6 +79,11 @@
 .pmo-sch table.x .tlink{cursor:pointer;color:var(--text-color);font-weight:600}
 .pmo-sch table.x .tlink:hover{color:var(--acc);text-decoration:underline}
 .pmo-sch .empty{padding:10px 2px;color:var(--text-muted);font-size:12px}
+/* 5. consumo de esfuerzo (barra de % consumido) */
+.pmo-sch table.x td.epct{text-align:left;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pmo-sch .ebar{display:inline-block;width:96px;height:9px;border-radius:5px;background:var(--subtle-fg,var(--gray-100));border:1px solid var(--border-color);vertical-align:middle;overflow:hidden;margin-right:8px}
+.pmo-sch .ebar>span{display:block;height:100%;background:#1f9d55;border-radius:5px}
+.pmo-sch .ebar>span.ov{background:#c02b2b}
 </style>
 
 {#- Cabecera + badge de estado del cronograma (derivado de slip vs línea base) -#}
@@ -196,5 +201,35 @@
 </div>
 {% else %}
 <div class="empty">Sin desviaciones en el cronograma al corte.</div>
+{% endif %}
+
+{#- 5. Consumo de esfuerzo por tarea (rescatado de Planificado vs Real). Presupuesto de esfuerzo: real
+    ACUMULADO al corte vs estimado TOTAL (expected_time). NO es plan-al-corte. Todas las hojas, con/sin
+    baseline. Reutiliza el estilo de la sección 4 (table.x). -#}
+<div class="sec">5. Consumo de esfuerzo por tarea <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">— real acumulado vs estimado total</span></div>
+{% if sv.effort %}
+<div class="xwrap">
+<table class="x">
+  <thead><tr><th>Tarea</th><th class="num">Horas estimadas (total)</th><th class="num">Horas reales (acumuladas al corte)</th><th class="num">% consumido</th></tr></thead>
+  <tbody>
+  {% for e in sv.effort %}
+    <tr>
+      <td><span class="tlink" data-task="{{ e.name }}">{{ e.subject }}</span></td>
+      <td class="num">{{ e.estimated }}</td>
+      <td class="num">{{ e.actual }}</td>
+      <td class="epct">
+        {%- if e.pct is none -%}—
+        {%- else -%}
+        {%- set w = 100 if e.pct > 100 else e.pct -%}
+        <span class="ebar"><span class="{% if e.pct > 100 %}ov{% endif %}" style="width:{{ w }}%"></span></span><span class="{% if e.pct > 100 %}bad{% endif %}" style="{% if e.pct > 100 %}font-weight:700{% endif %}">{{ e.pct }}%</span>
+        {%- endif -%}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty">Sin tareas hoja con esfuerzo.</div>
 {% endif %}
 </div>
