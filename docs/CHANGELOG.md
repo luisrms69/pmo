@@ -37,6 +37,12 @@ Rescate UX de PMO + evolución del Handoff a **Acta de Inicio / Charter** con au
 - **`project_economics.get_native_real_cost()`** — definición canónica única de `comparable_cost`
   (labor + externo, excluye material); de-duplicados los 5 consumidores previos (Financiera, PHI, dashboard
   económico, Closure, Financial Health), sin cambio de fórmula.
+- **Project Executive Report (Print Format estándar)** — reporte ejecutivo imprimible del Project (A4
+  landscape: encabezado, KPIs, distribución de Tasks por estado, horas previstas/registradas, hitos y
+  avance por fase con `Task.progress` nativo), **autocontenido en Jinja** sobre campos nativos de
+  Project/Task. **Único avance general = `Project.percent_complete`** (sin motor/`planned_progress`
+  paralelo; sin detalle Task-by-Task ni economía). Accesible desde Project → **PMO → "Reporte para
+  cliente"** (abre `/printview` con este formato).
 
 ### Changed
 - Indicador de cronograma previo (`_health`) renombrado a **"Estado de cronograma"** (En plazo / Con atraso /

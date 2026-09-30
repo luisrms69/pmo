@@ -26,8 +26,28 @@ frappe.ui.form.on("Project", {
 		pmo_risk_indicators(frm);
 		pmo_governance_cycle(frm);
 		pmo_committed_change_button(frm);
+		pmo_client_report_button(frm);
 	},
 });
+
+// --- REPORTE PARA CLIENTE: abre la vista de impresión del Project actual con el Print Format estándar
+// `Project Executive Report`; desde ahí se usa el PDF nativo de Frappe. Solo navegación; no toca el Print
+// Format ni ninguna otra funcionalidad PMO.
+function pmo_client_report_button(frm) {
+	frm.add_custom_button(
+		__("Reporte para cliente"),
+		() => {
+			const params = new URLSearchParams({
+				doctype: frm.doc.doctype,
+				name: frm.doc.name,
+				format: "Project Executive Report",
+				no_letterhead: 1,
+			});
+			window.open("/printview?" + params.toString(), "_blank");
+		},
+		__("PMO")
+	);
+}
 
 // --- FIN COMPROMETIDO: la fecha se muestra con el campo NATIVO read-only `pmo_committed_end_date` (no HTML).
 // La acción de cambio vive dentro del dropdown "PMO" (junto a las demás acciones), reutilizando el

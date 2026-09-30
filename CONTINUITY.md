@@ -9,9 +9,11 @@ Health Index (PHI) v1** (ADR-0013/0013a): motor `compute_phi` + adaptador + **PM
 Project Control/Portfolio + Cronograma como **check único** (compromiso → baseline vigente → N/E) + rename de
 la dimensión a **Commitment/Compromiso**; (3) **Financial Health v1** (ADR-0013b) independiente del PHI; (4)
 **`get_native_real_cost()`** canónico + de-dup de `comparable_cost`; (5) rename del semáforo antiguo a
-**"Estado de cronograma"**. Squash & Merge → tag `v0.18.0` sobre el merge commit → GitHub Release.
-**Pendiente NO bloqueante:** UX/navegación de la tabla de Portfolio. **Siguiente frente (no iniciado):
-Reportes PMO.**
+**"Estado de cronograma"**; (6) **Project Executive Report** — Print Format estándar imprimible del Project
+(autocontenido en Jinja; único avance = `Project.percent_complete`; sin detalle Task-by-Task ni economía),
+accesible desde Project → **PMO → "Reporte para cliente"**. Squash & Merge → tag `v0.18.0` sobre el merge
+commit → GitHub Release.
+**Pendiente NO bloqueante:** UX/navegación de la tabla de Portfolio.
 
 ---
 
