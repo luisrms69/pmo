@@ -89,14 +89,12 @@ _S_GREEN, _S_YELLOW, _S_RED = 1.0, 0.5, 0.0
 
 
 def _split_weights(weights: dict) -> dict:
-	"""Reparte los pesos de dimensión en pesos POR CHECK. Schedule conserva la proporción interna
-	SCH-1:SCH-2 = 20:15 escalada a su peso configurado. Devuelve {EXE-1, SCH-1, SCH-2, GOV-1}."""
-	exe = weights["execution"]
-	sch = weights["schedule"]
-	gov = weights["governance"]
-	sch1 = round(sch * 20 / 35)  # proporción histórica (20 de 35)
-	sch2 = sch - sch1
-	return {"EXE-1": exe, "SCH-1": sch1, "SCH-2": sch2, "GOV-1": gov}
+	"""Pesos POR CHECK. UN check por dimensión: Execution, Schedule (único, peso completo), Governance."""
+	return {
+		"EXE-1": weights["execution"],
+		"SCH-1": weights["schedule"],
+		"GOV-1": weights["governance"],
+	}
 
 
 def _coverage_level(ec):
@@ -181,50 +179,37 @@ def _phi_checks(signals: dict, weights: dict) -> list:
 			)
 		)
 
-	# ── Schedule — SCH-1: slip vs baseline normalizado por duración del plan ──
+	# ── Schedule — SCH-1 (ÚNICO): fin proyectado vs la fecha VINCULANTE. Precedencia (nunca ambas):
+	#   1) fecha comprometida con el cliente (días absolutos: <=0 verde · 1-10 amarillo · >10 rojo);
+	#   2) si NO hay compromiso, fin de línea base (normalizado por duración: ≤0 · ≤10% · >10%);
+	#   3) sin ninguna referencia → N/E (no inventar, no penalizar, no asumir cumplimiento).
+	# Cambiar la baseline NO altera Schedule cuando existe fecha comprometida (rama 1 no lee baseline).
+	has_committed = bool(signals.get("has_committed"))
+	slip_cm = signals.get("slip_committed_days")
 	slip_bl = signals.get("slip_baseline_days")
 	dur = signals.get("baseline_duration_days")
-	if not has_baseline or slip_bl is None or not dur or dur <= 0:
+	sw = w["SCH-1"]
+	if has_committed and slip_cm is not None:
+		s = _S_GREEN if slip_cm <= 0 else _S_YELLOW if slip_cm <= 10 else _S_RED
 		checks.append(
-			_chk(
-				"SCH-1",
-				"schedule",
-				w["SCH-1"],
-				CHECK_NE,
-				None,
-				"Baseline slip not normalizable (no baseline duration).",
-			)
+			_chk("SCH-1", "schedule", sw, CHECK_EVALUABLE, s, f"Forecast end slips {slip_cm}d vs committed date.")
 		)
-	else:
+	elif has_baseline and slip_bl is not None and dur and dur > 0:
 		r = slip_bl / dur
 		s = _S_GREEN if r <= 0 else _S_YELLOW if r <= 0.10 else _S_RED
 		checks.append(
 			_chk(
 				"SCH-1",
 				"schedule",
-				w["SCH-1"],
+				sw,
 				CHECK_EVALUABLE,
 				s,
 				f"Forecast end slips {slip_bl}d vs baseline ({round(r * 100)}% of {dur}d).",
 			)
 		)
-
-	# ── Schedule — SCH-2: slip vs fecha comprometida (días absolutos) ──
-	has_committed = bool(signals.get("has_committed"))
-	slip_cm = signals.get("slip_committed_days")
-	if not has_committed or slip_cm is None:
-		checks.append(_chk("SCH-2", "schedule", w["SCH-2"], CHECK_NA, None, "No committed end date set."))
 	else:
-		s = _S_GREEN if slip_cm <= 0 else _S_YELLOW if slip_cm <= 10 else _S_RED
 		checks.append(
-			_chk(
-				"SCH-2",
-				"schedule",
-				w["SCH-2"],
-				CHECK_EVALUABLE,
-				s,
-				f"Forecast end slips {slip_cm}d vs committed date.",
-			)
+			_chk("SCH-1", "schedule", sw, CHECK_NE, None, "No committed or baseline reference for schedule.")
 		)
 
 	# ── Governance — GOV-1: cumplimiento de controles requeridos (motor ADR-0014) ──

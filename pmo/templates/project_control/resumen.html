@@ -135,8 +135,8 @@
     <div class="phi-band" style="background:{{ phc.get(phi.band, '#666') }}">{{ phi.band_label }}</div>
   </div>
   <div class="phi-dims">
-    <div class="phi-d"><span class="l">{{ _("Execution") }} {{ tip(_("Fulfillment of the deliverables that should be completed by the cutoff date.")) }}</span><span class="v">{{ sc(phi.dimensions.execution.score) }}</span></div>
-    <div class="phi-d"><span class="l">{{ _("Schedule") }} {{ tip(_("Date compliance against baseline and committed date.")) }}</span><span class="v">{{ sc(phi.dimensions.schedule.score) }}</span></div>
+    <div class="phi-d"><span class="l">{{ _("Execution") }} {{ tip(_("Measures schedule compliance at the cutoff date, comparing the tasks that should already be completed according to the current baseline against those actually completed.")) }}</span><span class="v">{{ sc(phi.dimensions.execution.score) }}</span></div>
+    <div class="phi-d"><span class="l">{{ _("Commitment") }} {{ tip(_("Measures whether the projected completion date meets the date committed with the client. If there is no committed date, it uses the current baseline's completion date as the reference.")) }}</span><span class="v">{{ sc(phi.dimensions.schedule.score) }}</span></div>
     <div class="phi-d"><span class="l">{{ _("Governance") }} {{ tip(_("Fulfillment of the PMO controls required for the current stage.")) }}</span><span class="v">{{ sc(phi.dimensions.governance.score) }}</span></div>
     <div class="phi-d"><span class="l">{{ _("Coverage") }} {{ tip(_("How complete the available evidence used to compute PHI is.")) }}</span><span class="v">{{ phi.coverage_label }}{% if phi.evidence_coverage is not none %} · {{ (phi.evidence_coverage * 100)|round|int }}%{% endif %}</span></div>
   </div>

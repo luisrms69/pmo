@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PMO VERSION\n"
 "Report-Msgid-Bugs-To: it@buzola.mx\n"
-"POT-Creation-Date: 2026-09-29 23:10-0723\n"
-"PO-Revision-Date: 2026-09-29 23:10-0723\n"
+"POT-Creation-Date: 2026-09-30 00:22-0723\n"
+"PO-Revision-Date: 2026-09-30 00:22-0723\n"
 "Last-Translator: it@buzola.mx\n"
 "Language-Team: it@buzola.mx\n"
 "MIME-Version: 1.0\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:424
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:426
 #: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:113
 #: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:138
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:190
@@ -160,7 +160,7 @@ msgstr ""
 msgid "Active tasks"
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:423
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:425
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:189
 msgid "Actual (h)"
 msgstr ""
@@ -174,7 +174,7 @@ msgstr ""
 msgid "Actual hours at cutoff"
 msgstr ""
 
-#: pmo/health.py:291
+#: pmo/health.py:276
 msgid "Actual hours exceed the total estimated effort budget."
 msgstr ""
 
@@ -456,7 +456,7 @@ msgstr ""
 msgid "Authorized by"
 msgstr ""
 
-#: pmo/financial_health.py:141 pmo/health.py:266
+#: pmo/financial_health.py:141 pmo/health.py:251
 msgid "Authorized economic reference is inconsistent."
 msgstr ""
 
@@ -602,7 +602,7 @@ msgstr ""
 msgid "Baselines"
 msgstr ""
 
-#: pmo/phi.py:40 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:214
+#: pmo/phi.py:40 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:215
 msgid "Basic tracking"
 msgstr ""
 
@@ -614,8 +614,8 @@ msgstr ""
 msgid "Before baseline"
 msgstr ""
 
-#: pmo/health.py:26 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:284
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:315
+#: pmo/health.py:26 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:286
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:317
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:238
 msgid "Behind"
 msgstr ""
@@ -797,7 +797,10 @@ msgstr ""
 msgid "Commercial thread of the change. The commercial acceptance lives in the Quotation/Addendum workflow, not here."
 msgstr ""
 
-#: pmo/project_control.py:110 pmo/templates/project_control/executive.html:179
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:237
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:178 pmo/project_control.py:110
+#: pmo/templates/project_control/executive.html:179
+#: pmo/templates/project_control/resumen.html:139
 msgid "Commitment"
 msgstr ""
 
@@ -991,7 +994,7 @@ msgstr ""
 msgid "Could this potentially affect an authorized/controlled condition (scope, committed date, baseline, authorized economics)? Signal only — it does not create a Change Request."
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:236
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:238
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:180
 #: pmo/templates/project_control/resumen.html:141
 msgid "Coverage"
@@ -1070,10 +1073,6 @@ msgstr ""
 
 #: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:272
 msgid "Cycle detected in the supersession chain."
-msgstr ""
-
-#: pmo/templates/project_control/resumen.html:139
-msgid "Date compliance against baseline and committed date."
 msgstr ""
 
 #. Description of the 'Accepted on' (Date) field in DocType 'PMO Project
@@ -1252,7 +1251,7 @@ msgstr ""
 msgid "Effective-dated capacity: empty Employee = global baseline; with Employee = individual override. Applies from From Date until another row of the same type supersedes it. With no active row, the resource is shown as capacity missing (no value is assumed)."
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:410
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:412
 msgid "Effort"
 msgstr ""
 
@@ -1384,7 +1383,7 @@ msgstr ""
 msgid "Exact Addendum version (Quotation) that governance approved. Captured server-side when the change is Approved; updated by 'Reapprove addendum version' if a divergent new version is issued."
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:409
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:411
 msgid "Exceptions"
 msgstr ""
 
@@ -1543,6 +1542,7 @@ msgstr ""
 msgid "Financial"
 msgstr ""
 
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:238
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:181
 #: pmo/templates/project_control/resumen.html:156
 msgid "Financial health"
@@ -1552,18 +1552,18 @@ msgstr ""
 msgid "Financial health unavailable"
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:343
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:421
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:345
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:423
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:187
 msgid "Forecast > commitment"
 msgstr ""
 
-#: pmo/dashboard.py:54 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:417
+#: pmo/dashboard.py:54 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:419
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:183
 msgid "Forecast end"
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:290 pmo/project_control.py:91
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:292 pmo/project_control.py:91
 #: pmo/templates/project_control/executive.html:99
 msgid "Forecast exceeds commitment"
 msgstr ""
@@ -1609,10 +1609,6 @@ msgstr ""
 msgid "Fulfillment of the PMO controls required for the current stage."
 msgstr ""
 
-#: pmo/templates/project_control/resumen.html:138
-msgid "Fulfillment of the deliverables that should be completed by the cutoff date."
-msgstr ""
-
 #: pmo/templates/project_control/resumen.html:165
 msgid "Gap"
 msgstr ""
@@ -1633,7 +1629,7 @@ msgstr ""
 
 #. Option for the 'Area' (Select) field in DocType 'PMO Lessons Learned'
 #: pmo/pmo/doctype/pmo_lessons_learned/pmo_lessons_learned.json
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:235
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:237
 #: pmo/pmo/page/pmo_project_control/pmo_project_control.js:60
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:179
 #: pmo/templates/project_control/resumen.html:140
@@ -1679,8 +1675,8 @@ msgstr ""
 msgid "Hash del snapshot"
 msgstr ""
 
-#: pmo/dashboard.py:53 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:234
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:416
+#: pmo/dashboard.py:53 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:236
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:418
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:176
 msgid "Health"
 msgstr ""
@@ -1705,7 +1701,7 @@ msgstr ""
 msgid "High likelihood"
 msgstr ""
 
-#: pmo/health.py:309
+#: pmo/health.py:294
 msgid "High-exposure active risk without owner or response."
 msgstr ""
 
@@ -1881,7 +1877,7 @@ msgstr ""
 msgid "Insufficient"
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:226
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:227
 msgid "Insufficient execution data"
 msgstr ""
 
@@ -2090,6 +2086,14 @@ msgstr ""
 msgid "May affect controlled condition"
 msgstr ""
 
+#: pmo/templates/project_control/resumen.html:138
+msgid "Measures schedule compliance at the cutoff date, comparing the tasks that should already be completed according to the current baseline against those actually completed."
+msgstr ""
+
+#: pmo/templates/project_control/resumen.html:139
+msgid "Measures whether the projected completion date meets the date committed with the client. If there is no committed date, it uses the current baseline's completion date as the reference."
+msgstr ""
+
 #. Option for the 'Exposure' (Select) field in DocType 'PMO Project Risk'
 #. Option for the 'Exposure' (Select) field in DocType 'PMO Project Risk Item'
 #: pmo/pmo/doctype/pmo_project_risk/pmo_project_risk.json
@@ -2194,7 +2198,7 @@ msgstr ""
 msgid "No committed date"
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:254
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:256
 msgid "No customer"
 msgstr ""
 
@@ -2266,7 +2270,7 @@ msgstr ""
 msgid "No projects require attention right now."
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:327
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:329
 msgid "No projects require attention."
 msgstr ""
 
@@ -2356,7 +2360,7 @@ msgstr ""
 msgid "Not started: no progress or cost recorded yet."
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:225
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:226
 msgid "Not subject to PMO monitoring"
 msgstr ""
 
@@ -2382,13 +2386,13 @@ msgstr ""
 msgid "Objetivo y alcance"
 msgstr ""
 
-#: pmo/health.py:27 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:283
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:316
+#: pmo/health.py:27 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:285
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:318
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:232
 msgid "Off track"
 msgstr ""
 
-#: pmo/health.py:25 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:314
+#: pmo/health.py:25 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:316
 msgid "On schedule"
 msgstr ""
 
@@ -2494,12 +2498,12 @@ msgstr ""
 msgid "Owner"
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:234
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:236
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:175
 msgid "PHI"
 msgstr ""
 
-#: pmo/phi.py:36 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:214
+#: pmo/phi.py:36 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:215
 msgid "PHI unavailable"
 msgstr ""
 
@@ -2818,7 +2822,7 @@ msgstr ""
 msgid "Planificación de capacidad"
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:422
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:424
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:188
 msgid "Planned (h)"
 msgstr ""
@@ -2997,7 +3001,7 @@ msgstr ""
 msgid "Project progress"
 msgstr ""
 
-#: pmo/health.py:318
+#: pmo/health.py:303
 msgid "Project started without an effective baseline."
 msgstr ""
 
@@ -3116,7 +3120,7 @@ msgstr ""
 msgid "Readiness contractual/legal verificada"
 msgstr ""
 
-#: pmo/health.py:278
+#: pmo/health.py:263
 msgid "Real comparable cost exceeds the authorized cost."
 msgstr ""
 
@@ -3480,7 +3484,7 @@ msgstr ""
 msgid "Schedule commitment at risk"
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:311
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:313
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:182
 msgid "Schedule status"
 msgstr ""
@@ -3584,11 +3588,11 @@ msgstr ""
 msgid "Slip vs BL"
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:346
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:348
 msgid "Slip vs Baseline"
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:418
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:420
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:184
 msgid "Slip vs Baseline (d)"
 msgstr ""
@@ -3605,11 +3609,11 @@ msgstr ""
 msgid "Slip vs commit"
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:337
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:339
 msgid "Slip vs commitment"
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:419
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:421
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:185
 msgid "Slip vs commitment (d)"
 msgstr ""
@@ -4242,7 +4246,7 @@ msgstr ""
 msgid "With individual override"
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:289
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:291
 msgid "With overdue tasks"
 msgstr ""
 
@@ -4258,7 +4262,7 @@ msgstr ""
 msgid "Without Handoff"
 msgstr ""
 
-#: pmo/dashboard.py:78 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:285
+#: pmo/dashboard.py:78 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:287
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:244
 msgid "Without baseline"
 msgstr ""

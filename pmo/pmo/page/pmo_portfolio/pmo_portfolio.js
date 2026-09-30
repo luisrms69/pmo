@@ -234,7 +234,7 @@ class PMOPortfolio {
 			<table class="pmo-pf-table pmo-pf-phi">
 				<thead><tr>
 					<th>${__("Project")}</th><th>${__("PHI")}</th><th>${__("Health")}</th>
-					<th>${__("Execution")}</th><th>${__("Schedule")}</th><th>${__("Governance")}</th>
+					<th>${__("Execution")}</th><th>${__("Commitment")}</th><th>${__("Governance")}</th>
 					<th>${__("Coverage")}</th><th>${__("Financial health")}</th>
 				</tr></thead>
 				<tbody>${rows}</tbody>

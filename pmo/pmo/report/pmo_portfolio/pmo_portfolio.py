@@ -175,7 +175,7 @@ def _columns():
 		col("phi", N_("PHI"), "Int", 70),
 		col("phi_health", N_("Health"), "Data", 120),
 		col("phi_execution", N_("Execution"), "Int", 95),
-		col("phi_schedule", N_("Schedule"), "Int", 95),
+		col("phi_schedule", N_("Commitment"), "Int", 95),  # etiqueta visible de la dimensión PHI (clave interna sigue 'schedule')
 		col("phi_governance", N_("Governance"), "Int", 100),
 		col("phi_coverage", N_("Coverage"), "Data", 100),
 		col("fin_health", N_("Financial health"), "Data", 130),

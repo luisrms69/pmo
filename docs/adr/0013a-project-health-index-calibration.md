@@ -29,12 +29,16 @@ adaptador los lee de Settings con fallback a defaults.
 | Check | Dim | Peso | Verde 1.0 | Amarillo 0.5 | Rojo 0.0 | N/A | N/E |
 |---|---|---:|---|---|---|---|---|
 | **EXE-1** entrega al corte | Execution | 50 | `done/due ≥ 90%` | `70–90%` | `< 70%` | `due==0` | sin baseline |
-| **SCH-1** slip vs baseline (norm.) | Schedule | 20 | `slip/dur ≤ 0` | `≤ 10%` | `> 10%` | — | sin baseline/duración |
-| **SCH-2** slip vs compromiso (días) | Schedule | 15 | `≤ 0` | `1–10` | `> 10` | sin `pmo_committed_end_date` | — |
+| **SCH-1** fin proyectado vs fecha vinculante | Schedule | 35 | ver precedencia | ver precedencia | ver precedencia | — | sin ninguna referencia |
 | **GOV-1** controles requeridos | Governance | 15 | `cumplidos/req == 1` | `≥ 0.5` | `< 0.5` | `req==0` | — |
 
+- **Cronograma = UN solo check** (peso completo 35). Referencia por **precedencia (nunca ambas a la vez)**:
+  1. **Fecha comprometida** con el cliente → `forecast_end − committed` en días: `≤0` verde · `1–10` amarillo · `>10` rojo.
+  2. Solo si **no hay compromiso** y sí hay **fin de línea base** → `final_date_slip_days / duración_baseline`: `≤0` · `≤10%` · `>10%`.
+  3. Sin ninguna referencia → **N/E** (no inventar, no penalizar, no asumir cumplimiento).
+  Cambiar la baseline **no altera Schedule** cuando existe fecha comprometida (rama 1 no lee baseline). Elimina la
+  redundancia SCH-1/SCH-2 previa (ambos medían el retraso del fin proyectado contra dos anclas).
 - `done/due` = `completed_by_cutoff / baseline_due_by_cutoff` (`build_status_report`).
-- `slip/dur` = `final_date_slip_days` / duración del snapshot de baseline (inicio→fin del MISMO snapshot).
 - `req/cumplidos` desde `_evaluate/_facts`: estados `completo`(=cumplido) y `pendiente` cuentan como requeridos;
   `no_aplica` se excluye.
 - `s_c`: verde 1.0 / amarillo 0.5 / rojo 0.0.
@@ -102,13 +106,14 @@ baseline/compromiso caen a Model Scope 0.35–0.85 → provisional, como corresp
   condiciones/caps. No se esconde un incumplimiento como N/A.
 
 ## 8. Model/calibration identity
-`phi-v1` versiona: pesos (50/35/15), catálogo (EXE-1, SCH-1, SCH-2, GOV-1), thresholds, guardrails/caps,
+`phi-v1` versiona: pesos (50/35/15), catálogo (EXE-1, SCH-1 único, GOV-1), thresholds, guardrails/caps,
 reglas de estado/cobertura/emisión y bandas (80/50). Activar Financial/Resources/Risk con peso, añadir checks,
 o cambiar pesos/aplicabilidad ⇒ **nueva identidad** (scores no directamente comparables).
 
 ## 9. Limitaciones aceptadas v1
 - Financial/Resources solo detectan el extremo negativo (overrun) e inconsistencia; no miden eficiencia.
-- SCH-1 normaliza por duración del snapshot de baseline (aprox. defendible del span planeado).
+- SCH-1 evalúa contra la fecha comprometida (preferente) o, si no hay, contra el fin de baseline normalizado
+  por duración; una sola referencia por evaluación (nunca ambas).
 - GOV-1 mide cumplimiento de controles, no su calidad interna.
 - Sin reproducibilidad histórica: APPLICABLE cambia con la vida del proyecto.
 

@@ -76,7 +76,8 @@ permanecen versionados en código (no se convierte PMO Settings en catálogo gen
 Se **elimina** el piso estructural que forzaba "Diagnostic only" por baseline ausente. Un proyecto PMO sin
 baseline **conserva PHI**: la carencia pega en **Governance** (control baseline pendiente) y en una
 **critical condition estructural** (`governance_baseline_missing`, cap At Risk); los checks que genuinamente
-dependen del baseline (EXE-1, SCH-1) quedan **N/E** (bajan Evidence Coverage), sin fabricar ni ocultar.
+dependen de una referencia (EXE-1 del baseline; SCH-1 de compromiso o baseline) quedan **N/E** (bajan Evidence
+Coverage), sin fabricar ni ocultar.
 
 ### D9 — Critical conditions / caps: solo la BANDA, nunca el número
 El PHI matemático es **auditable e inmutable**. Un critical cap puede **empeorar la banda** (techo `At Risk`),

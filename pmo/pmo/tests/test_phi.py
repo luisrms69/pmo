@@ -81,14 +81,14 @@ class TestPHIEngine(unittest.TestCase):
 		self.assertEqual(r["band"], HEALTH_AT_RISK)
 		self.assertEqual(r["dimensions"]["execution"]["score"], 0)
 
-	# 3) Schedule deteriorado
+	# 3) Schedule deteriorado (check único; con compromiso presente manda el compromiso)
 	def test_schedule_degraded(self):
 		s = _healthy()
-		s["slip_baseline_days"] = 20  # 20% → rojo SCH-1
-		s["slip_committed_days"] = 30  # > 10d → rojo SCH-2
+		s["slip_committed_days"] = 30  # > 10d vs compromiso → rojo
 		r = compute_phi(s)
-		self.assertEqual(r["phi"], 65)  # (50 + 0 + 0 + 15)/100
+		self.assertEqual(r["phi"], 65)  # (50 + 0 + 15)/100
 		self.assertEqual(r["band"], HEALTH_AT_RISK)
+		self.assertEqual(r["dimensions"]["schedule"]["score"], 0)
 
 	# 4) Governance deteriorada — se refleja en el score (peso 15), sigue On Track (85)
 	def test_governance_degraded_stays_on_track(self):
@@ -219,6 +219,8 @@ class TestPHIEngine(unittest.TestCase):
 		s["due_by_cutoff"] = None
 		s["slip_baseline_days"] = None
 		s["baseline_duration_days"] = None
+		s["has_committed"] = False  # sin compromiso ni baseline → Schedule también N/E
+		s["slip_committed_days"] = None
 		s["gov_fulfilled"] = 1
 		r = compute_phi(s)
 		self.assertIsNone(r["phi"])
@@ -228,38 +230,36 @@ class TestPHIEngine(unittest.TestCase):
 		codes = [c["code"] for c in r["critical_conditions"]]
 		self.assertIn("governance_baseline_missing", codes)  # deficiencia visible
 
-	# 13) EXE evaluable pero SCH-2 N/A → número emitido; N/A baja Model Scope
+	# 13) N/A legítimo (GOV N/A) → número emitido; N/A baja Model Scope
 	def test_na_reduces_model_scope_but_emits(self):
 		s = _healthy()
-		s["has_committed"] = False  # SCH-2 N/A
-		s["slip_committed_days"] = None
+		s["gov_required"] = 0  # GOV N/A (aún no aplican controles)
+		s["gov_fulfilled"] = 0
 		r = compute_phi(s)
-		self.assertEqual(_check(r, "SCH-2")["state"], CHECK_NA)
-		self.assertIsNotNone(r["phi"])  # EXE evaluable → sí hay número
-		self.assertEqual(r["model_scope"], 0.85)  # 85/100
+		self.assertEqual(_check(r, "GOV-1")["state"], CHECK_NA)
+		self.assertIsNotNone(r["phi"])  # EXE + SCH evaluables → sí hay número
+		self.assertEqual(r["model_scope"], 0.85)  # (50+35)/100 ; GOV N/A fuera
 
-	# 14) EXE evaluable + SCH-1 N/E → cobertura parcial
+	# 14) Schedule N/E (sin compromiso y sin duración de baseline) → cobertura parcial
 	def test_partial_coverage(self):
 		s = _healthy()
-		s["baseline_duration_days"] = None  # SCH-1 N/E
-		s["has_committed"] = False  # SCH-2 N/A
+		s["baseline_duration_days"] = None  # baseline no normalizable
+		s["has_committed"] = False  # sin compromiso → cae a baseline; sin duración → N/E
 		s["slip_committed_days"] = None
 		r = compute_phi(s)
 		self.assertEqual(_check(r, "SCH-1")["state"], CHECK_NE)
 		self.assertIsNotNone(r["phi"])
-		self.assertEqual(r["coverage_level"], "partial")  # EC 65/85 = 0.765
+		self.assertEqual(r["coverage_level"], "partial")  # EC (50+15)/100 = 0.65
 		self.assertFalse(r["portfolio_comparable"])
 
 	# 15) Piso de Model Scope: con pesos que dejan MS<0.50 → sin número
 	def test_low_model_scope_no_number(self):
 		w = {"execution": 30, "schedule": 14, "governance": 56}
 		s = _healthy()
-		s["has_committed"] = False  # SCH-2 N/A
-		s["slip_committed_days"] = None
 		s["gov_required"] = 0  # GOV N/A
 		s["gov_fulfilled"] = 0
 		r = compute_phi(s, weights=w)
-		# aplicable = EXE(30 eval) + SCH-1(8 eval) = 38 → MS 0.38 < 0.50
+		# aplicable = EXE(30 eval) + SCH-1(14 eval) = 44 → MS 0.44 < 0.50
 		self.assertLess(r["model_scope"], 0.50)
 		self.assertIsNone(r["phi"])
 		self.assertEqual(r["reason"], PHI_REASON_LOW_SCOPE)
@@ -284,6 +284,68 @@ class TestPHIEngine(unittest.TestCase):
 		r = compute_phi(s)
 		self.assertEqual(r["phi"], 50)
 		self.assertEqual(r["band"], HEALTH_AT_RISK)
+
+
+class TestPHIScheduleSingleCheck(unittest.TestCase):
+	"""Cronograma = UN solo check con precedencia: compromiso > baseline > N/E (nunca ambas)."""
+
+	def test_committed_takes_precedence_over_baseline(self):
+		s = _healthy()
+		s["has_committed"] = True
+		s["slip_committed_days"] = 0  # a tiempo vs compromiso → verde
+		s["slip_baseline_days"] = 999  # baseline muy tarde (sería rojo) — debe IGNORARSE
+		s["baseline_duration_days"] = 100
+		chk = _check(compute_phi(s), "SCH-1")
+		self.assertEqual(chk["state"], CHECK_EVALUABLE)
+		self.assertEqual(chk["s_c"], 1.0)
+		self.assertIn("committed date", chk["detail"])
+
+	def test_only_committed(self):
+		s = _healthy()
+		s["has_committed"] = True
+		s["slip_committed_days"] = 20  # > 10 → rojo
+		s["has_baseline"] = False
+		s["slip_baseline_days"] = None
+		s["baseline_duration_days"] = None
+		chk = _check(compute_phi(s), "SCH-1")
+		self.assertEqual(chk["state"], CHECK_EVALUABLE)
+		self.assertEqual(chk["s_c"], 0.0)
+		self.assertIn("committed date", chk["detail"])
+
+	def test_only_baseline(self):
+		s = _healthy()
+		s["has_committed"] = False
+		s["slip_committed_days"] = None
+		s["slip_baseline_days"] = 5  # 5/100 = 5% → amarillo
+		s["baseline_duration_days"] = 100
+		chk = _check(compute_phi(s), "SCH-1")
+		self.assertEqual(chk["state"], CHECK_EVALUABLE)
+		self.assertEqual(chk["s_c"], 0.5)
+		self.assertIn("baseline", chk["detail"])
+
+	def test_no_reference_is_ne(self):
+		s = _healthy()
+		s["has_committed"] = False
+		s["slip_committed_days"] = None
+		s["has_baseline"] = False
+		s["slip_baseline_days"] = None
+		s["baseline_duration_days"] = None
+		self.assertEqual(_check(compute_phi(s), "SCH-1")["state"], CHECK_NE)
+
+	def test_changing_baseline_does_not_change_schedule_when_committed(self):
+		base = _healthy()
+		base["has_committed"] = True
+		base["slip_committed_days"] = 3  # amarillo por compromiso
+
+		def sched_sc(slip_bl, dur):
+			s = dict(base)
+			s["slip_baseline_days"] = slip_bl
+			s["baseline_duration_days"] = dur
+			return _check(compute_phi(s), "SCH-1")["s_c"]
+
+		# Dos baselines radicalmente distintas → Schedule NO cambia (manda el compromiso).
+		self.assertEqual(sched_sc(0, 100), sched_sc(500, 30))
+		self.assertEqual(sched_sc(0, 100), 0.5)  # sigue siendo el veredicto del compromiso
 
 
 class TestHealthNoRegression(unittest.TestCase):
