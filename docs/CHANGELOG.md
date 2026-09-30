@@ -1,5 +1,79 @@
 # Changelog — pmo
 
+## [0.18.0] — 2026-09-28
+
+Rescate UX de PMO + evolución del Handoff a **Acta de Inicio / Charter** con autorización, gobierno del
+**Fin comprometido**, y fusión de "Planificado vs Real" dentro de Estado/Cronograma.
+
+### Added
+- **Panel PMO / Ciclo de Gobernanza en Project** — pestaña "PMO" nativa en el form del Project: "Responsables
+  y contexto" (PM editable + responsable operativo / contacto / Fin comprometido como campos **nativos
+  read-only**, visibles con `depends_on`) y **"Ciclo de Gobernanza"** operable 2×3
+  (Acta→Línea base→Riesgos→Cambios→Cierre→Revisión), reutilizando `project_governance_state` (mismo motor
+  `_evaluate`). Dropdown **PMO** con acciones + "Cambiar fin comprometido".
+- **PMO Project Handoff = Acta de Inicio / Charter (ADR-0014 D3 enmendado, snapshot v2)** — captura server-side
+  de objetivo, alcance de alto nivel, Fin comprometido (obligatorio), checks de coordinación, readiness
+  contractual/legal y **autorización formal** (`authorized_by` + confirmación explícita). PM canónico
+  (`Project.pmo_project_manager`) read-only/sellado; `operational_owner`/`customer_contact` capturados en el
+  Acta (contacto filtrado por Customer vía Dynamic Link) y **sincronizados al Project** en `on_submit`.
+- **Cambio gobernado de Fin comprometido (ADR-0007 D6)** — endpoint `pmo.schedule_commit.change_committed_end_date`
+  (autoridad PMO + motivo obligatorio); registra Version + Comment; el campo del Project es read-only.
+
+- **Estado/Cronograma — sección "Consumo de esfuerzo por tarea"** (aditiva; secciones 1–4 intactas):
+  por tarea hoja, estimado TOTAL (`Task.expected_time`) vs real ACUMULADO al corte
+  (`get_actual_hours_by_task_asof`) + % consumido con barra. Funciona con o sin baseline; NO calcula
+  "planificado al corte" ni prorratea `expected_time`.
+- **PMO Project Health Index (PHI) v1 (ADR-0013/0013a)** — índice compuesto de salud del proyecto
+  (Execution 50 · Commitment 35 · Governance 15) que **compone** señales canónicas existentes (no recalcula):
+  motor puro `compute_phi` (`health.py`) + adaptador `pmo/phi.py`; gate Execution-evaluable, Model Scope /
+  Evidence Coverage, y caps categóricos (techo At Risk, sin alterar el número) por inconsistencia económica,
+  riesgo de alta exposición no gestionado y baseline faltante. Financial/Resources/Risk actúan como
+  guardrails/condiciones (sin peso). Cronograma = **check único** con precedencia fecha comprometida →
+  fin de línea base vigente → N/E. **PMO Settings** (Single) para los pesos de dimensión (Governance
+  calculado). Integrado en Project Control → Resumen (bloque "Salud del proyecto" con tooltips) y Portfolio.
+- **Financial Health / Salud financiera v1 (ADR-0013b)** — indicador financiero **independiente del PHI**:
+  `cost_gap = comparable_cost/authorized_cost − Project.percent_complete` (avance nativo, sin recalcular; no
+  EVM); estados Healthy / Cost pressure / Unfavorable / Over budget + N/A. Integrado en Resumen y Portfolio.
+- **`project_economics.get_native_real_cost()`** — definición canónica única de `comparable_cost`
+  (labor + externo, excluye material); de-duplicados los 5 consumidores previos (Financiera, PHI, dashboard
+  económico, Closure, Financial Health), sin cambio de fórmula.
+- **Project Executive Report (Print Format estándar)** — reporte ejecutivo imprimible del Project (A4
+  landscape: encabezado, KPIs, distribución de Tasks por estado, horas previstas/registradas, hitos y
+  avance por fase con `Task.progress` nativo), **autocontenido en Jinja** sobre campos nativos de
+  Project/Task. **Único avance general = `Project.percent_complete`** (sin motor/`planned_progress`
+  paralelo; sin detalle Task-by-Task ni economía). Accesible desde Project → **PMO → "Reporte para
+  cliente"** (abre `/printview` con este formato).
+
+### Changed
+- Indicador de cronograma previo (`_health`) renombrado a **"Estado de cronograma"** (En plazo / Con atraso /
+  Desviado) en Portfolio, Workspace y Print; **"Salud del proyecto" queda reservado al PHI** y se retiró el
+  pill antiguo de la cabecera de Resumen.
+- Retirada la pestaña **"Planned vs Actual"** de Project Control (absorbida por Estado/Cronograma); el
+  Script Report `PMO Planned vs Actual` y su shortcut de Workspace se conservan.
+- Retirado el JS legado del flujo Project→Handoff (`public/js/pmo_project_handoff.js`) y su `doctype_js`.
+- Docs actualizadas: ADR-0007, ADR-0008, ADR-0011, ADR-0014, `arquitectura.md`, `fechas-comprometidas.md`,
+  `planificado-vs-real.md`, `change-control.md`; nuevas guías `acta-de-inicio.md` y `cierre-y-revision.md`;
+  nuevos ADR-0013 (PHI marco), ADR-0013a (calibración `phi-v1`) y ADR-0013b (Financial Health `fin-v1`).
+
+## [0.17.0] — 2026-09-25
+
+Governance Lifecycle completo (ADR-0014) + Risk Analysis ligero (ADR-0016). Ciclo documental de gobierno del
+Project reutilizando lo existente, sin motores/aprobaciones/workflows paralelos.
+
+### Added
+- **Ciclo de Gobernanza (ADR-0014)** — `PMO Project Handoff` (transferencia), `PMO Project Closure`
+  (snapshot-only, guard terminal + CR abiertos + aceptación), `PMO Post-Project Review` + child
+  `PMO Lessons Learned` (mejora continua vía ToDo). Motor único `pmo/governance_inbox.py` (`_evaluate`/
+  `_facts`); estado de ciclo derivado (`pmo/governance.py`, sin workflow); exclusión de gobernanza con
+  autoridad PMO server-side. Dashboard transversal (`governance_board` + Custom HTML Block) e índice de
+  expediente en Project Control.
+- **Risk Analysis ligero (ADR-0016)** — `PMO Project Risk Assessment` + `PMO Project Risk Item` (cuestionario
+  administrable `PMO Risk Question`, exposición 3×3, owner/status, reporte `PMO Project Risk Register`).
+
+### Notes
+- Residuo de BD registrado: `tabPMO Project Charter` huérfano tras reemplazar Charter por Handoff (sin impacto
+  funcional; reconciliación diferida).
+
 ## [0.16.0] — 2026-09-12
 
 Arquitectura de reporting canónica de Project Control: una fuente, muchas vistas. Introduce el contexto

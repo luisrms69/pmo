@@ -12,16 +12,27 @@
   "handoff_date",
   "column_break_hdr",
   "project_manager",
+  "committed_end_date",
   "section_parties",
   "operational_owner",
   "customer_contact",
-  "section_summary",
+  "section_scope",
+  "project_objective",
+  "scope_high_level",
+  "section_transfer",
   "handoff_summary",
+  "section_transfer_checks",
+  "pm_informed_coordinated",
+  "internal_team_informed",
+  "column_break_checks",
+  "startup_conditions_reviewed",
   "contractual_legal_ready",
+  "section_authorization",
+  "authorized_by",
+  "start_authorization_confirmed",
   "section_snapshot",
   "customer",
   "company",
-  "committed_end_date",
   "proposal_reference",
   "column_break_snap",
   "issued_by",
@@ -56,11 +67,21 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Responsable interno de la gestión del proyecto.",
+   "description": "Project Manager canónico, tomado de Project.pmo_project_manager (fuente única). Read-only en el Acta: no se captura ni se elige aquí. Al emitir se congela como evidencia histórica en el snapshot; NO se sincroniza de vuelta al Project.",
+   "fetch_from": "project.pmo_project_manager",
    "fieldname": "project_manager",
    "fieldtype": "Link",
    "label": "Project Manager",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "description": "Fecha comprometida de terminación autorizada en el Acta. Es la fuente formal del compromiso inicial; al emitir (Submit) se copia a Project (pmo_committed_end_date). No depende de que el Project ya tenga una fecha cargada.",
+   "fieldname": "committed_end_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Fin comprometido",
+   "reqd": 1
   },
   {
    "fieldname": "section_parties",
@@ -68,27 +89,44 @@
    "label": "Responsables"
   },
   {
-   "description": "Se toma del Project (Responsable operativo interno) y se congela al emitir (Submit).",
-   "fetch_from": "project.pmo_operational_owner",
+   "description": "Responsable interno de la ejecución diaria. Se captura en el Acta; al emitir se sincroniza a Project.pmo_operational_owner y queda congelado en el Handoff.",
    "fieldname": "operational_owner",
    "fieldtype": "Link",
    "label": "Responsable operativo interno",
    "options": "Employee",
-   "read_only": 1
+   "reqd": 1
   },
   {
-   "description": "Se toma del Project (Contacto principal del cliente) y se congela al emitir (Submit).",
-   "fetch_from": "project.pmo_customer_contact",
+   "description": "Contacto principal del cliente. El selector muestra solo contactos del Customer del Project (define el Customer en el Project primero). Al emitir se sincroniza a Project.pmo_customer_contact y queda congelado en el Handoff.",
    "fieldname": "customer_contact",
    "fieldtype": "Link",
    "label": "Contacto principal del cliente",
    "options": "Contact",
-   "read_only": 1
+   "reqd": 1
   },
   {
-   "fieldname": "section_summary",
+   "fieldname": "section_scope",
    "fieldtype": "Section Break",
-   "label": "Resumen de handoff"
+   "label": "Objetivo y alcance"
+  },
+  {
+   "description": "Resultado que busca conseguir el proyecto. Texto breve; no repite el detalle de Proposal/Project.",
+   "fieldname": "project_objective",
+   "fieldtype": "Small Text",
+   "label": "Objetivo del proyecto",
+   "reqd": 1
+  },
+  {
+   "description": "Alcance de alto nivel del proyecto. No es WBS ni duplica el detalle de Proposal/Project.",
+   "fieldname": "scope_high_level",
+   "fieldtype": "Small Text",
+   "label": "Alcance de alto nivel",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_transfer",
+   "fieldtype": "Section Break",
+   "label": "Transferencia a ejecución"
   },
   {
    "description": "Resume qué se transfiere al equipo de ejecución: contexto relevante del proyecto, acuerdos de arranque, pendientes conocidos, dependencias inmediatas y cualquier consideración que el responsable operativo deba conocer antes de iniciar.\n\nIncluye, cuando aplique: acuerdos relevantes del kickoff, pendientes abiertos, dependencias con cliente o terceros, decisiones ya tomadas y consideraciones operativas importantes.",
@@ -98,11 +136,59 @@
    "reqd": 1
   },
   {
+   "fieldname": "section_transfer_checks",
+   "fieldtype": "Section Break"
+  },
+  {
    "default": "0",
-   "description": "PMO confirms that, where applicable, the requirements needed to start execution were verified (e.g. contracts, NDAs, orders/authorizations, commercial terms or other contractual/legal requirements needed to begin). This is not a legal approval of the documents, nor a capture of contracts; only a readiness confirmation before starting execution. Required before issuing the Handoff.",
+   "description": "El Project Manager fue informado y la transferencia a ejecución se coordinó con él. Requerido antes de emitir el Handoff.",
+   "fieldname": "pm_informed_coordinated",
+   "fieldtype": "Check",
+   "label": "PM informado y transferencia coordinada"
+  },
+  {
+   "default": "0",
+   "description": "El equipo interno necesario para el arranque fue informado de la transferencia. Requerido antes de emitir el Handoff.",
+   "fieldname": "internal_team_informed",
+   "fieldtype": "Check",
+   "label": "Equipo interno necesario informado"
+  },
+  {
+   "fieldname": "column_break_checks",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Las condiciones de arranque y los pendientes conocidos se revisaron con el Project Manager. Requerido antes de emitir el Handoff.",
+   "fieldname": "startup_conditions_reviewed",
+   "fieldtype": "Check",
+   "label": "Condiciones de arranque y pendientes revisados"
+  },
+  {
+   "default": "0",
+   "description": "PMO confirma que, cuando aplica, los requisitos para iniciar la ejecución se verificaron (p. ej. contratos, NDAs, órdenes/autorizaciones, términos comerciales u otros requisitos contractuales/legales necesarios para comenzar). No es una aprobación jurídica de los documentos ni una captura de contratos; solo una confirmación de readiness antes de iniciar. Requerido antes de emitir el Handoff.",
    "fieldname": "contractual_legal_ready",
    "fieldtype": "Check",
-   "label": "Contractual / Legal Readiness Verified"
+   "label": "Readiness contractual/legal verificada"
+  },
+  {
+   "fieldname": "section_authorization",
+   "fieldtype": "Section Break",
+   "label": "Autorización"
+  },
+  {
+   "description": "Nombre y cargo/rol de la persona que autorizó explícitamente el inicio del proyecto. Puede ser interna o externa (cliente, sponsor, dirección u otra autoridad competente). No es necesario capturar nombre/cargo/organización por separado.",
+   "fieldname": "authorized_by",
+   "fieldtype": "Data",
+   "label": "Autorizado por",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Confirma que una persona con autoridad para autorizar el inicio del proyecto otorgó explícitamente su autorización y que ésta fue comunicada al Project Manager. Requerido antes de emitir el Handoff.",
+   "fieldname": "start_authorization_confirmed",
+   "fieldtype": "Check",
+   "label": "Autorización explícita para iniciar obtenida"
   },
   {
    "collapsible": 1,
@@ -125,12 +211,6 @@
    "fieldtype": "Link",
    "label": "Empresa",
    "options": "Company",
-   "read_only": 1
-  },
-  {
-   "fieldname": "committed_end_date",
-   "fieldtype": "Date",
-   "label": "Fecha comprometida",
    "read_only": 1
   },
   {

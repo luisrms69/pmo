@@ -1,6 +1,6 @@
 # ADR-0011: Contexto canónico de Project Control — una fuente, muchas vistas
 
-**App:** pmo · **Rama protegida:** version-16 · **Estado:** Proposed · **Ciclo:** previo al Reporte Ejecutivo de Proyecto (post v0.15.0)
+**App:** pmo · **Rama protegida:** version-16 · **Estado:** Accepted (implementado) · **Ciclo:** previo al Reporte Ejecutivo de Proyecto (post v0.15.0)
 
 ## Contexto
 
@@ -30,9 +30,11 @@ Todo reporte **integral** de un Project consume un único compositor:
 build_project_control(project, cutoff=None, sections=None, audience="internal") -> dict
 ```
 
-- Devuelve una **estructura estable** de secciones:
-  `project · executive · schedule · baseline · exceptions · planning · resources · scope_changes ·
-  hours · costs · freshness · updates`.
+- Devuelve una **estructura estable** de secciones. Implementadas hoy (constantes en `project_control.py`):
+  `project · executive · schedule · planning · scope_changes` (DEFAULT_SECTIONS) más las **opt-in**
+  `costs` (gate económico, ADR-0012), `governance` (expediente/ciclo, ADR-0014 D8) y `risk` (ADR-0016), que
+  solo solicitan los endpoints/Page que las consumen. Otras secciones previstas (`baseline`/comparación,
+  `exceptions`, `resources`, `hours`, `freshness`, `updates`) se materializarán cuando su vista las consuma (D7).
 - `cutoff=None` → fecha de corte del Project o **hoy** (ADR-0006). `sections=None` → **contexto completo**;
   una **lista** explícita → subconjunto (performance / secciones bajo demanda). `audience` ∈
   `{internal, portal}`.
@@ -51,6 +53,8 @@ build_project_control(project, cutoff=None, sections=None, audience="internal") 
 | Change Requests | lógica de CR (ADR-0005) |
 | Horas | nativo (`Σ Task.expected_time` de hojas / `Project.actual_time`, ADR-0008) |
 | Costos | ERPNext + agregador propio **solo si** no hay nativo (se define al abordar la sección) |
+| Gobierno (expediente + ciclo de vida) | `pmo/governance.py` (`build_expediente`) + motor de inbox (`_evaluate`/`_facts`), ADR-0014 |
+| Riesgos (señales derivadas) | `pmo/risk_signals.py` (`compute_risk_signals`), ADR-0016 |
 
 Si una métrica **ya existe** en un motor, se **consume**; **no se copia**.
 
@@ -85,7 +89,7 @@ pmo/
  ├─ health.py                     ← health canónico
  ├─ ... motores (status_date, baseline, capacity, change requests)
  └─ templates/project_control/
-        executive.html · macros.html · print.css
+        executive.html · resumen.html · estado.html · financial.html · macros.html · print.css
 ```
 
 ### D6 — Reportes especializados pueden consumir su motor directamente

@@ -29,6 +29,14 @@ import frappe
 
 EXECUTIVE_ROLE = "PMO Executive Access"
 _WRITE_PTYPES = ("write", "create", "delete", "submit", "cancel", "amend")
+# Autoridad PMO transversal: puede OPERAR ciertos artefactos de gobierno de cualquier proyecto (no solo el
+# owner). Se usa para el Post-Project Review (responsabilidad PMO por contrato de gobernanza). P4 de lectura
+# se mantiene por visibilidad del Project; esto solo habilita la escritura del rol supervisor.
+_PMO_AUTHORITY_ROLES = ("PMO Manager", "System Manager")
+
+
+def _has_pmo_authority(user):
+	return user == "Administrator" or bool(set(frappe.get_roles(user)) & set(_PMO_AUTHORITY_ROLES))
 
 
 def _is_global_reader(user):
@@ -341,8 +349,9 @@ def get_permission_query_conditions_review(user=None):
 
 
 def has_permission_review(doc, ptype=None, user=None):
-	"""READ = visibilidad del Project. WRITE/CREATE/SUBMIT/CANCEL/AMEND = solo el owner del Project
-	(documento de gobierno). Executive read-only; SHARE denegado. Siempre True/False."""
+	"""READ = visibilidad del Project. WRITE/CREATE/SUBMIT/CANCEL/AMEND = autoridad PMO (responsabilidad de la
+	revisión posterior por contrato de gobernanza) **o** el owner del Project. Executive read-only; SHARE
+	denegado. Siempre True/False."""
 	user = user or frappe.session.user
 	if user == "Administrator":
 		return True
@@ -352,6 +361,10 @@ def has_permission_review(doc, ptype=None, user=None):
 	if ptype == "share":
 		return False
 	if ptype in _WRITE_PTYPES:
+		# La revisión posterior es responsabilidad PMO: la autoridad PMO puede operarla en cualquier proyecto;
+		# el owner del Project también (compatibilidad con el flujo previo). P4 de lectura intacto.
+		if _has_pmo_authority(user):
+			return True
 		return frappe.db.get_value("Project", project, "owner") == user
 	return is_project_visible(project, user)  # read
 

@@ -1,34 +1,37 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-09-26
-**Rama activa:** `feat/project-governance-lifecycle` (base `version-16` @ v0.16.0 → objetivo PR **v0.17.0**)
-**Tarea actual:** `/ship` de consolidación **v0.17.0**. La rama reúne, en un solo release, TODA la iniciativa
-Governance Lifecycle acumulada desde v0.16.0 (Governance/expediente, Handoff, Closure, Post-Project Review,
-Mejora continua, **Change Control v2 B4–B8** ADR-0015) **+ R1/Risk Analysis** (ADR-0016). Squash & Merge →
-tag `v0.17.0` sobre el merge commit → GitHub Release. **Siguiente bloque (no iniciado): rescate/replanteamiento
-integral de la UX global de PMO** (ver Nota en ADR-0016). Residuo conocido dev: tabla huérfana
-`tabPMO Project Risk Update` en `pmo-v16.dev` (no forma parte del repo; conservada). Vestigio menor:
-`last_reviewed_on/by` del Risk Assessment sin escritor (no se retiran en este cierre).
+**Fecha:** 2026-09-30
+**Rama activa:** `feat/pmo-home-rescate` (base `version-16` @ v0.17.0 → objetivo PR **v0.18.0**, MINOR)
+**Tarea actual:** `/ship` de cierre **v0.18.0** (PR #22). La rama reúne, en un solo release MINOR sobre v0.17.0:
+(1) **rescate UX de PMO** + **Panel PMO / Ciclo de Gobernanza** + **Handoff = Acta/Charter** + **cambio
+gobernado de Fin comprometido** + **fusión Planificado vs Real** (commits del rescate); (2) **PMO Project
+Health Index (PHI) v1** (ADR-0013/0013a): motor `compute_phi` + adaptador + **PMO Settings** + integración en
+Project Control/Portfolio + Cronograma como **check único** (compromiso → baseline vigente → N/E) + rename de
+la dimensión a **Commitment/Compromiso**; (3) **Financial Health v1** (ADR-0013b) independiente del PHI; (4)
+**`get_native_real_cost()`** canónico + de-dup de `comparable_cost`; (5) rename del semáforo antiguo a
+**"Estado de cronograma"**; (6) **Project Executive Report** — Print Format estándar imprimible del Project
+(autocontenido en Jinja; único avance = `Project.percent_complete`; sin detalle Task-by-Task ni economía),
+accesible desde Project → **PMO → "Reporte para cliente"**. Squash & Merge → tag `v0.18.0` sobre el merge
+commit → GitHub Release.
+**Pendiente NO bloqueante:** UX/navegación de la tabla de Portfolio.
 
 ---
 
 ## Recuperación rápida
 
 Estoy trabajando en:
-El **PR de arquitectura de reporting canónica** de Project Control. La rama reúne (un solo PR):
-ADR-0011 (contexto canónico) + Reporte Ejecutivo v1 + Calidad de Planeación + **bloque económico
-(ADR-0012)**. El bloque económico añade la sección `costs` a `build_project_control` consumiendo el
-contrato de `erpnext_proposals` (`get_project_authorized_economics`), sin recalcular economía.
+El **cierre `/ship` de la rama `feat/pmo-home-rescate`** (PR #22) hacia `version-16` (v0.18.0). Todo
+implementado y con QA visual aprobado (PHI + Financial Health incluidos); suites del bloque verdes.
 
 Plan que estoy siguiendo:
-ADR-0011 + ADR-0012 + spec económica del usuario (BLOQUE 0–5, MVP aceptado). Flujo `/ship pr` autorizado
-de corrido: commit → bump/CHANGELOG → gates → push → PR. DETENERSE antes de merge/tag/release.
+`/ship`: docs (CHANGELOG/CONTINUITY con PHI+Financial) → push → actualizar `/ship comentario-pr 22` →
+esperar **CI verde** → `/ship merge` (Squash) → `/ship release` (tag v0.18.0 + GitHub Release) → limpieza.
 
 Objetivo inmediato:
-Crear/actualizar el PR contra `version-16` con bump **0.16.0** (MINOR) y verificar CI.
+CI verde en PR #22 (HEAD con PHI+Financial) para proceder a merge + release.
 
 Criterio de avance:
-PR abierto contra `version-16`, working tree limpio, CI verde (o solo fallos ajenos al cambio).
+PR #22 OPEN contra `version-16`, working tree limpio, CI verde; luego merge + release + limpieza.
 
 ---
 

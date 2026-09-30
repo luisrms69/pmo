@@ -296,10 +296,11 @@ DocType **submittable** (`is_submittable`, autoname `PMO-CR-.#####`) que **gobie
 `Quotation`/`erpnext_proposals` (no se recapturan Scope Items); `Project`/`Task` recibe el alcance
 aprobado; `PMO Project Baseline` congela el before/after; `Timesheet` registra el Actual.
 
-> **Estado (v0.6.0 en construcción):** entregados el DocType + P4 + invariantes base, el **Workflow +
-> acción "Aplicar Quotation al Project" + semántica Aplicado/Implemented**, el **comparator
-> Baseline↔Baseline** y el **Change Register**. Pendiente: cierre + bump 0.6.0 y la validación comercial
-> end-to-end (dependencia de `erpnext_proposals`).
+> **Estado:** implementado. DocType + P4 + invariantes base, Workflow + acción "Aplicar Quotation al Project"
+> + semántica Aplicado/Implemented, comparator Baseline↔Baseline y Change Register. La evolución **Change
+> Control v2 (Addenda-céntrico)** está en **ADR-0015** (flujo único CR → Addenda, apply gobernado, evidencia
+> B5+B6, enforcement del orden). `PMO Change Request.implementation_owner` se default-ea desde
+> `Project.pmo_operational_owner` (que hoy se captura en el Acta/Handoff; ver ADR-0014).
 
 - **Campos:** solicitud (`project`, `title`, `raised_by`, `origin`, `request_date`, `priority`
   Baja/Media/Alta, `reason`, `description`); impacto mínimo estructurado (5 Checks
@@ -473,15 +474,19 @@ de forma **retrocompatible** (la firma de 5 args sigue válida):
 Distingue la fecha **planeada/calculada** (nativa: `Task.exp_end_date`, `Project.expected_end_date`, que se
 desplazan con dependencias/reprogramación; forecast no vinculante, ADR-0004) de la fecha **comprometida**
 (compromiso de negocio/acordado, no necesariamente contractual; no se desplaza automáticamente con el
-cronograma, pero **sí** puede cambiarse por edición autorizada).
+cronograma).
 
-- **Campos (Custom Field por fixture):** `Task.pmo_deadline` (Date) y `Project.pmo_committed_end_date`
-  (Date). Requieren `bench migrate` para sincronizar metadata; sin data/migration patch.
+- **Campos (Custom Field por fixture):** `Task.pmo_deadline` (Date, editable a mano) y
+  `Project.pmo_committed_end_date` (Date). Requieren `bench migrate` para sincronizar metadata.
+- **`Project.pmo_committed_end_date` es `read_only`** y se gobierna (ADR-0007 D6 enmendado): su **valor inicial**
+  lo establece el Acta de Inicio (PMO Project Handoff) al emitir; el **cambio posterior** solo por el endpoint
+  whitelisted `pmo.schedule_commit.change_committed_end_date(project, new_date, reason)` (autoridad PMO
+  `_has_pmo_authority`; motivo obligatorio; `new_date` ≠ actual). Registra **Version** explícita (Project tiene
+  `track_changes=0`) + **Comment** en el timeline. UI: acción "Cambiar fin comprometido" en el dropdown PMO.
 - **Validaciones suaves** (`pmo/schedule_commit.py`, `doc_events` `Task.validate` + `Project.validate`):
   avisan (`msgprint`, indicador naranja) si `exp_end_date` > `pmo_deadline` o `expected_end_date` >
   `pmo_committed_end_date`. **No bloquean** el guardado ni el Actual/Timesheet (coherente con ADR-0004);
-  campos vacíos = sin aviso. Las fechas del aviso se formatean en ISO directo (no `format_date`) para no
-  depender del locale (evita que el aviso se vuelva excepción en sesiones sin idioma).
+  campos vacíos = sin aviso. Fechas del aviso en ISO directo (no `format_date`) para no depender del locale.
 - **Fuera de alcance (ADR-0007):** constraints tipados (SNET/FNLT/MSO/MFO), auto-reprogramación, scheduler
   propio. **No** cambia el snapshot de Baseline (`snapshot_schema_version` sigue en 1) ni el reporte Status
   Date.
@@ -497,9 +502,13 @@ entrega armados por Project/Task. **Sin** motor nuevo, DocType, Custom Field ni 
   User / PMO Executive Access / System Manager). Sincroniza por `bench migrate` (fixture `is_standard`).
 - **Planned** = `Task.expected_time`. **Actual**: sin `status_date` → `Task.actual_time` (acumulado nativo);
   con `status_date` → Σ `Timesheet Detail.hours` submitted hasta el **fin del día** de corte.
-- **Indicadores por Task hoja:** Planned, Actual, **Variance** = `Actual - Planned`, **% Consumed** =
-  `Actual / Planned` (guarda de división por 0 → vacío). **Rollup** excluye `is_group` (envelope, evita doble
-  conteo). Total de Project en las tarjetas de `report_summary`.
+- **Columnas por Task hoja:** `planned_hours` (Total planned hours = `expected_time` **total**, no acumulado al
+  corte), `actual_hours` (Actual hours at cutoff), **`available_hours`** = `planned - actual` (horas
+  disponibles = plan total − real al corte, **no** una variación acumulada al corte) y **`% Consumed`** =
+  `actual / planned` (guarda de división por 0 → vacío). **Rollup** excluye `is_group` (envelope, evita doble
+  conteo). Total de Project en las tarjetas de `report_summary`. **Nota de comparabilidad:** el reporte pone
+  lado a lado **plan TOTAL** vs **real al corte** (no plan-al-corte vs real-al-corte); el análisis temporalmente
+  correcto (Baseline as-of + slip) vive en `PMO Status Report` (ADR-0006/0009).
 - **Helpers `as-of`** (`pmo/actual.py`, internos): `get_actual_hours_asof(project, status_date)` y
   `get_actual_hours_by_task_asof(...)`. Corte inclusivo `from_time <= timestamp(status_date, '24:00:00')`
   (= medianoche del día siguiente ≡ `date(from_time) <= status_date`); solo `docstatus = 1`; SQL estática
@@ -629,6 +638,53 @@ motores nuevos ni fórmulas económicas en pmo. Estado **actual** (`as_of="curre
   `erpnext_proposals`), nunca SSOT ni fallback. Moneda v1: `authorized` y nativos comparables solo si base
   única (el contrato es fail-closed ante moneda incompatible). Tests: `test_project_economics.py` (frontera/
   gate/estados) + `test_project_control.py` (costs: comparable≠basis, gate, portal, no-DEFAULT, seguridad).
+
+## Governance & Lifecycle (ADR-0014)
+
+Gobierno documental del ciclo del Project, reutilizando lo existente (sin motores/aprobaciones/workflows
+paralelos). Todos los artefactos enlazan al `Project` nativo (P4 heredado vía `pmo.permissions`).
+
+### Motor único de gobernanza
+`pmo/governance_inbox.py` es la **fuente única** que clasifica cada control del ciclo. `_facts(project)` lee los
+hechos canónicos una vez; `_evaluate(facts)` clasifica cada control (`acta · baseline · risk · change ·
+closure · review`) en `completo | pendiente | no_aplica` (`CONTROL_ORDER`/`CONTROL_LABELS`/`STATE_*`). Dos
+consumidores lo reutilizan **sin duplicar reglas**: `governance_board()` (dashboard transversal, `pmo/governance_inbox.py`)
+y `project_governance_state(project)` (contextual por Project, en `pmo/project_control.py`, + `_can_create` por
+gate real de permiso). La exclusión de gobernanza (`pmo/governance_project.py`,
+`guard_governance_exemption`) es autoridad **PMO Manager/System Manager** server-side; `governance_board` filtra
+excluidos, `_evaluate` no.
+
+### PMO Project Handoff = Acta de Inicio / Charter (ADR-0014 D3, enmienda Charter + Autorización)
+DocType submittable con snapshot canónico + hash (schema **v2**). Captura en el Acta (validado server-side en
+`before_submit`): `handoff_date`, `handoff_summary`, `project_objective`, `scope_high_level` (alto nivel, no
+WBS), `committed_end_date` (obligatoria; fuente del compromiso inicial), `operational_owner` (Link Employee) y
+`customer_contact` (Link Contact) — el contacto **filtrado por el `Customer` del Project** vía la relación
+nativa `Contact.links → Dynamic Link` (client `set_query` con `contact_query`; validación server-side), checks
+de coordinación (`pm_informed_coordinated`/`internal_team_informed`/`startup_conditions_reviewed`),
+`contractual_legal_ready`, y **autorización formal** (`authorized_by` Data libre + `start_authorization_confirmed`).
+- **Project Manager — fuente única `Project.pmo_project_manager`:** `Handoff.project_manager` es `read_only`
+  `fetch_from`, sellado server-side, congelado como evidencia, **no** se sincroniza de vuelta; Submit bloqueado
+  si el Project no tiene PM (gate UX preventivo en el form del Project impide crear el Acta sin PM).
+- **Sincronización Handoff → Project (`on_submit`):** `pmo_committed_end_date`, `pmo_operational_owner` y
+  `pmo_customer_contact` se escriben al Project (los tres `read_only` en el Project). El Handoff conserva su
+  copia congelada. Toda la evidencia humana entra al `captured` del snapshot (cubierta por el hash).
+- Un solo Handoff emitido por Project. Tests: `test_project_handoff.py`.
+
+### Closure y Post-Project Review
+`PMO Project Closure` (snapshot-only, guard de estado terminal + CR abiertos + aceptación; economía en campo
+`permlevel 1`) y `PMO Post-Project Review` + child `PMO Lessons Learned` (mejora continua vía ToDo nativo,
+separada del lifecycle). Ambos submittable con snapshot+hash (D4/D5/D11). Estado de ciclo derivado
+(`pmo/governance.py`, función pura, sin workflow).
+
+### Superficies UI (nativo-first)
+- **Project → pestaña "PMO"** (`project_pmo.js` + fixtures): sección "Responsables y contexto" (PM editable +
+  `operational_owner`/`customer_contact`/`committed_end_date` como **campos nativos read-only**, visibles con
+  `depends_on` de valor) y **"Ciclo de Gobernanza"** (rejilla 2×3 operable Acta→Línea base→Riesgos→Cambios→
+  Cierre→Revisión, microcopy contextual para `no_aplica`), más el dropdown **PMO** (acciones + "Cambiar fin
+  comprometido"). Reutiliza `project_governance_state`; no reimplementa lifecycle en JS.
+- **Panel PMO** (`pmo_project_control`): pestaña **Gobernanza** contextual reutilizando el mismo motor.
+- **Dashboard transversal** (`governance_board` + Custom HTML Block "PMO Governance"): lista de trabajo con
+  acciones en lenguaje humano; frontera con Mejora continua (D9).
 
 ## Fuera de alcance
 Planificado vs Real (ADR-0008): sin EVM (EV/PV/AC), CPI/SPI, forecast (EAC/ETC), planned time-phased/BCWS,

@@ -3,10 +3,11 @@
 
 """PMO dashboard — agregadores de presentación para el Workspace PMO (arquitectura híbrida native-first).
 
-Native-first: los KPIs (tamaño y volumen) y la señal de recursos alimentan **Number Cards nativas**
-(type=Custom con `method=`, o Document Type); la salud es un **Dashboard Chart Report-type**; los
-cambios abiertos son **Quick List nativa**. Solo dos Custom Blocks consumen datos derivados sin
-equivalente nativo: "requieren atención" (+ tareas más atrasadas) y "cartera por cliente".
+Native-first: los KPIs (tamaño/volumen, económicos y recursos) alimentan **Number Cards nativas**
+(type=Custom con `method=`, o Document Type); la salud es un **Dashboard Chart Report-type**. Los
+KPIs económicos agregados (`economic_kpi`) respetan el gate económico y la agregación por proyecto.
+Custom Blocks para lo derivado sin equivalente nativo: "requieren atención" (+ tareas más atrasadas),
+"cartera por cliente" (salud + económicos gateados) y "situación económica" agregada.
 
 P4: todo reutiliza motores/consultas que imponen permisos por usuario:
   - pmo_portfolio.execute → READ por proyecto (build_status_report) + set visible explícito.
@@ -25,6 +26,13 @@ import json
 import frappe
 from frappe import N_
 from frappe.utils import cint, flt, getdate, today
+
+from pmo.project_economics import (
+	ECONOMIC_ROLES,
+	can_see_project_economics,
+	get_authorized_economics,
+	get_native_real_cost,
+)
 
 # Etiquetas visibles (Number Cards + Custom Blocks). JS en fixture → gettext no lo extrae. Inglés canónico.
 _DASHBOARD_STRINGS = (
@@ -78,10 +86,24 @@ _DASHBOARD_STRINGS = (
 	N_("Address {0} change requests"),
 	N_("Issue closure"),
 	N_("Perform post-project review"),
+	# Fila ejecutiva económica + situación económica agregada (Number Cards + Custom Block "PMO Economics").
+	N_("Authorized value"),
+	N_("Billed"),
+	N_("Real cost"),
+	N_("Utilization"),
+	N_("Authorized margin"),
+	N_("Economic situation"),
+	N_("No economic access."),
+	N_("Authorized"),  # etiqueta corta para el agregado económico y la Cartera
+	N_("{0} without linked proposal (excluded)"),
+	N_("{0} with inconsistent authorized data"),
+	# Cartera por cliente (columnas: cliente · proyectos activos · salud · [autorizado · facturado]).
+	N_("Active projects"),
 )
 
 _KPI_METRICS = ("active", "requiring_attention", "overdue_tasks", "without_baseline", "clients")
-_RESOURCE_METRICS = ("people_involved",)
+_RESOURCE_METRICS = ("people_involved", "utilization")
+_ECONOMIC_METRICS = ("authorized_revenue", "billed", "real_cost")
 
 
 # ---------------------------------------------------------------------------
@@ -117,14 +139,42 @@ def attention_block():
 
 @frappe.whitelist()
 def customers_block():
-	"""Bloque secundario: cartera por cliente (agregación derivada del portafolio). P4."""
-	return {"customers": _data()["customers"]}
+	"""Bloque secundario: cartera por cliente (agregación derivada del portafolio). P4. `econ_access`
+	indica si el observador puede ver columnas económicas (mismo gate económico que los KPIs)."""
+	d = _data()
+	econ = d["economics"]
+	return {
+		"customers": d["customers"],
+		"econ_access": bool(econ.get("has_access")),
+		"currency": econ.get("currency"),
+	}
 
 
 @frappe.whitelist()
 def governance_block():
 	"""Sección Project Governance (ADR-0014 D9): conteos + proyectos con acción de gobierno pendiente. P4."""
 	return {"governance": _data()["governance"]}
+
+
+@frappe.whitelist()
+def economic_kpi(filters: str | dict | None = None):
+	"""KPI económico agregado del portafolio (Number Card Custom). Gateado por rol económico + READ por
+	proyecto (`can_see_project_economics`). Sin acceso → `value=None` (la card muestra "—", no expone
+	economía). Compone valores canónicos; no inventa métricas."""
+	metric = _metric(filters)
+	if metric not in _ECONOMIC_METRICS:
+		frappe.throw(frappe._("Unknown PMO economic metric: {0}").format(metric))
+	econ = _data()["economics"]
+	if not econ.get("has_access"):
+		return {"value": None}
+	return {"value": econ.get(metric)}
+
+
+@frappe.whitelist()
+def economics_block():
+	"""Situación económica agregada del portafolio (Custom Block). Gateada; incluye trazabilidad
+	(proyectos sin propuesta excluidos / inconsistentes) para no falsear el agregado."""
+	return {"economics": _data()["economics"]}
 
 
 def _metric(filters):
@@ -149,6 +199,7 @@ def _data():
 def _build():
 	from pmo.pmo.report.pmo_portfolio.pmo_portfolio import (
 		HEALTH_AT_RISK,
+		HEALTH_LABELS,
 		HEALTH_OFF_TRACK,
 		HEALTH_ON_TRACK,
 		execute,
@@ -218,24 +269,56 @@ def _build():
 	)
 	attention = attention[:12]
 
-	customers = []
+	# Cartera por cliente: horas + salud rollup (peor proyecto manda). La economía por cliente se anexa
+	# después, solo si el observador pasa el gate económico.
 	by_cust = {}
 	for r in rows:
 		c = cust_map.get(r.get("project"))
 		if not c:
 			continue
 		agg = by_cust.setdefault(
-			c, {"customer": c, "projects": 0, "at_risk_deviated": 0, "planned": 0.0, "actual": 0.0}
+			c,
+			{
+				"customer": c,
+				"projects": 0,
+				"at_risk_deviated": 0,
+				"planned": 0.0,
+				"actual": 0.0,
+				"_off": 0,
+				"_risk": 0,
+			},
 		)
 		agg["projects"] += 1
-		if r.get("health_key") in (HEALTH_OFF_TRACK, HEALTH_AT_RISK):
+		hk = r.get("health_key")
+		if hk in (HEALTH_OFF_TRACK, HEALTH_AT_RISK):
 			agg["at_risk_deviated"] += 1
+		if hk == HEALTH_OFF_TRACK:
+			agg["_off"] += 1
+		elif hk == HEALTH_AT_RISK:
+			agg["_risk"] += 1
 		agg["planned"] += flt(r.get("planned_hours"))
 		agg["actual"] += flt(r.get("actual_hours"))
-	if by_cust:
-		customers = sorted(
-			by_cust.values(), key=lambda c: (c["at_risk_deviated"], c["projects"]), reverse=True
-		)
+
+	economics = _economics(rows, cust_map)
+
+	customers = []
+	for agg in by_cust.values():
+		hk = HEALTH_OFF_TRACK if agg["_off"] else (HEALTH_AT_RISK if agg["_risk"] else HEALTH_ON_TRACK)
+		row = {
+			"customer": agg["customer"],
+			"projects": agg["projects"],
+			"at_risk_deviated": agg["at_risk_deviated"],
+			"planned": agg["planned"],
+			"actual": agg["actual"],
+			"health_key": hk,
+			"health": frappe._(HEALTH_LABELS[hk]),
+		}
+		if economics.get("has_access"):
+			pc = economics["per_customer"].get(agg["customer"], {})
+			row["authorized"] = pc.get("authorized")  # None si el cliente no tiene autorizado disponible
+			row["billed"] = pc.get("billed", 0.0)
+		customers.append(row)
+	customers.sort(key=lambda c: (c["at_risk_deviated"], c["projects"]), reverse=True)
 
 	return {
 		"kpis": kpis,
@@ -243,7 +326,92 @@ def _build():
 		"attention": attention,
 		"delayed_tasks": _delayed_tasks(),
 		"customers": customers,
+		"economics": economics,
 		"governance": _governance(),
+	}
+
+
+def _project_native(project):
+	"""Lectura de los reales nativos del Project (ERPNext) para la agregación económica. `comparable_cost`
+	= total_costing_amount + total_purchase_cost (labor + externo, SIN material), MISMA semántica que la
+	sección `costs` de Project Control. Aislado en un helper para trazabilidad y testeabilidad."""
+	nat = (
+		frappe.db.get_value("Project", project, ["company", "total_billed_amount"], as_dict=True)
+		or frappe._dict()
+	)
+	cur = (
+		frappe.db.get_value("Company", nat.get("company"), "default_currency") if nat.get("company") else None
+	)
+	return {
+		"billed": flt(nat.get("total_billed_amount")),
+		# Costo real COMPARABLE desde la fuente canónica única (misma fórmula: costing + purchase).
+		"comparable_cost": get_native_real_cost(project)["comparable_cost"],
+		"currency": cur,
+	}
+
+
+def _economics(rows, cust_map):
+	"""Agregación económica del portafolio (gateada). **Compone** valores canónicos existentes; NO inventa
+	métricas (nada de ROI/CPI/SPI/EVM). Respeta `can_see_project_economics` por proyecto. Reglas:
+
+	- `authorized_revenue=None` (proyecto sin propuesta) se **excluye** de la suma, nunca se convierte en 0.
+	- Estados `inconsistent` se **cuentan aparte** (trazabilidad) y no falsean el agregado.
+	- Si ningún proyecto tuvo autorizado disponible → `authorized_revenue=None` (no 0).
+	- Costo real = `comparable_cost` (labor + externo, sin material), MISMA semántica que Project Control.
+	- Sin rol económico → `{has_access: False}` (los KPIs devuelven None; sin exponer economía)."""
+	if not (set(frappe.get_roles()) & set(ECONOMIC_ROLES)):
+		return {"has_access": False}
+
+	authorized = authorized_margin = billed = real_cost = 0.0
+	authorized_count = counted = excluded_no_proposal = inconsistent = 0
+	base_currencies = set()
+	per_customer = {}
+
+	for r in rows:
+		project = r.get("project")
+		if not project or not can_see_project_economics(project):
+			continue
+		counted += 1
+		nat = _project_native(project)
+		billed_p = nat["billed"]
+		billed += billed_p
+		real_cost += nat["comparable_cost"]
+		if nat["currency"]:
+			base_currencies.add(nat["currency"])
+
+		econ = get_authorized_economics(project)
+		auth_p = None
+		if econ.get("available"):
+			data = econ.get("data") or {}
+			auth_p = flt(data.get("authorized_revenue"))
+			authorized += auth_p
+			authorized_margin += flt(data.get("authorized_margin"))
+			authorized_count += 1
+		elif econ.get("reason") == "inconsistent":
+			inconsistent += 1
+		elif econ.get("reason") == "no_proposal":
+			excluded_no_proposal += 1
+
+		c = cust_map.get(project)
+		if c:
+			pc = per_customer.setdefault(c, {"authorized": None, "billed": 0.0})
+			pc["billed"] = flt(pc["billed"] + billed_p, 2)
+			if auth_p is not None:
+				pc["authorized"] = flt((pc["authorized"] or 0.0) + auth_p, 2)
+
+	return {
+		"has_access": True,
+		# None (no 0) si ningún proyecto tenía autorizado disponible → no falsear.
+		"authorized_revenue": flt(authorized, 2) if authorized_count else None,
+		"authorized_margin": flt(authorized_margin, 2) if authorized_count else None,
+		"billed": flt(billed, 2),
+		"real_cost": flt(real_cost, 2),
+		"projects_counted": counted,
+		"authorized_count": authorized_count,
+		"excluded_no_proposal": excluded_no_proposal,
+		"inconsistent": inconsistent,
+		"currency": (next(iter(base_currencies)) if len(base_currencies) == 1 else None),
+		"per_customer": per_customer,
 	}
 
 

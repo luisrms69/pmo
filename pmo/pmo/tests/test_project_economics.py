@@ -8,9 +8,41 @@ inconsistencia real) sin degradar la inconsistencia a ausencia, y la decisión �
 
 from unittest.mock import patch
 
+import frappe
 from frappe.tests import IntegrationTestCase
 
 from pmo import project_economics as pe
+
+
+class TestNativeRealCost(IntegrationTestCase):
+	"""get_native_real_cost — ÚNICA definición de comparable_cost (labor+externo, EXCLUYE material)."""
+
+	def _run(self, costing, purchase, material):
+		nat = frappe._dict(
+			total_costing_amount=costing,
+			total_purchase_cost=purchase,
+			total_consumed_material_cost=material,
+		)
+		orig = frappe.db.get_value
+
+		def _side(doctype, *a, **k):
+			# Solo interceptar la lectura de costos nativos del Project; delegar el resto (flt lee DB
+			# para el método de redondeo → no debe romperse).
+			if doctype == "Project":
+				return nat
+			return orig(doctype, *a, **k)
+
+		with patch("frappe.db.get_value", side_effect=_side):
+			return pe.get_native_real_cost("PROJ-X")
+
+	def test_comparable_excludes_material(self):
+		r = self._run(100, 40, 25)
+		self.assertEqual(r["comparable_cost"], 140.0)  # costing+purchase, SIN material
+		self.assertEqual(r["gross_margin_cost_basis"], 165.0)  # +material (base gross_margin nativo)
+		self.assertEqual((r["costing"], r["purchase"], r["material"]), (100.0, 40.0, 25.0))
+
+	def test_empty(self):
+		self.assertEqual(self._run(0, 0, 0)["comparable_cost"], 0.0)
 
 
 class TestEconomicAccess(IntegrationTestCase):

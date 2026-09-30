@@ -2,18 +2,10 @@
  "charts": [
   {
    "chart_name": "PMO Portfolio Health",
-   "label": "Portfolio health"
-  },
-  {
-   "chart_name": "PMO Capacity Snapshot",
-   "label": "Capacity — current month"
-  },
-  {
-   "chart_name": "PMO Top Projects by Effort",
-   "label": "Top 5 by planned hours"
+   "label": "Salud del portafolio"
   }
  ],
- "content": "[{\"id\": \"b8a12b04b9\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO \\u2014 Project office</b></span>\", \"col\": 12}}, {\"id\": \"c2cbc2021d\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>PMO at a glance</b></span>\", \"col\": 12}}, {\"id\": \"85d11479e5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active projects\", \"col\": 3}}, {\"id\": \"b33e474b69\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active tasks\", \"col\": 3}}, {\"id\": \"dc9d557bb3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"People involved\", \"col\": 3}}, {\"id\": \"298491a8ec\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Projects requiring attention\", \"col\": 3}}, {\"id\": \"1eb7fb4218\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Overdue tasks\", \"col\": 3}}, {\"id\": \"dd6a3b07a6\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Health &amp; capacity</b></span>\", \"col\": 12}}, {\"id\": \"de2b17be6f\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Portfolio health\", \"col\": 4}}, {\"id\": \"cab2899f5d\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Capacity \\u2014 current month\", \"col\": 8}}, {\"id\": \"430bf9e594\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Top projects by effort</b></span>\", \"col\": 12}}, {\"id\": \"62c66eafdf\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Top 5 by planned hours\", \"col\": 8}}, {\"id\": \"e140747d4a\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Requires attention</b></span>\", \"col\": 12}}, {\"id\": \"7605b4dd56\", \"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"PMO Attention\", \"col\": 12}}, {\"id\": \"d987dfc2f0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Portfolio</b></span>\", \"col\": 12}}, {\"id\": \"ef159fae48\", \"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"PMO Customers\", \"col\": 8}}, {\"id\": \"182da8bd78\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active clients\", \"col\": 4}}, {\"id\": \"92640c434e\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>PMO governance</b></span>\", \"col\": 12}}, {\"id\": \"51e74aa970\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Projects without baseline\", \"col\": 3}}, {\"id\": \"dc51778bcf\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Open change requests\", \"col\": 5}}, {\"id\": \"4a11266f21\", \"type\": \"card\", \"data\": {\"card_name\": \"PMO Governance\", \"col\": 4}}, {\"id\": \"80b339ed39\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Explore</b></span>\", \"col\": 12}}, {\"id\": \"dad4713059\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Portfolio\", \"col\": 4}}, {\"id\": \"7370f3bc6e\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Project Control\", \"col\": 4}}, {\"id\": \"7049b4a30f\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Capacity Planning\", \"col\": 4}}, {\"id\": \"6daa725a5c\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 12}}]",
+ "content": "[{\"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO \\u2014 Oficina de proyectos</b></span>\", \"col\": 12}, \"id\": \"pmoh200\"}, {\"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Resumen ejecutivo</b></span>\", \"col\": 12}, \"id\": \"pmoh201\"}, {\"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"PMO Resumen Ejecutivo\", \"col\": 12}, \"id\": \"pmoh202\"}, {\"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Resumen visual</b></span>\", \"col\": 12}, \"id\": \"pmoh203\"}, {\"type\": \"chart\", \"data\": {\"chart_name\": \"Salud del portafolio\", \"col\": 6}, \"id\": \"pmoh204\"}, {\"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"PMO Situaci\\u00f3n Econ\\u00f3mica\", \"col\": 6}, \"id\": \"pmoh205\"}, {\"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Panorama operativo</b></span>\", \"col\": 12}, \"id\": \"pmoh206\"}, {\"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"PMO Panorama Operativo\", \"col\": 12}, \"id\": \"pmoh207\"}, {\"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Cartera por cliente</b></span>\", \"col\": 12}, \"id\": \"pmoh208\"}, {\"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"PMO Customers\", \"col\": 12}, \"id\": \"pmoh209\"}]",
  "docstatus": 0,
  "doctype": "Workspace",
  "for_user": "",
@@ -21,244 +13,13 @@
  "icon": "project",
  "idx": 0,
  "label": "PMO",
- "links": [
-  {
-   "type": "Card Break",
-   "label": "PMO Governance",
-   "link_type": null,
-   "link_to": null,
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Project Baseline",
-   "link_type": "DocType",
-   "link_to": "PMO Project Baseline",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Change Request",
-   "link_type": "DocType",
-   "link_to": "PMO Change Request",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Capacity",
-   "link_type": "DocType",
-   "link_to": "PMO Capacity",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "Import Tags",
-   "link_type": "Page",
-   "link_to": "tag_import",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Card Break",
-   "label": "Reports",
-   "link_type": null,
-   "link_to": null,
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Portfolio",
-   "link_type": "Report",
-   "link_to": "PMO Portfolio",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 1,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Status Report",
-   "link_type": "Report",
-   "link_to": "PMO Status Report",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 1,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Planned vs Actual",
-   "link_type": "Report",
-   "link_to": "PMO Planned vs Actual",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 1,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Baseline Comparison",
-   "link_type": "Report",
-   "link_to": "PMO Baseline Comparison",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 1,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Change Register",
-   "link_type": "Report",
-   "link_to": "PMO Change Register",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Capacity Planning",
-   "link_type": "Report",
-   "link_to": "PMO Capacity Planning",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 1,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Resource Capacity",
-   "link_type": "Report",
-   "link_to": "PMO Resource Capacity",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 1,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Resource Usage by Project",
-   "link_type": "Report",
-   "link_to": "PMO Resource Usage by Project",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 1,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  },
-  {
-   "type": "Link",
-   "label": "PMO Work by Resource",
-   "link_type": "Report",
-   "link_to": "PMO Work by Resource",
-   "onboard": 0,
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 1,
-   "link_count": 0,
-   "only_for": "",
-   "description": ""
-  }
- ],
+ "links": [],
  "module": "PMO",
  "name": "PMO",
- "number_cards": [
-  {
-   "number_card_name": "PMO Active Projects",
-   "label": "Active projects"
-  },
-  {
-   "number_card_name": "PMO Active Tasks",
-   "label": "Active tasks"
-  },
-  {
-   "number_card_name": "PMO People Involved",
-   "label": "People involved"
-  },
-  {
-   "number_card_name": "PMO Requiring Attention",
-   "label": "Projects requiring attention"
-  },
-  {
-   "number_card_name": "PMO Overdue Tasks",
-   "label": "Overdue tasks"
-  },
-  {
-   "number_card_name": "PMO Active Clients",
-   "label": "Active clients"
-  },
-  {
-   "number_card_name": "PMO Projects Without Baseline",
-   "label": "Projects without baseline"
-  }
- ],
+ "number_cards": [],
  "parent_page": "",
  "public": 1,
- "quick_lists": [
-  {
-   "document_type": "PMO Change Request",
-   "label": "Open change requests",
-   "quick_list_filter": "[[\"PMO Change Request\", \"workflow_state\", \"in\", [\"Draft\", \"In Review\"]]]"
-  }
- ],
+ "quick_lists": [],
  "restrict_to_domain": "",
  "roles": [
   {
@@ -278,40 +39,20 @@
   }
  ],
  "sequence_id": 10.0,
- "shortcuts": [
-  {
-   "type": "Page",
-   "label": "Portfolio",
-   "link_to": "pmo_portfolio",
-   "color": "Blue",
-   "doc_view": "",
-   "stats_filter": "",
-   "format": ""
-  },
-  {
-   "type": "Page",
-   "label": "Project Control",
-   "link_to": "pmo_project_control",
-   "color": "Green",
-   "doc_view": "",
-   "stats_filter": "",
-   "format": ""
-  },
-  {
-   "type": "Page",
-   "label": "Capacity Planning",
-   "link_to": "capacity_planning",
-   "color": "Green",
-   "doc_view": "",
-   "stats_filter": "",
-   "format": ""
-  }
- ],
+ "shortcuts": [],
  "title": "PMO",
  "custom_blocks": [
   {
-   "custom_block_name": "PMO Attention",
-   "label": "PMO Attention"
+   "custom_block_name": "PMO Resumen Ejecutivo",
+   "label": "PMO Resumen Ejecutivo"
+  },
+  {
+   "custom_block_name": "PMO Situación Económica",
+   "label": "PMO Situación Económica"
+  },
+  {
+   "custom_block_name": "PMO Panorama Operativo",
+   "label": "PMO Panorama Operativo"
   },
   {
    "custom_block_name": "PMO Customers",

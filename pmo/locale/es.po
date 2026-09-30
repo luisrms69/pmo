@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PMO VERSION\n"
 "Report-Msgid-Bugs-To: it@buzola.mx\n"
-"POT-Creation-Date: 2026-09-25 22:38-0837\n"
-"PO-Revision-Date: 2026-09-10 02:54-5237\n"
+"POT-Creation-Date: 2026-09-30 00:22-0837\n"
+"PO-Revision-Date: 2026-09-10 02:54-5837\n"
 "Last-Translator: it@buzola.mx\n"
 "Language: es\n"
 "Language-Team: it@buzola.mx\n"
@@ -18,14 +18,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:324
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:426
 #: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:113
 #: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:138
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:149
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:190
 msgid "% Consumed"
 msgstr "% Consumido"
 
-#: pmo/project_control.py:77 pmo/templates/project_control/executive.html:105
+#: pmo/project_control.py:95 pmo/templates/project_control/executive.html:105
 #, python-format
 msgid "% consumed:"
 msgstr "% consumido:"
@@ -46,6 +46,11 @@ msgstr "(Proyecto)"
 msgid "80-100%"
 msgstr "80-100%"
 
+#. Header text in the PMO Governance Workspace
+#: pmo/pmo/workspace/pmo_governance/pmo_governance.json
+msgid "<span class=\"h4\"><b>Gobernanza PMO</b></span>"
+msgstr ""
+
 #. Header text in the PMO Capacity Workspace
 #: pmo/pmo/workspace/pmo_capacity/pmo_capacity.json
 msgid "<span class=\"h4\"><b>PMO Capacity</b></span>"
@@ -56,70 +61,44 @@ msgstr "<span class=\"h4\"><b>PMO Capacidad</b></span>"
 msgid "<span class=\"h4\"><b>PMO Control</b></span>"
 msgstr "<span class=\"h4\"><b>PMO Control</b></span>"
 
-#. Header text in the PMO Governance Workspace
-#: pmo/pmo/workspace/pmo_governance/pmo_governance.json
-msgid "<span class=\"h4\"><b>PMO Governance</b></span>"
-msgstr "<span class=\"h4\"><b>Gobernanza PMO</b></span>"
+#. Header text in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "<span class=\"h4\"><b>PMO — Oficina de proyectos</b></span>"
+msgstr ""
 
 #. Header text in the PMO Workspace
 #: pmo/pmo/workspace/pmo/pmo.json
-msgid "<span class=\"h4\"><b>PMO — Project office</b></span>"
-msgstr "<span class=\"h4\"><b>PMO — Oficina de proyectos</b></span>"
-
-#. Header text in the PMO Governance Workspace
-#: pmo/pmo/workspace/pmo_governance/pmo_governance.json
-msgid "<span class=\"h5\"><b>Continuous improvement</b></span>"
-msgstr "<span class=\"h5\"><b>Mejora continua</b></span>"
+msgid "<span class=\"h5\"><b>Cartera por cliente</b></span>"
+msgstr ""
 
 #. Header text in the PMO Workspace
 #: pmo/pmo/workspace/pmo/pmo.json
-msgid "<span class=\"h5\"><b>Explore</b></span>"
-msgstr "<span class=\"h5\"><b>Explorar</b></span>"
+msgid "<span class=\"h5\"><b>Panorama operativo</b></span>"
+msgstr ""
 
 #. Header text in the PMO Workspace
 #: pmo/pmo/workspace/pmo/pmo.json
-msgid "<span class=\"h5\"><b>Health &amp; capacity</b></span>"
-msgstr "<span class=\"h5\"><b>Salud y capacidad</b></span>"
+msgid "<span class=\"h5\"><b>Resumen ejecutivo</b></span>"
+msgstr ""
 
 #. Header text in the PMO Workspace
 #: pmo/pmo/workspace/pmo/pmo.json
-msgid "<span class=\"h5\"><b>PMO at a glance</b></span>"
-msgstr "<span class=\"h5\"><b>PMO en un vistazo</b></span>"
+msgid "<span class=\"h5\"><b>Resumen visual</b></span>"
+msgstr ""
 
-#. Header text in the PMO Workspace
-#: pmo/pmo/workspace/pmo/pmo.json
-msgid "<span class=\"h5\"><b>PMO governance</b></span>"
-msgstr "<span class=\"h5\"><b>Gobierno PMO</b></span>"
-
-#. Header text in the PMO Workspace
-#: pmo/pmo/workspace/pmo/pmo.json
-msgid "<span class=\"h5\"><b>Portfolio</b></span>"
-msgstr "<span class=\"h5\"><b>Cartera</b></span>"
-
-#. Header text in the PMO Workspace
-#: pmo/pmo/workspace/pmo/pmo.json
-msgid "<span class=\"h5\"><b>Requires attention</b></span>"
-msgstr "<span class=\"h5\"><b>Atención requerida</b></span>"
-
-#. Header text in the PMO Governance Workspace
-#: pmo/pmo/workspace/pmo_governance/pmo_governance.json
-msgid "<span class=\"h5\"><b>Risk management</b></span>"
-msgstr "<span class=\"h5\"><b>Gestión de riesgos</b></span>"
-
-#. Header text in the PMO Workspace
-#: pmo/pmo/workspace/pmo/pmo.json
-msgid "<span class=\"h5\"><b>Top projects by effort</b></span>"
-msgstr "<span class=\"h5\"><b>Proyectos por esfuerzo</b></span>"
-
-#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:182
+#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:184
 msgid "A Completed Project requires the formal acceptance (Accepted by and Accepted on) before closing."
 msgstr "Un Project Completed requiere la aceptación formal (Aceptado por y Fecha de aceptación) antes de cerrar."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:178
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:75
+msgid "A Replan baseline (PMO exception without a Change Request) requires an authorized PMO role. A change during execution must go through an approved, implemented Change Request."
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:204
 msgid "A baseline cannot supersede itself."
 msgstr "Una baseline no puede sustituirse a si misma."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:149
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:175
 msgid "A baseline with revision {0} already exists in this Project."
 msgstr "Ya existe una baseline con revision {0} en este Project."
 
@@ -131,17 +110,18 @@ msgstr "Ya existe una capacidad para el scope {0} desde {1} ({2})."
 msgid "A commercial Quotation/Addendum will be created from the original contract. Requires commercial authorship (Proposals Manager). Continue?"
 msgstr "Se creará una Cotización/Addenda comercial del contrato original. Requiere autoría comercial (Proposals Manager). ¿Continuar?"
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:173
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:811
+#: pmo/public/js/project_pmo.js:479
+msgid "A formal substitution needs an approved, implemented Change Request. A PMO replan (without a Change Request) requires an authorized PMO role."
+msgstr "Una sustitución formal requiere una Solicitud de Cambio aprobada e implementada. Una replaneación PMO (sin Solicitud de Cambio) requiere un rol PMO autorizado."
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:199
 msgid "A non-Original baseline requires an effective baseline to supersede, but the Project has none. Create and approve an Original baseline first."
 msgstr "Una línea base distinta de Original requiere una línea base vigente a la cual sustituir, pero el proyecto no tiene ninguna. Crea y aprueba primero una línea base Original."
 
 #: pmo/pmo/doctype/pmo_project_risk/pmo_project_risk.py:51
 msgid "A risk description is required."
 msgstr "Se requiere una descripción del riesgo."
-
-#: pmo/public/js/pmo_project_handoff.js:24
-msgid "Abrir Project para completar datos"
-msgstr ""
 
 #. Label of the accepted_by (Data) field in DocType 'PMO Project Closure'
 #: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.json
@@ -153,7 +133,7 @@ msgstr "Aceptado por"
 msgid "Accepted on"
 msgstr "Fecha de aceptación"
 
-#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:166
+#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:168
 msgid "Accepted on cannot be later than the Closure date."
 msgstr "La fecha de aceptación no puede ser posterior a la fecha de cierre."
 
@@ -162,23 +142,28 @@ msgstr "La fecha de aceptación no puede ser posterior a la fecha de cierre."
 msgid "Action owner"
 msgstr "Responsable de la acción"
 
-#. Label of a number card in the PMO Workspace
-#: pmo/dashboard.py:38 pmo/pmo/workspace/pmo/pmo.json
+#: pmo/dashboard.py:46
 msgid "Active clients"
 msgstr "Clientes activos"
 
-#. Label of a number card in the PMO Workspace
-#: pmo/dashboard.py:32 pmo/pmo/workspace/pmo/pmo.json
+#: pmo/dashboard.py:40 pmo/dashboard.py:101
 msgid "Active projects"
 msgstr "Proyectos activos"
 
-#. Label of a number card in the PMO Workspace
-#: pmo/dashboard.py:33 pmo/pmo/workspace/pmo/pmo.json
+#: pmo/governance_inbox.py:32
+msgid "Active projects excluded"
+msgstr "Proyectos activos excluidos"
+
+#: pmo/governance_inbox.py:39
+msgid "Active projects formally excluded from PMO governance."
+msgstr "Proyectos activos formalmente excluidos de la gobernanza PMO."
+
+#: pmo/dashboard.py:41
 msgid "Active tasks"
 msgstr "Tareas activas"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:323
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:148
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:425
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:189
 msgid "Actual (h)"
 msgstr "Real (h)"
 
@@ -190,6 +175,10 @@ msgstr "Real confidencial"
 #: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:130
 msgid "Actual hours at cutoff"
 msgstr "Horas reales al corte"
+
+#: pmo/health.py:276
+msgid "Actual hours exceed the total estimated effort budget."
+msgstr ""
 
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.py:147
 msgid "Actual hours to date"
@@ -219,11 +208,11 @@ msgstr "Addenda creada: {0}"
 msgid "Addendum version reapproved."
 msgstr "Versión de la addenda re-aprobada."
 
-#: pmo/dashboard.py:77 pmo/dashboard.py:263
+#: pmo/dashboard.py:85 pmo/dashboard.py:431
 msgid "Address {0} change request"
 msgstr "Atender {0} solicitud de cambio"
 
-#: pmo/dashboard.py:78 pmo/dashboard.py:265
+#: pmo/dashboard.py:86 pmo/dashboard.py:433
 msgid "Address {0} change requests"
 msgstr "Atender {0} solicitudes de cambio"
 
@@ -240,11 +229,15 @@ msgstr "Cierre administrativo/financiero revisado"
 
 #. Label of the baseline_after (Link) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:294
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:358
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.js:26
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:184
 msgid "After baseline"
 msgstr "Línea base posterior"
+
+#: pmo/governance_inbox.py:47
+msgid "Age / Date"
+msgstr "Antigüedad / Fecha"
 
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:897
 msgid "Aggregated availability"
@@ -261,6 +254,18 @@ msgstr "Capacidad y carga agregadas"
 msgid "Al enviar (Submit) la línea base, el usuario que realiza el Submit queda registrado como su aprobador."
 msgstr ""
 
+#. Label of the scope_high_level (Small Text) field in DocType 'PMO Project
+#. Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Alcance de alto nivel"
+msgstr ""
+
+#. Description of the 'Alcance de alto nivel' (Small Text) field in DocType
+#. 'PMO Project Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Alcance de alto nivel del proyecto. No es WBS ni duplica el detalle de Proposal/Project."
+msgstr ""
+
 #. Label of the amended_from (Link) field in DocType 'PMO Change Request'
 #. Label of the amended_from (Link) field in DocType 'PMO Project Baseline'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
@@ -273,15 +278,15 @@ msgstr "Enmendado desde"
 msgid "Amount (impact)"
 msgstr "Monto (impacto)"
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:167
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:193
 msgid "An Original baseline already exists for this Project."
 msgstr "Ya existe una baseline Original para este Project."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:156
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:182
 msgid "An Original baseline must not supersede another."
 msgstr "Una baseline Original no debe sustituir a otra."
 
-#: pmo/project_control.py:170 pmo/templates/project_control/financial.html:73
+#: pmo/project_control.py:188 pmo/templates/project_control/financial.html:73
 msgid "Applied addenda"
 msgstr "Addendas aplicadas"
 
@@ -290,7 +295,7 @@ msgstr "Addendas aplicadas"
 msgid "Applied at"
 msgstr "Aplicado el"
 
-#: pmo/project_control.py:140 pmo/templates/project_control/financial.html:29
+#: pmo/project_control.py:158 pmo/templates/project_control/financial.html:29
 msgid "Applied changes"
 msgstr "Addendas aplicadas"
 
@@ -398,7 +403,11 @@ msgstr "Probabilidad tal como se identificó."
 msgid "As-identified signal: could this affect an authorized/controlled condition? Signal only — it does not create a Change Request."
 msgstr "Señal tal como se identificó: ¿podría afectar una condición autorizada/controlada? Solo es señal — no crea una Solicitud de Cambio."
 
-#: pmo/project_control.py:177 pmo/templates/project_control/executive.html:263
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:690
+msgid "Assess risks"
+msgstr "Evaluar riesgos"
+
+#: pmo/project_control.py:195 pmo/templates/project_control/executive.html:263
 msgid "Assessed"
 msgstr "Evaluado"
 
@@ -424,48 +433,81 @@ msgstr "Asociaciones solicitadas"
 msgid "Associations that would be applied"
 msgstr "Asociaciones que se aplicarían"
 
-#: pmo/health.py:23 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:187
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:217
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:197
+#: pmo/phi.py:22
 msgid "At risk"
 msgstr "En riesgo"
 
-#: pmo/dashboard.py:63
+#: pmo/dashboard.py:71
 msgid "At risk / deviated"
 msgstr "En riesgo / desviados"
 
-#: pmo/project_control.py:141 pmo/templates/project_control/financial.html:29
+#: pmo/templates/project_control/resumen.html:147
+msgid "Attention:"
+msgstr "Atención:"
+
+#: pmo/project_control.py:159 pmo/templates/project_control/financial.html:29
 msgid "Authorized (current)"
 msgstr "Autorizado vigente"
 
-#: pmo/project_control.py:153 pmo/templates/project_control/financial.html:49
+#: pmo/project_control.py:171 pmo/templates/project_control/financial.html:49
 msgid "Authorized (total)"
 msgstr "Autorizado (total)"
 
-#: pmo/project_control.py:131 pmo/project_economics.py:79
+#: pmo/governance_inbox.py:54
+#: pmo/pmo/report/pmo_projects_without_governance/pmo_projects_without_governance.py:36
+msgid "Authorized by"
+msgstr "Autorizado por"
+
+#: pmo/financial_health.py:141 pmo/health.py:251
+msgid "Authorized economic reference is inconsistent."
+msgstr "La referencia económica autorizada es inconsistente."
+
+#: pmo/project_control.py:149 pmo/project_economics.py:105
 msgid "Authorized economics unavailable: the linked proposal data is inconsistent."
 msgstr "Economía autorizada no disponible: los datos de la propuesta vinculada son inconsistentes."
 
-#: pmo/project_control.py:155 pmo/templates/project_control/financial.html:51
+#: pmo/project_control.py:173 pmo/templates/project_control/financial.html:51
 msgid "Authorized external"
 msgstr "Externo autorizado"
 
-#: pmo/project_control.py:154 pmo/templates/project_control/financial.html:50
+#: pmo/project_control.py:172 pmo/templates/project_control/financial.html:50
 msgid "Authorized labor"
 msgstr "Labor autorizada"
 
-#: pmo/project_control.py:162 pmo/templates/project_control/financial.html:62
+#: pmo/dashboard.py:94 pmo/project_control.py:180
+#: pmo/templates/project_control/financial.html:62
 msgid "Authorized margin"
 msgstr "Margen autorizado"
 
-#: pmo/project_control.py:163 pmo/templates/project_control/financial.html:63
+#: pmo/project_control.py:181 pmo/templates/project_control/financial.html:63
 msgid "Authorized margin %"
 msgstr "Margen autorizado %"
 
-#: pmo/project_control.py:132 pmo/templates/project_control/executive.html:123
+#: pmo/project_control.py:150 pmo/templates/project_control/executive.html:123
 #: pmo/templates/project_control/financial.html:21
 msgid "Authorized reference unavailable."
 msgstr "Referencia autorizada no disponible."
+
+#: pmo/dashboard.py:90
+msgid "Authorized value"
+msgstr ""
+
+#. Label of the section_authorization (Section Break) field in DocType 'PMO
+#. Project Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Autorización"
+msgstr ""
+
+#. Label of the start_authorization_confirmed (Check) field in DocType 'PMO
+#. Project Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Autorización explícita para iniciar obtenida"
+msgstr ""
+
+#. Label of the authorized_by (Data) field in DocType 'PMO Project Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Autorizado por"
+msgstr ""
 
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:491
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:531
@@ -486,7 +528,17 @@ msgstr "Horas disponibles"
 msgid "Average planned utilization"
 msgstr "Utilización planificada media"
 
-#: pmo/project_control.py:65 pmo/templates/project_control/executive.html:74
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:824
+#: pmo/public/js/project_pmo.js:492
+msgid "Backing Change Request"
+msgstr "Solicitud de cambio que respalda"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:823
+#: pmo/public/js/project_pmo.js:491
+msgid "Backing Change Request (optional)"
+msgstr "Solicitud de cambio que respalda (opcional)"
+
+#: pmo/project_control.py:83 pmo/templates/project_control/executive.html:74
 msgid "Baseline"
 msgstr "Línea base"
 
@@ -498,11 +550,11 @@ msgstr "Baseline After no puede ser efectiva antes que Baseline Before ({0})."
 msgid "Baseline After cannot be the same as Baseline Before."
 msgstr "Baseline After no puede ser igual a Baseline Before."
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:45
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:57
 msgid "Baseline Comparison"
 msgstr "Comparación de línea base"
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:284
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:348
 msgid "Baseline Comparison needs two submitted baselines of this Project. This Project does not have enough yet."
 msgstr "La Comparación de línea base necesita dos líneas base emitidas de este Project. Este Project aún no tiene suficientes."
 
@@ -511,11 +563,24 @@ msgstr "La Comparación de línea base necesita dos líneas base emitidas de est
 msgid "Baseline comparison"
 msgstr "Comparación de línea base"
 
+#: pmo/public/js/project_pmo.js:370
+msgid "Baseline history"
+msgstr "Historial de líneas base"
+
 #. Description of the 'Before baseline' (Link) field in DocType 'PMO Change
 #. Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
 msgid "Baseline in effect when the change is formalized (frozen when the change is sent to review)."
 msgstr "Línea base vigente al formalizar el cambio (congelada al enviar a revisión)."
+
+#: pmo/phi.py:34
+msgid "Baseline missing"
+msgstr "Falta línea base"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:793
+#: pmo/public/js/project_pmo.js:462
+msgid "Baseline set: {0}"
+msgstr "Línea base establecida: {0}"
 
 #. Description of the 'After baseline' (Link) field in DocType 'PMO Change
 #. Request'
@@ -527,21 +592,45 @@ msgstr "Línea base que incorpora el cambio. Se fija automáticamente al emitir 
 msgid "Baseline {0} has no snapshot (it is not frozen/Submitted)."
 msgstr "La baseline {0} no tiene snapshot (no está congelada/Submitted)."
 
+#: pmo/public/js/project_pmo.js:437
+msgid "Baseline: {0} · {1}"
+msgstr "Línea base: {0} · {1}"
+
 #. Label of the section_baselines (Section Break) field in DocType 'PMO Change
 #. Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:407
-#: pmo/project_control.py:112 pmo/templates/project_control/executive.html:235
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:471
+#: pmo/project_control.py:130 pmo/templates/project_control/executive.html:235
 msgid "Baselines"
 msgstr "Líneas base"
 
+#: pmo/phi.py:40 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:215
+msgid "Basic tracking"
+msgstr "Seguimiento básico"
+
 #. Label of the baseline_before (Link) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:292
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:356
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.js:15
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:183
 msgid "Before baseline"
 msgstr "Línea base previa"
+
+#: pmo/health.py:26 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:286
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:317
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:238
+msgid "Behind"
+msgstr "Con atraso"
+
+#. Description of the 'Governance Weight (auto)' (Int) field in DocType 'PMO
+#. Settings'
+#: pmo/pmo/doctype/pmo_settings/pmo_settings.json
+msgid "Calculado automáticamente: 100 - Execution - Schedule. Debe quedar > 0."
+msgstr ""
+
+#: pmo/public/js/project_pmo.js:39
+msgid "Cambiar fin comprometido"
+msgstr ""
 
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:290
 msgid "Cannot cancel a Change Request in a terminal state ({0}). Record a new Change Request."
@@ -555,11 +644,15 @@ msgstr "No se puede cancelar: el Change Request ya se cerró con una nueva basel
 msgid "Cannot cancel: the change was already applied to the Project. Record a new Change Request to revert it."
 msgstr "No se puede cancelar: el cambio ya fue aplicado al Project. Registra un Change Request nuevo para revertirlo."
 
-#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:195
+#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:197
 msgid "Cannot close: the Project has {0} open Change Request(s). Resolve or close them (Rejected/Closed) before closing the Project."
 msgstr "No se puede cerrar: el Project tiene {0} Solicitud(es) de Cambio abierta(s). Resuélvelas o ciérralas (Rechazada/Cerrada) antes de cerrar el Project."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:275
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:336
+msgid "Cannot freeze the baseline (fix the plan first): {0}"
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:301
 msgid "Cannot freeze: {0}"
 msgstr "No se puede congelar: {0}"
 
@@ -586,10 +679,21 @@ msgstr "Capacidad h/día"
 msgid "Capacity heatmap"
 msgstr "Mapa de calor de capacidad"
 
-#. Label of a chart in the PMO Workspace
-#: pmo/dashboard.py:40 pmo/pmo/workspace/pmo/pmo.json
+#: pmo/dashboard.py:48
 msgid "Capacity — current month"
 msgstr "Capacidad — mes actual"
+
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:154
+msgid "Captura el Alcance de alto nivel antes de emitir el Handoff."
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:152
+msgid "Captura el Objetivo del proyecto antes de emitir el Handoff."
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:157
+msgid "Captura la Fecha comprometida de terminación (Fin comprometido) antes de emitir el Handoff."
+msgstr ""
 
 #. Label of the causes (Small Text) field in DocType 'PMO Post-Project Review'
 #: pmo/pmo/doctype/pmo_post_project_review/pmo_post_project_review.json
@@ -598,11 +702,11 @@ msgstr "Causas"
 
 #. Option for the 'Area' (Select) field in DocType 'PMO Lessons Learned'
 #: pmo/pmo/doctype/pmo_lessons_learned/pmo_lessons_learned.json
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:46
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:58
 msgid "Change Control"
 msgstr "Control de cambios"
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:402
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:466
 msgid "Change Request"
 msgstr "Solicitud de cambio"
 
@@ -610,7 +714,7 @@ msgstr "Solicitud de cambio"
 msgid "Change Request (context)"
 msgstr "Change Request (contexto)"
 
-#: pmo/project_control.py:106 pmo/templates/project_control/executive.html:230
+#: pmo/project_control.py:124 pmo/templates/project_control/executive.html:230
 msgid "Change Requests"
 msgstr "Solicitudes de cambio"
 
@@ -619,13 +723,22 @@ msgstr "Solicitudes de cambio"
 msgid "Change register"
 msgstr "Registro de cambios"
 
+#: pmo/public/js/project_pmo.js:396
+msgid "Change requests"
+msgstr "Solicitudes de cambio"
+
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:54
 msgid "Change type"
 msgstr "Tipo de cambio"
 
-#: pmo/project_control.py:128 pmo/templates/project_control/executive.html:143
+#: pmo/project_control.py:146 pmo/templates/project_control/executive.html:143
 msgid "Changes:"
 msgstr "Cambios:"
+
+#. Label of the pmo_sec_access (Section Break) field in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Ciclo de Gobernanza"
+msgstr ""
 
 #. Label of the customer (Link) field in DocType 'PMO Project Handoff'
 #: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
@@ -644,7 +757,7 @@ msgstr "Cierre"
 msgid "Closure Checklist"
 msgstr "Lista de verificación de cierre"
 
-#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:173
+#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:175
 msgid "Closure can only be issued for a terminal Project (Completed or Cancelled). Current status: {0}."
 msgstr "El Closure solo se emite para un Project terminal (Completed o Cancelled). Estado actual: {0}."
 
@@ -664,7 +777,7 @@ msgstr "Confirmaciones de cierre: cada punto indica que fue revisado/completado 
 msgid "Closure date"
 msgstr "Fecha de cierre"
 
-#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:164
+#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:166
 msgid "Closure date cannot be in the future."
 msgstr "La fecha de cierre no puede estar en el futuro."
 
@@ -686,7 +799,10 @@ msgstr "Snapshot de cierre (congelado al emitir)"
 msgid "Commercial thread of the change. The commercial acceptance lives in the Quotation/Addendum workflow, not here."
 msgstr "Hilo comercial del cambio. La aceptación comercial vive en el flujo de la Cotización/Addendum, no aquí."
 
-#: pmo/project_control.py:92 pmo/templates/project_control/executive.html:179
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:237
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:178 pmo/project_control.py:110
+#: pmo/templates/project_control/executive.html:179
+#: pmo/templates/project_control/resumen.html:139
 msgid "Commitment"
 msgstr "Compromiso"
 
@@ -696,13 +812,8 @@ msgstr "Compromiso"
 msgid "Committed (confidential)"
 msgstr "Comprometido (confidencial)"
 
-#. Description of the 'PMO — Committed end' (Date) field in DocType 'Project'
-#: pmo/fixtures/custom_field.json
-msgid "Committed completion date of the project (business or agreed commitment). Different from the Expected End Date, which is the calculated date. It does not shift automatically with the schedule (can be changed manually). It does not block saving; if the calculated end exceeds it, only a warning is shown. Empty = no commitment."
-msgstr "Fecha comprometida de terminación del proyecto (compromiso de negocio o acordado). Distinta del Expected End Date, que es la fecha calculada. No se desplaza automáticamente con el cronograma (puede cambiarse manualmente). No bloquea el guardado; si el fin calculado la supera, solo se muestra un aviso. Vacío = sin compromiso."
-
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.py:48
-#: pmo/project_control.py:70 pmo/templates/project_control/executive.html:84
+#: pmo/project_control.py:88 pmo/templates/project_control/executive.html:84
 msgid "Committed date"
 msgstr "Fecha comprometida"
 
@@ -712,7 +823,7 @@ msgstr "Fecha comprometida"
 msgid "Committed/deadline date of the task (business or agreed commitment). Different from the Expected End Date, which is the calculated date. It does not shift automatically with rescheduling (can be changed manually). It does not move the task, block saving, or the actual log; if the planned end exceeds it, only a warning is shown. Empty = no commitment."
 msgstr "Fecha comprometida/límite de la tarea (compromiso de negocio o acordado). Distinta del Expected End Date, que es la fecha calculada. No se desplaza automáticamente con la reprogramación (puede cambiarse manualmente). No mueve la tarea ni bloquea el guardado ni el registro real; si el fin planeado la supera, solo se muestra un aviso. Vacío = sin compromiso."
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:296
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:360
 msgid "Compare"
 msgstr "Comparar"
 
@@ -728,17 +839,50 @@ msgstr "Comparar con línea base anterior"
 msgid "Completed / due to date"
 msgstr "Completadas / debidas a la fecha"
 
+#. Label of the startup_conditions_reviewed (Check) field in DocType 'PMO
+#. Project Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Condiciones de arranque y pendientes revisados"
+msgstr ""
+
 #: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.py:28
 msgid "Confidential"
 msgstr "Confidencial"
 
-#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:140
-msgid "Confirm 'Contractual / Legal Readiness Verified' before issuing the Handoff."
-msgstr "Confirma 'Readiness contractual/legal verificada' antes de emitir el Handoff."
-
-#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:189
+#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:191
 msgid "Confirm all Closure Checklist items before issuing the Closure."
 msgstr "Confirma todos los puntos de la Lista de verificación de cierre antes de emitir el Closure."
+
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:188
+msgid "Confirma 'Autorización explícita para iniciar obtenida' antes de emitir el Handoff."
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:171
+msgid "Confirma 'Condiciones de arranque y pendientes revisados' antes de emitir el Handoff."
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:167
+msgid "Confirma 'Equipo interno necesario informado' antes de emitir el Handoff."
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:163
+msgid "Confirma 'PM informado y transferencia coordinada' antes de emitir el Handoff."
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:179
+msgid "Confirma 'Readiness contractual/legal verificada' antes de emitir el Handoff."
+msgstr ""
+
+#. Description of the 'Autorización explícita para iniciar obtenida' (Check)
+#. field in DocType 'PMO Project Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Confirma que una persona con autoridad para autorizar el inicio del proyecto otorgó explícitamente su autorización y que ésta fue comunicada al Project Manager. Requerido antes de emitir el Handoff."
+msgstr ""
+
+#: pmo/templates/project_control/resumen.html:125
+#: pmo/templates/project_control/resumen.html:134
+msgid "Consolidated project health index based on execution, schedule and governance. Critical conditions may limit the final classification."
+msgstr "Índice consolidado de salud del proyecto basado en ejecución, cronograma y gobernanza. Las condiciones críticas pueden limitar la clasificación final."
 
 #. Label of the pmo_customer_contact (Link) field in DocType 'Project'
 #. Label of the customer_contact (Link) field in DocType 'PMO Project Handoff'
@@ -748,9 +892,9 @@ msgid "Contacto principal del cliente"
 msgstr ""
 
 #. Description of the 'Contacto principal del cliente' (Link) field in DocType
-#. 'Project'
-#: pmo/fixtures/custom_field.json
-msgid "Contacto principal del cliente para este proyecto. El PMO Project Handoff toma este valor y lo congela al emitir."
+#. 'PMO Project Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Contacto principal del cliente. El selector muestra solo contactos del Customer del Project (define el Customer en el Project primero). Al emitir se sincroniza a Project.pmo_customer_contact y queda congelado en el Handoff."
 msgstr ""
 
 #. Label of a Card Break in the PMO Governance Workspace
@@ -763,15 +907,9 @@ msgstr "Mejora continua"
 msgid "Continuous improvement actions"
 msgstr "Acciones de mejora continua"
 
-#: pmo/project_control.py:142 pmo/templates/project_control/financial.html:31
+#: pmo/project_control.py:160 pmo/templates/project_control/financial.html:31
 msgid "Contract revenue"
 msgstr "Ingreso"
-
-#. Label of the contractual_legal_ready (Check) field in DocType 'PMO Project
-#. Handoff'
-#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
-msgid "Contractual / Legal Readiness Verified"
-msgstr "Readiness contractual/legal verificada"
 
 #. Label of the chk_contractual_legal (Check) field in DocType 'PMO Project
 #. Closure'
@@ -779,36 +917,67 @@ msgstr "Readiness contractual/legal verificada"
 msgid "Contractual / legal obligations reviewed"
 msgstr "Obligaciones contractuales/legales revisadas"
 
+#: pmo/governance_inbox.py:45
+msgid "Control"
+msgstr "Control"
+
+#. Label of a Workspace Sidebar Item
+#: pmo/workspace_sidebar/pmo.json
+msgid "Control de Proyecto"
+msgstr ""
+
+#. Label of the pmo_sec_ctrl (Section Break) field in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Control del proyecto"
+msgstr ""
+
 #. Option for the 'Section' (Select) field in DocType 'PMO Risk Question'
 #: pmo/pmo/doctype/pmo_risk_question/pmo_risk_question.json
 msgid "Cost / economic"
 msgstr "Costo / económico"
 
-#: pmo/project_control.py:168 pmo/templates/project_control/financial.html:71
+#: pmo/templates/project_control/resumen.html:164
+msgid "Cost consumed"
+msgstr "Costo consumido"
+
+#: pmo/project_control.py:186 pmo/templates/project_control/financial.html:71
 msgid "Cost impact (applied)"
 msgstr "Impacto en costo (aplicado)"
 
-#: pmo/project_control.py:122 pmo/templates/project_control/executive.html:134
+#: pmo/phi.py:31
+msgid "Cost overrun"
+msgstr "Sobrecosto"
+
+#: pmo/financial_health.py:36
+msgid "Cost pressure"
+msgstr "Presión de costo"
+
+#: pmo/project_control.py:140 pmo/templates/project_control/executive.html:134
 msgid "Cost — authorized"
 msgstr "Costo — autorizado"
 
-#: pmo/project_control.py:123 pmo/templates/project_control/executive.html:136
+#: pmo/project_control.py:141 pmo/templates/project_control/executive.html:136
 msgid "Cost — registered"
 msgstr "Costo — registrado"
 
-#: pmo/project_control.py:152 pmo/templates/project_control/financial.html:47
+#: pmo/project_control.py:170 pmo/templates/project_control/financial.html:47
 msgid "Costs"
 msgstr "Costos"
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:592
+msgid "Could not load the PMO panel."
+msgstr "No se pudo cargar el panel PMO."
+
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:216
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:212
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:242
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:265
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:334
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:231
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:280
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:298
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:329
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:398
 msgid "Could not load the data."
 msgstr "No se pudieron cargar los datos."
 
-#: pmo/dashboard.py:65
+#: pmo/dashboard.py:73 pmo/governance_inbox.py:42
 msgid "Could not load this PMO panel."
 msgstr "No se pudo cargar este panel PMO."
 
@@ -827,17 +996,35 @@ msgstr "No se pudo leer el archivo."
 msgid "Could this potentially affect an authorized/controlled condition (scope, committed date, baseline, authorized economics)? Signal only — it does not create a Change Request."
 msgstr "¿Podría afectar una condición autorizada/controlada (alcance, fecha comprometida, línea base, economía autorizada)? Solo es señal — no crea una Solicitud de Cambio."
 
-#: pmo/dashboard.py:75 pmo/dashboard.py:256
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:238
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:180
+#: pmo/templates/project_control/resumen.html:141
+msgid "Coverage"
+msgstr "Cobertura"
+
+#: pmo/dashboard.py:83 pmo/dashboard.py:424
 msgid "Create Handoff"
 msgstr "Crear Handoff"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:711
+msgid "Create closure"
+msgstr "Crear cierre"
 
 #: pmo/public/js/pmo_change_request.js:24
 msgid "Create commercial addendum"
 msgstr "Crear addenda comercial"
 
-#: pmo/dashboard.py:76 pmo/dashboard.py:259
+#: pmo/dashboard.py:84 pmo/dashboard.py:427
 msgid "Create initial baseline"
 msgstr "Crear línea base inicial"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:709
+msgid "Create record"
+msgstr "Crear acta"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:712
+msgid "Create review"
+msgstr "Crear revisión"
 
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:220
 msgid "Create the Addendum before sending the Change Request for review (every formal change goes through exactly one Addendum)."
@@ -851,7 +1038,11 @@ msgstr "Crea la Addenda de esta Solicitud de Cambio antes de poder implementarla
 msgid "Creating addendum…"
 msgstr "Creando addenda…"
 
-#: pmo/project_control.py:68 pmo/templates/project_control/executive.html:79
+#: pmo/phi.py:33
+msgid "Critical risk pending management"
+msgstr "Riesgo crítico pendiente de gestión"
+
+#: pmo/project_control.py:86 pmo/templates/project_control/executive.html:79
 msgid "Current forecast (plan)"
 msgstr "Pronóstico vigente (plan)"
 
@@ -867,8 +1058,8 @@ msgstr "Estado actual"
 msgid "Cutoff (Status Date)"
 msgstr "Corte (Status Date)"
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:158
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:159
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:177
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:178
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.py:106
 msgid "Cutoff date"
 msgstr "Fecha de corte"
@@ -878,11 +1069,11 @@ msgstr "Fecha de corte"
 msgid "Cutoff date (Data Date) of the Project's as-of control (ADR-0006). Only today or past; no future date allowed. It is the default value of the cutoff-date status report."
 msgstr "Fecha de corte (Data Date) del control a fecha del Project (ADR-0006). Solo hoy o pasada; no admite fecha futura. Es el valor por defecto del reporte de status a fecha de corte."
 
-#: pmo/project_control.py:62 pmo/templates/project_control/executive.html:61
+#: pmo/project_control.py:80 pmo/templates/project_control/executive.html:61
 msgid "Cutoff date (Status Date):"
 msgstr "Fecha de corte (Status Date):"
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:246
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:272
 msgid "Cycle detected in the supersession chain."
 msgstr "Ciclo detectado en la cadena de supersession."
 
@@ -927,7 +1118,25 @@ msgstr "Decisión"
 msgid "Decision notes"
 msgstr "Notas de decisión"
 
-#: pmo/dashboard.py:58
+#. Description of the 'Excluido de gobernanza PMO' (Check) field in DocType
+#. 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Declaración explícita de que este proyecto NO está sujeto al proceso de gobernanza PMO. Default: No (sujeto). Solo PMO Manager o System Manager pueden cambiarlo (enforcement server-side). Un proyecto excluido no genera desviaciones de gobernanza pero sigue siendo visible para la PMO."
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:216
+msgid "Define el Customer en el Project antes de emitir el Handoff (requerido para el Contacto del cliente)."
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:199
+msgid "Define el Project Manager (Responsable del proyecto) en el Project antes de emitir el Handoff."
+msgstr ""
+
+#: pmo/public/js/project_pmo.js:55
+msgid "Define el Project Manager antes de crear el Acta de inicio."
+msgstr ""
+
+#: pmo/dashboard.py:66
 msgid "Delay (d)"
 msgstr "Atraso (d)"
 
@@ -952,9 +1161,7 @@ msgstr "Detalle por documento"
 msgid "Detailed description of the requested change."
 msgstr "Descripción detallada del cambio solicitado."
 
-#: pmo/health.py:24 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:186
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:218
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:191
+#: pmo/phi.py:22
 msgid "Deviated"
 msgstr "Desviado"
 
@@ -990,7 +1197,15 @@ msgstr "Evidencia económica (restringida)"
 msgid "Economic evidence — permlevel 1: readable only by economic roles (economic gate). Not exposed to plain Project READ."
 msgstr "Evidencia económica — permlevel 1: legible solo por roles económicos (gate económico). No expuesta al READ simple del Project."
 
-#: pmo/project_control.py:136 pmo/templates/project_control/financial.html:16
+#: pmo/phi.py:30
+msgid "Economic reference inconsistent"
+msgstr "Referencia económica inconsistente"
+
+#: pmo/dashboard.py:95
+msgid "Economic situation"
+msgstr ""
+
+#: pmo/project_control.py:154 pmo/templates/project_control/financial.html:16
 msgid "Economic state:"
 msgstr "Estado económico:"
 
@@ -1006,17 +1221,21 @@ msgstr "Snapshot económico"
 msgid "Economics snapshot hash"
 msgstr "Hash del snapshot económico"
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:201
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:227
 msgid "Effective Date cannot be earlier than that of the superseded baseline ({0})."
 msgstr "Effective Date no puede ser anterior a la de la baseline que sustituye ({0})."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:101
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:127
 msgid "Effective Date cannot be in the future (scheduled baselines are not supported)."
 msgstr "La fecha de vigencia no puede ser futura (no se admiten líneas base programadas)."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:291
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:317
 msgid "Effective Date cannot be later than the approval date."
 msgstr "Effective Date no puede ser posterior a la fecha de aprobacion."
+
+#: pmo/templates/project_control/resumen.html:145
+msgid "Effective band limited by:"
+msgstr "Banda efectiva limitada por:"
 
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.py:108
 msgid "Effective baseline"
@@ -1034,11 +1253,11 @@ msgstr "Horas efectivas"
 msgid "Effective-dated capacity: empty Employee = global baseline; with Employee = individual override. Applies from From Date until another row of the same type supersedes it. With no active row, the resource is shown as capacity missing (no value is assumed)."
 msgstr "Capacidad efectivo-datada: Employee vacío = baseline global; con Employee = override individual. Aplica desde From Date hasta que otra fila del mismo tipo la sustituya. Sin fila vigente, el recurso se muestra como capacidad faltante (no se asume ningún valor)."
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:311
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:412
 msgid "Effort"
 msgstr "Esfuerzo"
 
-#: pmo/project_control.py:76 pmo/templates/project_control/executive.html:103
+#: pmo/project_control.py:94 pmo/templates/project_control/executive.html:103
 msgid "Effort (hours)"
 msgstr "Esfuerzo (horas)"
 
@@ -1046,6 +1265,38 @@ msgstr "Esfuerzo (horas)"
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
 msgid "Effort / Resources"
 msgstr "Esfuerzo / Recursos"
+
+#: pmo/phi.py:32
+msgid "Effort overrun"
+msgstr "Sobreconsumo de esfuerzo"
+
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:230
+msgid "El Contacto principal del cliente no está relacionado con el Customer del Project. Selecciona un contacto del Customer."
+msgstr ""
+
+#. Description of the 'PM informado y transferencia coordinada' (Check) field
+#. in DocType 'PMO Project Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "El Project Manager fue informado y la transferencia a ejecución se coordinó con él. Requerido antes de emitir el Handoff."
+msgstr ""
+
+#: pmo/public/js/project_pmo.js:57
+msgid "El Project Manager se define en Project → PMO."
+msgstr ""
+
+#: pmo/schedule_commit.py:77
+msgid "El Project indicado no existe."
+msgstr ""
+
+#: pmo/schedule_commit.py:90
+msgid "El Project no tiene un Fin comprometido vigente que modificar. Se establece al emitir el Acta de Inicio (Handoff)."
+msgstr ""
+
+#. Description of the 'Equipo interno necesario informado' (Check) field in
+#. DocType 'PMO Project Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "El equipo interno necesario para el arranque fue informado de la transferencia. Requerido antes de emitir el Handoff."
+msgstr ""
 
 #. Label of the issued_at (Datetime) field in DocType 'PMO Project Handoff'
 #: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
@@ -1068,13 +1319,13 @@ msgid "Empty = global capacity (baseline); set = individual override for that Em
 msgstr "Vacío = capacidad global (baseline); informado = override individual para ese Employee."
 
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.py:45
-#: pmo/project_control.py:85 pmo/templates/project_control/executive.html:164
+#: pmo/project_control.py:103 pmo/templates/project_control/executive.html:164
 #: pmo/templates/project_control/executive.html:179
 msgid "End (Baseline)"
 msgstr "Fin (Línea Base)"
 
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.py:46
-#: pmo/project_control.py:86 pmo/templates/project_control/executive.html:164
+#: pmo/project_control.py:104 pmo/templates/project_control/executive.html:164
 #: pmo/templates/project_control/executive.html:179
 msgid "End (Forecast)"
 msgstr "Fin (Pronóstico)"
@@ -1082,6 +1333,12 @@ msgstr "Fin (Pronóstico)"
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:29
 msgid "End (Project)"
 msgstr "Fin (Proyecto)"
+
+#. Label of the internal_team_informed (Check) field in DocType 'PMO Project
+#. Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Equipo interno necesario informado"
+msgstr ""
 
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:1037
 msgid "Estimated"
@@ -1128,19 +1385,52 @@ msgstr ""
 msgid "Exact Addendum version (Quotation) that governance approved. Captured server-side when the change is Approved; updated by 'Reapprove addendum version' if a divergent new version is issued."
 msgstr "Versión exacta de la addenda (Cotización) que aprobó la gobernanza. Se captura server-side cuando el cambio se Aprueba; se actualiza con «Re-aprobar versión de la addenda» si se emite una versión nueva divergente."
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:310
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:411
 msgid "Exceptions"
 msgstr "Excepciones"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:600
+#: pmo/public/js/project_pmo.js:341
+msgid "Excluded from PMO governance"
+msgstr "Excluido de gobernanza PMO"
+
+#. Label of the pmo_governance_exempt (Check) field in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Excluido de gobernanza PMO"
+msgstr ""
+
+#: pmo/pmo/report/pmo_projects_without_governance/pmo_projects_without_governance.py:42
+msgid "Exclusion date"
+msgstr "Fecha de exclusión"
+
+#: pmo/governance_inbox.py:53
+#: pmo/pmo/report/pmo_projects_without_governance/pmo_projects_without_governance.py:34
+msgid "Exclusion reason"
+msgstr "Motivo de exclusión"
+
+#. Label of the pmo_exempt_by (Link) field in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Exclusión autorizada por"
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_settings/pmo_settings.py:26
+msgid "Execution + Schedule must be less than 100 so Governance stays greater than 0."
+msgstr ""
 
 #: pmo/governance.py:29
 msgid "Execution / Control"
 msgstr "Ejecución / Control"
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:42
-msgid "Executive report"
-msgstr "Reporte ejecutivo"
+#. Label of the execution_weight (Int) field in DocType 'PMO Settings'
+#: pmo/pmo/doctype/pmo_settings/pmo_settings.json
+msgid "Execution Weight"
+msgstr ""
 
-#: pmo/project_control.py:63 pmo/templates/project_control/executive.html:66
+#: pmo/pmo/doctype/pmo_settings/pmo_settings.py:24
+msgid "Execution and Schedule weights must be greater than 0."
+msgstr ""
+
+#: pmo/project_control.py:81 pmo/templates/project_control/executive.html:66
 msgid "Executive summary"
 msgstr "Resumen ejecutivo"
 
@@ -1160,14 +1450,14 @@ msgstr "Resumen ejecutivo de recomendaciones. Solo narrativo — NO genera accio
 msgid "Expected Time"
 msgstr "Tiempo Esperado"
 
-#: pmo/dashboard.py:56
+#: pmo/dashboard.py:64
 msgid "Expected end"
 msgstr "Fin esperado"
 
 #. Description of the 'Motivo' (Small Text) field in DocType 'PMO Project
 #. Baseline'
 #: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
-msgid "Explica por qué se sustituye la línea base vigente. En una replaneación, describe la desviación o la decisión de gestión que justifica establecer una nueva referencia."
+msgid "Explica por qué se establece o sustituye la línea base. La línea base es un compromiso formal y el motivo es obligatorio: en la Original registra por qué se congela el plan; en una replaneación, la desviación o decisión de gestión que justifica una nueva referencia."
 msgstr ""
 
 #. Label of the exposure (Select) field in DocType 'PMO Project Risk'
@@ -1185,12 +1475,8 @@ msgstr "Exposición"
 msgid "External dependencies"
 msgstr "Dependencias externas"
 
-#: pmo/public/js/pmo_project_handoff.js:52
-msgid "Falta definir el Contacto principal del cliente en el Project."
-msgstr ""
-
-#: pmo/public/js/pmo_project_handoff.js:50
-msgid "Falta definir el Responsable operativo interno en el Project."
+#: pmo/public/js/project_pmo.js:52
+msgid "Falta el Project Manager"
 msgstr ""
 
 #. Description of the 'Fecha de vigencia' (Date) field in DocType 'PMO Project
@@ -1199,15 +1485,25 @@ msgstr ""
 msgid "Fecha a partir de la cual esta línea base se utiliza como referencia oficial para medir el proyecto."
 msgstr ""
 
-#. Label of the committed_end_date (Date) field in DocType 'PMO Project
+#. Description of the 'Fin comprometido' (Date) field in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Fecha comprometida de terminación (compromiso vigente). Se establece desde el Acta/Handoff y se modifica solo por la acción gobernada 'Cambiar fin comprometido'. Read-only en el formulario; visible cuando tiene valor."
+msgstr ""
+
+#. Description of the 'Fin comprometido' (Date) field in DocType 'PMO Project
 #. Handoff'
 #: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
-msgid "Fecha comprometida"
+msgid "Fecha comprometida de terminación autorizada en el Acta. Es la fuente formal del compromiso inicial; al emitir (Submit) se copia a Project (pmo_committed_end_date). No depende de que el Project ya tenga una fecha cargada."
 msgstr ""
 
 #. Label of the approved_at (Datetime) field in DocType 'PMO Project Baseline'
 #: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
 msgid "Fecha de aprobación"
+msgstr ""
+
+#. Label of the pmo_exempt_on (Datetime) field in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Fecha de exclusión"
 msgstr ""
 
 #. Label of the handoff_date (Date) field in DocType 'PMO Project Handoff'
@@ -1220,29 +1516,57 @@ msgstr ""
 msgid "Fecha de vigencia"
 msgstr ""
 
+#. Description of the 'Fecha de exclusión' (Datetime) field in DocType
+#. 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Fecha/hora en que se autorizó la exclusión de gobernanza. Se fija server-side al activar la exclusión."
+msgstr ""
+
+#. Label of the pmo_committed_end_date (Date) field in DocType 'Project'
+#. Label of the committed_end_date (Date) field in DocType 'PMO Project
+#. Handoff'
+#: pmo/fixtures/custom_field.json
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Fin comprometido"
+msgstr ""
+
+#: pmo/schedule_commit.py:124
+msgid "Fin comprometido actualizado: {0} → {1}. Motivo: {2}"
+msgstr ""
+
 #. Label of the final_result (Small Text) field in DocType 'PMO Project
 #. Closure'
 #: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.json
 msgid "Final result"
 msgstr "Resultado final"
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:47
-#: pmo/project_control.py:134
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:59
+#: pmo/project_control.py:152
 msgid "Financial"
 msgstr "Financiera"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:245
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:321
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:146
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:238
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:181
+#: pmo/templates/project_control/resumen.html:156
+msgid "Financial health"
+msgstr "Salud financiera"
+
+#: pmo/financial_health.py:39
+msgid "Financial health unavailable"
+msgstr "Salud financiera no disponible"
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:345
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:423
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:187
 msgid "Forecast > commitment"
 msgstr "Pronóstico > compromiso"
 
-#: pmo/dashboard.py:46 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:317
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:142
+#: pmo/dashboard.py:54 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:419
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:183
 msgid "Forecast end"
 msgstr "Fin pronosticado"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:193 pmo/project_control.py:73
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:292 pmo/project_control.py:91
 #: pmo/templates/project_control/executive.html:99
 msgid "Forecast exceeds commitment"
 msgstr "Pronóstico excede compromiso"
@@ -1283,6 +1607,14 @@ msgstr "Congelado al enviar (evidencia). No editable después del envío."
 msgid "Frozen snapshot (JSON)"
 msgstr "Snapshot congelado (JSON)"
 
+#: pmo/templates/project_control/resumen.html:140
+msgid "Fulfillment of the PMO controls required for the current stage."
+msgstr "Cumplimiento de los controles PMO requeridos para la etapa actual."
+
+#: pmo/templates/project_control/resumen.html:165
+msgid "Gap"
+msgstr "Brecha"
+
 #. Description of the 'Section' (Select) field in DocType 'PMO Risk Question'
 #: pmo/pmo/doctype/pmo_risk_question/pmo_risk_question.json
 msgid "Generic sections apply to any project; specialized sections (e.g. Information Technology) group domain prompts. New sections are added through the app's normal versioned mechanism (never a Property Setter)."
@@ -1292,10 +1624,28 @@ msgstr "Las secciones generales aplican a cualquier proyecto; las secciones espe
 msgid "Global"
 msgstr "Global"
 
+#. Label of a Workspace Sidebar Item
+#: pmo/workspace_sidebar/pmo.json
+msgid "Gobernanza PMO"
+msgstr ""
+
 #. Option for the 'Area' (Select) field in DocType 'PMO Lessons Learned'
 #: pmo/pmo/doctype/pmo_lessons_learned/pmo_lessons_learned.json
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:237
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:60
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:179
+#: pmo/templates/project_control/resumen.html:140
 msgid "Governance"
 msgstr "Gobernanza"
+
+#. Label of the governance_weight (Int) field in DocType 'PMO Settings'
+#: pmo/pmo/doctype/pmo_settings/pmo_settings.json
+msgid "Governance Weight (auto)"
+msgstr ""
+
+#: pmo/governance_inbox.py:29
+msgid "Governance cycle of the project"
+msgstr "Ciclo de gobernanza del proyecto"
 
 #. Description of the 'Decision notes' (Small Text) field in DocType 'PMO
 #. Change Request'
@@ -1308,11 +1658,15 @@ msgstr "Notas de la decisión de gobernanza. Obligatorias cuando el cambio se re
 msgid "Governance documents"
 msgstr "Documentos de gobernanza"
 
+#: pmo/public/js/project_pmo.js:338
+msgid "Governance: excluded"
+msgstr "Gobernanza: excluido"
+
 #: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.js:28
 msgid "Granularity"
 msgstr "Granularidad"
 
-#: pmo/project_control.py:127 pmo/templates/project_control/executive.html:141
+#: pmo/project_control.py:145 pmo/templates/project_control/executive.html:141
 msgid "Gross margin — registered"
 msgstr "Margen bruto — registrado"
 
@@ -1323,11 +1677,15 @@ msgstr "Margen bruto — registrado"
 msgid "Hash del snapshot"
 msgstr ""
 
-#: pmo/dashboard.py:45 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:213
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:316
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:141
+#: pmo/dashboard.py:53 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:236
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:418
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:176
 msgid "Health"
 msgstr "Salud"
+
+#: pmo/financial_health.py:35 pmo/phi.py:22
+msgid "Healthy"
+msgstr "Saludable"
 
 #. Option for the 'Exposure' (Select) field in DocType 'PMO Project Risk'
 #. Option for the 'Exposure' (Select) field in DocType 'PMO Project Risk Item'
@@ -1345,10 +1703,18 @@ msgstr "Alta"
 msgid "High likelihood"
 msgstr "Alta"
 
-#: pmo/project_control.py:179 pmo/public/js/project_pmo.js:63
+#: pmo/health.py:294
+msgid "High-exposure active risk without owner or response."
+msgstr ""
+
+#: pmo/project_control.py:197 pmo/public/js/project_pmo.js:545
 #: pmo/templates/project_control/executive.html:267
 msgid "High-exposure risks"
 msgstr "Riesgos de exposición alta"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:677
+msgid "History"
+msgstr "Historial"
 
 #: pmo/risk_history.py:160
 msgid "History is sourced natively from Version (track_changes) and timeline Comments; no parallel history is stored."
@@ -1358,6 +1724,10 @@ msgstr "La historia proviene nativamente de Version (track_changes) y de los Com
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
 msgid "Hours (impact)"
 msgstr "Horas (impacto)"
+
+#: pmo/templates/project_control/resumen.html:141
+msgid "How complete the available evidence used to compute PHI is."
+msgstr "Qué tan completa es la evidencia disponible utilizada para calcular el PHI."
 
 #. Description of the 'Versión de línea base' (Data) field in DocType 'PMO
 #. Project Baseline'
@@ -1408,7 +1778,7 @@ msgstr "Snapshot no económico inmutable al cierre (cronograma/esfuerzo/cambios)
 #: pmo/pmo/doctype/pmo_project_risk/pmo_project_risk.json
 #: pmo/pmo/doctype/pmo_project_risk_item/pmo_project_risk_item.json
 #: pmo/pmo/report/pmo_project_risk_register/pmo_project_risk_register.py:38
-#: pmo/project_control.py:111 pmo/templates/project_control/executive.html:235
+#: pmo/project_control.py:129 pmo/templates/project_control/executive.html:235
 msgid "Impact"
 msgstr "Impacto"
 
@@ -1419,7 +1789,7 @@ msgstr "Notas de impacto"
 
 #. Label of the impact_summary (Data) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:406
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:470
 msgid "Impact summary"
 msgstr "Resumen de impacto"
 
@@ -1445,9 +1815,8 @@ msgstr "Notas de implementación"
 msgid "Implemented"
 msgstr "Implementado"
 
-#. Label of a Link in the PMO Workspace
 #: pmo/pmo/page/tag_import/tag_import.js:12
-#: pmo/pmo/page/tag_import/tag_import.js:61 pmo/pmo/workspace/pmo/pmo.json
+#: pmo/pmo/page/tag_import/tag_import.js:61
 msgid "Import Tags"
 msgstr "Importar Tags"
 
@@ -1455,7 +1824,7 @@ msgstr "Importar Tags"
 msgid "In Review"
 msgstr "En revisión"
 
-#: pmo/project_control.py:102 pmo/templates/project_control/executive.html:214
+#: pmo/project_control.py:120 pmo/templates/project_control/executive.html:214
 msgid "In current baseline"
 msgstr "En la línea base vigente"
 
@@ -1477,6 +1846,26 @@ msgstr "Identificación de riesgo incompleta"
 msgid "Inconsistent Change Control state: more than one active Change Request references the Proposal Group {0}."
 msgstr "Estado de Control de Cambios inconsistente: más de una Solicitud de Cambio activa referencia el Grupo de Propuesta {0}."
 
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:210
+msgid "Indica el Contacto principal del cliente antes de emitir el Handoff."
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:208
+msgid "Indica el Responsable operativo interno antes de emitir el Handoff."
+msgstr ""
+
+#: pmo/schedule_commit.py:98
+msgid "Indica el motivo del cambio."
+msgstr ""
+
+#: pmo/schedule_commit.py:95
+msgid "Indica la nueva fecha de Fin comprometido."
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:184
+msgid "Indica quién autorizó el inicio ('Autorizado por') antes de emitir el Handoff."
+msgstr ""
+
 #. Option for the 'Section' (Select) field in DocType 'PMO Risk Question'
 #: pmo/pmo/doctype/pmo_risk_question/pmo_risk_question.json
 msgid "Information Technology"
@@ -1486,6 +1875,14 @@ msgstr "Tecnologías de Información"
 msgid "Initiation"
 msgstr "Inicio"
 
+#: pmo/phi.py:26
+msgid "Insufficient"
+msgstr "Insuficiente"
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:227
+msgid "Insufficient execution data"
+msgstr "Datos de ejecución insuficientes"
+
 #: pmo/status_date.py:42
 msgid "Invalid Status Date"
 msgstr "Status Date inválida"
@@ -1494,9 +1891,13 @@ msgstr "Status Date inválida"
 msgid "Invalid header. Expected: {0}"
 msgstr "Encabezado inválido. Se esperaba: {0}"
 
-#: pmo/dashboard.py:79 pmo/dashboard.py:268
+#: pmo/dashboard.py:87 pmo/dashboard.py:436 pmo/public/js/project_pmo.js:409
 msgid "Issue closure"
 msgstr "Emitir cierre"
+
+#: pmo/public/js/project_pmo.js:404
+msgid "Issue closure: open"
+msgstr "Cierre del proyecto: abrir"
 
 #. Label of the issued_at (Datetime) field in DocType 'PMO Post-Project Review'
 #. Label of the issued_at (Datetime) field in DocType 'PMO Project Closure'
@@ -1512,9 +1913,34 @@ msgstr "Emitido el"
 msgid "Issued by"
 msgstr "Emitido por"
 
-#: pmo/project_control.py:144 pmo/templates/project_control/financial.html:33
+# Gobernanza PMO — dashboard v3 (subtítulos KPI, bandeja y excluidos) (es-MX).
+#: pmo/governance_inbox.py:33
+msgid "Items requiring PMO review or decision."
+msgstr "Elementos que requieren revisión o decisión del PMO."
+
+#: pmo/governance_inbox.py:34
+msgid "Items requiring the Project Manager's attention."
+msgstr "Elementos que requieren atención del Project Manager."
+
+#. Description of the 'Motivo de exclusión de gobernanza' (Small Text) field in
+#. DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Justificación obligatoria de por qué el proyecto se excluye de la gobernanza PMO. Requerido cuando 'Excluido de gobernanza PMO' está activo."
+msgstr ""
+
+#: pmo/schedule_commit.py:100
+msgid "La nueva fecha debe ser diferente de la fecha comprometida actual."
+msgstr ""
+
+#: pmo/project_control.py:162 pmo/templates/project_control/financial.html:33
 msgid "Labor"
 msgstr "Labor"
+
+#. Description of the 'Condiciones de arranque y pendientes revisados' (Check)
+#. field in DocType 'PMO Project Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Las condiciones de arranque y los pendientes conocidos se revisaron con el Project Manager. Requerido antes de emitir el Handoff."
+msgstr ""
 
 #. Label of the last_reviewed_by (Link) field in DocType 'PMO Project Risk
 #. Assessment'
@@ -1527,6 +1953,10 @@ msgstr "Revisado por última vez por"
 #: pmo/pmo/doctype/pmo_project_risk_assessment/pmo_project_risk_assessment.json
 msgid "Last reviewed on"
 msgstr "Revisado por última vez el"
+
+#: pmo/public/js/project_pmo.js:496
+msgid "Leave empty for a PMO replan (management decision)."
+msgstr "Dejar vacío para una replaneación PMO (decisión de gestión)."
 
 #. Label of the lesson (Small Text) field in DocType 'PMO Lessons Learned'
 #: pmo/pmo/doctype/pmo_lessons_learned/pmo_lessons_learned.json
@@ -1595,7 +2025,8 @@ msgstr ""
 msgid "Malformed row: doctype, document, tags columns are required."
 msgstr "Fila mal formada: se requieren columnas doctype, document, tags."
 
-#: pmo/project_control.py:184 pmo/public/js/project_pmo.js:43
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:696
+#: pmo/project_control.py:202 pmo/public/js/project_pmo.js:389
 #: pmo/templates/project_control/executive.html:276
 msgid "Manage risks"
 msgstr "Gestionar riesgos"
@@ -1618,23 +2049,23 @@ msgstr "Riesgo manual"
 msgid "Manually identified risk (not derived from a questionnaire prompt)."
 msgstr "Riesgo identificado manualmente (no derivado de una pregunta del cuestionario)."
 
-#: pmo/project_control.py:146 pmo/templates/project_control/financial.html:35
+#: pmo/project_control.py:164 pmo/templates/project_control/financial.html:35
 msgid "Margin"
 msgstr "Margen"
 
-#: pmo/project_control.py:147 pmo/templates/project_control/financial.html:36
+#: pmo/project_control.py:165 pmo/templates/project_control/financial.html:36
 msgid "Margin %"
 msgstr "Margen %"
 
-#: pmo/project_control.py:169 pmo/templates/project_control/financial.html:72
+#: pmo/project_control.py:187 pmo/templates/project_control/financial.html:72
 msgid "Margin impact (applied)"
 msgstr "Impacto en margen (aplicado)"
 
-#: pmo/project_control.py:126 pmo/templates/project_control/executive.html:140
+#: pmo/project_control.py:144 pmo/templates/project_control/executive.html:140
 msgid "Margin — authorized"
 msgstr "Margen — autorizado"
 
-#: pmo/project_control.py:161 pmo/templates/project_control/financial.html:60
+#: pmo/project_control.py:179 pmo/templates/project_control/financial.html:60
 msgid "Margins"
 msgstr "Márgenes"
 
@@ -1657,6 +2088,14 @@ msgstr "Materializado"
 msgid "May affect controlled condition"
 msgstr "Puede afectar condición controlada"
 
+#: pmo/templates/project_control/resumen.html:138
+msgid "Measures schedule compliance at the cutoff date, comparing the tasks that should already be completed according to the current baseline against those actually completed."
+msgstr "Mide el cumplimiento del programa a la fecha de corte, comparando las tareas que según la línea base vigente ya deberían estar terminadas contra las que realmente están completadas."
+
+#: pmo/templates/project_control/resumen.html:139
+msgid "Measures whether the projected completion date meets the date committed with the client. If there is no committed date, it uses the current baseline's completion date as the reference."
+msgstr "Mide si la fecha proyectada de terminación cumple la fecha comprometida con el cliente. Si no existe una fecha comprometida, utiliza como referencia la fecha de terminación de la línea base vigente."
+
 #. Option for the 'Exposure' (Select) field in DocType 'PMO Project Risk'
 #. Option for the 'Exposure' (Select) field in DocType 'PMO Project Risk Item'
 #: pmo/pmo/doctype/pmo_project_risk/pmo_project_risk.json
@@ -1677,7 +2116,7 @@ msgstr "Media"
 msgid "Metric"
 msgstr "Métrica"
 
-#: pmo/project_control.py:83 pmo/templates/project_control/executive.html:162
+#: pmo/project_control.py:101 pmo/templates/project_control/executive.html:162
 msgid "Milestones"
 msgstr "Hitos"
 
@@ -1689,7 +2128,7 @@ msgstr "Falta la descripción del riesgo"
 msgid "Modified"
 msgstr "Modificada"
 
-#: pmo/dashboard.py:53
+#: pmo/dashboard.py:61
 msgid "Most delayed tasks"
 msgstr "Tareas más atrasadas"
 
@@ -1698,18 +2137,52 @@ msgstr "Tareas más atrasadas"
 msgid "Motivo"
 msgstr ""
 
+#. Label of the pmo_exempt_reason (Small Text) field in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Motivo de exclusión de gobernanza"
+msgstr ""
+
 #: pmo/pmo/page/tag_import/tag_import.js:21
 msgid "Multiple Tags per document separated by commas."
 msgstr "Varios Tags por documento separados por comas."
 
-#: pmo/project_control.py:107 pmo/templates/project_control/executive.html:257
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:675
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:809
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:853
+#: pmo/public/js/project_pmo.js:364 pmo/public/js/project_pmo.js:477
+#: pmo/public/js/project_pmo.js:522
+msgid "New baseline"
+msgstr "Nueva línea base"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:847
+#: pmo/public/js/project_pmo.js:516
+msgid "New baseline created: {0}"
+msgstr "Nueva línea base creada: {0}"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:700
+msgid "New request"
+msgstr "Nueva solicitud"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:616
+msgid "Next step"
+msgstr "Siguiente paso"
+
+#: pmo/project_control.py:125 pmo/templates/project_control/executive.html:257
 msgid "No Change Requests for this Project."
 msgstr "Este proyecto no tiene solicitudes de cambio."
 
-#: pmo/project_control.py:118 pmo/templates/project_control/executive.html:124
+#: pmo/financial_health.py:142
+msgid "No authorized economic reference (project without a linked proposal)."
+msgstr "Sin referencia económica autorizada (proyecto sin propuesta vinculada)."
+
+#: pmo/project_control.py:136 pmo/templates/project_control/executive.html:124
 #: pmo/templates/project_control/financial.html:22
 msgid "No authorized reference (project without linked proposal)."
 msgstr "Sin referencia autorizada (proyecto sin propuesta vinculada)."
+
+#: pmo/public/js/project_pmo.js:434
+msgid "No baseline"
+msgstr "Sin línea base"
 
 #: pmo/status_date.py:238
 msgid "No baseline in effect at the cutoff date: showing Current and Actual."
@@ -1719,15 +2192,23 @@ msgstr "Sin línea base vigente a la fecha de corte: se muestran Current y Actua
 msgid "No capacity configured (neither override nor global) for {0} on {1}."
 msgstr "No hay capacidad configurada (ni override ni global) para {0} en {1}."
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:646
+msgid "No change requests"
+msgstr "Sin solicitudes de cambio"
+
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.py:99
 msgid "No committed date"
 msgstr "Sin fecha comprometida"
 
-#: pmo/dashboard.py:64
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:256
+msgid "No customer"
+msgstr "Sin cliente"
+
+#: pmo/dashboard.py:72
 msgid "No customer-linked projects."
 msgstr "No hay proyectos con cliente asignado."
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:453
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:517
 msgid "No data."
 msgstr "Sin datos."
 
@@ -1735,9 +2216,13 @@ msgstr "Sin datos."
 msgid "No dates"
 msgstr "Sin fechas"
 
-#: pmo/dashboard.py:60
+#: pmo/dashboard.py:68
 msgid "No delayed tasks among your projects."
 msgstr "No hay tareas atrasadas en tus proyectos."
+
+#: pmo/dashboard.py:96
+msgid "No economic access."
+msgstr ""
 
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:295
 msgid "No employees in scope."
@@ -1752,11 +2237,11 @@ msgstr "Aún no hay historia registrada."
 msgid "No live Addendum version was found for this Change Request's Proposal Group."
 msgstr "No se encontró una versión viva de la addenda para el Grupo de Propuesta de esta Solicitud de Cambio."
 
-#: pmo/public/js/project_pmo.js:54
+#: pmo/public/js/project_pmo.js:537
 msgid "No open risks"
 msgstr "Sin riesgos abiertos"
 
-#: pmo/dashboard.py:68
+#: pmo/dashboard.py:76 pmo/governance_inbox.py:41
 msgid "No pending governance actions."
 msgstr "No hay acciones de gobernanza pendientes."
 
@@ -1779,23 +2264,27 @@ msgstr "Sin planificación para este empleado en el rango."
 msgid "No project"
 msgstr "Sin proyecto"
 
-#: pmo/dashboard.py:52
+#: pmo/governance_inbox.py:40
+msgid "No projects excluded from governance."
+msgstr "Sin proyectos excluidos de gobernanza."
+
+#: pmo/dashboard.py:60
 msgid "No projects require attention right now."
 msgstr "Ningún proyecto requiere atención en este momento."
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:229
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:329
 msgid "No projects require attention."
 msgstr "Ningún proyecto requiere atención."
 
-#: pmo/project_control.py:185 pmo/templates/project_control/executive.html:271
+#: pmo/project_control.py:203 pmo/templates/project_control/executive.html:271
 msgid "No risks require attention."
 msgstr "Ningún riesgo requiere atención."
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:257
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:321
 msgid "No schedule rows at this cutoff date: this Project has no effective baseline. The summary above still applies."
 msgstr "Sin filas de cronograma a esta fecha de corte: este Project no tiene una línea base vigente. El resumen de arriba sigue aplicando."
 
-#: pmo/project_control.py:94 pmo/templates/project_control/executive.html:194
+#: pmo/project_control.py:112 pmo/templates/project_control/executive.html:194
 msgid "No tasks with relevant deviation at the cutoff date."
 msgstr "Sin tareas con desviación relevante a la fecha de corte."
 
@@ -1803,13 +2292,19 @@ msgstr "Sin tareas con desviación relevante a la fecha de corte."
 msgid "No valid Tags in the row (empty tags column)."
 msgstr "No hay Tags válidos en la fila (columna tags vacía)."
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:159
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:168
 msgid "No visible projects for the current filters."
 msgstr "No hay proyectos visibles para los filtros actuales."
 
 #: pmo/tag_import.py:164
 msgid "No write permission on {0} {1}"
 msgstr "Sin permiso de escritura sobre {0} {1}"
+
+#. Description of the 'Autorizado por' (Data) field in DocType 'PMO Project
+#. Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Nombre y cargo/rol de la persona que autorizó explícitamente el inicio del proyecto. Puede ser interna o externa (cliente, sponsor, dirección u otra autoridad competente). No es necesario capturar nombre/cargo/organización por separado."
+msgstr ""
 
 #. Description of the 'Hours (impact)' (Float) field in DocType 'PMO Change
 #. Request'
@@ -1837,11 +2332,19 @@ msgstr "Documento inexistente: {0} {1}"
 msgid "Nonexistent documents"
 msgstr "Documentos inexistentes"
 
-#: pmo/project_control.py:176 pmo/templates/project_control/executive.html:263
+#: pmo/financial_health.py:40 pmo/governance_inbox.py:52
+msgid "Not applicable"
+msgstr "No aplica"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:630
+msgid "Not applicable yet"
+msgstr "No corresponde todavía"
+
+#: pmo/project_control.py:194 pmo/templates/project_control/executive.html:263
 msgid "Not assessed yet"
 msgstr "Sin evaluar aún"
 
-#: pmo/project_control.py:104 pmo/templates/project_control/executive.html:202
+#: pmo/project_control.py:122 pmo/templates/project_control/executive.html:202
 msgid "Not evaluable (no baseline in effect)"
 msgstr "No evaluable (sin línea base vigente)"
 
@@ -1853,6 +2356,14 @@ msgstr "No tiene permiso para leer este proyecto."
 msgid "Not permitted to read this risk."
 msgstr "No tiene permiso para leer este riesgo."
 
+#: pmo/financial_health.py:143
+msgid "Not started: no progress or cost recorded yet."
+msgstr "No iniciado: aún no hay avance ni costo registrado."
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:226
+msgid "Not subject to PMO monitoring"
+msgstr "No sujeto a seguimiento PMO"
+
 #: pmo/pmo/page/tag_import/tag_import.js:98
 msgid "Nothing was applied. With {0} error(s), NO tag was written (all or nothing)."
 msgstr "No se aplicó nada. Con {0} error(es), no se escribió NINGÚN tag (todo o nada)."
@@ -1863,19 +2374,41 @@ msgstr "No se aplicó nada. Con {0} error(es), no se escribió NINGÚN tag (todo
 msgid "Objectives achieved"
 msgstr "Objetivos alcanzados"
 
-#: pmo/health.py:22 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:216
-msgid "On track"
-msgstr "En plan"
+#. Label of the project_objective (Small Text) field in DocType 'PMO Project
+#. Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Objetivo del proyecto"
+msgstr ""
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:191
+#. Label of the section_scope (Section Break) field in DocType 'PMO Project
+#. Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Objetivo y alcance"
+msgstr ""
+
+#: pmo/health.py:27 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:285
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:318
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:232
+msgid "Off track"
+msgstr "Desviado"
+
+#: pmo/health.py:25 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:316
+msgid "On schedule"
+msgstr "En plazo"
+
+#: pmo/governance_project.py:48
+msgid "Only a PMO Manager (or System Manager) can change a project's PMO governance exemption. A Project Manager cannot exempt their own project."
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:217
 msgid "Only a Submitted, non-Cancelled baseline can be superseded."
 msgstr "Solo se puede sustituir una baseline Submitted y no Cancelada."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:189
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:215
 msgid "Only a baseline from the same Project can be superseded."
 msgstr "Solo se puede sustituir una baseline del mismo Project."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:129
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:155
 msgid "Only an Implemented Change Request can back a new baseline (it must be approved and applied, awaiting its new baseline to close)."
 msgstr "Solo una Solicitud de Cambio Implementada puede respaldar una nueva línea base (debe estar aprobada y aplicada, a la espera de su nueva línea base para cerrar)."
 
@@ -1883,20 +2416,19 @@ msgstr "Solo una Solicitud de Cambio Implementada puede respaldar una nueva lín
 msgid "Only baselines from the same Project can be compared."
 msgstr "Solo se pueden comparar baselines del mismo Project."
 
-#: pmo/project_control.py:178 pmo/templates/project_control/executive.html:266
+#: pmo/project_control.py:196 pmo/templates/project_control/executive.html:266
 msgid "Open / managing"
 msgstr "Abiertos / en gestión"
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:163
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:182
 msgid "Open Project"
 msgstr "Abrir Project"
 
-#. Label of a quick_list in the PMO Workspace
-#: pmo/dashboard.py:71 pmo/pmo/workspace/pmo/pmo.json
+#: pmo/dashboard.py:79
 msgid "Open change requests"
 msgstr "Solicitudes de cambio abiertas"
 
-#: pmo/public/js/project_pmo.js:57
+#: pmo/public/js/project_pmo.js:540
 msgid "Open risks"
 msgstr "Riesgos abiertos"
 
@@ -1905,7 +2437,7 @@ msgstr "Riesgos abiertos"
 msgid "Operations / support handover completed"
 msgstr "Entrega a operación/soporte completada"
 
-#: pmo/project_control.py:150 pmo/templates/project_control/financial.html:43
+#: pmo/project_control.py:168 pmo/templates/project_control/financial.html:43
 msgid "Ordered (Sales Orders)"
 msgstr "Ordenado (Sales Orders)"
 
@@ -1924,6 +2456,10 @@ msgstr "Origen"
 msgid "Original: primera versión autorizada del plan. Cambio aprobado: nueva referencia derivada de una Solicitud de Cambio aprobada e implementada. Replaneación aprobada: nueva referencia por decisión de gestión (por ejemplo, desviaciones acumuladas), sin requerir una Solicitud de Cambio."
 msgstr ""
 
+#: pmo/financial_health.py:38
+msgid "Over budget"
+msgstr "Sobrecosto"
+
 #: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:299
 msgid "Overallocated"
 msgstr "Sobreasignados"
@@ -1934,16 +2470,15 @@ msgid "Overallocation"
 msgstr "Sobreasignación"
 
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.py:49
-#: pmo/project_control.py:88 pmo/templates/project_control/executive.html:164
+#: pmo/project_control.py:106 pmo/templates/project_control/executive.html:164
 msgid "Overdue at cutoff"
 msgstr "Vencida al corte"
 
-#. Label of a number card in the PMO Workspace
-#: pmo/dashboard.py:36 pmo/pmo/workspace/pmo/pmo.json
+#: pmo/dashboard.py:44
 msgid "Overdue tasks"
 msgstr "Tareas vencidas"
 
-#: pmo/project_control.py:72 pmo/templates/project_control/executive.html:98
+#: pmo/project_control.py:90 pmo/templates/project_control/executive.html:98
 msgid "Overdue tasks at cutoff"
 msgstr "Tareas vencidas al corte"
 
@@ -1959,35 +2494,54 @@ msgstr "Override"
 msgid "Override hours"
 msgstr "Horas override"
 
+#: pmo/governance_inbox.py:48
+msgid "Owner"
+msgstr "Responsable"
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:236
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:175
+msgid "PHI"
+msgstr ""
+
+#: pmo/phi.py:36 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:215
+msgid "PHI unavailable"
+msgstr "PHI no disponible"
+
+#. Label of the phi_section (Section Break) field in DocType 'PMO Settings'
+#: pmo/pmo/doctype/pmo_settings/pmo_settings.json
+msgid "PHI — Dimension Weights"
+msgstr ""
+
+#. Label of the pm_informed_coordinated (Check) field in DocType 'PMO Project
+#. Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "PM informado y transferencia coordinada"
+msgstr ""
+
+#. Label of the pmo_tab (Tab Break) field in DocType 'Project'
 #. Name of a Workspace
 #. Title of a Workspace Sidebar
 #. Label of a Workspace Sidebar Item
-#: pmo/pmo/workspace/pmo/pmo.json pmo/public/js/project_pmo.js:15
-#: pmo/public/js/project_pmo.js:38 pmo/public/js/project_pmo.js:45
-#: pmo/workspace_sidebar/pmo.json
+#: pmo/fixtures/custom_field.json pmo/pmo/workspace/pmo/pmo.json
+#: pmo/public/js/project_pmo.js:22 pmo/public/js/project_pmo.js:41
+#: pmo/public/js/project_pmo.js:328 pmo/workspace_sidebar/pmo.json
 msgid "PMO"
 msgstr ""
 
 #. Name of a report
-#. Label of a Link in the PMO Workspace
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.json
-#: pmo/pmo/workspace/pmo/pmo.json
 msgid "PMO Baseline Comparison"
 msgstr "PMO Comparación de Líneas Base"
 
 #. Name of a DocType
-#. Label of a Link in the PMO Workspace
 #. Name of a Workspace
 #: pmo/pmo/doctype/pmo_capacity/pmo_capacity.json
-#: pmo/pmo/workspace/pmo/pmo.json
 #: pmo/pmo/workspace/pmo_capacity/pmo_capacity.json
 msgid "PMO Capacity"
 msgstr "PMO Capacidad"
 
 #. Name of a report
-#. Label of a Link in the PMO Workspace
 #: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.json
-#: pmo/pmo/workspace/pmo/pmo.json
 msgid "PMO Capacity Planning"
 msgstr "PMO Planeación de Capacidad"
 
@@ -1997,17 +2551,13 @@ msgid "PMO Capacity Snapshot"
 msgstr "PMO Instantánea de capacidad"
 
 #. Name of a report
-#. Label of a Link in the PMO Workspace
 #: pmo/pmo/report/pmo_change_register/pmo_change_register.json
-#: pmo/pmo/workspace/pmo/pmo.json
 msgid "PMO Change Register"
 msgstr "PMO Registro de Cambios"
 
 #. Name of a DocType
-#. Label of a Link in the PMO Workspace
 #. Label of a Link in the PMO Governance Workspace
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
-#: pmo/pmo/workspace/pmo/pmo.json
 #: pmo/pmo/workspace/pmo_governance/pmo_governance.json
 msgid "PMO Change Request"
 msgstr "PMO Solicitud de Cambio"
@@ -2037,12 +2587,8 @@ msgstr "PMO Control"
 msgid "PMO Executive Access"
 msgstr ""
 
-#. Label of a Card Break in the PMO Workspace
 #. Name of a Workspace
-#. Label of a Workspace Sidebar Item
-#: pmo/pmo/workspace/pmo/pmo.json
 #: pmo/pmo/workspace/pmo_governance/pmo_governance.json
-#: pmo/workspace_sidebar/pmo.json
 msgid "PMO Governance"
 msgstr "Gobernanza PMO"
 
@@ -2053,10 +2599,18 @@ msgstr "PMO Lecciones Aprendidas"
 
 #. Name of a role
 #: pmo/pmo/doctype/pmo_capacity/pmo_capacity.json
+#: pmo/pmo/doctype/pmo_post_project_review/pmo_post_project_review.json
 #: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.json
 #: pmo/pmo/doctype/pmo_risk_question/pmo_risk_question.json
+#: pmo/pmo/doctype/pmo_settings/pmo_settings.json
 msgid "PMO Manager"
 msgstr ""
+
+# Panel PMO — Page pmo_project_control: pestaña Gobernanza (consola del ciclo)
+# (es-MX).
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:25
+msgid "PMO Panel"
+msgstr "Panel PMO"
 
 #. Label of the pmo_planned_hours (Float) field in DocType 'ToDo'
 #: pmo/fixtures/custom_field.json
@@ -2064,17 +2618,13 @@ msgid "PMO Planned Hours"
 msgstr "PMO Horas Planificadas"
 
 #. Name of a report
-#. Label of a Link in the PMO Workspace
 #: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.json
-#: pmo/pmo/workspace/pmo/pmo.json
 msgid "PMO Planned vs Actual"
 msgstr "PMO Planificado vs Real"
 
 #. Name of a report
-#. Label of a Link in the PMO Workspace
 #: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:21
 #: pmo/pmo/report/pmo_portfolio/pmo_portfolio.json
-#: pmo/pmo/workspace/pmo/pmo.json
 msgid "PMO Portfolio"
 msgstr "PMO Portafolio"
 
@@ -2086,10 +2636,8 @@ msgid "PMO Post-Project Review"
 msgstr "PMO Revisión Post-Proyecto"
 
 #. Name of a DocType
-#. Label of a Link in the PMO Workspace
 #. Label of a Link in the PMO Governance Workspace
 #: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
-#: pmo/pmo/workspace/pmo/pmo.json
 #: pmo/pmo/workspace/pmo_governance/pmo_governance.json
 msgid "PMO Project Baseline"
 msgstr "PMO Línea Base de Proyecto"
@@ -2100,11 +2648,6 @@ msgstr "PMO Línea Base de Proyecto"
 #: pmo/pmo/workspace/pmo_governance/pmo_governance.json
 msgid "PMO Project Closure"
 msgstr "PMO Cierre de Proyecto"
-
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:25
-#: pmo/public/js/project_pmo.js:13
-msgid "PMO Project Control"
-msgstr "PMO Control de Proyecto"
 
 #. Name of a DocType
 #. Label of a Link in the PMO Governance Workspace
@@ -2140,16 +2683,17 @@ msgid "PMO Project Risk Register"
 msgstr "Registro de riesgos"
 
 #. Name of a report
-#. Label of a Link in the PMO Workspace
+#: pmo/pmo/report/pmo_projects_without_governance/pmo_projects_without_governance.json
+msgid "PMO Projects Without Governance"
+msgstr ""
+
+#. Name of a report
 #: pmo/pmo/report/pmo_resource_capacity/pmo_resource_capacity.json
-#: pmo/pmo/workspace/pmo/pmo.json
 msgid "PMO Resource Capacity"
 msgstr "PMO Capacidad de Recursos"
 
 #. Name of a report
-#. Label of a Link in the PMO Workspace
 #: pmo/pmo/report/pmo_resource_usage_by_project/pmo_resource_usage_by_project.json
-#: pmo/pmo/workspace/pmo/pmo.json
 msgid "PMO Resource Usage by Project"
 msgstr "PMO Uso de Recursos por Proyecto"
 
@@ -2160,15 +2704,18 @@ msgstr "PMO Uso de Recursos por Proyecto"
 msgid "PMO Risk Question"
 msgstr "Catálogo de preguntas de riesgo"
 
+#. Name of a DocType
+#: pmo/pmo/doctype/pmo_settings/pmo_settings.json
+msgid "PMO Settings"
+msgstr ""
+
 #. Label of the pmo_status_date (Date) field in DocType 'Project'
 #: pmo/fixtures/custom_field.json
 msgid "PMO Status Date"
 msgstr "PMO Fecha de Corte"
 
 #. Name of a report
-#. Label of a Link in the PMO Workspace
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.json
-#: pmo/pmo/workspace/pmo/pmo.json
 msgid "PMO Status Report"
 msgstr "PMO Reporte de Estado"
 
@@ -2178,17 +2725,15 @@ msgid "PMO Top Projects by Effort"
 msgstr "PMO Top de proyectos por esfuerzo"
 
 #. Name of a report
-#. Label of a Link in the PMO Workspace
 #: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.json
-#: pmo/pmo/workspace/pmo/pmo.json
 msgid "PMO Work by Resource"
 msgstr "PMO Trabajo por Recurso"
 
-#. Description of the 'Contractual / Legal Readiness Verified' (Check) field in
+#. Description of the 'Readiness contractual/legal verificada' (Check) field in
 #. DocType 'PMO Project Handoff'
 #: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
-msgid "PMO confirms that, where applicable, the requirements needed to start execution were verified (e.g. contracts, NDAs, orders/authorizations, commercial terms or other contractual/legal requirements needed to begin). This is not a legal approval of the documents, nor a capture of contracts; only a readiness confirmation before starting execution. Required before issuing the Handoff."
-msgstr "PMO confirma que, cuando aplica, los requisitos necesarios para iniciar la ejecución fueron verificados (por ejemplo contratos, NDAs, órdenes/autorizaciones, términos comerciales u otros requisitos contractuales/legales necesarios para comenzar). No es una aprobación jurídica de los documentos ni una captura de contratos; solo una confirmación de readiness antes de iniciar la ejecución. Requerido antes de emitir el Handoff."
+msgid "PMO confirma que, cuando aplica, los requisitos para iniciar la ejecución se verificaron (p. ej. contratos, NDAs, órdenes/autorizaciones, términos comerciales u otros requisitos contractuales/legales necesarios para comenzar). No es una aprobación jurídica de los documentos ni una captura de contratos; solo una confirmación de readiness antes de iniciar. Requerido antes de emitir el Handoff."
+msgstr ""
 
 #. Description of the 'Contractual / legal obligations reviewed' (Check) field
 #. in DocType 'PMO Project Closure'
@@ -2201,21 +2746,20 @@ msgstr "PMO revisó que no quedan obligaciones contractuales/legales relevantes 
 msgid "PMO — Committed date (deadline)"
 msgstr "PMO — Fecha comprometida (deadline)"
 
-#. Label of the pmo_committed_end_date (Date) field in DocType 'Project'
-#: pmo/fixtures/custom_field.json
-msgid "PMO — Committed end"
-msgstr "PMO — Fin comprometido"
+#: pmo/public/js/project_pmo.js:20
+msgid "PROJECT CONTROL"
+msgstr "CONTROL DE PROYECTO"
 
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:26
 msgid "Parent task"
 msgstr "Tarea padre"
 
-#: pmo/project_control.py:171 pmo/templates/project_control/financial.html:78
+#: pmo/project_control.py:189 pmo/templates/project_control/financial.html:78
 #: pmo/templates/project_control/financial.html:84
 msgid "Pending changes"
 msgstr "Cambios pendientes"
 
-#: pmo/dashboard.py:67
+#: pmo/dashboard.py:75
 msgid "Pending governance actions"
 msgstr "Acciones pendientes de gobernanza"
 
@@ -2237,16 +2781,19 @@ msgstr "Pendientes que no desaparecen con el cierre y fueron transferidos a oper
 msgid "Pending items transferred"
 msgstr "Pendientes transferidos"
 
-#. Label of a number card in the PMO Workspace
-#: pmo/dashboard.py:34 pmo/pmo/workspace/pmo/pmo.json
+#: pmo/dashboard.py:42
 msgid "People involved"
 msgstr "Personas participando"
 
-#: pmo/dashboard.py:80 pmo/dashboard.py:270
+#: pmo/dashboard.py:88 pmo/dashboard.py:438 pmo/public/js/project_pmo.js:420
 msgid "Perform post-project review"
 msgstr "Realizar revisión post-proyecto"
 
-#: pmo/project_control.py:182 pmo/public/js/project_pmo.js:28
+#: pmo/public/js/project_pmo.js:414
+msgid "Perform post-project review: open"
+msgstr "Revisión posterior: abrir"
+
+#: pmo/project_control.py:200 pmo/public/js/project_pmo.js:384
 #: pmo/templates/project_control/executive.html:278
 msgid "Perform risk assessment"
 msgstr "Realizar evaluación de riesgos"
@@ -2262,14 +2809,23 @@ msgstr "Persona responsable de vigilar y responder a este riesgo."
 msgid "Person responsible for coordinating/confirming that the approved change was incorporated into the Current Plan. Defaults to the Project's operational owner but is owned by this change and can be edited while the CR is editable. It does not modify the Project."
 msgstr "Persona responsable de coordinar/confirmar que el cambio aprobado quedó incorporado al Plan Vigente. Toma por defecto el responsable operativo del Project, pero es un dato propio del cambio y puede editarse mientras el CR sea editable. No modifica el Project."
 
-#. Description of the 'Responsable operativo interno' (Link) field in DocType
-#. 'Project'
-#: pmo/fixtures/custom_field.json
-msgid "Persona interna responsable de la operación/ejecución diaria del proyecto, distinta del Project Manager. El PMO Project Handoff toma este valor y lo congela al emitir."
+#. Description of the 'Execution Weight' (Int) field in DocType 'PMO Settings'
+#: pmo/pmo/doctype/pmo_settings/pmo_settings.json
+msgid "Peso de Execution en el PHI. Execution + Schedule debe ser < 100."
 msgstr ""
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:322
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:147
+#. Description of the 'Schedule Weight' (Int) field in DocType 'PMO Settings'
+#: pmo/pmo/doctype/pmo_settings/pmo_settings.json
+msgid "Peso de Schedule en el PHI."
+msgstr ""
+
+#. Label of a Workspace Sidebar Item
+#: pmo/workspace_sidebar/pmo.json
+msgid "Planificación de capacidad"
+msgstr ""
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:424
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:188
 msgid "Planned (h)"
 msgstr "Planificado (h)"
 
@@ -2320,38 +2876,38 @@ msgid "Planned visible"
 msgstr "Planificado visible"
 
 #. Label of a shortcut in the PMO Control Workspace
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:44
 #: pmo/pmo/workspace/pmo_control/pmo_control.json
 msgid "Planned vs Actual"
 msgstr "Planificado vs Real"
 
-#: pmo/dashboard.py:50
+#: pmo/dashboard.py:58
 msgid "Planned/Actual (h)"
 msgstr "Plan/Real (h)"
 
-#: pmo/project_control.py:97 pmo/templates/project_control/executive.html:206
+#: pmo/project_control.py:115 pmo/templates/project_control/executive.html:206
 msgid "Planning Maturity"
 msgstr "Madurez de planeación"
 
-#: pmo/project_control.py:96 pmo/templates/project_control/executive.html:203
+#: pmo/project_control.py:114 pmo/templates/project_control/executive.html:203
 msgid "Planning quality"
 msgstr "Calidad de planeación"
 
-#. Label of a shortcut in the PMO Workspace
 #. Label of a Workspace Sidebar Item
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:92
-#: pmo/pmo/workspace/pmo/pmo.json pmo/workspace_sidebar/pmo.json
+#: pmo/workspace_sidebar/pmo.json
+msgid "Portafolio"
+msgstr ""
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:100
 msgid "Portfolio"
 msgstr "Portafolio"
 
-#: pmo/dashboard.py:61
+#: pmo/dashboard.py:69
 msgid "Portfolio by customer"
 msgstr "Cartera por cliente"
 
-#. Label of a chart in the PMO Workspace
-#: pmo/dashboard.py:39 pmo/pmo/workspace/pmo/pmo.json
+#: pmo/dashboard.py:47
 msgid "Portfolio health"
-msgstr "Salud del portafolio"
+msgstr "Estado de cronograma del portafolio"
 
 #: pmo/pmo/report/pmo_continuous_improvement/pmo_continuous_improvement.py:49
 msgid "Post-Project Review"
@@ -2380,14 +2936,21 @@ msgstr "Tarea anterior"
 msgid "Project / bucket"
 msgstr "Proyecto / grupo"
 
-#. Label of a shortcut in the PMO Workspace
 #. Label of a Link in the PMO Governance Workspace
-#. Label of a Workspace Sidebar Item
-#: pmo/pmo/workspace/pmo/pmo.json
 #: pmo/pmo/workspace/pmo_governance/pmo_governance.json
-#: pmo/workspace_sidebar/pmo.json
 msgid "Project Control"
 msgstr "Control de Proyecto"
+
+#. Label of the pmo_project_manager (Link) field in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Project Manager / Responsable del proyecto"
+msgstr ""
+
+#. Description of the 'Project Manager' (Link) field in DocType 'PMO Project
+#. Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Project Manager canónico, tomado de Project.pmo_project_manager (fuente única). Read-only en el Acta: no se captura ni se elige aquí. Al emitir se congela como evidencia histórica en el snapshot; NO se sincroniza de vuelta al Project."
+msgstr ""
 
 #: pmo/risk_history.py:156
 msgid "Project Risk"
@@ -2403,7 +2966,7 @@ msgstr "Cambios de Proyecto"
 msgid "Project documentation completed"
 msgstr "Documentación del proyecto completada"
 
-#: pmo/project_control.py:117 pmo/templates/project_control/executive.html:119
+#: pmo/project_control.py:135 pmo/templates/project_control/executive.html:119
 msgid "Project economics (current)"
 msgstr "Economía del proyecto (actual)"
 
@@ -2412,32 +2975,70 @@ msgstr "Economía del proyecto (actual)"
 msgid "Project file"
 msgstr "Expediente del proyecto"
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:608
+msgid "Project governance"
+msgstr "Gobernanza del proyecto"
+
+#: pmo/templates/project_control/resumen.html:125
+msgid "Project health"
+msgstr "Salud del proyecto"
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:88
+msgid "Project health (PHI)"
+msgstr "Salud del proyecto (PHI)"
+
 #: pmo/project_link.py:22
 msgid "Project is immutable"
 msgstr "El Project es inmutable"
 
-#: pmo/project_control.py:69 pmo/templates/project_control/executive.html:81
+#: pmo/pmo/report/pmo_projects_without_governance/pmo_projects_without_governance.py:26
+msgid "Project name"
+msgstr "Nombre del proyecto"
+
+#: pmo/project_control.py:87 pmo/templates/project_control/executive.html:81
 msgid "Project planned end (ERPNext)"
 msgstr "Fin planeado del proyecto (ERPNext)"
+
+#: pmo/templates/project_control/resumen.html:163
+msgid "Project progress"
+msgstr "Avance del proyecto"
+
+#: pmo/health.py:303
+msgid "Project started without an effective baseline."
+msgstr ""
 
 #: pmo/pmo/report/pmo_planned_vs_actual/pmo_planned_vs_actual.py:34
 #: pmo/status_date.py:219
 msgid "Project {0} does not exist."
 msgstr "El Project {0} no existe."
 
-#. Label of a number card in the PMO Workspace
-#: pmo/dashboard.py:35 pmo/dashboard.py:43 pmo/pmo/workspace/pmo/pmo.json
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:92
+msgid "Projects by customer"
+msgstr "Proyectos por cliente"
+
+#: pmo/governance_inbox.py:38
+msgid "Projects not subject to governance"
+msgstr "Proyectos no sujetos a gobernanza"
+
+#: pmo/governance_inbox.py:35
+msgid "Projects not subject to governance."
+msgstr "Proyectos no sujetos a gobernanza."
+
+#: pmo/dashboard.py:43 pmo/dashboard.py:51
 msgid "Projects requiring attention"
 msgstr "Proyectos que requieren atención"
 
-#. Label of a number card in the PMO Workspace
-#: pmo/dashboard.py:37 pmo/pmo/workspace/pmo/pmo.json
+#: pmo/governance_inbox.py:37
+msgid "Projects with pending or in-review governance items."
+msgstr "Proyectos con elementos de gobernanza pendientes o en revisión."
+
+#: pmo/dashboard.py:45
 msgid "Projects without baseline"
 msgstr "Proyectos sin baseline"
 
 #. Label of the proposal_group (Data) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
-#: pmo/project_control.py:172
+#: pmo/project_control.py:190
 msgid "Proposal group"
 msgstr "Grupo de propuesta"
 
@@ -2451,13 +3052,22 @@ msgstr ""
 msgid "Provide Decision notes explaining why the Change Request is rejected."
 msgstr "Indica las Notas de la decisión que expliquen por qué se rechaza la Solicitud de Cambio."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:93
-msgid "Provide a Reason (Motivo) for an Approved Change or an approved Replan baseline."
-msgstr "Indica un Motivo para una línea base de Cambio aprobado o de Replaneación aprobada."
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:120
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:391
+msgid "Provide a Reason (Motivo) for the baseline."
+msgstr "Indica un Motivo para la línea base."
 
 #: pmo/status_date.py:55
 msgid "Provide a Status Date (or set `PMO Status Date` on the Project) for cutoff-date control."
 msgstr "Indica una Status Date (o fija `PMO Status Date` en el Project) para el control a fecha de corte."
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:417
+msgid "Provide a reason (justification) for the new baseline."
+msgstr ""
+
+#: pmo/governance_project.py:59
+msgid "Provide a reason to exclude this project from PMO governance."
+msgstr ""
 
 #: pmo/pmo/doctype/pmo_project_risk/pmo_project_risk.py:82
 msgid "Provide an Update note explaining why the risk changed."
@@ -2468,7 +3078,7 @@ msgstr "Proporciona una Nota de actualización que explique por qué cambió el 
 msgid "Proyecto"
 msgstr ""
 
-#: pmo/project_control.py:157 pmo/templates/project_control/financial.html:55
+#: pmo/project_control.py:175 pmo/templates/project_control/financial.html:55
 msgid "Purchases (registered external)"
 msgstr "Compras (externo registrado)"
 
@@ -2506,6 +3116,20 @@ msgstr "Solicitado por"
 msgid "Re-approval is only possible for an Approved Change Request."
 msgstr "La re-aprobación solo es posible para una Solicitud de Cambio Aprobada."
 
+#. Label of the contractual_legal_ready (Check) field in DocType 'PMO Project
+#. Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Readiness contractual/legal verificada"
+msgstr ""
+
+#: pmo/health.py:263
+msgid "Real comparable cost exceeds the authorized cost."
+msgstr ""
+
+#: pmo/dashboard.py:92
+msgid "Real cost"
+msgstr ""
+
 #: pmo/public/js/pmo_change_request.js:76
 msgid "Reapprove addendum version"
 msgstr "Re-aprobar versión de la addenda"
@@ -2513,6 +3137,12 @@ msgstr "Re-aprobar versión de la addenda"
 #: pmo/public/js/pmo_change_request.js:82
 msgid "Reapproving addendum version…"
 msgstr "Re-aprobando versión de la addenda…"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:781
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:833
+#: pmo/public/js/project_pmo.js:453 pmo/public/js/project_pmo.js:502
+msgid "Reason (justification)"
+msgstr "Motivo (justificación)"
 
 #. Description of the 'Update note' (Small Text) field in DocType 'PMO Project
 #. Risk'
@@ -2536,15 +3166,15 @@ msgstr "Acción recomendada"
 msgid "Record the Stakeholder Communication before closing the implemented change (use 'N/A' if it genuinely does not apply)."
 msgstr "Registra la Comunicación a interesados antes de cerrar el cambio implementado (usa 'N/A' si realmente no aplica)."
 
-#: pmo/project_control.py:158 pmo/templates/project_control/financial.html:56
+#: pmo/project_control.py:176 pmo/templates/project_control/financial.html:56
 msgid "Registered comparable cost"
 msgstr "Costo comparable registrado"
 
-#: pmo/project_control.py:164 pmo/templates/project_control/financial.html:64
+#: pmo/project_control.py:182 pmo/templates/project_control/financial.html:64
 msgid "Registered gross margin"
 msgstr "Margen bruto registrado"
 
-#: pmo/project_control.py:165 pmo/templates/project_control/financial.html:65
+#: pmo/project_control.py:183 pmo/templates/project_control/financial.html:65
 msgid "Registered gross margin %"
 msgstr "Margen bruto registrado %"
 
@@ -2570,21 +3200,25 @@ msgstr "Replaneación aprobada"
 #. Label of the section_detail (Section Break) field in DocType 'PMO Change
 #. Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
-#: pmo/project_control.py:108 pmo/templates/project_control/executive.html:234
+#: pmo/project_control.py:126 pmo/templates/project_control/executive.html:234
 msgid "Request"
 msgstr "Solicitud"
 
 #. Label of the request_date (Date) field in DocType 'PMO Change Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:404
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:468
 msgid "Request date"
 msgstr "Fecha de solicitud"
 
-#: pmo/dashboard.py:72
+#: pmo/governance_inbox.py:36
+msgid "Require attention"
+msgstr "Requieren atención"
+
+#: pmo/dashboard.py:80
 msgid "Require closure"
 msgstr "Requieren cierre"
 
-#: pmo/dashboard.py:73
+#: pmo/dashboard.py:81
 msgid "Require review"
 msgstr "Requieren revisión"
 
@@ -2600,9 +3234,23 @@ msgstr "Obligatorio cuando se define una Acción recomendada. Fecha límite de l
 msgid "Required when a Recommended action is set. Owner of the follow-up action (produces a native ToDo on submit)."
 msgstr "Obligatorio cuando se define una Acción recomendada. Responsable de la acción de seguimiento (produce un ToDo nativo al enviar)."
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:88
+#: pmo/governance_inbox.py:31
+msgid "Requires PM action"
+msgstr "Requiere acción PM"
+
+# Gobernanza V1 — tablero (Custom Block "PMO Governance"), menú Project y
+# reporte de excluidos (es-MX).
+#: pmo/governance_inbox.py:30
+msgid "Requires PMO action"
+msgstr "Requiere acción PMO"
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:96
 msgid "Requires attention"
 msgstr "Requiere atención"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:666
+msgid "Requires the appropriate role/permission"
+msgstr "Requiere el rol/permiso adecuado"
 
 #. Label of a shortcut in the PMO Capacity Workspace
 #: pmo/pmo/workspace/pmo_capacity/pmo_capacity.json
@@ -2641,10 +3289,16 @@ msgstr "Recursos liberados/reasignados"
 msgid "Resources without current capacity"
 msgstr "Recursos sin capacidad vigente"
 
-#. Description of the 'Project Manager' (Link) field in DocType 'PMO Project
-#. Handoff'
+#. Description of the 'Project Manager / Responsable del proyecto' (Link) field
+#. in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Responsable de administrar este proyecto. Usado por Gobernanza para atribuir la siguiente acción."
+msgstr ""
+
+#. Description of the 'Responsable operativo interno' (Link) field in DocType
+#. 'PMO Project Handoff'
 #: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
-msgid "Responsable interno de la gestión del proyecto."
+msgid "Responsable interno de la ejecución diaria. Se captura en el Acta; al emitir se sincroniza a Project.pmo_operational_owner y queda congelado en el Handoff."
 msgstr ""
 
 #. Label of the pmo_operational_owner (Link) field in DocType 'Project'
@@ -2660,6 +3314,11 @@ msgstr ""
 msgid "Responsables"
 msgstr ""
 
+#. Label of the pmo_sec_resp (Section Break) field in DocType 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Responsables y contexto"
+msgstr ""
+
 #. Label of the response (Small Text) field in DocType 'PMO Project Risk'
 #: pmo/pmo/doctype/pmo_project_risk/pmo_project_risk.json
 msgid "Response / treatment"
@@ -2668,6 +3327,12 @@ msgstr "Respuesta / tratamiento"
 #. Label of the preflight_result (Code) field in DocType 'PMO Project Baseline'
 #: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.json
 msgid "Resultado del preflight (JSON)"
+msgstr ""
+
+#. Description of the 'Objetivo del proyecto' (Small Text) field in DocType
+#. 'PMO Project Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Resultado que busca conseguir el proyecto. Texto breve; no repite el detalle de Proposal/Project."
 msgstr ""
 
 #. Description of the 'Resumen de handoff' (Small Text) field in DocType 'PMO
@@ -2679,9 +3344,8 @@ msgid ""
 "Incluye, cuando aplique: acuerdos relevantes del kickoff, pendientes abiertos, dependencias con cliente o terceros, decisiones ya tomadas y consideraciones operativas importantes."
 msgstr ""
 
-#. Label of the section_summary (Section Break) field in DocType 'PMO Project
-#. Handoff'
 #. Label of the handoff_summary (Small Text) field in DocType 'PMO Project
+#. Handoff'
 #: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
 msgid "Resumen de handoff"
 msgstr ""
@@ -2690,23 +3354,23 @@ msgstr ""
 msgid "Return to Draft"
 msgstr "Devolver a Borrador"
 
-#: pmo/project_control.py:167 pmo/templates/project_control/financial.html:70
+#: pmo/project_control.py:185 pmo/templates/project_control/financial.html:70
 msgid "Revenue impact (applied)"
 msgstr "Impacto en ingreso (aplicado)"
 
-#: pmo/project_control.py:119 pmo/templates/project_control/executive.html:129
+#: pmo/project_control.py:137 pmo/templates/project_control/executive.html:129
 msgid "Revenue — authorized"
 msgstr "Ingreso — autorizado"
 
-#: pmo/project_control.py:121 pmo/templates/project_control/executive.html:131
+#: pmo/project_control.py:139 pmo/templates/project_control/executive.html:131
 msgid "Revenue — billed"
 msgstr "Ingreso — facturado"
 
-#: pmo/project_control.py:120 pmo/templates/project_control/executive.html:130
+#: pmo/project_control.py:138 pmo/templates/project_control/executive.html:130
 msgid "Revenue — ordered"
 msgstr "Ingreso — ordenado"
 
-#: pmo/project_control.py:148 pmo/templates/project_control/financial.html:40
+#: pmo/project_control.py:166 pmo/templates/project_control/financial.html:40
 msgid "Revenues"
 msgstr "Ingresos"
 
@@ -2738,9 +3402,17 @@ msgstr "Revisado por"
 msgid "Risk"
 msgstr "Riesgo"
 
-#: pmo/project_control.py:175 pmo/templates/project_control/executive.html:263
+#: pmo/project_control.py:193 pmo/templates/project_control/executive.html:263
 msgid "Risk assessment"
 msgstr "Evaluación de riesgos"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:639
+msgid "Risk assessment pending"
+msgstr "Evaluación de riesgos pendiente"
+
+#: pmo/public/js/project_pmo.js:381
+msgid "Risk assessment: open"
+msgstr "Evaluación de riesgos: abrir"
 
 #. Label of a Card Break in the PMO Governance Workspace
 #: pmo/pmo/workspace/pmo_governance/pmo_governance.json
@@ -2782,11 +3454,11 @@ msgstr "Cuestionario de riesgos"
 msgid "Risk update"
 msgstr "Actualización del riesgo"
 
-#: pmo/public/js/project_pmo.js:50
+#: pmo/public/js/project_pmo.js:534
 msgid "Risk: not assessed"
 msgstr "Riesgo: sin evaluar"
 
-#: pmo/project_control.py:174 pmo/templates/project_control/executive.html:262
+#: pmo/project_control.py:192 pmo/templates/project_control/executive.html:262
 msgid "Risks"
 msgstr "Riesgos"
 
@@ -2794,34 +3466,37 @@ msgstr "Riesgos"
 msgid "Row #{0}: {1} is required when the risk applies."
 msgstr "Fila #{0}: {1} es obligatorio cuando el riesgo aplica."
 
+#. Label of a chart in the PMO Workspace
+#: pmo/pmo/workspace/pmo/pmo.json
+msgid "Salud del portafolio"
+msgstr ""
+
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:89
 msgid "Scale"
 msgstr "Escala"
 
-#: pmo/project_control.py:82 pmo/templates/project_control/executive.html:147
+#: pmo/project_control.py:100 pmo/templates/project_control/executive.html:147
 msgid "Schedule (Gantt)"
 msgstr "Cronograma (Gantt)"
 
-#: pmo/schedule_commit.py:40 pmo/schedule_commit.py:57
+#. Label of the schedule_weight (Int) field in DocType 'PMO Settings'
+#: pmo/pmo/doctype/pmo_settings/pmo_settings.json
+msgid "Schedule Weight"
+msgstr ""
+
+#: pmo/schedule_commit.py:42 pmo/schedule_commit.py:59
 msgid "Schedule commitment at risk"
 msgstr "Compromiso de cronograma en riesgo"
+
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:313
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:182
+msgid "Schedule status"
+msgstr "Estado de cronograma"
 
 #. Option for the 'Section' (Select) field in DocType 'PMO Risk Question'
 #: pmo/pmo/doctype/pmo_risk_question/pmo_risk_question.json
 msgid "Scope & requirements"
 msgstr "Alcance y requisitos"
-
-#. Description of the 'Contacto principal del cliente' (Link) field in DocType
-#. 'PMO Project Handoff'
-#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
-msgid "Se toma del Project (Contacto principal del cliente) y se congela al emitir (Submit)."
-msgstr ""
-
-#. Description of the 'Responsable operativo interno' (Link) field in DocType
-#. 'PMO Project Handoff'
-#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
-msgid "Se toma del Project (Responsable operativo interno) y se congela al emitir (Submit)."
-msgstr ""
 
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:108
 msgid "Search employee..."
@@ -2836,7 +3511,7 @@ msgstr "Sección de la pregunta de origen (snapshot). Vacía para riesgos añadi
 msgid "Select a CSV file first."
 msgstr "Selecciona primero un archivo CSV."
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:176
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:195
 msgid "Select a Project to begin."
 msgstr "Selecciona un Project para empezar."
 
@@ -2851,7 +3526,7 @@ msgstr "Selecciona un Project."
 msgid "Select at least one employee and a range with data."
 msgstr "Selecciona al menos un empleado y un rango con datos."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:115
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:141
 msgid "Select the approved Change Request that backs this baseline (Approved Change)."
 msgstr "Selecciona la Solicitud de Cambio aprobada que respalda esta línea base (Cambio aprobado)."
 
@@ -2859,7 +3534,7 @@ msgstr "Selecciona la Solicitud de Cambio aprobada que respalda esta línea base
 msgid "Select the before and after baselines."
 msgstr "Selecciona la línea base previa y la posterior."
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:311
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:375
 msgid "Select two different baselines."
 msgstr "Selecciona dos líneas base distintas."
 
@@ -2884,17 +3559,15 @@ msgstr "Se fija automáticamente para riesgos añadidos manualmente (no derivado
 msgid "Set automatically on approval (Submit)."
 msgstr "Fijado automáticamente al aprobar (Submit)."
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:680
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:799
+#: pmo/public/js/project_pmo.js:361 pmo/public/js/project_pmo.js:468
+msgid "Set baseline"
+msgstr "Establecer línea base"
+
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:179
 msgid "Set the Implementation Owner before marking the change as implemented."
 msgstr "Define el Responsable de implementación antes de marcar el cambio como implementado."
-
-#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:164
-msgid "Set the internal Operational Owner (Responsable operativo interno) on the Project before issuing the Handoff."
-msgstr "Define el Responsable operativo interno en el Project antes de emitir la Entrega."
-
-#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:170
-msgid "Set the primary Customer Contact (Contacto principal del cliente) on the Project before issuing the Handoff."
-msgstr "Define el Contacto principal del cliente en el Project antes de emitir la Entrega."
 
 #. Description of the 'Last reviewed on' (Date) field in DocType 'PMO Project
 #. Risk Assessment'
@@ -2902,7 +3575,11 @@ msgstr "Define el Contacto principal del cliente en el Project antes de emitir l
 msgid "Set when the risk questionnaire is confirmed as reviewed (uses the Project Status Date)."
 msgstr "Se fija cuando el cuestionario de riesgos se confirma como revisado (usa la Fecha de estado del proyecto)."
 
-#: pmo/project_control.py:87 pmo/templates/project_control/executive.html:164
+#: pmo/governance_inbox.py:46
+msgid "Situation"
+msgstr "Situación"
+
+#: pmo/project_control.py:105 pmo/templates/project_control/executive.html:164
 #: pmo/templates/project_control/executive.html:179
 msgid "Slip"
 msgstr "Desvío"
@@ -2911,16 +3588,16 @@ msgstr "Desvío"
 msgid "Slip (days)"
 msgstr "Desvío (días)"
 
-#: pmo/dashboard.py:47
+#: pmo/dashboard.py:55
 msgid "Slip vs BL"
 msgstr "Desvío vs BL"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:248
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:348
 msgid "Slip vs Baseline"
 msgstr "Desvío vs Línea Base"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:318
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:143
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:420
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:184
 msgid "Slip vs Baseline (d)"
 msgstr "Desvío vs Línea Base (d)"
 
@@ -2928,20 +3605,20 @@ msgstr "Desvío vs Línea Base (d)"
 msgid "Slip vs Baseline (days)"
 msgstr "Desvío vs Línea Base (días)"
 
-#: pmo/project_control.py:67 pmo/templates/project_control/executive.html:76
+#: pmo/project_control.py:85 pmo/templates/project_control/executive.html:76
 msgid "Slip vs Baseline:"
 msgstr "Desvío vs Línea Base:"
 
-#: pmo/dashboard.py:48
+#: pmo/dashboard.py:56
 msgid "Slip vs commit"
 msgstr "Desvío vs compromiso"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:239
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:339
 msgid "Slip vs commitment"
 msgstr "Desvío vs compromiso"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:319
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:144
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:421
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:185
 msgid "Slip vs commitment (d)"
 msgstr "Desvío vs compromiso (d)"
 
@@ -2949,7 +3626,7 @@ msgstr "Desvío vs compromiso (d)"
 msgid "Slip vs commitment (days)"
 msgstr "Desvío vs compromiso (días)"
 
-#: pmo/project_control.py:71 pmo/templates/project_control/executive.html:86
+#: pmo/project_control.py:89 pmo/templates/project_control/executive.html:86
 msgid "Slip vs commitment:"
 msgstr "Desvío vs compromiso:"
 
@@ -3002,6 +3679,10 @@ msgstr ""
 msgid "Solicitud de cambio"
 msgstr ""
 
+#: pmo/schedule_commit.py:83
+msgid "Solo una autoridad PMO (PMO Manager o System Manager) puede cambiar el Fin comprometido."
+msgstr ""
+
 #. Label of the sort_order (Int) field in DocType 'PMO Risk Question'
 #: pmo/pmo/doctype/pmo_risk_question/pmo_risk_question.json
 msgid "Sort order"
@@ -3047,11 +3728,22 @@ msgstr "Interesados y gobernanza"
 msgid "Start (Project)"
 msgstr "Inicio (Proyecto)"
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:43
+#: pmo/public/js/project_pmo.js:357
+msgid "Start record"
+msgstr "Acta de inicio"
+
+# Menú PMO del Project — grupo Gobernanza (variantes abrir + ver estado)
+# (es-MX).
+#: pmo/public/js/project_pmo.js:355
+msgid "Start record: open"
+msgstr "Acta de inicio: abrir"
+
+# --- Project Control > pestaña Estado / Cronograma ---
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:56
 msgid "Status / Schedule"
 msgstr "Estado / Cronograma"
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:81
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:94
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.js:26
 msgid "Status Date"
 msgstr "Fecha de corte"
@@ -3065,11 +3757,21 @@ msgstr "Status Date (corte, opcional)"
 msgid "Status Report (as-of control)"
 msgstr "Reporte de Estado (control a fecha)"
 
+#: pmo/phi.py:24
+msgid "Sufficient"
+msgstr "Suficiente"
+
 #. Description of the 'Impact summary' (Data) field in DocType 'PMO Change
 #. Request'
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.json
 msgid "Summary of the marked impact types (for the Change Register)."
 msgstr "Resumen de los tipos de impacto marcados (para el Registro de cambios)."
+
+# Gobernanza PMO — dashboard v2 (ciclo + KPIs + atención + excluidos) y menú
+# Project (es-MX).
+#: pmo/governance_inbox.py:28
+msgid "Supervision of the project governance cycle compliance: what is missing, why, and who must act."
+msgstr "Supervisión del cumplimiento del ciclo de gobernanza de proyectos: qué falta, por qué y quién debe actuar."
 
 #: pmo/pmo/page/tag_import/tag_import.js:119
 msgid "Tags added"
@@ -3085,7 +3787,7 @@ msgstr "Tags a agregar"
 msgid "Target date"
 msgstr "Fecha objetivo"
 
-#: pmo/project_control.py:75 pmo/templates/project_control/executive.html:95
+#: pmo/project_control.py:93 pmo/templates/project_control/executive.html:95
 msgid "Task compliance"
 msgstr "Cumplimiento de tareas"
 
@@ -3097,7 +3799,7 @@ msgstr "Tareas añadidas"
 msgid "Tasks beyond commitment"
 msgstr "Tareas fuera de compromiso"
 
-#: pmo/project_control.py:74 pmo/templates/project_control/executive.html:91
+#: pmo/project_control.py:92 pmo/templates/project_control/executive.html:91
 msgid "Tasks expected complete by cutoff"
 msgstr "Tareas previstas al corte"
 
@@ -3109,11 +3811,11 @@ msgstr "Tareas modificadas"
 msgid "Tasks removed"
 msgstr "Tareas eliminadas"
 
-#: pmo/project_control.py:90 pmo/templates/project_control/executive.html:176
+#: pmo/project_control.py:108 pmo/templates/project_control/executive.html:176
 msgid "Tasks to evaluate (with deviation)"
 msgstr "Tareas a evaluar (con desviación)"
 
-#: pmo/project_control.py:78 pmo/templates/project_control/executive.html:108
+#: pmo/project_control.py:96 pmo/templates/project_control/executive.html:108
 msgid "Tasks:"
 msgstr "Tareas:"
 
@@ -3123,11 +3825,11 @@ msgstr "Tareas:"
 msgid "Technical/PM evaluation of the change. Multi-party discussion uses native Comments."
 msgstr "Evaluación técnica/PM del cambio. La discusión multi-actor usa Comentarios nativos."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:135
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:161
 msgid "That Change Request already has an associated later baseline ({0})."
 msgstr "Esa Solicitud de Cambio ya tiene una línea base posterior asociada ({0})."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:216
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:242
 msgid "That baseline was already superseded; you must supersede the current head of the chain."
 msgstr "Esa baseline ya fue sustituida; debe sustituir la cabeza vigente de la cadena."
 
@@ -3175,13 +3877,17 @@ msgstr "La Solicitud de Cambio no tiene una aprobación gobernada (addenda aprob
 msgid "The Change Request has no governed approval (approved addendum / fingerprint)."
 msgstr "La Solicitud de Cambio no tiene una aprobación gobernada (addenda aprobada / huella)."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:126
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:152
 msgid "The Change Request must belong to the same Project as the baseline."
 msgstr "La Solicitud de Cambio debe pertenecer al mismo Project que la línea base."
 
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:445
 msgid "The Project does not come from a proposal (no Quotation with proposal_project); an addendum cannot be created."
 msgstr "El Project no proviene de una propuesta (sin Cotización con proposal_project); no se puede crear una addenda."
+
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:329
+msgid "The Project has no tasks to freeze into a baseline."
+msgstr ""
 
 #: pmo/project_link.py:22
 msgid "The Project of this document cannot be changed."
@@ -3245,11 +3951,11 @@ msgstr "El riesgo concreto. Forma sugerida: debido a <causa>, puede ocurrir <eve
 msgid "The erpnext_proposals integration is not available: contract {0} is missing. Requires erpnext_proposals >= 0.22.0 installed on the site."
 msgstr "La integración con erpnext_proposals no está disponible: falta el contrato {0}. Requiere erpnext_proposals >= 0.22.0 instalado en el sitio."
 
-#: pmo/schedule_commit.py:37
+#: pmo/schedule_commit.py:39
 msgid "The planned end ({0}) exceeds the committed date (PMO Deadline: {1})."
 msgstr "El fin planeado ({0}) excede la fecha comprometida (PMO Deadline: {1})."
 
-#: pmo/schedule_commit.py:54
+#: pmo/schedule_commit.py:56
 msgid "The project's planned end ({0}) exceeds the committed date ({1})."
 msgstr "El fin planeado del proyecto ({0}) excede la fecha comprometida ({1})."
 
@@ -3265,11 +3971,11 @@ msgstr "Los recursos del proyecto fueron liberados, reasignados o revisados seg�
 msgid "The relevant stakeholders were informed of the closure."
 msgstr "Los interesados relevantes fueron informados del cierre."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:124
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:150
 msgid "The selected Change Request does not exist."
 msgstr "La Solicitud de Cambio seleccionada no existe."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:187
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:213
 msgid "The superseded baseline does not exist."
 msgstr "La baseline que se sustituye no existe."
 
@@ -3281,6 +3987,10 @@ msgstr "No hay días laborables entre {0} y {1} según la Holiday List {2}."
 msgid "There is no Holiday List to resolve working days."
 msgstr "No hay Holiday List para resolver los días laborables."
 
+#: pmo/phi.py:37
+msgid "There is not yet enough evaluable execution data to calculate overall project health."
+msgstr "Aún no existe suficiente información de ejecución evaluable para calcular la salud integral del proyecto."
+
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:436
 msgid "This Change Request already has an addendum ({0})."
 msgstr "Este Change Request ya tiene una addenda ({0})."
@@ -3289,11 +3999,15 @@ msgstr "Este Change Request ya tiene una addenda ({0})."
 msgid "This Change Request has no Addendum to apply."
 msgstr "Esta Solicitud de Cambio no tiene una addenda que aplicar."
 
-#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:157
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:388
+msgid "This Project already has an effective baseline. Use «New baseline» to supersede it."
+msgstr ""
+
+#: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.py:159
 msgid "This Project already has an issued Closure ({0})."
 msgstr "Este Project ya tiene un Closure emitido ({0})."
 
-#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:132
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.py:145
 msgid "This Project already has an issued Handoff ({0})."
 msgstr "Este Project ya tiene una Entrega emitida ({0})."
 
@@ -3301,11 +4015,15 @@ msgstr "Este Project ya tiene una Entrega emitida ({0})."
 msgid "This Project already has an issued Post-Project Review ({0})."
 msgstr "Este Project ya tiene una Revisión Post-Proyecto emitida ({0})."
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:376
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:440
 msgid "This Project has no Change Requests."
 msgstr "Este Project no tiene solicitudes de cambio."
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:260
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:415
+msgid "This Project has no baseline yet. Use «Set baseline» first."
+msgstr ""
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:324
 msgid "This Project has no tasks with effort to show."
 msgstr "Este Project no tiene tareas con esfuerzo para mostrar."
 
@@ -3313,16 +4031,20 @@ msgstr "Este Project no tiene tareas con esfuerzo para mostrar."
 msgid "This addendum version's delta differs from the version approved in Change Request {0}. Reapprove the addendum version before advancing it."
 msgstr "El delta de esta versión de la addenda difiere de la versión aprobada en la Solicitud de Cambio {0}. Re-aprueba la versión de la addenda antes de avanzarla."
 
-#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:237
+#: pmo/pmo/doctype/pmo_project_baseline/pmo_project_baseline.py:263
 msgid "This baseline cannot be cancelled: it has a successor ({0}). Cancel the head of the chain first."
 msgstr "No se puede cancelar esta baseline: tiene un sucesor ({0}). Cancela primero la cabeza de la cadena."
+
+#: pmo/phi.py:41
+msgid "This project is not subject to formal PMO monitoring. PHI does not apply."
+msgstr "Este proyecto no está sujeto a seguimiento formal PMO. El PHI no aplica."
 
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:645
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:940
 msgid "This view works with one employee at a time. Select exactly one employee in the left panel."
 msgstr "Esta vista trabaja con un empleado a la vez. Selecciona exactamente un empleado en el panel de la izquierda."
 
-#: pmo/project_control.py:156 pmo/templates/project_control/financial.html:54
+#: pmo/project_control.py:174 pmo/templates/project_control/financial.html:54
 msgid "Timesheets (registered labor)"
 msgstr "Timesheets (labor registrada)"
 
@@ -3339,8 +4061,7 @@ msgstr ""
 msgid "To Date cannot be earlier than From Date."
 msgstr "To Date no puede ser anterior a From Date."
 
-#. Label of a chart in the PMO Workspace
-#: pmo/dashboard.py:41 pmo/pmo/workspace/pmo/pmo.json
+#: pmo/dashboard.py:49
 msgid "Top 5 by planned hours"
 msgstr "Top 5 por horas planificadas"
 
@@ -3353,7 +4074,13 @@ msgstr "Total (nativo)"
 msgid "Total planned hours"
 msgstr "Horas planificadas totales"
 
-#: pmo/project_control.py:103 pmo/templates/project_control/executive.html:218
+#. Label of the section_transfer (Section Break) field in DocType 'PMO Project
+#. Handoff'
+#: pmo/pmo/doctype/pmo_project_handoff/pmo_project_handoff.json
+msgid "Transferencia a ejecución"
+msgstr ""
+
+#: pmo/project_control.py:121 pmo/templates/project_control/executive.html:218
 msgid "Unassigned active tasks"
 msgstr "Tareas activas sin responsable"
 
@@ -3365,11 +4092,19 @@ msgstr "Tareas activas sin responsable"
 msgid "Undetermined"
 msgstr "Indeterminado"
 
-#: pmo/dashboard.py:95
+#: pmo/financial_health.py:37
+msgid "Unfavorable"
+msgstr "Desfavorable"
+
+#: pmo/dashboard.py:117
 msgid "Unknown PMO KPI metric: {0}"
 msgstr "Métrica KPI de PMO desconocida: {0}"
 
-#: pmo/dashboard.py:104
+#: pmo/dashboard.py:166
+msgid "Unknown PMO economic metric: {0}"
+msgstr ""
+
+#: pmo/dashboard.py:126
 msgid "Unknown PMO resource metric: {0}"
 msgstr "Métrica de recursos de PMO desconocida: {0}"
 
@@ -3386,6 +4121,12 @@ msgstr "Nota de actualización requerida"
 msgid "Upload a CSV with columns"
 msgstr "Sube un CSV con columnas"
 
+#. Description of the 'Exclusión autorizada por' (Link) field in DocType
+#. 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Usuario (autoridad PMO) que autorizó la exclusión. Se fija server-side al activar la exclusión; no se confía en el valor enviado por el cliente."
+msgstr ""
+
 #: pmo/pmo/page/tag_import/tag_import.js:73
 msgid "Valid documents"
 msgstr "Documentos válidos"
@@ -3393,6 +4134,18 @@ msgstr "Documentos válidos"
 #: pmo/pmo/page/tag_import/tag_import.js:174
 msgid "Validating..."
 msgstr "Validando..."
+
+#. Description of the 'Responsable operativo interno' (Link) field in DocType
+#. 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Valor vigente sincronizado desde el Acta/Handoff. Read-only en Project (se captura al crear el Acta); visible cuando tiene valor."
+msgstr ""
+
+#. Description of the 'Contacto principal del cliente' (Link) field in DocType
+#. 'Project'
+#: pmo/fixtures/custom_field.json
+msgid "Valor vigente sincronizado desde el Acta/Handoff. Read-only en Project (se captura al crear el Acta, filtrado por el Customer); visible cuando tiene valor."
+msgstr ""
 
 #. Description of the 'Línea base sustituida' (Link) field in DocType 'PMO
 #. Project Baseline'
@@ -3413,8 +4166,15 @@ msgstr ""
 msgid "Versión de línea base"
 msgstr ""
 
-#: pmo/project_control.py:183 pmo/public/js/project_pmo.js:27
-#: pmo/templates/project_control/executive.html:275
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:698
+msgid "View changes"
+msgstr "Ver cambios"
+
+#: pmo/public/js/project_pmo.js:428
+msgid "View governance status"
+msgstr "Ver estado de gobernanza"
+
+#: pmo/project_control.py:201 pmo/templates/project_control/executive.html:275
 msgid "View risk assessment"
 msgstr "Ver evaluación de riesgos"
 
@@ -3460,6 +4220,10 @@ msgstr "Cuando aplica, operación, soporte, conocimiento, accesos y documentaci�
 msgid "Where applicable, pending billing/collections, purchases/suppliers, orders and other administrative items related to the Project were reviewed. A review confirmation, not new financial logic."
 msgstr "Cuando aplica, se revisaron facturación/cobros pendientes, compras/proveedores, órdenes y otros pendientes administrativos relacionados con el Project. Una confirmación de revisión, no nueva lógica financiera."
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:609
+msgid "Where this project stands, what is missing, and who must act."
+msgstr "En qué punto está este proyecto, qué falta y quién debe actuar."
+
 #. Description of the 'Accepted by' (Data) field in DocType 'PMO Project
 #. Closure'
 #: pmo/pmo/doctype/pmo_project_closure/pmo_project_closure.json
@@ -3477,11 +4241,11 @@ msgstr "Quién solicita/levanta el cambio."
 msgid "Why the change is requested (the driver/justification)."
 msgstr "Por qué se solicita el cambio (el motivo/justificación)."
 
-#: pmo/project_control.py:100 pmo/templates/project_control/executive.html:212
+#: pmo/project_control.py:118 pmo/templates/project_control/executive.html:212
 msgid "With end date"
 msgstr "Con fecha de fin"
 
-#: pmo/project_control.py:101 pmo/templates/project_control/executive.html:213
+#: pmo/project_control.py:119 pmo/templates/project_control/executive.html:213
 msgid "With estimate"
 msgstr "Con estimación"
 
@@ -3489,24 +4253,24 @@ msgstr "Con estimación"
 msgid "With individual override"
 msgstr "Con override individual"
 
-#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:192
+#: pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:291
 msgid "With overdue tasks"
 msgstr "Con tareas vencidas"
 
-#: pmo/project_control.py:98 pmo/templates/project_control/executive.html:210
+#: pmo/project_control.py:116 pmo/templates/project_control/executive.html:210
 msgid "With owner"
 msgstr "Con responsable"
 
-#: pmo/project_control.py:99 pmo/templates/project_control/executive.html:211
+#: pmo/project_control.py:117 pmo/templates/project_control/executive.html:211
 msgid "With start date"
 msgstr "Con fecha de inicio"
 
-#: pmo/dashboard.py:69
+#: pmo/dashboard.py:77
 msgid "Without Handoff"
 msgstr "Sin Handoff"
 
-#: pmo/dashboard.py:70 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:188
-#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:203
+#: pmo/dashboard.py:78 pmo/pmo/page/pmo_portfolio/pmo_portfolio.js:287
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:244
 msgid "Without baseline"
 msgstr "Sin línea base"
 
@@ -3514,12 +4278,12 @@ msgstr "Sin línea base"
 msgid "Without configured capacity"
 msgstr "Sin capacidad configurada"
 
-#: pmo/project_control.py:180 pmo/public/js/project_pmo.js:68
+#: pmo/project_control.py:198 pmo/public/js/project_pmo.js:549
 #: pmo/templates/project_control/executive.html:268
 msgid "Without owner"
 msgstr "Sin responsable"
 
-#: pmo/project_control.py:181 pmo/public/js/project_pmo.js:72
+#: pmo/project_control.py:199 pmo/public/js/project_pmo.js:552
 #: pmo/templates/project_control/executive.html:269
 msgid "Without treatment"
 msgstr "Sin tratamiento"
@@ -3546,11 +4310,12 @@ msgstr "Horas laborables por día desde From Date. Debe ser mayor que 0."
 msgid "You do not have access to this Project."
 msgstr "No tienes acceso a este Project."
 
-#: pmo/project_control.py:135 pmo/templates/project_control/financial.html:7
+#: pmo/project_control.py:153 pmo/templates/project_control/financial.html:7
 msgid "You do not have economic access to this project."
 msgstr "No tienes acceso económico a este proyecto."
 
-#: pmo/project_control.py:80 pmo/templates/project_control/executive.html:108
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:640
+#: pmo/project_control.py:98 pmo/templates/project_control/executive.html:108
 msgid "active"
 msgstr "activas"
 
@@ -3559,7 +4324,7 @@ msgstr "activas"
 msgid "added"
 msgstr "agregados"
 
-#: pmo/project_control.py:129 pmo/templates/project_control/executive.html:143
+#: pmo/project_control.py:147 pmo/templates/project_control/executive.html:143
 msgid "applied"
 msgstr "aplicadas"
 
@@ -3619,6 +4384,10 @@ msgstr ""
 msgid "available (&gt;0)"
 msgstr "disponible (&gt;0)"
 
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:648
+msgid "awaiting PMO"
+msgstr "espera decisión PMO"
+
 #: pmo/pmo/page/capacity_planning/capacity_planning.js:184
 msgid "coming soon"
 msgstr "próximamente"
@@ -3627,7 +4396,7 @@ msgstr "próximamente"
 msgid "committed (0)"
 msgstr "comprometido (0)"
 
-#: pmo/project_control.py:137 pmo/templates/project_control/financial.html:16
+#: pmo/project_control.py:155 pmo/templates/project_control/financial.html:16
 msgid "current"
 msgstr "actual"
 
@@ -3653,7 +4422,7 @@ msgstr ""
 msgid "fingerprint failed"
 msgstr ""
 
-#: pmo/dashboard.py:316
+#: pmo/dashboard.py:484
 msgid "forecast beyond commitment (+{0}d)"
 msgstr "forecast supera el compromiso (+{0}d)"
 
@@ -3661,7 +4430,7 @@ msgstr "forecast supera el compromiso (+{0}d)"
 msgid "global"
 msgstr "global"
 
-#: pmo/project_control.py:125 pmo/templates/project_control/executive.html:138
+#: pmo/project_control.py:143 pmo/templates/project_control/executive.html:138
 msgid "gross margin basis"
 msgstr "base del margen bruto"
 
@@ -3673,7 +4442,7 @@ msgstr "inconsistencias"
 msgid "mapping"
 msgstr "mapeo"
 
-#: pmo/project_control.py:124 pmo/templates/project_control/executive.html:138
+#: pmo/project_control.py:142 pmo/templates/project_control/executive.html:138
 msgid "material"
 msgstr "material"
 
@@ -3681,7 +4450,11 @@ msgstr "material"
 msgid "missing capacity"
 msgstr "capacidad faltante"
 
-#: pmo/dashboard.py:323
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:642
+msgid "need attention"
+msgstr "requieren atención"
+
+#: pmo/dashboard.py:491
 msgid "needs review"
 msgstr "requiere revisión"
 
@@ -3690,7 +4463,7 @@ msgstr "requiere revisión"
 msgid "no availability"
 msgstr "sin disponibilidad"
 
-#: pmo/project_control.py:66 pmo/templates/project_control/executive.html:75
+#: pmo/project_control.py:84 pmo/templates/project_control/executive.html:75
 msgid "no baseline"
 msgstr "sin baseline"
 
@@ -3701,6 +4474,10 @@ msgstr "sin cambios (ya tiene los tags)"
 #: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py:195
 msgid "no dates"
 msgstr "sin fechas"
+
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:647
+msgid "open"
+msgstr "abiertas"
 
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:191
 msgid "opened from"
@@ -3730,31 +4507,40 @@ msgstr ""
 msgid "overallocated (&lt;0)"
 msgstr "sobreasignado (&lt;0)"
 
-#: pmo/project_control.py:81 pmo/templates/project_control/executive.html:108
+#: pmo/project_control.py:99 pmo/templates/project_control/executive.html:108
 msgid "overdue at cutoff"
 msgstr "vencidas al corte"
 
-#: pmo/project_control.py:160 pmo/templates/project_control/financial.html:58
+#: pmo/project_control.py:178 pmo/templates/project_control/financial.html:58
 msgid "part of ERPNext gross margin basis; not part of the comparable contractual cost."
 msgstr "parte de la base del margen bruto de ERPNext; no del costo comparable contractual."
 
-#: pmo/project_control.py:130 pmo/templates/project_control/executive.html:143
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:613
+#: pmo/project_control.py:148 pmo/templates/project_control/executive.html:143
 msgid "pending"
 msgstr "pendientes"
+
+#: pmo/financial_health.py:151
+msgid "reason"
+msgstr ""
 
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:158
 msgid "removed"
 msgstr "eliminado"
 
-#: pmo/dashboard.py:322
+#: pmo/dashboard.py:490
 msgid "slipped vs baseline (+{0}d)"
 msgstr "desvío respecto de la línea base (+{0}d)"
+
+#: pmo/pmo/report/pmo_portfolio/pmo_portfolio.py:144
+msgid "state"
+msgstr ""
 
 #: pmo/pmo/report/pmo_baseline_comparison/pmo_baseline_comparison.py:192
 msgid "the report compares baselines; it does not attribute the diff to a single Change Request"
 msgstr "el reporte compara líneas base; no atribuye el diff a un solo Change Request"
 
-#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:159
+#: pmo/pmo/page/pmo_project_control/pmo_project_control.js:178
 msgid "today"
 msgstr "hoy"
 
@@ -3774,7 +4560,7 @@ msgstr "no se aplicará (hay errores en el CSV)"
 msgid "with errors"
 msgstr "con errores"
 
-#: pmo/project_control.py:105 pmo/templates/project_control/executive.html:110
+#: pmo/project_control.py:123 pmo/templates/project_control/executive.html:110
 msgid "{0} active task(s) without owner"
 msgstr "{0} tarea(s) activa(s) sin responsable"
 
@@ -3782,17 +4568,25 @@ msgstr "{0} tarea(s) activa(s) sin responsable"
 msgid "{0} must belong to the same Project as the Change Request."
 msgstr "{0} debe pertenecer al mismo Project del Change Request."
 
-#: pmo/dashboard.py:318
+#: pmo/dashboard.py:486
 msgid "{0} overdue task(s)"
 msgstr "{0} tarea(s) vencida(s)"
 
-#: pmo/dashboard.py:320
+#: pmo/dashboard.py:488
 msgid "{0} task(s) forecast past deadline"
 msgstr "{0} tarea(s) con forecast más allá del compromiso"
 
-#: pmo/project_control.py:95 pmo/templates/project_control/executive.html:197
+#: pmo/project_control.py:113 pmo/templates/project_control/executive.html:197
 msgid "{0} task(s) with baseline but without relevant deviation are not listed (of {1} with baseline)."
 msgstr "{0} tarea(s) con línea base pero sin desviación relevante no se listan (de {1} con baseline)."
+
+#: pmo/dashboard.py:99
+msgid "{0} with inconsistent authorized data"
+msgstr ""
+
+#: pmo/dashboard.py:98
+msgid "{0} without linked proposal (excluded)"
+msgstr ""
 
 #: pmo/pmo/report/pmo_status_report/pmo_status_report.py:166
 msgid "«Current» is today's plan evaluated against the cutoff date, not a reconstruction of the plan that existed on that date. Actual comes from dated Timesheet; completeness uses «completed_on» as a proxy."
@@ -3803,6 +4597,11 @@ msgid "— (no baseline at date)"
 msgstr "— (sin línea base a la fecha)"
 
 
-# --- Override manual de término heredado de frappe/erpnext (estado del riesgo) ---
-msgid "Open"
-msgstr "Abierto"
+msgid "Schedule"
+msgstr "Cronograma"
+
+msgid "Execution"
+msgstr "Ejecución"
+
+msgid "Partial"
+msgstr "Parcial"

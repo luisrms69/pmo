@@ -18,13 +18,20 @@ from pmo.project_control import (
 	DEFAULT_SECTIONS,
 	SECTION_COSTS,
 	_assigned_task_names,
+	_comparative_gantt,
 	_costs_section,
+	_exc_deviation,
+	_exc_type,
+	_execution_state,
 	_executive_section,
 	_planning_section,
+	_schedule_deviations,
 	_scope_changes_section,
 	build_project_control,
 	get_executive_html,
 	get_financial_html,
+	get_schedule_html,
+	get_summary_html,
 )
 
 KPI_KEYS = {
@@ -460,6 +467,510 @@ class TestRenderer(IntegrationTestCase):
 		# `_()` sigue viva tras construir los bits: se renderizan encabezados traducibles posteriores.
 		self.assertIn("Change Requests", html)
 		self.assertIn("Planning quality", html)
+
+
+class TestSummaryView(IntegrationTestCase):
+	"""Pestaña Resumen (get_summary_html → resumen.html): reusa motores, es-MX, 4 bloques, drill-down.
+	No toca executive.html/get_executive_html (Print Format intactos)."""
+
+	def _ctx(self, with_derived=False):
+		ctx = frappe._dict(
+			{
+				"audience": "internal",
+				"cutoff": "2026-09-11",
+				"note": None,
+				"project": {
+					"name": "PROJ-X",
+					"project_name": "Proyecto X",
+					"status": "Open",
+					"customer_name": "Cliente Demo",
+					"start_date": "2026-09-01",
+					"committed_end": "2026-10-15",
+					"forecast_end": "2026-10-30",
+					"has_baseline": True,
+					"baseline_end": "2026-10-01",
+				},
+				"executive": {
+					"kpis": {
+						"health": "on_track",
+						"health_label": "On track",
+						"percent_complete": 68,
+						"overdue_tasks": 3,
+						"planned_hours": 120.0,
+						"actual_hours": 96.0,
+						"slip_baseline_days": -2,
+						"slip_committed_days": -2,
+					}
+				},
+				"schedule": {
+					"counts": {"overdue_at_cutoff": 3},
+					"milestones": [{"slip_days": 3}, {"slip_days": 0}, {"slip_days": None}],
+				},
+				"risk": {
+					"assessment_exists": True,
+					"assessment": "PMO-RA-1",
+					"assessment_state": "assessed",
+					"open": 2,
+					"high_exposure": 1,
+					"no_owner": 0,
+					"no_response": 1,
+				},
+				"governance": {
+					"handoff": {"available": True, "reference": "PMO-HOF-1", "date": "2026-09-05"},
+					"baseline": {"available": True, "reference": "BL-002", "date": "2026-09-06"},
+					"closure": {"available": False, "reference": None, "date": None},
+					"review": {"available": False, "reference": None, "date": None},
+					"change_requests": {"total": 3, "open": 1},
+					"lifecycle_state": "execution",
+				},
+			}
+		)
+		if with_derived:
+			ctx["milestones_with_deviation"] = 1
+			ctx["milestones_total"] = 3
+			ctx["governance_flags"] = {
+				"has_handoff": True,
+				"needs_baseline": False,
+				"needs_closure": False,
+				"needs_review": False,
+				"open_change_requests": 1,
+			}
+		return ctx
+
+	def _render(self, pc):
+		return frappe.render_template("pmo/templates/project_control/resumen.html", {"pc": pc})
+
+	def test_endpoint_composition_and_derivation(self):
+		flags = {
+			"has_handoff": True,
+			"needs_baseline": False,
+			"needs_closure": False,
+			"needs_review": False,
+			"open_change_requests": 1,
+		}
+		with (
+			patch("pmo.project_control.build_project_control", return_value=self._ctx()) as b,
+			patch("pmo.project_control.governance_flags", return_value=flags),
+			patch("pmo.phi.get_phi_view", return_value=None),
+		):
+			html = get_summary_html("PROJ-X", cutoff="2026-09-11")
+		_, kw = b.call_args
+		# Resumen pide gobernanza + riesgo + cronograma; NUNCA economía (Financiera tiene su pestaña).
+		self.assertIn("governance", kw["sections"])
+		self.assertIn("risk", kw["sections"])
+		self.assertIn("schedule", kw["sections"])
+		self.assertNotIn("costs", kw["sections"])
+		# Derivación de presentación: hitos con desviación = milestones con slip>0 (1 de 3).
+		self.assertIn("1 / 3", html)
+		self.assertIn("Avance del proyecto", html)
+		self.assertIn("Gobernanza del proyecto", html)
+
+	def test_render_blocks_and_semantics_es_mx(self):
+		html = self._render(self._ctx(with_derived=True))
+		# 1) Identidad y estado + 2) Avance + 3) Excepciones + 4) Gobernanza (es-MX)
+		self.assertIn("Proyecto X", html)
+		self.assertIn("Cliente Demo", html)
+		# El pill antiguo de "Salud" se retiró de la cabecera (ADR-0013): "Salud del proyecto" = PHI.
+		self.assertNotIn("En plan", html)
+		self.assertIn("68%", html)  # progreso
+		self.assertIn("120 h", html)  # horas planificadas
+		# Riesgos: señales existentes (sin agregado artificial de "requieren atención")
+		self.assertIn("Sin responsable", html)
+		self.assertIn("Sin tratamiento", html)
+		self.assertNotIn("Requieren atención", html)
+		self.assertNotIn("Requiere atención", html)
+		# Cambios: solo totales / abiertas
+		self.assertIn("Solicitudes totales", html)
+		self.assertIn("Solicitudes abiertas", html)
+		# Gobernanza: Acta de transferencia (NO "Charter"); Cierre/Revisión "No requerido"
+		self.assertIn("Acta de transferencia", html)
+		self.assertNotIn("Charter", html)
+		self.assertIn("BL-002", html)  # línea base vigente
+		self.assertIn("No requerido", html)  # closure/review no requeridos
+
+	def test_no_costs_block_in_summary(self):
+		# Economía vive en la pestaña Financiera: el Resumen no la muestra aunque el gate pasara.
+		html = self._render(self._ctx(with_derived=True))
+		for token in ("Situación económica", "Valor autorizado", "Facturado", "Costo real", "economics"):
+			self.assertNotIn(token, html)
+
+
+class TestScheduleView(IntegrationTestCase):
+	"""Pestaña Estado / Cronograma: Gantt comparativo (línea base vs plan vigente), estado de ejecución y
+	excepciones. Reutiliza motores; NO recalcula fechas/slips. Solo lectura."""
+
+	def test_exc_type(self):
+		# El tipo etiqueta la RAZÓN de la desviación temporal; prioriza vencida > desplazada/hito desviado >
+		# adelantada > excede compromiso. Ya no clasifica composición (Fuera de línea base / Retirada): esos
+		# cambios viven en el Gantt y no son desviaciones.
+		self.assertEqual(_exc_type({"overdue_at_status_date": True, "slip_days": 3}), "Vencida")
+		self.assertEqual(_exc_type({"is_milestone": 1, "slip_days": 4}), "Hito desviado")
+		self.assertEqual(_exc_type({"slip_days": 2}), "Desplazada")
+		self.assertEqual(_exc_type({"slip_days": -3}), "Adelantada")
+		self.assertEqual(_exc_type({"exceeds_deadline": True, "slip_days": 0}), "Excede compromiso")
+		# Un hito sin desviación no debe etiquetarse como desviación (además el filtro lo excluye del bloque).
+		self.assertEqual(_exc_type({"is_milestone": 1, "slip_days": 0}), "—")
+		self.assertEqual(_exc_type({"slip_days": 0}), "—")
+
+	def test_exc_deviation_reference(self):
+		# 2.1 — la desviación indica inequívocamente su referencia (línea base vs compromiso).
+		self.assertEqual(_exc_deviation("Desplazada", {"slip_days": 5}), (5, "línea base"))
+		self.assertEqual(_exc_deviation("Adelantada", {"slip_days": -2}), (-2, "línea base"))
+		# «Excede compromiso» se mide contra la fecha comprometida, no contra baseline (evita el "0 d" ambiguo).
+		self.assertEqual(
+			_exc_deviation(
+				"Excede compromiso",
+				{"slip_days": 0, "current_exp_end_date": "2026-09-25", "pmo_deadline": "2026-09-20"},
+			),
+			(5, "compromiso"),
+		)
+
+	def test_schedule_deviations_only_real_deviations(self):
+		"""«Desviaciones del cronograma» = SOLO desviaciones temporales reales. Un hito sin desviación, una
+		tarea nueva sin desviación y una retirada NO aparecen por su sola clasificación (viven en el Gantt).
+		Una añadida sí aparece si excede el compromiso, y entonces por ESA razón. La capacidad de detectar
+		añadidas/retiradas/hitos sigue intacta (compare_snapshots); solo no contamina este bloque."""
+		# Filas vs línea base ya anotadas (is_milestone / exceeds_deadline ya resueltos).
+		annotated = [
+			{
+				"name": "PRUEBAS",
+				"subject": "Pruebas",
+				"overdue_at_status_date": True,
+				"slip_days": 2,
+				"is_milestone": 0,
+				"exceeds_deadline": False,
+				"baseline_exp_end_date": "2026-09-01",
+				"current_exp_end_date": "2026-09-03",
+				"pmo_deadline": None,
+			},
+			{
+				"name": "REPLAN",
+				"subject": "Reingeniería",
+				"overdue_at_status_date": False,
+				"slip_days": 4,
+				"is_milestone": 0,
+				"exceeds_deadline": False,
+				"baseline_exp_end_date": "2026-09-10",
+				"current_exp_end_date": "2026-09-14",
+				"pmo_deadline": None,
+			},
+			# Hito SIN desviación (0 d vs línea base, no vencido, no excede) → NO debe aparecer.
+			{
+				"name": "HITO",
+				"subject": "Entrega a cliente",
+				"overdue_at_status_date": False,
+				"slip_days": 0,
+				"is_milestone": 1,
+				"exceeds_deadline": False,
+				"baseline_exp_end_date": "2026-09-20",
+				"current_exp_end_date": "2026-09-20",
+				"pmo_deadline": None,
+			},
+			# Tarea de línea base sin desviación → NO debe aparecer.
+			{
+				"name": "DISENO",
+				"subject": "Diseño",
+				"overdue_at_status_date": False,
+				"slip_days": 0,
+				"is_milestone": 0,
+				"exceeds_deadline": False,
+				"baseline_exp_end_date": "2026-09-05",
+				"current_exp_end_date": "2026-09-05",
+				"pmo_deadline": None,
+			},
+		]
+		diff = {
+			"tasks_added": [{"name": "DESPLIEGUE"}, {"name": "SOPORTE"}],
+			"tasks_removed": [{"name": "CANCELADA"}],
+		}
+
+		def gv_all(dt, filters=None, fields=None, **k):
+			# Añadidas (con is_group en el filtro): DESPLIEGUE excede compromiso; SOPORTE no.
+			if filters and "is_group" in filters:
+				return [
+					frappe._dict(
+						name="DESPLIEGUE",
+						subject="Despliegue",
+						status="Open",
+						exp_end_date="2026-09-25",
+						pmo_deadline="2026-09-20",
+						is_milestone=0,
+					),
+					frappe._dict(
+						name="SOPORTE",
+						subject="Soporte extra",
+						status="Open",
+						exp_end_date="2026-09-10",
+						pmo_deadline=None,
+						is_milestone=0,
+					),
+				]
+			# Estado vigente de las filas restantes.
+			return [frappe._dict(name=n, status="Working") for n in filters["name"][1]]
+
+		with (
+			patch("pmo.project_control._annotate", return_value=annotated),
+			patch("pmo.project_control.compare_snapshots", return_value=diff),
+			patch("pmo.project_control._current_owners", return_value={}),
+			patch("pmo.project_control.frappe.get_all", side_effect=gv_all),
+		):
+			out = _schedule_deviations("X", {"tasks_vs_baseline": annotated}, {"tasks": []}, {"tasks": []})
+
+		by_name = {r["name"]: r for r in out}
+		# Aparecen SOLO las desviaciones reales, cada una por su razón.
+		self.assertEqual(set(by_name), {"PRUEBAS", "REPLAN", "DESPLIEGUE"})
+		self.assertEqual(by_name["PRUEBAS"]["type"], "Vencida")
+		self.assertEqual(by_name["REPLAN"]["type"], "Desplazada")
+		self.assertEqual(by_name["REPLAN"]["dev_ref"], "línea base")
+		self.assertEqual(by_name["DESPLIEGUE"]["type"], "Excede compromiso")
+		self.assertEqual(by_name["DESPLIEGUE"]["dev_ref"], "compromiso")
+		self.assertEqual(by_name["DESPLIEGUE"]["dev_days"], 5)
+		# NO aparecen por su sola clasificación.
+		self.assertNotIn("HITO", by_name)  # hito sin desviación
+		self.assertNotIn("SOPORTE", by_name)  # añadida sin desviación (solo en el Gantt)
+		self.assertNotIn("CANCELADA", by_name)  # retirada (solo en el Gantt)
+		self.assertNotIn("DISENO", by_name)  # sin desviación
+
+	def test_execution_state_buckets_and_exclusivity(self):
+		leaves = [
+			frappe._dict(name="A", status="Completed"),
+			frappe._dict(name="B", status="Working"),  # en curso
+			frappe._dict(name="C", status="Open"),  # vencida (tvb overdue)
+			frappe._dict(name="D", status="Open"),  # pendiente
+			frappe._dict(name="E", status="Overdue"),  # vencida (fallback nativo, no en tvb)
+			frappe._dict(name="F", status="Cancelled"),  # excluida
+		]
+		tvb = {"C": {"overdue_at_status_date": True}, "B": {"overdue_at_status_date": False}}
+		with patch("pmo.project_control.frappe.get_all", return_value=leaves):
+			ex = _execution_state("X", tvb, has_baseline=True)
+		self.assertEqual(ex["completadas"], 1)  # A
+		self.assertEqual(ex["en_curso"], 1)  # B
+		self.assertEqual(ex["vencidas"], 2)  # C (tvb) + E (nativo)
+		self.assertEqual(ex["pendientes"], 1)  # D
+		self.assertEqual(ex["total"], 5)  # F excluida
+		self.assertEqual(ex["completadas"] + ex["en_curso"] + ex["vencidas"] + ex["pendientes"], ex["total"])
+		self.assertEqual(ex["overdue_source"], "overdue_at_status_date")
+
+	def test_execution_state_fallback_without_baseline(self):
+		leaves = [frappe._dict(name="A", status="Overdue")]
+		with patch("pmo.project_control.frappe.get_all", return_value=leaves):
+			ex = _execution_state("X", {}, has_baseline=False)
+		self.assertEqual(ex["vencidas"], 1)  # sin baseline → estado nativo Overdue
+		self.assertIn("nativo", ex["overdue_source"])
+
+	def test_comparative_gantt_bars_added_removed_milestone(self):
+		live = [
+			frappe._dict(
+				name="T1",
+				subject="T1",
+				status="Working",
+				exp_start_date="2026-09-01",
+				exp_end_date="2026-09-10",
+				progress=50,
+				is_group=0,
+				is_milestone=0,
+				lft=1,
+				parent_task=None,
+			),
+			frappe._dict(
+				name="T2",
+				subject="Hito",
+				status="Open",
+				exp_start_date="2026-09-20",
+				exp_end_date="2026-09-20",
+				progress=0,
+				is_group=0,
+				is_milestone=1,
+				lft=2,
+				parent_task=None,
+			),
+			frappe._dict(
+				name="T3",
+				subject="Nueva",
+				status="Open",
+				exp_start_date="2026-09-05",
+				exp_end_date="2026-09-15",
+				progress=0,
+				is_group=0,
+				is_milestone=0,
+				lft=3,
+				parent_task=None,
+			),
+		]
+		baseline_snap = {
+			"tasks": [
+				{
+					"name": "T1",
+					"subject": "T1",
+					"exp_start_date": "2026-08-25",
+					"exp_end_date": "2026-09-05",
+					"is_group": 0,
+					"is_milestone": 0,
+				},
+				{
+					"name": "T2",
+					"subject": "Hito",
+					"exp_start_date": "2026-09-15",
+					"exp_end_date": "2026-09-15",
+					"is_group": 0,
+					"is_milestone": 1,
+				},
+				{
+					"name": "T9",
+					"subject": "Retirada",
+					"exp_start_date": "2026-09-01",
+					"exp_end_date": "2026-09-08",
+					"is_group": 0,
+					"is_milestone": 0,
+				},
+			]
+		}
+		tvb = {"T1": {"overdue_at_status_date": True, "slip_days": 5}, "T2": {"slip_days": 5}}
+		with patch("pmo.project_control.frappe.get_list", return_value=live):
+			g = _comparative_gantt("X", baseline_snap, {}, "2026-09-08", tvb)
+		self.assertTrue(g["has_baseline"])
+		rows = {r["name"]: r for r in g["tasks"]}
+		self.assertEqual(len(g["tasks"]), 4)  # 3 vivas + 1 retirada
+		# T1: dos barras + vencida
+		self.assertIsNotNone(rows["T1"]["baseline_bar"])
+		self.assertIsNotNone(rows["T1"]["current_bar"])
+		self.assertTrue(rows["T1"]["overdue"])
+		self.assertFalse(rows["T1"]["added"])
+		# T2: hito con ambas referencias
+		self.assertEqual(rows["T2"]["is_milestone"], 1)
+		# T3: añadida (solo plan vigente)
+		self.assertTrue(rows["T3"]["added"])
+		self.assertIsNone(rows["T3"]["baseline_bar"])
+		self.assertIsNotNone(rows["T3"]["current_bar"])
+		# T9: retirada (solo línea base)
+		self.assertTrue(rows["T9"]["removed"])
+		self.assertIsNone(rows["T9"]["current_bar"])
+		self.assertIsNotNone(rows["T9"]["baseline_bar"])
+		# eje + corte
+		self.assertIsNotNone(g["cutoff_pct"])
+		self.assertGreaterEqual(g["cutoff_pct"], 0)
+
+	def _sv(self):
+		return frappe._dict(
+			{
+				"header": {
+					"name": "PROJ-X",
+					"project_name": "Proyecto X",
+					"status": "Open",
+					"customer_name": "Cliente Demo",
+					"start_date": "2026-09-01",
+					"cutoff": "2026-09-30",
+					"has_baseline": True,
+					"baseline_ref": "BL-001",
+					"baseline_name": "PMO-BL-1",
+					"baseline_end": "2026-11-30",
+					"current_end": "2026-12-12",
+					"committed_end": "2026-11-30",
+					"slip_baseline": 12,
+					"slip_committed": -3,
+					"note": None,
+				},
+				"gantt": {
+					"has_baseline": True,
+					"min_start": "2026-09-01",
+					"max_end": "2026-12-12",
+					"cutoff_pct": 40.0,
+					"tasks": [
+						{
+							"name": "T1",
+							"subject": "Diseño",
+							"depth": 0,
+							"is_group": 0,
+							"is_milestone": 0,
+							"progress": 50,
+							"start": "2026-09-01",
+							"end": "2026-09-10",
+							"baseline_bar": {"offset": 0, "width": 10},
+							"current_bar": {"offset": 2, "width": 10},
+							"overdue": True,
+							"completed": False,
+							"added": False,
+							"removed": False,
+							"slip_days": 5,
+						},
+					],
+				},
+				"execution": {
+					"completadas": 12,
+					"en_curso": 8,
+					"pendientes": 8,
+					"vencidas": 4,
+					"total": 32,
+					"overdue_source": "overdue_at_status_date",
+				},
+				# Solo desviaciones temporales reales. Añadida/retirada (composición) NO entran a la tabla:
+				# viven en el Gantt/leyenda. Aquí, Vencida (vs línea base) y Excede compromiso (vs compromiso).
+				"deviations": [
+					{
+						"type": "Vencida",
+						"name": "T1",
+						"subject": "Diseño",
+						"is_milestone": 0,
+						"owner": "user@x.com",
+						"baseline_exp_end_date": "2026-09-05",
+						"current_exp_end_date": "2026-09-10",
+						"dev_days": 5,
+						"dev_ref": "línea base",
+						"status": "Working",
+					},
+					{
+						"type": "Excede compromiso",
+						"name": "T2",
+						"subject": "Despliegue",
+						"is_milestone": 0,
+						"owner": None,
+						"baseline_exp_end_date": "2026-09-20",
+						"current_exp_end_date": "2026-09-25",
+						"dev_days": 5,
+						"dev_ref": "compromiso",
+						"status": "Open",
+					},
+				],
+			}
+		)
+
+	def test_render_es_mx_effort_and_no_economics(self):
+		with patch("pmo.project_control._schedule_view", return_value=dict(self._sv())):
+			html = get_schedule_html("PROJ-X", cutoff="2026-09-30")
+		# 4 bloques es-MX
+		self.assertIn("Estado del cronograma", html)
+		self.assertIn("línea base vs plan vigente", html)
+		self.assertIn("Estado de ejecución", html)
+		# Renombrado: el bloque responde «¿dónde está desviado el cronograma?».
+		self.assertIn("Desviaciones del cronograma", html)
+		self.assertNotIn("Excepciones del cronograma", html)
+		# semántica: "plan vigente", NO "pronosticado"
+		self.assertIn("Fin plan vigente", html)
+		self.assertNotIn("pronosticado", html.lower())
+		# Gantt: barras + corte + drill a Task
+		self.assertIn("Línea base", html)
+		self.assertIn("Plan vigente", html)
+		self.assertIn('data-task="T1"', html)
+		# 2.1 — desviación con referencia inequívoca (línea base vs compromiso)
+		self.assertIn("5 d vs línea base", html)
+		self.assertIn("5 d vs compromiso", html)
+		# Composición (añadida/retirada) se diferencia en la LEYENDA del Gantt, no como fila de desviación.
+		self.assertIn("Fuera de línea base", html)
+		self.assertIn("Retirada del plan", html)
+		# ejecución (barra segmentada) + total
+		self.assertIn("Total tareas", html)
+		# Sección 5 (consumo de esfuerzo por tarea) SÍ aparece en Estado/Cronograma (rescate de PvA).
+		self.assertIn("Consumo de esfuerzo por tarea", html)
+		# Pero NO se etiqueta como "planificado al corte": expected_time es presupuesto TOTAL, no plan a la
+		# fecha. Economía / riesgos / gobernanza siguen FUERA de esta pestaña.
+		for token in (
+			"Horas planificadas",
+			"Costo real",
+			"Situación económica",
+			"Riesgos",
+			"Gobernanza",
+		):
+			self.assertNotIn(token, html)
 
 
 class TestCostsSection(IntegrationTestCase):

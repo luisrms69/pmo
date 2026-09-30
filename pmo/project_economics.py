@@ -14,9 +14,35 @@ Principios (ADR-0011 + privacidad P4):
 - Tres estados diferenciados; una inconsistencia real **no** se degrada a ausencia."""
 
 import frappe
+from frappe.utils import flt
 
 # Única lista de roles con acceso económico. `Projects Manager` (nativo, demasiado amplio) NO se incluye.
 ECONOMIC_ROLES = ("PMO Manager", "PMO Executive Access", "System Manager")
+
+# Campos de costo REAL nativo del Project (ERPNext `update_costing`).
+_NATIVE_REAL_COST_FIELDS = ("total_costing_amount", "total_purchase_cost", "total_consumed_material_cost")
+
+
+def get_native_real_cost(project: str) -> dict:
+	"""ÚNICA definición canónica de los costos reales NATIVOS del Project y de `comparable_cost`.
+
+	`comparable_cost = total_costing_amount + total_purchase_cost` (labor + externo vía OC→PI; **EXCLUYE
+	material**, para comparar contra el costo autorizado del contrato). `material` se expone aparte;
+	`gross_margin_cost_basis = costing + purchase + material` es la base del `gross_margin` NATIVO de ERPNext.
+
+	Solo compone campos nativos existentes — NO incluye economía autorizada ni lógica de Financial Health.
+	La fórmula NO cambia respecto a los consumidores previos (extracción/de-dup, no rediseño)."""
+	nat = frappe.db.get_value("Project", project, _NATIVE_REAL_COST_FIELDS, as_dict=True) or frappe._dict()
+	costing = flt(nat.get("total_costing_amount"))
+	purchase = flt(nat.get("total_purchase_cost"))
+	material = flt(nat.get("total_consumed_material_cost"))
+	return {
+		"costing": costing,  # labor real (Timesheet) = total_costing_amount
+		"purchase": purchase,  # externo real (Purchase Invoice) = total_purchase_cost
+		"material": material,  # consumo de stock; NO parte del comparable
+		"comparable_cost": flt(costing + purchase, 2),
+		"gross_margin_cost_basis": flt(costing + purchase + material, 2),
+	}
 
 
 def can_see_project_economics(project: str, user: str | None = None) -> bool:

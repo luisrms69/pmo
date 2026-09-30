@@ -40,29 +40,47 @@ def _project(name, status="Open"):
 
 
 def _prepare_handoff_parties(project):
-	"""El Handoff exige responsable operativo interno + contacto del cliente en el Project para emitirse."""
+	"""El Handoff captura responsable operativo + contacto en el Acta; el contacto se filtra por el Customer
+	del Project (relación nativa Dynamic Link). Prepara Customer + Contact relacionado + Employee y devuelve
+	(emp, contact) para capturarlos en el Acta."""
 	emp = frappe.db.exists("Employee", {"employee_name": "Gov Op Owner"}) or (
 		frappe.get_doc({"doctype": "Employee", "employee_name": "Gov Op Owner", "first_name": "Gov"})
 		.insert(ignore_permissions=True, ignore_mandatory=True)
 		.name
 	)
-	ct = frappe.db.exists("Contact", {"first_name": "Gov Contact"}) or (
-		frappe.get_doc({"doctype": "Contact", "first_name": "Gov Contact"})
+	cust = frappe.db.exists("Customer", {"customer_name": "Gov Customer"}) or (
+		frappe.get_doc({"doctype": "Customer", "customer_name": "Gov Customer"})
 		.insert(ignore_permissions=True, ignore_mandatory=True)
 		.name
 	)
-	frappe.db.set_value("Project", project, "pmo_operational_owner", emp, update_modified=False)
-	frappe.db.set_value("Project", project, "pmo_customer_contact", ct, update_modified=False)
+	ct = frappe.db.exists("Contact", {"first_name": "Gov Contact"})
+	if not ct:
+		cdoc = frappe.get_doc({"doctype": "Contact", "first_name": "Gov Contact"})
+		cdoc.append("links", {"link_doctype": "Customer", "link_name": cust})
+		ct = cdoc.insert(ignore_permissions=True, ignore_mandatory=True).name
+	frappe.db.set_value("Project", project, "customer", cust, update_modified=False)
+	frappe.db.set_value("Project", project, "pmo_project_manager", "Administrator", update_modified=False)
+	return emp, ct
 
 
 def _handoff(project):
-	_prepare_handoff_parties(project)
+	emp, ct = _prepare_handoff_parties(project)
 	doc = frappe.get_doc(
 		{
 			"doctype": "PMO Project Handoff",
 			"project": project,
+			"operational_owner": emp,
+			"customer_contact": ct,
 			"handoff_summary": "Transferencia X",
+			"project_objective": "Objetivo del proyecto X.",
+			"scope_high_level": "Alcance de alto nivel del proyecto X.",
+			"committed_end_date": "2026-03-31",
+			"authorized_by": "Sponsor del cliente",
+			"pm_informed_coordinated": 1,
+			"internal_team_informed": 1,
+			"startup_conditions_reviewed": 1,
 			"contractual_legal_ready": 1,
+			"start_authorization_confirmed": 1,
 		}
 	)
 	doc.insert(ignore_permissions=True)

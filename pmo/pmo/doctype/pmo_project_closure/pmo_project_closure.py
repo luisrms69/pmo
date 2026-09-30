@@ -33,7 +33,11 @@ from pmo.project_control import (
 	SECTION_SCOPE_CHANGES,
 	build_project_control,
 )
-from pmo.project_economics import can_see_project_economics, get_authorized_economics
+from pmo.project_economics import (
+	can_see_project_economics,
+	get_authorized_economics,
+	get_native_real_cost,
+)
 
 CLOSURE_SNAPSHOT_SCHEMA_VERSION = 1
 _TERMINAL_STATUSES = ("Completed", "Cancelled")
@@ -125,8 +129,6 @@ def build_closure_economics(project: str, user: str | None = None) -> dict:
 	econ = get_authorized_economics(project)
 	edata = econ.get("data") or {}
 	native = frappe.db.get_value("Project", project, _NATIVE_COST_FIELDS, as_dict=True) or frappe._dict()
-	costing = flt(native.get("total_costing_amount"))
-	purchase = flt(native.get("total_purchase_cost"))
 	return {
 		"snapshot_schema_version": CLOSURE_SNAPSHOT_SCHEMA_VERSION,
 		"as_of": "current_at_issuance",
@@ -139,7 +141,7 @@ def build_closure_economics(project: str, user: str | None = None) -> dict:
 		"currency": edata.get("currency"),
 		"total_sales_amount": flt(native.get("total_sales_amount")),
 		"total_billed_amount": flt(native.get("total_billed_amount")),
-		"comparable_cost": flt(costing + purchase, 2),
+		"comparable_cost": get_native_real_cost(project)["comparable_cost"],
 		"gross_margin": flt(native.get("gross_margin")),
 		"per_gross_margin": flt(native.get("per_gross_margin")),
 	}

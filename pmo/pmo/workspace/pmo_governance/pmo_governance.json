@@ -1,7 +1,7 @@
 {
  "app": "pmo",
  "charts": [],
- "content": "[{\"id\": \"govhdr0001\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>PMO Governance</b></span>\", \"col\": 12}}, {\"id\": \"govblk0001\", \"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"PMO Governance\", \"col\": 12}}, {\"id\": \"govcard001\", \"type\": \"card\", \"data\": {\"card_name\": \"Governance documents\", \"col\": 6}}, {\"id\": \"govcard002\", \"type\": \"card\", \"data\": {\"card_name\": \"Project file\", \"col\": 6}}, {\"id\": \"rahdr00001\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Risk management</b></span>\", \"col\": 12}}, {\"id\": \"racard0001\", \"type\": \"card\", \"data\": {\"card_name\": \"Risk management\", \"col\": 6}}, {\"id\": \"racfg0001\", \"type\": \"card\", \"data\": {\"card_name\": \"Risk configuration\", \"col\": 6}}, {\"id\": \"cihdr00001\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Continuous improvement</b></span>\", \"col\": 12}}, {\"id\": \"ciqlist001\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Continuous improvement actions\", \"col\": 8}}, {\"id\": \"cicard0001\", \"type\": \"card\", \"data\": {\"card_name\": \"Continuous improvement\", \"col\": 4}}]",
+ "content": "[{\"id\": \"govhdr0001\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Gobernanza PMO</b></span>\", \"col\": 12}}, {\"id\": \"govblk0001\", \"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"PMO Governance\", \"col\": 12}}]",
  "custom_blocks": [
   {
    "custom_block_name": "PMO Governance",

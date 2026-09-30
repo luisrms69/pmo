@@ -20,11 +20,29 @@ interna, pero primero se aplica P4.
 
 import frappe
 from frappe import N_
-from frappe.utils import flt, getdate, today
+from frappe.utils import cint, flt, getdate, today
 
-from pmo.governance import build_expediente
+from pmo.actual import get_actual_hours_by_task_asof
+from pmo.baseline import build_snapshot, get_effective_baseline
+from pmo.compare import compare_snapshots
+from pmo.governance import build_expediente, count_open_change_requests, governance_flags
+from pmo.governance_inbox import (
+	CONTROL_DESCRIPTIONS,
+	CONTROL_ICONS,
+	CONTROL_LABELS,
+	CONTROL_ORDER,
+	STATE_NO_APLICA,
+	STATE_PENDIENTE,
+	_evaluate,
+	_facts,
+)
+from pmo.governance_project import is_governance_exempt
 from pmo.health import HEALTH_LABELS, _health
-from pmo.project_economics import can_see_project_economics, get_authorized_economics
+from pmo.project_economics import (
+	can_see_project_economics,
+	get_authorized_economics,
+	get_native_real_cost,
+)
 from pmo.status_date import build_status_report
 
 SECTION_PROJECT = "project"
@@ -242,7 +260,10 @@ def _project_section(project: str, sr: dict) -> dict:
 	"""Identidad y fechas del proyecto (encabezado). Sin cálculo de negocio."""
 	meta = (
 		frappe.db.get_value(
-			"Project", project, ["project_name", "status", "company", "customer"], as_dict=True
+			"Project",
+			project,
+			["project_name", "status", "company", "customer", "expected_start_date"],
+			as_dict=True,
 		)
 		or frappe._dict()
 	)
@@ -256,6 +277,7 @@ def _project_section(project: str, sr: dict) -> dict:
 		"company": meta.get("company"),
 		"customer": meta.get("customer"),
 		"customer_name": customer_name,
+		"start_date": meta.get("expected_start_date"),  # Fecha de inicio planeada (nativo ERPNext)
 		"cutoff": sr.get("status_date"),
 		"has_baseline": sr.get("baseline") is not None,
 		"forecast_end": (sr.get("current") or {}).get("expected_end_date"),
@@ -387,9 +409,7 @@ def _costs_section(project: str) -> dict:
 	applied_count = len([q for q in (data.get("quotations") or []) if q.get("role") == "applied_change"])
 	pending_count = len(data.get("pending_changes") or [])
 	nat = frappe.db.get_value("Project", project, _NATIVE_COST_FIELDS, as_dict=True) or frappe._dict()
-	costing = flt(nat.get("total_costing_amount"))
-	purchase = flt(nat.get("total_purchase_cost"))
-	material = flt(nat.get("total_consumed_material_cost"))
+	real_cost = get_native_real_cost(project)  # fuente canónica única (costing/purchase/material/comparable)
 	base_currency = (
 		frappe.db.get_value("Company", nat.get("company"), "default_currency") if nat.get("company") else None
 	)
@@ -403,15 +423,7 @@ def _costs_section(project: str) -> dict:
 			"total_sales_amount": flt(nat.get("total_sales_amount")),
 			"total_billed_amount": flt(nat.get("total_billed_amount")),
 		},
-		"real_cost": {
-			"costing": costing,  # labor real (Timesheet) = total_costing_amount
-			"purchase": purchase,  # externo real (Purchase Invoice) = total_purchase_cost
-			"material": material,  # consumo de stock; excepción/componente adicional, NO parte del comparable
-			# Costo real COMPARABLE contra authorized_cost (proceso: labor + externo vía OC→PI). Excluye material.
-			"comparable_cost": flt(costing + purchase, 2),
-			# Base del gross_margin NATIVO de ERPNext (incluye material). No se usa para comparar con autorizado.
-			"gross_margin_cost_basis": flt(costing + purchase + material, 2),
-		},
+		"real_cost": real_cost,  # {costing, purchase, material, comparable_cost, gross_margin_cost_basis}
 		"native_margin": {
 			"gross_margin": flt(nat.get("gross_margin")),
 			"per_gross_margin": flt(nat.get("per_gross_margin")),
@@ -627,6 +639,414 @@ def get_executive_html(project: str, cutoff: str | None = None, audience: str = 
 
 
 @frappe.whitelist()
+def get_summary_html(project: str, cutoff: str | None = None) -> str:
+	"""Endpoint de la pestaña **Resumen** de Project Control. Compacta: identidad+estado, avance (síntesis),
+	excepciones (cronograma/riesgos/cambios) y gobernanza. **Reusa** los mismos motores (build_status_report,
+	risk_signals, build_expediente/governance_flags); NO recalcula ni introduce métricas/persistencia.
+
+	Composición (superficie de consulta): NO incluye economía (pestaña Financiera), ni Gantt, ni tablas
+	completas de tareas/riesgos/CR (esas viven en sus pestañas). `executive.html`/`get_executive_html`
+	quedan intactos para el Print Format; esta pestaña usa su propio template `resumen.html`."""
+	ctx = build_project_control(
+		project,
+		cutoff=cutoff,
+		audience="internal",
+		sections=[SECTION_PROJECT, SECTION_EXECUTIVE, SECTION_SCHEDULE, SECTION_RISK, SECTION_GOVERNANCE],
+	)
+	# Derivación de PRESENTACIÓN (sin semántica nueva): hitos con desviación = milestones con slip > 0
+	# (reusa el `slip_days` ya calculado por el motor de cronograma).
+	ms = (ctx.get("schedule") or {}).get("milestones") or []
+	ctx["milestones_with_deviation"] = sum(1 for m in ms if (m.get("slip_days") or 0) > 0)
+	ctx["milestones_total"] = len(ms)
+	# Señales de gobierno (fuente única) para etiquetar Cierre/Revisión como Pendiente/No requerido.
+	ctx["governance_flags"] = governance_flags(project)
+	# PHI (ADR-0013): bloque de salud integral. Compone (no recalcula); decorado con etiquetas de usuario.
+	from pmo.phi import get_phi_view
+
+	ctx["phi"] = get_phi_view(project, cutoff)
+	# Financial Health (ADR-0013b): indicador financiero SEPARADO del PHI. Solo con acceso económico
+	# (muestra costo consumido); sin acceso → no se compone (no aparece en el payload).
+	if can_see_project_economics(project):
+		from pmo.financial_health import get_financial_view
+
+		ctx["financial"] = get_financial_view(project)
+	# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti -- ruta de plantilla literal propia (no input de usuario)
+	return frappe.render_template("pmo/templates/project_control/resumen.html", {"pc": ctx})
+
+
+# ---------------------------------------------------------------------------
+# Vista Estado / Cronograma (control de cronograma; SOLO lectura; sin motor nuevo).
+# Reutiliza build_status_report (indicadores), get_effective_baseline + build_snapshot (snapshots),
+# compare_snapshots (diff baseline↔actual) y _annotate/_relevant (excepciones). No recalcula slips.
+# ---------------------------------------------------------------------------
+_INPROGRESS_STATUSES = ("Working", "Pending Review")
+
+
+def _gbar(start, end, min_start, span):
+	"""Geometría de una barra (offset/width en %) sobre el eje común. Misma matemática que `_gantt`."""
+	if not start or not end:
+		return None
+	s, e = getdate(start), getdate(end)
+	return {
+		"offset": round((s - min_start).days / span * 100, 2),
+		"width": round(max(((e - s).days + 1) / span * 100, 0.6), 2),
+	}
+
+
+def _comparative_gantt(project: str, baseline_snap, current_snap, sd, tvb_map: dict) -> dict:
+	"""Gantt de control: por Task, barra Línea base (snapshot baseline) vs barra Plan vigente (Task viva),
+	sobre un eje temporal común, con progreso, hitos, vencidas y marcas añadida/retirada. Solo presentación
+	(offset/width); NO recalcula fechas ni slips (los toma de los snapshots / tasks_vs_baseline)."""
+	live = frappe.get_list(
+		"Task",
+		filters={"project": project},
+		fields=[
+			"name",
+			"subject",
+			"status",
+			"exp_start_date",
+			"exp_end_date",
+			"progress",
+			"is_group",
+			"is_milestone",
+			"lft",
+			"parent_task",
+		],
+		order_by="lft asc",
+		limit=0,
+	)
+	b_index = {t["name"]: t for t in (baseline_snap.get("tasks") or [])} if baseline_snap else {}
+	live_names = {t.name for t in live}
+	has_bl = baseline_snap is not None
+
+	dates = []
+	for t in live:
+		for dt in (t.exp_start_date, t.exp_end_date):
+			if dt:
+				dates.append(getdate(dt))
+	for bt in b_index.values():
+		for dt in (bt.get("exp_start_date"), bt.get("exp_end_date")):
+			if dt:
+				dates.append(getdate(dt))
+	if sd:
+		dates.append(getdate(sd))
+	if not dates:
+		return {"has_baseline": has_bl, "tasks": [], "min_start": None, "max_end": None, "cutoff_pct": None}
+	min_start, max_end = min(dates), max(dates)
+	span = max((max_end - min_start).days, 1)
+
+	parentmap = {t.name: t.parent_task for t in live}
+
+	def depth(name, guard=0):
+		p = parentmap.get(name)
+		return 0 if not p or guard > 50 else 1 + depth(p, guard + 1)
+
+	rows = []
+	for t in live:
+		bt = b_index.get(t.name)
+		tv = tvb_map.get(t.name) or {}
+		rows.append(
+			{
+				"name": t.name,
+				"subject": t.subject or t.name,
+				"depth": depth(t.name),
+				"is_group": int(t.is_group or 0),
+				"is_milestone": int(t.is_milestone or 0),
+				"progress": int(flt(t.progress)),
+				"start": str(t.exp_start_date)[:10] if t.exp_start_date else None,
+				"end": str(t.exp_end_date)[:10] if t.exp_end_date else None,
+				"baseline_bar": _gbar(bt.get("exp_start_date"), bt.get("exp_end_date"), min_start, span)
+				if bt
+				else None,
+				"current_bar": _gbar(t.exp_start_date, t.exp_end_date, min_start, span),
+				"overdue": bool(tv.get("overdue_at_status_date")),
+				"completed": t.status == "Completed",
+				"added": has_bl and (t.name not in b_index),
+				"removed": False,
+				"slip_days": tv.get("slip_days"),
+			}
+		)
+	# Retiradas: en baseline pero no en el plan vigente → solo barra baseline.
+	if has_bl:
+		for name in sorted(set(b_index) - live_names):
+			bt = b_index[name]
+			rows.append(
+				{
+					"name": name,
+					"subject": bt.get("subject") or name,
+					"depth": 0,
+					"is_group": int(bt.get("is_group") or 0),
+					"is_milestone": int(bt.get("is_milestone") or 0),
+					"progress": 0,
+					"start": bt.get("exp_start_date"),
+					"end": bt.get("exp_end_date"),
+					"baseline_bar": _gbar(bt.get("exp_start_date"), bt.get("exp_end_date"), min_start, span),
+					"current_bar": None,
+					"overdue": False,
+					"completed": False,
+					"added": False,
+					"removed": True,
+					"slip_days": None,
+				}
+			)
+	cutoff_pct = round((getdate(sd) - min_start).days / span * 100, 2) if sd else None
+	return {
+		"has_baseline": has_bl,
+		"tasks": rows,
+		"min_start": str(min_start),
+		"max_end": str(max_end),
+		"cutoff_pct": cutoff_pct,
+	}
+
+
+def _execution_state(project: str, tvb_map: dict, has_baseline: bool) -> dict:
+	"""Estado de ejecución por TAREA (no esfuerzo): Completadas / En curso / Pendientes / Vencidas,
+	mutuamente excluyentes (prioridad: Completada > Vencida > En curso > Pendiente). "Vencida" =
+	`overdue_at_status_date` (baseline+corte) cuando la tarea está en la baseline; si no (tarea añadida
+	o sin baseline vigente) → fallback al estado nativo `Overdue`."""
+	leaves = frappe.get_all("Task", filters={"project": project, "is_group": 0}, fields=["name", "status"])
+	completadas = en_curso = pendientes = vencidas = 0
+	for t in leaves:
+		st = t.status
+		if st in ("Cancelled", "Template"):
+			continue
+		if st == "Completed":
+			completadas += 1
+			continue
+		tv = tvb_map.get(t.name)
+		is_overdue = bool(tv.get("overdue_at_status_date")) if tv else (st == "Overdue")
+		if is_overdue:
+			vencidas += 1
+		elif st in _INPROGRESS_STATUSES or st == "Overdue":
+			en_curso += 1
+		else:  # Open (y cualquier no-terminal restante)
+			pendientes += 1
+	return {
+		"completadas": completadas,
+		"en_curso": en_curso,
+		"pendientes": pendientes,
+		"vencidas": vencidas,
+		"total": completadas + en_curso + pendientes + vencidas,
+		"overdue_source": "overdue_at_status_date" if has_baseline else "estado nativo (Overdue)",
+	}
+
+
+def _current_owners(names: list) -> dict:
+	"""{task: responsable vigente} = primer `ToDo` Open (`allocated_to`) por Task. Sin asignación → None."""
+	if not names:
+		return {}
+	todos = frappe.get_all(
+		"ToDo",
+		filters={"reference_type": "Task", "reference_name": ("in", list(names)), "status": "Open"},
+		fields=["reference_name", "allocated_to"],
+		order_by="creation asc",
+	)
+	out = {}
+	for td in todos:
+		out.setdefault(td.reference_name, td.allocated_to)
+	return out
+
+
+def _exc_type(r: dict) -> str:
+	"""Tipo de DESVIACIÓN temporal (es-MX), derivado de señales ya calculadas; sin nueva semántica. Prioriza
+	la razón real de la desviación: vencida > desplazada/hito desviado > adelantada > excede compromiso.
+	NO es un clasificador de composición: «Fuera de línea base» / «Retirada del plan» son cambios de
+	composición del plan (se ven en el Gantt), no desviaciones, y no llegan aquí salvo que además tengan
+	una desviación temporal real (en cuyo caso se etiquetan por ESA razón, p. ej. «Excede compromiso»)."""
+	if r.get("overdue_at_status_date"):
+		return "Vencida"
+	slip = r.get("slip_days")
+	if slip is not None and slip > 0:
+		return "Hito desviado" if r.get("is_milestone") else "Desplazada"
+	if slip is not None and slip < 0:
+		return "Adelantada"
+	if r.get("exceeds_deadline"):
+		return "Excede compromiso"
+	return "—"
+
+
+def _exc_deviation(rtype: str, r: dict) -> tuple:
+	"""Desviación CON su referencia inequívoca (2.1). «Excede compromiso» se mide contra la fecha
+	comprometida (`current_exp_end - pmo_deadline`); el resto contra la línea base (`slip_days`). Compone
+	fechas canónicas; no crea métricas."""
+	if rtype == "Excede compromiso":
+		cur, dl = r.get("current_exp_end_date"), r.get("pmo_deadline")
+		if cur and dl:
+			return (getdate(cur) - getdate(dl)).days, "compromiso"
+		return None, None
+	slip = r.get("slip_days")
+	return (slip, "línea base") if slip is not None else (None, None)
+
+
+def _schedule_deviations(project: str, ind: dict, baseline_snap, current_snap) -> list:
+	"""«¿Dónde está desviado el cronograma?» — SOLO desviaciones temporales REALES. Incluye una tarea únicamente
+	si: está vencida al corte, excede la fecha comprometida, o tiene diferencia material de fechas vs la línea
+	base (`slip_days≠0`). NO entran por su sola clasificación: un hito sin desviación, una tarea «fuera de línea
+	base» solo por ser nueva, ni una «retirada del plan» solo por retirarse — esos cambios de composición se ven
+	en el Gantt. Una añadida sí aparece si excede el compromiso (única desviación temporal medible sin baseline),
+	y entonces se etiqueta por ESA razón. NO usa `_relevant` (que incluye hitos): filtra desviación-only aquí."""
+
+	def _is_deviation(r: dict) -> bool:
+		slip = r.get("slip_days")
+		return bool(
+			r.get("overdue_at_status_date") or (slip is not None and slip != 0) or r.get("exceeds_deadline")
+		)
+
+	rows = _annotate(project, ind.get("tasks_vs_baseline") or [])
+	deviated = [r for r in rows if _is_deviation(r)]
+	live_status = {}
+	if baseline_snap is not None:
+		# Añadidas: existen en el plan vigente, no en la baseline (identidad por Task ID, nunca por subject).
+		# Solo entran a DESVIACIONES si exceden el compromiso; el resto vive únicamente en el Gantt.
+		added_names = [
+			t["name"] for t in compare_snapshots(baseline_snap, current_snap).get("tasks_added", [])
+		]
+		if added_names:
+			for t in frappe.get_all(
+				"Task",
+				filters={"name": ("in", added_names), "is_group": 0},
+				fields=["name", "subject", "status", "exp_end_date", "pmo_deadline", "is_milestone"],
+			):
+				live_status[t.name] = t.status
+				if t.exp_end_date and t.pmo_deadline and getdate(t.exp_end_date) > getdate(t.pmo_deadline):
+					deviated.append(
+						{
+							"name": t.name,
+							"subject": t.subject,
+							"is_milestone": int(t.is_milestone or 0),
+							"baseline_exp_end_date": None,
+							"current_exp_end_date": str(t.exp_end_date),
+							"pmo_deadline": str(t.pmo_deadline),
+							"slip_days": None,
+							"exceeds_deadline": True,
+						}
+					)
+
+	owners = _current_owners([r["name"] for r in deviated])
+	need_status = [r["name"] for r in deviated if r["name"] not in live_status]
+	if need_status:
+		for t in frappe.get_all("Task", filters={"name": ("in", need_status)}, fields=["name", "status"]):
+			live_status[t.name] = t.status
+
+	out = []
+	for r in deviated:
+		rtype = _exc_type(r)
+		dev_days, dev_ref = _exc_deviation(rtype, r)
+		out.append(
+			{
+				"type": rtype,
+				"name": r["name"],
+				"subject": r.get("subject") or r["name"],
+				"is_milestone": int(r.get("is_milestone") or 0),
+				"owner": owners.get(r["name"]),
+				"baseline_exp_end_date": r.get("baseline_exp_end_date"),
+				"current_exp_end_date": r.get("current_exp_end_date"),
+				"dev_days": dev_days,  # magnitud de la desviación (o None)
+				"dev_ref": dev_ref,  # referencia inequívoca: "línea base" | "compromiso" | None
+				"status": live_status.get(r["name"]),
+			}
+		)
+	# Orden: mayor desviación primero; sin magnitud comparable al final.
+	out.sort(key=lambda r: (r["dev_days"] is None, -(r["dev_days"] or 0)))
+	return out
+
+
+def _effort_by_task(project: str, cutoff) -> list:
+	"""Consumo de esfuerzo por tarea hoja (sección 5, rescatado de Planned vs Actual, ADR-0008): estimado
+	TOTAL (`Task.expected_time`) vs real ACUMULADO al corte (`get_actual_hours_by_task_asof`, Timesheet
+	submitted ≤ corte). `% consumido = real / estimado_total`. NO es plan-al-corte: `expected_time` es el
+	presupuesto total, no esfuerzo esperado a la fecha. Funciona **con o sin baseline** (no depende de ella)."""
+	leaves = frappe.get_all(
+		"Task",
+		filters={"project": project, "is_group": 0},
+		fields=["name", "subject", "expected_time"],
+		order_by="lft asc",
+		limit=0,
+	)
+	actual_map = get_actual_hours_by_task_asof(project, cutoff) if cutoff else {}
+	rows = []
+	for t in leaves:
+		est = flt(t.get("expected_time"))
+		real = flt(actual_map.get(t.name, 0))
+		rows.append(
+			{
+				"name": t.name,
+				"subject": t.subject or t.name,
+				"estimated": flt(est, 1),
+				"actual": flt(real, 2),
+				"pct": round(real / est * 100) if est else None,
+			}
+		)
+	return rows
+
+
+def _schedule_view(project: str, cutoff=None) -> dict:
+	"""Contexto de la pestaña Estado / Cronograma. Compone motores existentes; sin recálculo."""
+	# Corte por defecto = `Project.pmo_status_date` o hoy (misma resolución que build_project_control).
+	cutoff = (
+		str(cutoff) if cutoff else (frappe.db.get_value("Project", project, "pmo_status_date") or today())
+	)
+	sr = build_status_report(project, cutoff)  # P4 + validación de corte + indicadores
+	ind = sr.get("indicators") or {}
+	sd = sr.get("status_date")
+	baseline_name = get_effective_baseline(project, as_of=sd)  # baseline EFECTIVA al corte (no "la última")
+	baseline_snap = None
+	baseline_rev = None
+	if baseline_name:
+		snap = frappe.db.get_value("PMO Project Baseline", baseline_name, "snapshot")
+		baseline_snap = frappe.parse_json(snap) if snap else None
+		baseline_rev = frappe.db.get_value("PMO Project Baseline", baseline_name, "revision") or baseline_name
+	current_snap = build_snapshot(project)
+	meta = (
+		frappe.db.get_value(
+			"Project", project, ["project_name", "status", "customer", "expected_start_date"], as_dict=True
+		)
+		or frappe._dict()
+	)
+	cust_name = (
+		frappe.db.get_value("Customer", meta.customer, "customer_name") or meta.customer
+		if meta.get("customer")
+		else None
+	)
+	tvb_map = {t["name"]: t for t in (ind.get("tasks_vs_baseline") or [])}
+	return {
+		"header": {
+			"name": project,
+			"project_name": meta.get("project_name"),
+			"status": meta.get("status"),
+			"customer_name": cust_name,
+			"start_date": meta.get("expected_start_date"),
+			"cutoff": sd,
+			"has_baseline": baseline_snap is not None,
+			"baseline_ref": baseline_rev,
+			"baseline_name": baseline_name,
+			"baseline_end": (sr.get("baseline") or {}).get("expected_end_date"),
+			"current_end": (sr.get("current") or {}).get("expected_end_date"),
+			"committed_end": sr.get("committed_end_date"),
+			"slip_baseline": ind.get("final_date_slip_days"),
+			"slip_committed": ind.get("slip_vs_committed_days"),
+			"note": sr.get("note"),
+		},
+		"gantt": _comparative_gantt(project, baseline_snap, current_snap, sd, tvb_map),
+		"execution": _execution_state(project, tvb_map, baseline_snap is not None),
+		"deviations": _schedule_deviations(project, ind, baseline_snap, current_snap),
+		# Sección 5 (aditiva): consumo de esfuerzo por tarea hoja (real acumulado ≤ corte vs estimado total).
+		"effort": _effort_by_task(project, sd),
+	}
+
+
+@frappe.whitelist()
+def get_schedule_html(project: str, cutoff: str | None = None) -> str:
+	"""Pestaña **Estado / Cronograma** de Project Control (solo lectura). ¿Cumplimos el cronograma y dónde
+	se separa el plan vigente de la línea base? Gantt comparativo (Línea base vs Plan vigente) + estado de
+	ejecución + excepciones. Reutiliza los motores existentes; NO crea un segundo motor de cronograma; NO
+	muestra horas/economía/riesgos/CR/gobernanza. P4 vía build_status_report."""
+	sv = _deep_dict(_schedule_view(project, cutoff))
+	# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti -- ruta de plantilla literal propia (no input de usuario)
+	return frappe.render_template("pmo/templates/project_control/estado.html", {"sv": sv})
+
+
+@frappe.whitelist()
 def get_financial_html(project: str, cutoff: str | None = None) -> str:
 	"""Endpoint específico de la Page (pestaña Financiera). Reutiliza `build_project_control` (P4 vía
 	build_status_report + gate económico único) y `pc.costs`; NO consulta economía ni llama a
@@ -638,3 +1058,123 @@ def get_financial_html(project: str, cutoff: str | None = None) -> str:
 	)
 	# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti -- ruta de plantilla literal propia (no input de usuario)
 	return frappe.render_template("pmo/templates/project_control/financial.html", {"pc": ctx})
+
+
+# ---------------------------------------------------------------------------
+# Panel PMO del Project — CONTRATO CONTEXTUAL (backend natural de la Page pmo_project_control).
+# Estado PMO de UN Project: reutiliza el MISMO motor transversal (`_evaluate`/`_facts` de
+# pmo.governance_inbox); NO duplica reglas de gobernanza ni amplía el dashboard de portafolio.
+# ---------------------------------------------------------------------------
+
+# Microcopy instructivo (es-MX): «por qué todavía no corresponde» cuando el control está not_applicable.
+# Solo orientación de presentación; la clasificación real la produce el motor (_evaluate).
+CONTROL_NA_REASON = {
+	"acta": "Aplica mientras el proyecto está en ejecución (Open/On hold).",
+	"baseline": "Aplica mientras el proyecto está en ejecución (Open/On hold).",
+	"risk": "Se habilita al establecer la primera línea base.",
+	"change": "Sin solicitudes de cambio registradas todavía.",
+	"closure": "Se habilita cuando el proyecto termina (Completed/Cancelled).",
+	"review": "Se habilita después de emitir el cierre.",
+}
+_CONTROL_CREATE_DT = {
+	"acta": "PMO Project Handoff",
+	"baseline": "PMO Project Baseline",
+	"risk": "PMO Project Risk Assessment",
+	"change": "PMO Change Request",
+	"closure": "PMO Project Closure",
+	"review": "PMO Post-Project Review",
+}
+
+
+def _can_create(doctype: str, project: str) -> bool:
+	"""¿El usuario puede CREAR este artefacto de gobierno para el Project? Usa los gates reales
+	(has_permission_* por DocType); la UI solo refleja, el backend sigue siendo la autoridad."""
+	try:
+		doc = frappe.get_doc({"doctype": doctype, "project": project})
+		return bool(frappe.has_permission(doctype, "create", doc=doc))
+	except Exception:
+		return False
+
+
+@frappe.whitelist()
+def project_governance_state(project: str) -> dict:
+	"""CONTRATO CONTEXTUAL de UN Project para el Panel PMO (P4: READ del Project). Reutiliza el MISMO motor
+	que el dashboard transversal: `_evaluate(project)` clasifica cada control; aquí se enriquece con lo mínimo
+	que la UI necesita para PRESENTAR y OPERAR el ciclo (documento existente, conteos de Riesgos/Cambios,
+	acción disponible y capacidad real de actuar). NO duplica reglas de gobernanza ni toca governance_board."""
+	from pmo.pmo.doctype.pmo_project_baseline.pmo_project_baseline import get_baseline_state
+
+	frappe.has_permission("Project", ptype="read", doc=project, throw=True)
+	f = _facts(project)
+	exempt = is_governance_exempt(project)
+	controls = _evaluate(f)
+	risk = f["risk"]
+	crs = f["crs"]
+	open_crs = count_open_change_requests(project)
+	in_review = sum(
+		1 for c in crs if (c.get("workflow_state") or "") == "In Review" and cint(c.get("docstatus")) != 2
+	)
+	bl = get_baseline_state(project)
+
+	# Documento existente «para abrir» por control (si aplica).
+	existing = {
+		"acta": (f["handoff"] or {}).get("name")
+		and {"doctype": "PMO Project Handoff", "name": f["handoff"]["name"]},
+		"baseline": f["baseline"] and {"doctype": "PMO Project Baseline", "name": f["baseline"]},
+		"risk": risk.get("assessment")
+		and {"doctype": "PMO Project Risk Assessment", "name": risk.get("assessment")},
+		"change": None,
+		"closure": (f["closure"] or {}).get("name")
+		and {"doctype": "PMO Project Closure", "name": f["closure"]["name"]},
+		"review": (f["review"] or {}).get("name")
+		and {"doctype": "PMO Post-Project Review", "name": f["review"]["name"]},
+	}
+	counts = {
+		"risk": {
+			"assessment_exists": bool(risk.get("assessment_exists")),
+			"open": cint(risk.get("open")),
+			"needs_attention": cint(risk.get("no_owner")) + cint(risk.get("no_response")),
+		},
+		"change": {"open": open_crs, "in_review": in_review, "total": len(crs)},
+	}
+
+	out = []
+	for key in CONTROL_ORDER:
+		c = controls.get(key, {})
+		state = c.get("state", STATE_NO_APLICA)
+		out.append(
+			{
+				"control": key,
+				"label": CONTROL_LABELS[key],
+				"description": CONTROL_DESCRIPTIONS[key],
+				"icon": CONTROL_ICONS[key],
+				"state": state,
+				"situation": c.get("situation"),
+				"action_owner": c.get("action_owner"),
+				"na_reason": CONTROL_NA_REASON[key] if state == STATE_NO_APLICA else None,
+				"existing": existing.get(key) or None,
+				"counts": counts.get(key),
+				"can_create": _can_create(_CONTROL_CREATE_DT[key], project),
+			}
+		)
+
+	return {
+		"project": project,
+		"project_name": f["project_name"],
+		"project_manager": f["project_manager"],
+		"status": f["status"],
+		"started": f["started"],
+		"exempt": exempt,
+		"exempt_reason": frappe.db.get_value("Project", project, "pmo_exempt_reason") if exempt else None,
+		"pending_count": 0 if exempt else sum(1 for r in out if r["state"] == STATE_PENDIENTE),
+		"controls": out,
+		# Datos para operar la etapa Línea base con el flujo REAL existente (establecer/nueva/historial).
+		"baseline": {
+			"has_baseline": bool(bl.get("has_baseline")),
+			"revision": bl.get("revision"),
+			"effective_date": bl.get("effective_date"),
+			"baseline_count": bl.get("baseline_count"),
+			"eligible_crs": bl.get("eligible_crs"),
+			"can_replan": bl.get("can_replan"),
+		},
+	}

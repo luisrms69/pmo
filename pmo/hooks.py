@@ -58,9 +58,8 @@ doctype_calendar_js = {"Task": "public/js/task_calendar_pmo.js"}
 doctype_js = {
 	"PMO Change Request": "public/js/pmo_change_request.js",
 	"PMO Project Baseline": "public/js/pmo_project_baseline.js",
-	# Handoff: refleja read-only el responsable operativo / contacto del cliente desde el Project y avisa si
-	# faltan antes del Submit (fuente única = Project; no se editan ni se escriben desde el Handoff).
-	"PMO Project Handoff": "public/js/pmo_project_handoff.js",
+	# El JS del Handoff vive en su carpeta de doctype (pmo/pmo/doctype/pmo_project_handoff/*.js), auto-cargado
+	# por Frappe: filtra el Contacto por el Customer del Project (captura en el Acta → sincroniza al Project).
 	# Solo navegación: botón "PMO Project Control" en el form nativo de Project (no toca core).
 	"Project": "public/js/project_pmo.js",
 }
@@ -195,6 +194,7 @@ doc_events = {
 	"Project": {
 		"validate": [
 			"pmo.status_date.validate_project_status_date",  # ADR-0006 D2
+			"pmo.governance_project.guard_governance_exemption",  # Gobernanza V1: exclusión gobernada + auditoría
 			"pmo.schedule_commit.validate_project_committed_end",  # ADR-0007 D4 (warning)
 		],
 	},
@@ -272,7 +272,20 @@ fixtures = [
 	# P4-safe (pmo.dashboard.attention_block / customers_block); caché por-usuario, nunca global.
 	{
 		"dt": "Custom HTML Block",
-		"filters": [["name", "in", ["PMO Attention", "PMO Customers", "PMO Governance"]]],
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"PMO Resumen Ejecutivo",
+					"PMO Situación Económica",
+					"PMO Panorama Operativo",
+					"PMO Customers",
+					"PMO Attention",
+					"PMO Governance",
+				],
+			]
+		],
 	},
 ]
 
