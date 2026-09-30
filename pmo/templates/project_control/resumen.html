@@ -12,8 +12,6 @@
 {%- macro d(x) -%}{% if x %}{{ x }}{% else %}—{% endif %}{%- endmacro -%}
 {%- macro slip(x) -%}{% if x is none %}—{% else %}{{ x }} d{% endif %}{%- endmacro -%}
 {%- macro hrs(x) -%}{% if x is none %}—{% else %}{{ x|int if x == x|int else x }} h{% endif %}{%- endmacro -%}
-{%- set hc = {'on_track':'#1f9d55','at_risk':'#d97706','deviated':'#c02b2b'} -%}
-{%- set hl = {'on_track':'En plan','at_risk':'En riesgo','deviated':'Desviado'} -%}
 {%- set worst = [kp.slip_committed_days or 0, kp.slip_baseline_days or 0] | max -%}
 <div class="pmo-sum">
 <style>
@@ -80,6 +78,24 @@
 .pmo-sum .gov .gi .ref{font-size:10px;color:var(--text-muted)}
 .pmo-sum .gov .gi .ref a{cursor:pointer;color:var(--acc)}
 
+/* PHI — Salud integral (ADR-0013) */
+.pmo-sum .phi-main{display:flex;align-items:center;gap:22px;flex-wrap:wrap;border:1px solid var(--border-color);
+  border-left:5px solid #666;border-radius:10px;padding:14px 20px;background:var(--card-bg)}
+.pmo-sum .phi-score{display:flex;align-items:center;gap:12px}
+.pmo-sum .phi-num{font-size:40px;font-weight:800;line-height:1;letter-spacing:-1px}
+.pmo-sum .phi-num small{font-size:16px;font-weight:700;color:var(--text-muted)}
+.pmo-sum .phi-band{display:inline-block;padding:5px 14px;border-radius:14px;color:#fff;font-weight:700;font-size:13px}
+.pmo-sum .phi-dims{display:flex;gap:26px;flex-wrap:wrap;margin-left:6px}
+.pmo-sum .phi-d{display:flex;flex-direction:column}
+.pmo-sum .phi-d .l{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted)}
+.pmo-sum .phi-d .v{font-size:20px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.pmo-sum .phi-i{cursor:help;color:var(--text-muted);font-size:11px;opacity:.75;vertical-align:super}
+.pmo-sum .phi-cap{margin-top:8px;font-size:12px;color:var(--red-600);font-weight:600}
+.pmo-sum .phi-cap.warn{color:var(--orange-600)}
+.pmo-sum .phi-basic{border:1px dashed var(--border-color);border-radius:10px;padding:14px 20px;background:var(--subtle-fg,var(--gray-50))}
+.pmo-sum .phi-basic .phi-basic-t{font-size:16px;font-weight:700}
+.pmo-sum .phi-basic .phi-basic-m{font-size:12px;color:var(--text-muted);margin-top:3px}
+
 @media (max-width:900px){
   .pmo-sum .adv{grid-template-columns:1fr 1fr}
   .pmo-sum .panels{grid-template-columns:1fr}
@@ -94,15 +110,68 @@
     <div class="meta"><b>{{ d(pr.customer_name) }}</b> · {{ pr.name }} · {{ d(pr.status) }} · Inicio {{ d(pr.start_date) }}</div>
   </div>
   <div class="ctl-stats">
-    <div class="ctl-stat">
-      <div class="l">Salud</div>
-      <div class="v"><span class="hpill" style="background:{{ hc.get(kp.health, '#666') }}">{{ hl.get(kp.health, kp.health) }}</span></div>
-    </div>
     <div class="ctl-stat"><div class="l">Fecha compromiso</div><div class="v">{{ d(pr.committed_end) }}</div></div>
     <div class="ctl-stat"><div class="l">Fin pronosticado</div><div class="v">{{ d(pr.forecast_end) }}</div></div>
     <div class="ctl-stat"><div class="l">Desvío vs compromiso</div><div class="v {% if (kp.slip_committed_days or 0) > 0 %}bad{% endif %}">{{ slip(kp.slip_committed_days) }}</div></div>
   </div>
 </div>
+
+{#- A2. SALUD DEL PROYECTO (PHI, ADR-0013) — bloque nuevo; textos fuente en inglés vía _() -#}
+{%- set phi = pc.phi -%}
+{%- set phc = {'on_track':'#1f9d55','at_risk':'#d97706','deviated':'#c02b2b'} -%}
+{%- macro sc(x) -%}{% if x is none %}—{% else %}{{ x }}{% endif %}{%- endmacro -%}
+{%- macro tip(t) -%}<span class="phi-i" title="{{ t }}">&#9432;</span>{%- endmacro -%}
+{%- if phi -%}
+<div class="sec">{{ _("Project health") }} {{ tip(_("Consolidated project health index based on execution, schedule and governance. Critical conditions may limit the final classification.")) }}</div>
+{%- if phi.display_state in ('exempt', 'unavailable') -%}
+<div class="phi-basic">
+  <div class="phi-basic-t">{{ phi.display_title }}</div>
+  <div class="phi-basic-m">{{ phi.display_message }}</div>
+</div>
+{%- else -%}
+<div class="phi-main" style="border-left-color:{{ phc.get(phi.band, '#666') }}">
+  <div class="phi-score">
+    <div class="phi-num" title="{{ _('Consolidated project health index based on execution, schedule and governance. Critical conditions may limit the final classification.') }}">{{ phi.phi }}<small>/100</small></div>
+    <div class="phi-band" style="background:{{ phc.get(phi.band, '#666') }}">{{ phi.band_label }}</div>
+  </div>
+  <div class="phi-dims">
+    <div class="phi-d"><span class="l">{{ _("Execution") }} {{ tip(_("Fulfillment of the deliverables that should be completed by the cutoff date.")) }}</span><span class="v">{{ sc(phi.dimensions.execution.score) }}</span></div>
+    <div class="phi-d"><span class="l">{{ _("Schedule") }} {{ tip(_("Date compliance against baseline and committed date.")) }}</span><span class="v">{{ sc(phi.dimensions.schedule.score) }}</span></div>
+    <div class="phi-d"><span class="l">{{ _("Governance") }} {{ tip(_("Fulfillment of the PMO controls required for the current stage.")) }}</span><span class="v">{{ sc(phi.dimensions.governance.score) }}</span></div>
+    <div class="phi-d"><span class="l">{{ _("Coverage") }} {{ tip(_("How complete the available evidence used to compute PHI is.")) }}</span><span class="v">{{ phi.coverage_label }}{% if phi.evidence_coverage is not none %} · {{ (phi.evidence_coverage * 100)|round|int }}%{% endif %}</span></div>
+  </div>
+</div>
+{%- if phi.cap_applied and phi.condition_labels -%}
+<div class="phi-cap">{{ _("Effective band limited by:") }} {{ phi.condition_labels | join(", ") }}</div>
+{%- elif phi.condition_labels -%}
+<div class="phi-cap warn">{{ _("Attention:") }} {{ phi.condition_labels | join(", ") }}</div>
+{%- endif -%}
+{%- endif -%}
+{%- endif -%}
+
+{#- A3. SALUD FINANCIERA (Financial Health, ADR-0013b) — SEPARADO del PHI. Solo con acceso económico. -#}
+{%- set fin = pc.financial -%}
+{%- if fin -%}
+{%- set fc = {'healthy':'#1f9d55','cost_pressure':'#d97706','unfavorable':'#c02b2b','over_budget':'#c02b2b'} -%}
+<div class="sec">{{ _("Financial health") }}</div>
+{%- if fin.applicable -%}
+<div class="phi-main" style="border-left-color:{{ fc.get(fin.state, '#666') }}">
+  <div class="phi-score">
+    <div class="phi-band" style="background:{{ fc.get(fin.state, '#666') }}">{{ fin.state_label }}</div>
+  </div>
+  <div class="phi-dims">
+    <div class="phi-d"><span class="l">{{ _("Project progress") }}</span><span class="v">{{ sc(fin.physical_progress_pct) }}%</span></div>
+    <div class="phi-d"><span class="l">{{ _("Cost consumed") }}</span><span class="v">{% if fin.cost_consumption_pct is not none %}{{ fin.cost_consumption_pct }}%{% else %}—{% endif %}</span></div>
+    <div class="phi-d"><span class="l">{{ _("Gap") }}</span><span class="v">{% if fin.cost_gap is not none %}{{ '+' if fin.cost_gap > 0 else '' }}{{ fin.cost_gap }} pp{% else %}—{% endif %}</span></div>
+  </div>
+</div>
+{%- else -%}
+<div class="phi-basic">
+  <div class="phi-basic-t">{{ fin.state_label }}</div>
+  <div class="phi-basic-m">{{ fin.message }}</div>
+</div>
+{%- endif -%}
+{%- endif -%}
 
 {#- B. AVANCE DEL PROYECTO -#}
 <div class="sec">Avance del proyecto</div>

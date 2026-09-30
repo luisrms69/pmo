@@ -19,6 +19,7 @@ import frappe
 from frappe import N_, _
 from frappe.utils import flt, today
 
+from pmo.financial_health import FIN_STATE_LABELS, get_project_financial_health
 from pmo.governance import governance_flags
 
 # Salud: única fuente de verdad en pmo.health (claves + algoritmo, ADR-0011 D2). Se re-exporta aquí para
@@ -31,7 +32,25 @@ from pmo.health import (  # re-export estable para print_status/dashboard
 	_health,
 )
 from pmo.permissions import _is_global_reader, _member_projects_subquery
+from pmo.phi import phi_for_row
+from pmo.project_economics import can_see_project_economics
 from pmo.status_date import build_status_report
+
+# Orden de criticidad para el portafolio (peor primero): Deviated → At risk → Healthy → sin PHI → exento.
+_PHI_RANK = {"deviated": 0, "at_risk": 1, "on_track": 2}
+
+
+def _criticality_key(row):
+	"""Clave de orden por criticidad PHI. Los que tienen banda mandan; luego 'sin PHI'; exento al final."""
+	state = row.get("phi_state")
+	if state == "scored":
+		return (
+			_PHI_RANK.get(row.get("phi_band"), 3),
+			(row.get("phi") if row.get("phi") is not None else 100),
+		)
+	if state == "unavailable":
+		return (4, 0)
+	return (5, 0)  # exempt / basic tracking
 
 
 def execute(filters=None):
@@ -44,6 +63,8 @@ def execute(filters=None):
 			# P4 autoritativa: build_status_report exige READ; un proyecto no legible se omite (no rompe
 			# el dashboard). El pre-filtro ya limita el alcance; esto es defensa en profundidad.
 			continue
+	# Jerarquizar por criticidad PHI (peor primero) sin romper filtros ni P4 (solo reordena filas visibles).
+	data.sort(key=_criticality_key)
 	return _columns(), data, None, _health_chart(data), _summary(data)
 
 
@@ -94,7 +115,7 @@ def _project_row(project):
 	has_baseline = bool(report.get("baseline"))
 	health_key = _health(slip_baseline, slip_committed, overdue, exceeds)
 
-	return {
+	row = {
 		"project": project,
 		"project_name": meta.get("project_name"),
 		"status": meta.get("status"),
@@ -114,6 +135,17 @@ def _project_row(project):
 		# columnas nuevas — expuestas en la fila para consumidores/resúmenes.
 		**governance_flags(project),
 	}
+	# PHI (ADR-0013): reutiliza el mismo `report` (build_status_report) ya calculado (modo ligero, D8).
+	row.update(phi_for_row(project, report))
+	# Financial Health (ADR-0013b): indicador financiero SEPARADO; solo con acceso económico por proyecto.
+	if can_see_project_economics(project):
+		fh = get_project_financial_health(project)
+		row["fin_state"] = fh["state"]
+		row["fin_health"] = _(FIN_STATE_LABELS[fh["state"]]) if fh["state"] in FIN_STATE_LABELS else None
+		row["fin_gap"] = fh.get("cost_gap")
+	else:
+		row["fin_state"] = row["fin_health"] = row["fin_gap"] = None
+	return row
 
 
 def _effort_totals(project):
@@ -140,7 +172,14 @@ def _columns():
 		col("project_name", N_("Name"), "Data", 200),
 		col("customer", N_("Customer"), "Link", 160, options="Customer"),
 		col("status", N_("Status"), "Data", 90),
-		col("health", N_("Health"), "Data", 100),
+		col("phi", N_("PHI"), "Int", 70),
+		col("phi_health", N_("Health"), "Data", 120),
+		col("phi_execution", N_("Execution"), "Int", 95),
+		col("phi_schedule", N_("Schedule"), "Int", 95),
+		col("phi_governance", N_("Governance"), "Int", 100),
+		col("phi_coverage", N_("Coverage"), "Data", 100),
+		col("fin_health", N_("Financial health"), "Data", 130),
+		col("health", N_("Schedule status"), "Data", 110),
 		col("forecast_end", N_("Forecast end"), "Date", 120),
 		col("slip_baseline", N_("Slip vs Baseline (d)"), "Int", 140),
 		col("slip_committed", N_("Slip vs commitment (d)"), "Int", 150),
@@ -190,13 +229,13 @@ def _summary(data):
 	return [
 		{"label": _("Projects"), "value": len(data), "datatype": "Int"},
 		{
-			"label": _("Deviated"),
+			"label": _("Off track"),  # estado de cronograma (no "salud"); reservado "At risk" para PHI
 			"value": off,
 			"datatype": "Int",
 			"indicator": "Red" if off else "Green",
 		},
 		{
-			"label": _("At risk"),
+			"label": _("Behind"),
 			"value": risk,
 			"datatype": "Int",
 			"indicator": "Orange" if risk else "Green",

@@ -1,0 +1,82 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-09-29 00:00:00",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "phi_section",
+  "execution_weight",
+  "schedule_weight",
+  "column_break_phi",
+  "governance_weight"
+ ],
+ "fields": [
+  {
+   "fieldname": "phi_section",
+   "fieldtype": "Section Break",
+   "label": "PHI — Dimension Weights"
+  },
+  {
+   "default": "50",
+   "description": "Peso de Execution en el PHI. Execution + Schedule debe ser < 100.",
+   "fieldname": "execution_weight",
+   "fieldtype": "Int",
+   "label": "Execution Weight",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "default": "35",
+   "description": "Peso de Schedule en el PHI.",
+   "fieldname": "schedule_weight",
+   "fieldtype": "Int",
+   "label": "Schedule Weight",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_phi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Calculado automáticamente: 100 - Execution - Schedule. Debe quedar > 0.",
+   "fieldname": "governance_weight",
+   "fieldtype": "Int",
+   "label": "Governance Weight (auto)",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-09-29 00:00:00",
+ "modified_by": "Administrator",
+ "module": "PMO",
+ "name": "PMO Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "role": "PMO Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

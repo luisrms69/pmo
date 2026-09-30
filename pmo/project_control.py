@@ -38,7 +38,11 @@ from pmo.governance_inbox import (
 )
 from pmo.governance_project import is_governance_exempt
 from pmo.health import HEALTH_LABELS, _health
-from pmo.project_economics import can_see_project_economics, get_authorized_economics
+from pmo.project_economics import (
+	can_see_project_economics,
+	get_authorized_economics,
+	get_native_real_cost,
+)
 from pmo.status_date import build_status_report
 
 SECTION_PROJECT = "project"
@@ -405,9 +409,7 @@ def _costs_section(project: str) -> dict:
 	applied_count = len([q for q in (data.get("quotations") or []) if q.get("role") == "applied_change"])
 	pending_count = len(data.get("pending_changes") or [])
 	nat = frappe.db.get_value("Project", project, _NATIVE_COST_FIELDS, as_dict=True) or frappe._dict()
-	costing = flt(nat.get("total_costing_amount"))
-	purchase = flt(nat.get("total_purchase_cost"))
-	material = flt(nat.get("total_consumed_material_cost"))
+	real_cost = get_native_real_cost(project)  # fuente canónica única (costing/purchase/material/comparable)
 	base_currency = (
 		frappe.db.get_value("Company", nat.get("company"), "default_currency") if nat.get("company") else None
 	)
@@ -421,15 +423,7 @@ def _costs_section(project: str) -> dict:
 			"total_sales_amount": flt(nat.get("total_sales_amount")),
 			"total_billed_amount": flt(nat.get("total_billed_amount")),
 		},
-		"real_cost": {
-			"costing": costing,  # labor real (Timesheet) = total_costing_amount
-			"purchase": purchase,  # externo real (Purchase Invoice) = total_purchase_cost
-			"material": material,  # consumo de stock; excepción/componente adicional, NO parte del comparable
-			# Costo real COMPARABLE contra authorized_cost (proceso: labor + externo vía OC→PI). Excluye material.
-			"comparable_cost": flt(costing + purchase, 2),
-			# Base del gross_margin NATIVO de ERPNext (incluye material). No se usa para comparar con autorizado.
-			"gross_margin_cost_basis": flt(costing + purchase + material, 2),
-		},
+		"real_cost": real_cost,  # {costing, purchase, material, comparable_cost, gross_margin_cost_basis}
 		"native_margin": {
 			"gross_margin": flt(nat.get("gross_margin")),
 			"per_gross_margin": flt(nat.get("per_gross_margin")),
@@ -666,6 +660,16 @@ def get_summary_html(project: str, cutoff: str | None = None) -> str:
 	ctx["milestones_total"] = len(ms)
 	# Señales de gobierno (fuente única) para etiquetar Cierre/Revisión como Pendiente/No requerido.
 	ctx["governance_flags"] = governance_flags(project)
+	# PHI (ADR-0013): bloque de salud integral. Compone (no recalcula); decorado con etiquetas de usuario.
+	from pmo.phi import get_phi_view
+
+	ctx["phi"] = get_phi_view(project, cutoff)
+	# Financial Health (ADR-0013b): indicador financiero SEPARADO del PHI. Solo con acceso económico
+	# (muestra costo consumido); sin acceso → no se compone (no aparece en el payload).
+	if can_see_project_economics(project):
+		from pmo.financial_health import get_financial_view
+
+		ctx["financial"] = get_financial_view(project)
 	# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti -- ruta de plantilla literal propia (no input de usuario)
 	return frappe.render_template("pmo/templates/project_control/resumen.html", {"pc": ctx})
 

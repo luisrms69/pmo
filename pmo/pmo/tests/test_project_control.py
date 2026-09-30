@@ -551,6 +551,7 @@ class TestSummaryView(IntegrationTestCase):
 		with (
 			patch("pmo.project_control.build_project_control", return_value=self._ctx()) as b,
 			patch("pmo.project_control.governance_flags", return_value=flags),
+			patch("pmo.phi.get_phi_view", return_value=None),
 		):
 			html = get_summary_html("PROJ-X", cutoff="2026-09-11")
 		_, kw = b.call_args
@@ -569,7 +570,8 @@ class TestSummaryView(IntegrationTestCase):
 		# 1) Identidad y estado + 2) Avance + 3) Excepciones + 4) Gobernanza (es-MX)
 		self.assertIn("Proyecto X", html)
 		self.assertIn("Cliente Demo", html)
-		self.assertIn("En plan", html)  # salud mapeada es-MX (no "On track")
+		# El pill antiguo de "Salud" se retiró de la cabecera (ADR-0013): "Salud del proyecto" = PHI.
+		self.assertNotIn("En plan", html)
 		self.assertIn("68%", html)  # progreso
 		self.assertIn("120 h", html)  # horas planificadas
 		# Riesgos: señales existentes (sin agregado artificial de "requieren atención")

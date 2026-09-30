@@ -31,6 +31,7 @@ from pmo.project_economics import (
 	ECONOMIC_ROLES,
 	can_see_project_economics,
 	get_authorized_economics,
+	get_native_real_cost,
 )
 
 # Etiquetas visibles (Number Cards + Custom Blocks). JS en fixture → gettext no lo extrae. Inglés canónico.
@@ -335,12 +336,7 @@ def _project_native(project):
 	= total_costing_amount + total_purchase_cost (labor + externo, SIN material), MISMA semántica que la
 	sección `costs` de Project Control. Aislado en un helper para trazabilidad y testeabilidad."""
 	nat = (
-		frappe.db.get_value(
-			"Project",
-			project,
-			["company", "total_billed_amount", "total_costing_amount", "total_purchase_cost"],
-			as_dict=True,
-		)
+		frappe.db.get_value("Project", project, ["company", "total_billed_amount"], as_dict=True)
 		or frappe._dict()
 	)
 	cur = (
@@ -348,7 +344,8 @@ def _project_native(project):
 	)
 	return {
 		"billed": flt(nat.get("total_billed_amount")),
-		"comparable_cost": flt(flt(nat.get("total_costing_amount")) + flt(nat.get("total_purchase_cost")), 2),
+		# Costo real COMPARABLE desde la fuente canónica única (misma fórmula: costing + purchase).
+		"comparable_cost": get_native_real_cost(project)["comparable_cost"],
 		"currency": cur,
 	}
 

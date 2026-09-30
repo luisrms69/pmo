@@ -41,8 +41,9 @@ class TestPortfolioPure(unittest.TestCase):
 		]
 		cards = {c["label"]: c for c in _summary(data)}
 		self.assertEqual(cards["Projects"]["value"], 3)
-		self.assertEqual(cards["Deviated"]["value"], 1)
-		self.assertEqual(cards["At risk"]["value"], 1)
+		# Estado de cronograma (no "salud"): "Off track"/"Behind" (reservado "At risk" para PHI).
+		self.assertEqual(cards["Off track"]["value"], 1)
+		self.assertEqual(cards["Behind"]["value"], 1)
 		self.assertEqual(cards["Without baseline"]["value"], 2)
 
 

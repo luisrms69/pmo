@@ -84,6 +84,10 @@ class PMOPortfolio {
 					<div class="pmo-pf-summary" data-region="summary"></div>
 					<div class="pmo-pf-healthbox" data-region="health"></div>
 				</div>
+				<div class="pmo-pf-section">
+					<div class="pmo-pf-h2">${__("Project health (PHI)")}</div>
+					<div data-region="phi"></div>
+				</div>
 				<div class="pmo-pf-section pmo-pf-bycust">
 					<div class="pmo-pf-h2">${__("Projects by customer")}</div>
 					<div data-region="bycustomer"></div>
@@ -166,13 +170,75 @@ class PMOPortfolio {
 					)}</div>`
 				);
 			this.$root.find('[data-region="table"]').html("");
+			this.$root.find('[data-region="phi"]').html("");
 			return;
 		}
 		this._render_summary();
 		this._render_health();
+		this._render_phi();
 		this._render_customers();
 		this._render_attention();
 		this._render_table();
+	}
+
+	// --- PHI: salud integral por proyecto (ADR-0013). Filas ya vienen ordenadas por criticidad
+	// desde el server; aquí solo se presentan. Los exentos se muestran como "Basic tracking" (no PHI). ---
+	_render_phi() {
+		const h = (v) => frappe.utils.escape_html(v == null ? "" : String(v));
+		const sc = (v) => (v == null ? '<span class="dash">—</span>' : v);
+		const PHI_CLS = { deviated: "bad", at_risk: "warn", on_track: "ok" };
+		const rows = this.rows
+			.map((row) => {
+				const st = row.phi_state;
+				if (st === "scored") {
+					const cls = PHI_CLS[row.phi_band] || "";
+					return `
+					<tr class="phi-row ${cls}">
+						<td class="cell-project"><a class="proj" data-project="${h(row.project)}">${h(
+						row.project_name || row.project
+					)}</a></td>
+						<td class="phi-num ${cls}">${row.phi}</td>
+						<td><span class="phi-badge ${cls}">${h(row.phi_health)}</span></td>
+						<td>${sc(row.phi_execution)}</td>
+						<td>${sc(row.phi_schedule)}</td>
+						<td>${sc(row.phi_governance)}</td>
+						<td class="phi-cov">${h(row.phi_coverage)}${
+						row.phi_conditions && row.phi_conditions.length
+							? ` · <span class="phi-cond">${h(
+									row.phi_conditions.join(", ")
+							  )}</span>`
+							: ""
+					}</td>
+					<td>${row.fin_health ? h(row.fin_health) : "—"}</td>
+					</tr>`;
+				}
+				const label = st === "exempt" ? __("Basic tracking") : __("PHI unavailable");
+				return `
+				<tr class="phi-row muted">
+					<td class="cell-project"><a class="proj" data-project="${h(row.project)}">${h(
+					row.project_name || row.project
+				)}</a></td>
+					<td class="phi-num muted">—</td>
+					<td><span class="phi-badge muted">${label}</span></td>
+					<td>—</td><td>—</td><td>—</td>
+					<td class="phi-cov muted">${
+						st === "exempt"
+							? __("Not subject to PMO monitoring")
+							: __("Insufficient execution data")
+					}</td>
+					<td>${row.fin_health ? h(row.fin_health) : "—"}</td>
+				</tr>`;
+			})
+			.join("");
+		this.$root.find('[data-region="phi"]').html(`
+			<table class="pmo-pf-table pmo-pf-phi">
+				<thead><tr>
+					<th>${__("Project")}</th><th>${__("PHI")}</th><th>${__("Health")}</th>
+					<th>${__("Execution")}</th><th>${__("Schedule")}</th><th>${__("Governance")}</th>
+					<th>${__("Coverage")}</th><th>${__("Financial health")}</th>
+				</tr></thead>
+				<tbody>${rows}</tbody>
+			</table>`);
 	}
 
 	// --- Resumen compacto "Proyectos por cliente" — agrupa las MISMAS filas del inventario (ya
@@ -216,8 +282,8 @@ class PMOPortfolio {
 
 		const primary = [
 			kpi(__("Projects"), c.total),
-			kpi(__("Deviated"), c.deviated, c.deviated ? "bad" : ""),
-			kpi(__("At risk"), c.at_risk, c.at_risk ? "warn" : ""),
+			kpi(__("Off track"), c.deviated, c.deviated ? "bad" : ""),
+			kpi(__("Behind"), c.at_risk, c.at_risk ? "warn" : ""),
 			kpi(__("Without baseline"), c.no_baseline, c.no_baseline ? "warn" : ""),
 		].join("");
 
@@ -233,7 +299,8 @@ class PMOPortfolio {
 			);
 	}
 
-	// --- Capa 1b: Health compacto (On track / At risk / Deviated) — proporcional, ancho acotado ---
+	// --- Capa 1b: Estado de cronograma compacto (En plazo / Con atraso / Desviado) — NO es "salud"
+	// (eso es PHI). Proporcional, ancho acotado. ---
 	_render_health() {
 		const c = this._counts();
 		const total = c.total || 1;
@@ -243,12 +310,12 @@ class PMOPortfolio {
 				: "";
 		this.$root.find('[data-region="health"]').html(`
 			<div class="pmo-pf-hl">
-				<div class="pmo-pf-hl-title">${__("Health")}</div>
+				<div class="pmo-pf-hl-title">${__("Schedule status")}</div>
 				<div class="bar">${seg(c.on_track, "ok")}${seg(c.at_risk, "warn")}${seg(c.deviated, "bad")}</div>
 				<div class="legend">
-					<span><i class="ok"></i>${__("On track")} ${c.on_track}</span>
-					<span><i class="warn"></i>${__("At risk")} ${c.at_risk}</span>
-					<span><i class="bad"></i>${__("Deviated")} ${c.deviated}</span>
+					<span><i class="ok"></i>${__("On schedule")} ${c.on_track}</span>
+					<span><i class="warn"></i>${__("Behind")} ${c.at_risk}</span>
+					<span><i class="bad"></i>${__("Off track")} ${c.deviated}</span>
 				</div>
 			</div>`);
 	}
@@ -437,6 +504,18 @@ class PMOPortfolio {
 .pmo-pf-pct span{display:block;height:100%}
 .pmo-pf-pct span.ok{background:var(--green-500)}.pmo-pf-pct span.warn{background:var(--orange-500)}.pmo-pf-pct span.bad{background:var(--red-500)}
 .pmo-pf-table .pctcell{white-space:nowrap}.pmo-pf-table .pct-t{font-size:11px;color:var(--text-muted)}
+/* PHI (ADR-0013) */
+.pmo-pf-phi td.phi-num{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+.pmo-pf-phi td.phi-num.ok{color:var(--green-600)}.pmo-pf-phi td.phi-num.warn{color:var(--orange-600)}.pmo-pf-phi td.phi-num.bad{color:var(--red-600)}.pmo-pf-phi td.phi-num.muted{color:var(--gray-400)}
+.pmo-pf-phi .phi-badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;color:#fff}
+.pmo-pf-phi .phi-badge.ok{background:var(--green-500)}.pmo-pf-phi .phi-badge.warn{background:var(--orange-500)}.pmo-pf-phi .phi-badge.bad{background:var(--red-500)}.pmo-pf-phi .phi-badge.muted{background:var(--gray-400)}
+.pmo-pf-phi tr.phi-row.bad{background:var(--red-50,rgba(226,76,76,.06))}
+.pmo-pf-phi tr.phi-row.warn{background:var(--orange-50,rgba(248,129,79,.06))}
+.pmo-pf-phi tr.phi-row td{border-left:3px solid transparent}
+.pmo-pf-phi tr.phi-row.bad td:first-child{border-left-color:var(--red-500)}
+.pmo-pf-phi tr.phi-row.warn td:first-child{border-left-color:var(--orange-500)}
+.pmo-pf-phi tr.phi-row.ok td:first-child{border-left-color:var(--green-500)}
+.pmo-pf-phi .phi-cov{color:var(--text-muted);font-size:11px}.pmo-pf-phi .phi-cond{color:var(--red-600);font-weight:600}
 `;
 		const style = document.createElement("style");
 		style.id = "pmo-pf-styles";
