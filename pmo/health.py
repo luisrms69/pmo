@@ -192,7 +192,14 @@ def _phi_checks(signals: dict, weights: dict) -> list:
 	if has_committed and slip_cm is not None:
 		s = _S_GREEN if slip_cm <= 0 else _S_YELLOW if slip_cm <= 10 else _S_RED
 		checks.append(
-			_chk("SCH-1", "schedule", sw, CHECK_EVALUABLE, s, f"Forecast end slips {slip_cm}d vs committed date.")
+			_chk(
+				"SCH-1",
+				"schedule",
+				sw,
+				CHECK_EVALUABLE,
+				s,
+				f"Forecast end slips {slip_cm}d vs committed date.",
+			)
 		)
 	elif has_baseline and slip_bl is not None and dur and dur > 0:
 		r = slip_bl / dur

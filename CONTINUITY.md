@@ -1,33 +1,35 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-09-28
+**Fecha:** 2026-09-30
 **Rama activa:** `feat/pmo-home-rescate` (base `version-16` @ v0.17.0 → objetivo PR **v0.18.0**, MINOR)
-**Tarea actual:** `/ship` de cierre **v0.18.0**. La rama reúne (un solo release, 18 commits sobre v0.17.0):
-**rescate UX de PMO** (Home, Portafolio, Project Control/Resumen), **Panel PMO / Ciclo de Gobernanza** en el
-Project (pestaña PMO nativa), **Handoff = Acta de Inicio / Charter** con autorización + sync Handoff→Project
-(ADR-0014 D3 enmendado, snapshot v2), **PM canónico** read-only, **cambio gobernado de Fin comprometido**
-(ADR-0007 D6, endpoint + Version/Comment), **fusión de "Planificado vs Real"** en Estado/Cronograma
-(sección aditiva "Consumo de esfuerzo por tarea") con retiro de esa pestaña, y **actualización documental**
-(ADRs 0007/0008/0011/0014 + arquitectura + guías de usuario). Squash & Merge → tag `v0.18.0` sobre el merge
-commit → GitHub Release. **Siguiente frente (no iniciado): Reportes PMO.**
+**Tarea actual:** `/ship` de cierre **v0.18.0** (PR #22). La rama reúne, en un solo release MINOR sobre v0.17.0:
+(1) **rescate UX de PMO** + **Panel PMO / Ciclo de Gobernanza** + **Handoff = Acta/Charter** + **cambio
+gobernado de Fin comprometido** + **fusión Planificado vs Real** (commits del rescate); (2) **PMO Project
+Health Index (PHI) v1** (ADR-0013/0013a): motor `compute_phi` + adaptador + **PMO Settings** + integración en
+Project Control/Portfolio + Cronograma como **check único** (compromiso → baseline vigente → N/E) + rename de
+la dimensión a **Commitment/Compromiso**; (3) **Financial Health v1** (ADR-0013b) independiente del PHI; (4)
+**`get_native_real_cost()`** canónico + de-dup de `comparable_cost`; (5) rename del semáforo antiguo a
+**"Estado de cronograma"**. Squash & Merge → tag `v0.18.0` sobre el merge commit → GitHub Release.
+**Pendiente NO bloqueante:** UX/navegación de la tabla de Portfolio. **Siguiente frente (no iniciado):
+Reportes PMO.**
 
 ---
 
 ## Recuperación rápida
 
 Estoy trabajando en:
-El **cierre `/ship` de la rama `feat/pmo-home-rescate`** hacia `version-16` (v0.18.0). Todo implementado y con
-QA visual aprobado; suite completa verde (597 tests / 51 módulos).
+El **cierre `/ship` de la rama `feat/pmo-home-rescate`** (PR #22) hacia `version-16` (v0.18.0). Todo
+implementado y con QA visual aprobado (PHI + Financial Health incluidos); suites del bloque verdes.
 
 Plan que estoy siguiendo:
-`/ship` completo: preflight (limpio) → bump 0.18.0 + CHANGELOG + CONTINUITY → push → PR a `version-16` →
-`/ship comentario-pr` → `/ship merge` (Squash) → `/ship release` (tag v0.18.0 + GitHub Release) → limpieza.
+`/ship`: docs (CHANGELOG/CONTINUITY con PHI+Financial) → push → actualizar `/ship comentario-pr 22` →
+esperar **CI verde** → `/ship merge` (Squash) → `/ship release` (tag v0.18.0 + GitHub Release) → limpieza.
 
 Objetivo inmediato:
-Push + PR contra `version-16` con `__version__` **0.18.0** y verificar CI.
+CI verde en PR #22 (HEAD con PHI+Financial) para proceder a merge + release.
 
 Criterio de avance:
-PR abierto contra `version-16`, working tree limpio, CI verde; luego merge + release + limpieza.
+PR #22 OPEN contra `version-16`, working tree limpio, CI verde; luego merge + release + limpieza.
 
 ---
 

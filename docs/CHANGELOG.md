@@ -23,13 +23,31 @@ Rescate UX de PMO + evolución del Handoff a **Acta de Inicio / Charter** con au
   por tarea hoja, estimado TOTAL (`Task.expected_time`) vs real ACUMULADO al corte
   (`get_actual_hours_by_task_asof`) + % consumido con barra. Funciona con o sin baseline; NO calcula
   "planificado al corte" ni prorratea `expected_time`.
+- **PMO Project Health Index (PHI) v1 (ADR-0013/0013a)** — índice compuesto de salud del proyecto
+  (Execution 50 · Commitment 35 · Governance 15) que **compone** señales canónicas existentes (no recalcula):
+  motor puro `compute_phi` (`health.py`) + adaptador `pmo/phi.py`; gate Execution-evaluable, Model Scope /
+  Evidence Coverage, y caps categóricos (techo At Risk, sin alterar el número) por inconsistencia económica,
+  riesgo de alta exposición no gestionado y baseline faltante. Financial/Resources/Risk actúan como
+  guardrails/condiciones (sin peso). Cronograma = **check único** con precedencia fecha comprometida →
+  fin de línea base vigente → N/E. **PMO Settings** (Single) para los pesos de dimensión (Governance
+  calculado). Integrado en Project Control → Resumen (bloque "Salud del proyecto" con tooltips) y Portfolio.
+- **Financial Health / Salud financiera v1 (ADR-0013b)** — indicador financiero **independiente del PHI**:
+  `cost_gap = comparable_cost/authorized_cost − Project.percent_complete` (avance nativo, sin recalcular; no
+  EVM); estados Healthy / Cost pressure / Unfavorable / Over budget + N/A. Integrado en Resumen y Portfolio.
+- **`project_economics.get_native_real_cost()`** — definición canónica única de `comparable_cost`
+  (labor + externo, excluye material); de-duplicados los 5 consumidores previos (Financiera, PHI, dashboard
+  económico, Closure, Financial Health), sin cambio de fórmula.
 
 ### Changed
+- Indicador de cronograma previo (`_health`) renombrado a **"Estado de cronograma"** (En plazo / Con atraso /
+  Desviado) en Portfolio, Workspace y Print; **"Salud del proyecto" queda reservado al PHI** y se retiró el
+  pill antiguo de la cabecera de Resumen.
 - Retirada la pestaña **"Planned vs Actual"** de Project Control (absorbida por Estado/Cronograma); el
   Script Report `PMO Planned vs Actual` y su shortcut de Workspace se conservan.
 - Retirado el JS legado del flujo Project→Handoff (`public/js/pmo_project_handoff.js`) y su `doctype_js`.
 - Docs actualizadas: ADR-0007, ADR-0008, ADR-0011, ADR-0014, `arquitectura.md`, `fechas-comprometidas.md`,
-  `planificado-vs-real.md`, `change-control.md`; nuevas guías `acta-de-inicio.md` y `cierre-y-revision.md`.
+  `planificado-vs-real.md`, `change-control.md`; nuevas guías `acta-de-inicio.md` y `cierre-y-revision.md`;
+  nuevos ADR-0013 (PHI marco), ADR-0013a (calibración `phi-v1`) y ADR-0013b (Financial Health `fin-v1`).
 
 ## [0.17.0] — 2026-09-25
 
