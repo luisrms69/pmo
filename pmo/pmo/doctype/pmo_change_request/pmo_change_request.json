@@ -107,7 +107,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Priority",
-   "options": "Low\nMedium\nHigh"
+   "options": "Low\nMedium\nHigh",
+   "reqd": 1
   },
   {
    "fieldname": "section_detail",

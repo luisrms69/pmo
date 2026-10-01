@@ -1,5 +1,31 @@
 # Changelog — pmo
 
+## [0.19.0] — 2026-09-30
+
+Ajustes pequeños sobre Project Control y Change Control (sin tocar PHI/Financial): desviación accionable de
+responsables, prioridad obligatoria en Change Requests y un acceso más visible al Project.
+
+### Added
+- **Tasks exigibles sin responsable (desviación accionable)** — `_planning_section.unassigned` ahora cuenta
+  solo Tasks hoja **activas, sin ToDo abierto, con `exp_start_date` y `exp_start_date ≤ Status Date`**. Las
+  tareas futuras o sin fecha de inicio ya no penalizan. `with_responsible_pct`/Planning Maturity intactos.
+  Señal visible en **Project Control → Resumen** (bloque compacto de Planeación) y con la semántica
+  correspondiente en el Reporte Ejecutivo / Print Format (etiquetas es-MX "exigibles").
+- **Change Request Priority** — `priority` existente ahora **obligatorio** (default **Medium**; sin `severity`).
+  Visible en la tabla de Change Requests del Reporte Ejecutivo y en la bandeja de Gobernanza, que **ordena**
+  las desviaciones de CR **High → Medium → Low** (solo orden visual/operativo: no altera cumplimiento de
+  Governance, workflow ni PHI).
+
+### Changed
+- **Acceso "Ir a proyecto"** en Project Control: la acción `Open Project` pasa a **botón secundario Frappe**
+  con etiqueta **"Ir a proyecto"**; navegación sin cambios (`frappe.set_route("Form", "Project", …)`).
+
+### Fixed
+- **Normalización `datetime.date → str` del cutoff** en `build_project_control` y `get_summary_html`:
+  `Project.pmo_status_date` (nativo `datetime.date`) se pasa como `str` a `build_status_report` (que exige
+  `str | None`), evitando un `FrappeTypeError` (417) al abrir Resumen / imprimir en proyectos con
+  `pmo_status_date`. Bug real y reproducible; con test de regresión.
+
 ## [0.18.0] — 2026-09-28
 
 Rescate UX de PMO + evolución del Handoff a **Acta de Inicio / Charter** con autorización, gobierno del

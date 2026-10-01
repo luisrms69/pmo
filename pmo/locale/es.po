@@ -2421,8 +2421,8 @@ msgid "Open / managing"
 msgstr "Abiertos / en gestión"
 
 #: pmo/pmo/page/pmo_project_control/pmo_project_control.js:182
-msgid "Open Project"
-msgstr "Abrir Project"
+msgid "Go to project"
+msgstr "Ir a proyecto"
 
 #: pmo/dashboard.py:79
 msgid "Open change requests"
@@ -4082,7 +4082,7 @@ msgstr ""
 
 #: pmo/project_control.py:121 pmo/templates/project_control/executive.html:218
 msgid "Unassigned active tasks"
-msgstr "Tareas activas sin responsable"
+msgstr "Tareas exigibles sin responsable"
 
 #. Option for the 'May affect controlled condition' (Select) field in DocType
 #. 'PMO Project Risk'
@@ -4562,7 +4562,7 @@ msgstr "con errores"
 
 #: pmo/project_control.py:123 pmo/templates/project_control/executive.html:110
 msgid "{0} active task(s) without owner"
-msgstr "{0} tarea(s) activa(s) sin responsable"
+msgstr "{0} tarea(s) exigible(s) sin responsable"
 
 #: pmo/pmo/doctype/pmo_change_request/pmo_change_request.py:130
 msgid "{0} must belong to the same Project as the Change Request."

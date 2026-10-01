@@ -1,19 +1,17 @@
 # CONTINUITY.md — pmo
 
 **Fecha:** 2026-09-30
-**Rama activa:** `feat/pmo-home-rescate` (base `version-16` @ v0.17.0 → objetivo PR **v0.18.0**, MINOR)
-**Tarea actual:** `/ship` de cierre **v0.18.0** (PR #22). La rama reúne, en un solo release MINOR sobre v0.17.0:
-(1) **rescate UX de PMO** + **Panel PMO / Ciclo de Gobernanza** + **Handoff = Acta/Charter** + **cambio
-gobernado de Fin comprometido** + **fusión Planificado vs Real** (commits del rescate); (2) **PMO Project
-Health Index (PHI) v1** (ADR-0013/0013a): motor `compute_phi` + adaptador + **PMO Settings** + integración en
-Project Control/Portfolio + Cronograma como **check único** (compromiso → baseline vigente → N/E) + rename de
-la dimensión a **Commitment/Compromiso**; (3) **Financial Health v1** (ADR-0013b) independiente del PHI; (4)
-**`get_native_real_cost()`** canónico + de-dup de `comparable_cost`; (5) rename del semáforo antiguo a
-**"Estado de cronograma"**; (6) **Project Executive Report** — Print Format estándar imprimible del Project
-(autocontenido en Jinja; único avance = `Project.percent_complete`; sin detalle Task-by-Task ni economía),
-accesible desde Project → **PMO → "Reporte para cliente"**. Squash & Merge → tag `v0.18.0` sobre el merge
-commit → GitHub Release.
+**Rama activa:** `feat/pmo-unassigned-and-cr-priority` (base `version-16` @ v0.18.0 → objetivo PR **v0.19.0**, MINOR)
+**Tarea actual:** `/ship` de cierre **v0.19.0**. Bloque pequeño y congelado sobre Project Control / Change
+Control (sin tocar PHI/Financial): (A) **Tasks exigibles sin responsable** — `_planning_section.unassigned`
+cuenta solo hojas activas, sin ToDo abierto, con `exp_start_date` ≤ Status Date (futuras/sin fecha no
+penalizan); visible en Resumen (bloque Planeación) y Reporte Ejecutivo. (B) **Change Request Priority**
+obligatorio (default Medium), visible en Reporte Ejecutivo y bandeja de Gobernanza, que ordena CR
+High→Medium→Low (solo visual). (C) acceso **"Ir a proyecto"** (botón). (D) fix de normalización
+`datetime.date → str` del cutoff en `build_project_control`/`get_summary_html` (417 al abrir Resumen/imprimir)
+con test de regresión. Squash & Merge → tag `v0.19.0` sobre el merge commit → GitHub Release.
 **Pendiente NO bloqueante:** UX/navegación de la tabla de Portfolio.
+**Siguiente paso separado (NO en este bloque):** actualización de staging/producción.
 
 ---
 

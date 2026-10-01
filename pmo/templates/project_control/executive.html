@@ -232,7 +232,7 @@
 <table>
   <thead><tr>
     <th>{{ _("Request") }}</th><th>{{ _("Date") }}</th><th>{{ _("State") }}</th>
-    <th>{{ _("Impact") }}</th><th>{{ _("Baselines") }}</th>
+    <th>{{ _("Priority") }}</th><th>{{ _("Impact") }}</th><th>{{ _("Baselines") }}</th>
   </tr></thead>
   <tbody>
   {% for c in pc.scope_changes.change_requests %}
@@ -240,6 +240,7 @@
       <td>{{ c.title or c.name }}</td>
       <td>{{ d(c.request_date) }}</td>
       <td>{% if c.workflow_state %}<span class="badge">{{ _(c.workflow_state) }}</span>{% else %}—{% endif %}</td>
+      <td>{% if c.priority %}{{ _(c.priority) }}{% else %}—{% endif %}</td>
       <td>
         {{ d(c.impact_summary) }}
         {%- set bits = [] -%}

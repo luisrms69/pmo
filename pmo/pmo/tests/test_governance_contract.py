@@ -634,3 +634,28 @@ class TestReviewPermissions(IntegrationTestCase):
 		doc = self._review_doc(p)
 		self.assertFalse(has_permission_review(doc, "create", other))
 		self.assertTrue(has_permission_review(doc, "create", owner))  # el owner sí (flujo previo)
+
+
+class TestChangeRequestPriority(IntegrationTestCase):
+	"""Priority obligatorio (default Medium) + propagación/orden en las desviaciones de Gobernanza."""
+
+	def test_priority_required_in_meta_keeps_default(self):
+		f = frappe.get_meta("PMO Change Request").get_field("priority")
+		self.assertTrue(f.reqd, "priority debe ser obligatorio (reqd=1)")
+		self.assertEqual(f.default, "Medium")  # default conservado
+
+	def test_change_rows_carry_priority_ordered_high_first(self):
+		# 3 CRs abiertos (In Review) con prioridades distintas → cada fila trae priority y el orden de las
+		# desviaciones de CR es High → Medium → Low (solo visual/operativo; no cambia el estado del control).
+		p = _project("GC-CR-PRIO")
+		_start(p)
+		names = {
+			"Low": _cr(p, "In Review"),
+			"High": _cr(p, "In Review"),
+			"Medium": _cr(p, "In Review"),
+		}
+		for prio, name in names.items():
+			frappe.db.set_value("PMO Change Request", name, "priority", prio, update_modified=False)
+		rows = _evaluate(_facts(p))[CONTROL_CHANGE]["rows"]
+		self.assertTrue(all("priority" in r for r in rows), "cada fila de CR debe traer priority")
+		self.assertEqual([r["priority"] for r in rows], ["High", "Medium", "Low"])

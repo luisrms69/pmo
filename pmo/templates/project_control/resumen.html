@@ -232,6 +232,21 @@
       <div class="sub"><span class="k">Solicitudes totales</span><span class="val">{{ g.change_requests.total }}</span></div>
     </div>
   </div>
+
+  {#- Planeación — Tasks exigibles sin responsable (desviación accionable; no penaliza tareas futuras) -#}
+  {% if pc.planning %}
+  {%- set ua = pc.planning.unassigned -%}
+  <div class="cp">
+    <div class="cphd"><span class="t">Planeación</span></div>
+    <div class="lead"><span class="big {% if ua.count %}bad{% else %}ok{% endif %}">{{ ua.count }}</span><span class="cap">Tasks exigibles sin responsable</span></div>
+    {%- if ua.count -%}
+    <div class="subs">
+      {% for t in ua.tasks[:5] %}<div class="sub"><span class="k">{{ t.subject or t.name }}</span></div>{% endfor %}
+      {%- if ua.count > 5 %}<div class="sub"><span class="k" style="color:var(--text-muted)">y {{ ua.count - 5 }} más</span></div>{% endif -%}
+    </div>
+    {%- endif -%}
+  </div>
+  {% endif %}
 </div>
 
 {#- D. GOBERNANZA — franja compacta secundaria -#}

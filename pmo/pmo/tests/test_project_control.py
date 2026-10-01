@@ -17,6 +17,7 @@ from pmo.pmo.report.pmo_portfolio.pmo_portfolio import _health as portfolio_heal
 from pmo.project_control import (
 	DEFAULT_SECTIONS,
 	SECTION_COSTS,
+	SECTION_PROJECT,
 	_assigned_task_names,
 	_comparative_gantt,
 	_costs_section,
@@ -141,6 +142,43 @@ class TestExecutiveSection(IntegrationTestCase):
 		self.assertIsNone(kp["hours_consumed_pct"])  # planned=0 → None, no ZeroDivision
 
 
+class TestStatusDateNormalization(IntegrationTestCase):
+	"""Regresión Server Error: `Project.pmo_status_date` (datetime.date) debe llegar a `build_status_report`
+	como `str` (la validación de tipos del whitelist lo exige en HTTP). Reproduce el 417 al abrir Resumen."""
+
+	def test_build_project_control_stringifies_native_status_date(self):
+		import datetime
+
+		captured = {}
+
+		def spy_bsr(project, status_date=None):
+			captured["type"] = type(status_date).__name__
+			return {
+				"status_date": status_date,
+				"baseline": None,
+				"current": {},
+				"committed_end_date": None,
+				"indicators": {},
+				"note": None,
+			}
+
+		real_gv = frappe.db.get_value
+
+		def gv(*a, **k):
+			# El lookup de pmo_status_date devuelve un datetime.date (como la BD); el resto delega.
+			if len(a) >= 3 and a[2] == "pmo_status_date":
+				return datetime.date(2026, 9, 11)
+			return real_gv(*a, **k)
+
+		with (
+			patch("pmo.project_control.build_status_report", side_effect=spy_bsr),
+			patch("pmo.project_control.frappe.db.get_value", side_effect=gv),
+			patch("pmo.project_control._project_section", return_value={}),
+		):
+			build_project_control("X", sections=[SECTION_PROJECT])  # cutoff=None → resuelve pmo_status_date
+		self.assertEqual(captured["type"], "str")  # nunca datetime.date
+
+
 class TestScopeChanges(IntegrationTestCase):
 	"""scope_changes: audience=portal oculta Draft; internal los incluye (ADR-0011 D3)."""
 
@@ -240,7 +278,7 @@ class TestPlanningSection(IntegrationTestCase):
 			patch("pmo.project_control.frappe.get_all", side_effect=ga),
 			patch("pmo.project_control.frappe.db.get_value", side_effect=gv),
 		):
-			pl = _planning_section("X", {"baseline": {"name": "BL"}})
+			pl = _planning_section("X", {"baseline": {"name": "BL"}, "status_date": "2026-09-30"})
 		c = pl["components"]
 		self.assertEqual(c["with_responsible_pct"], 50)  # T1,T2 / 4
 		self.assertEqual(c["with_start_pct"], 75)  # T1,T2,T3 / 4
@@ -256,7 +294,7 @@ class TestPlanningSection(IntegrationTestCase):
 			patch("pmo.project_control.frappe.get_all", side_effect=ga),
 			patch("pmo.project_control.frappe.db.get_value", side_effect=gv),
 		):
-			pl = _planning_section("X", {"baseline": {"name": "BL"}})
+			pl = _planning_section("X", {"baseline": {"name": "BL"}, "status_date": "2026-09-30"})
 		# T3 (Open, sin responsable) es alerta; T4 (Completed, sin responsable) NO.
 		self.assertEqual(pl["unassigned"]["count"], 1)
 		self.assertEqual([t["name"] for t in pl["unassigned"]["tasks"]], ["T3"])
@@ -268,9 +306,51 @@ class TestPlanningSection(IntegrationTestCase):
 			patch("pmo.project_control.frappe.get_all", side_effect=ga),
 			patch("pmo.project_control.frappe.db.get_value", side_effect=gv),
 		):
-			pl = _planning_section("X", {"baseline": None})
+			pl = _planning_section("X", {"baseline": None, "status_date": "2026-09-30"})
 		self.assertIsNone(pl["components"]["in_baseline_pct"])  # None, no cero
 		self.assertEqual(pl["maturity_pct"], round((50 + 75 + 50 + 25) / 4))  # promedio de 4 evaluables
+
+	def test_unassigned_only_exigible_at_cutoff(self):
+		# Desviación ACCIONABLE: solo tareas hoja exigibles al corte (inicio ≤ Status Date), activas y sin
+		# ToDo abierto. Una futura (inicio > corte) y una sin `exp_start_date` NO entran en la alerta.
+		leaves = [
+			frappe._dict(  # exigible al corte, activa, sin responsable → SÍ es alerta
+				name="E1",
+				subject="E1",
+				status="Open",
+				exp_start_date="2026-09-01",
+				exp_end_date="2026-09-10",
+				expected_time=0,
+			),
+			frappe._dict(  # FUTURA (inicio > corte) → NO es alerta accionable
+				name="F1",
+				subject="F1",
+				status="Open",
+				exp_start_date="2026-12-01",
+				exp_end_date="2026-12-10",
+				expected_time=0,
+			),
+			frappe._dict(  # sin exp_start_date → NO entra (eso lo mide Planning Maturity)
+				name="N1",
+				subject="N1",
+				status="Open",
+				exp_start_date=None,
+				exp_end_date=None,
+				expected_time=0,
+			),
+		]
+		gl, ga, gv = self._mocks(leaves, assigned=[], baseline_names=None)
+		with (
+			patch("pmo.project_control.frappe.get_list", side_effect=gl),
+			patch("pmo.project_control.frappe.get_all", side_effect=ga),
+			patch("pmo.project_control.frappe.db.get_value", side_effect=gv),
+		):
+			pl = _planning_section("X", {"baseline": None, "status_date": "2026-09-15"})
+		# Solo E1 (exigible); F1 (futura) y N1 (sin inicio) quedan fuera de la alerta accionable.
+		self.assertEqual(pl["unassigned"]["count"], 1)
+		self.assertEqual([t["name"] for t in pl["unassigned"]["tasks"]], ["E1"])
+		# Planning Maturity NO se mezcla: with_responsible_pct mide completitud global (0/3 asignadas = 0%).
+		self.assertEqual(pl["components"]["with_responsible_pct"], 0)
 
 	def test_responsible_uses_open_todo_only(self):
 		# Guard de semántica: "responsable" = ToDo Open (no != Cancelled, que incluiría Closed).

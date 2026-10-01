@@ -72,6 +72,9 @@ CONTROL_CHANGE = "change"
 CONTROL_CLOSURE = "closure"
 CONTROL_REVIEW = "review"
 
+# Orden de atención de las desviaciones de Change Request por prioridad (solo visual/operativo).
+_PRIORITY_RANK = {"High": 0, "Medium": 1, "Low": 2}
+
 CONTROL_ORDER = (
 	CONTROL_ACTA,
 	CONTROL_BASELINE,
@@ -160,6 +163,7 @@ def _facts(project: str) -> dict:
 		fields=[
 			"name",
 			"title",
+			"priority",
 			"workflow_state",
 			"docstatus",
 			"request_date",
@@ -207,6 +211,7 @@ def _change_rows(f: dict) -> list:
 			"control": CONTROL_CHANGE,
 			"target_doctype": "PMO Change Request",
 			"target_name": cr.get("name"),
+			"priority": cr.get("priority"),  # prioridad del CR (solo orden/visual; no altera cumplimiento)
 		}
 		if state == "Draft":
 			rows.append(
@@ -252,6 +257,9 @@ def _change_rows(f: dict) -> list:
 					}
 				)
 			# No exige rebaseline si el cambio no afecta el plan congelado, o si `baseline_after` ya lo refleja.
+	# Orden SOLO visual/operativo de las desviaciones de CR: High → Medium → Low (un High no está "más
+	# incumplido"; es prioridad de atención). No cambia el estado ni el cumplimiento del control.
+	rows.sort(key=lambda r: _PRIORITY_RANK.get(r.get("priority"), _PRIORITY_RANK["Medium"]))
 	return rows
 
 
