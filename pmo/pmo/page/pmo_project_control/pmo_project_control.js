@@ -179,9 +179,9 @@ class PMOProjectControl {
 		$c.html(
 			`<span class="pmo-pc-proj">${frappe.utils.escape_html(this.state.project)}</span>
 			 <span class="pmo-pc-cut">${sd}</span>
-			 <a class="pmo-pc-open" data-open-project="${frappe.utils.escape_html(this.state.project)}">${__(
-				"Open Project"
-			)}</a>`
+			 <button class="btn btn-default btn-xs pmo-pc-open" data-open-project="${frappe.utils.escape_html(
+					this.state.project
+				)}">${__("Go to project")}</button>`
 		);
 		$c.off("click").on("click", "[data-open-project]", (e) => {
 			frappe.set_route("Form", "Project", $(e.currentTarget).attr("data-open-project"));

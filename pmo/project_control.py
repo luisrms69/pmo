@@ -212,7 +212,10 @@ def build_project_control(project: str, cutoff=None, sections=None, audience: st
 	- `audience` ∈ {internal, portal}: exposición/composición, no permisos (P4 la impone el motor).
 	"""
 	wanted = set(sections) if sections else set(DEFAULT_SECTIONS)
-	sd = str(cutoff) if cutoff else (frappe.db.get_value("Project", project, "pmo_status_date") or today())
+	# `build_status_report` exige `status_date: str | None` (la validación de tipos del whitelist lo impone en
+	# contexto HTTP). `Project.pmo_status_date` nativo es `datetime.date`: se normaliza a `str` SIEMPRE (no solo
+	# en la rama `cutoff`) para no propagar un `date` que dispara 417 al abrir Resumen o imprimir.
+	sd = str(cutoff) if cutoff else str(frappe.db.get_value("Project", project, "pmo_status_date") or today())
 	# build_status_report es el chokepoint P4 (has_permission read, throw). Se llama siempre.
 	sr = build_status_report(project, sd)
 	ind = sr.get("indicators") or {}
@@ -467,7 +470,9 @@ def _planning_section(project: str, sr: dict) -> dict:
 	  corte. **None si no hay baseline vigente.** Las tareas creadas DESPUÉS de la baseline no están en su
 	  snapshot → cuentan en el denominador pero no en el numerador (bajan la cobertura: señal de drift).
 	Planning Maturity = promedio simple de los componentes **evaluables** (no None); None si ninguno lo es.
-	Alerta "sin responsable": tareas hoja **activas** (status ∉ {Completed, Cancelled}) sin ToDo activo."""
+	Alerta "sin responsable" (desviación ACCIONABLE): tareas hoja **exigibles al corte** (inicio previsto ≤
+	Status Date; sin `exp_start_date` no cuenta), **activas** (status ∉ {Completed, Cancelled}) y sin ToDo
+	abierto. Las futuras no penalizan. Independiente de `with_responsible_pct` (completitud global del plan)."""
 	leaves = frappe.get_list(
 		"Task",
 		filters={"project": project, "is_group": 0},
@@ -509,10 +514,18 @@ def _planning_section(project: str, sr: dict) -> dict:
 	evaluable = [v for v in components.values() if v is not None]
 	maturity = round(sum(evaluable) / len(evaluable)) if evaluable else None
 
+	# Desviación ACCIONABLE de "sin responsable": solo tareas hoja EXIGIBLES al corte (inicio previsto ≤ Status
+	# Date), activas (∉ Completed/Cancelled) y sin ToDo abierto. Una tarea futura (inicio > corte) NO es
+	# desviación accionable; una tarea sin `exp_start_date` tampoco entra aquí (esa carencia la mide Planning
+	# Maturity, no esta alerta). NO se mezcla con `with_responsible_pct` (completitud global del plan).
+	cutoff = getdate(sr.get("status_date"))
 	unassigned = [
 		{"name": t.name, "subject": t.subject}
 		for t in leaves
-		if t.status not in _INACTIVE_STATUSES and t.name not in assigned
+		if t.status not in _INACTIVE_STATUSES
+		and t.name not in assigned
+		and t.exp_start_date
+		and getdate(t.exp_start_date) <= cutoff
 	]
 	return {
 		"maturity_pct": maturity,
@@ -647,11 +660,22 @@ def get_summary_html(project: str, cutoff: str | None = None) -> str:
 	Composición (superficie de consulta): NO incluye economía (pestaña Financiera), ni Gantt, ni tablas
 	completas de tareas/riesgos/CR (esas viven en sus pestañas). `executive.html`/`get_executive_html`
 	quedan intactos para el Print Format; esta pestaña usa su propio template `resumen.html`."""
+	# Normaliza el cutoff a `str` (patrón canónico): `Project.pmo_status_date` nativo es `datetime.date` y
+	# `get_phi_view` → `build_status_report` exige `str | None` (la validación de tipos del whitelist lo impone
+	# en HTTP). Resolverlo aquí y pasarlo a AMBOS consumidores evita el 417 al abrir Resumen sin tocar PHI.
+	cutoff = cutoff or str(frappe.db.get_value("Project", project, "pmo_status_date") or today())
 	ctx = build_project_control(
 		project,
 		cutoff=cutoff,
 		audience="internal",
-		sections=[SECTION_PROJECT, SECTION_EXECUTIVE, SECTION_SCHEDULE, SECTION_RISK, SECTION_GOVERNANCE],
+		sections=[
+			SECTION_PROJECT,
+			SECTION_EXECUTIVE,
+			SECTION_SCHEDULE,
+			SECTION_PLANNING,
+			SECTION_RISK,
+			SECTION_GOVERNANCE,
+		],
 	)
 	# Derivación de PRESENTACIÓN (sin semántica nueva): hitos con desviación = milestones con slip > 0
 	# (reusa el `slip_days` ya calculado por el motor de cronograma).
