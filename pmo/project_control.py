@@ -684,6 +684,9 @@ def get_summary_html(project: str, cutoff: str | None = None) -> str:
 	ctx["milestones_total"] = len(ms)
 	# Señales de gobierno (fuente única) para etiquetar Cierre/Revisión como Pendiente/No requerido.
 	ctx["governance_flags"] = governance_flags(project)
+	# Integridad del programa (ADR-0017, I.1): solo el resumen compacto para la tarjeta del Resumen; el
+	# detalle vive en Estado/Cronograma. Read-only y degrada seguro ({} si falla).
+	ctx["schedule_integrity"] = _schedule_integrity(project, cutoff).get("summary") or {}
 	# PHI (ADR-0013): bloque de salud integral. Compone (no recalcula); decorado con etiquetas de usuario.
 	from pmo.phi import get_phi_view
 
@@ -1056,7 +1059,21 @@ def _schedule_view(project: str, cutoff=None) -> dict:
 		"deviations": _schedule_deviations(project, ind, baseline_snap, current_snap),
 		# Sección 5 (aditiva): consumo de esfuerzo por tarea hoja (real acumulado ≤ corte vs estimado total).
 		"effort": _effort_by_task(project, sd),
+		# Sección 6 (ADR-0017, I.1): diagnóstico de integridad del programa (read-only, degrada seguro).
+		"integrity": _schedule_integrity(project, sd),
 	}
+
+
+def _schedule_integrity(project: str, cutoff=None) -> dict:
+	"""Envoltura read-only de la capa de dominio `pmo.scheduling`. Nunca escribe; nunca lanza: si el
+	análisis falla por datos inesperados, degrada a un payload vacío y lo registra (no rompe Estado)."""
+	from pmo.scheduling import analyze_schedule_integrity
+
+	try:
+		return analyze_schedule_integrity(project, status_date=cutoff)
+	except Exception:
+		frappe.logger("pmo").warning(f"schedule_integrity failed for {project}", exc_info=True)
+		return {}
 
 
 @frappe.whitelist()

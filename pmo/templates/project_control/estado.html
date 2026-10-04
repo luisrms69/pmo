@@ -232,4 +232,68 @@
 {% else %}
 <div class="empty">Sin tareas hoja con esfuerzo.</div>
 {% endif %}
+
+{#- 6. Integridad del programa (ADR-0017, I.1). Diagnóstico READ-ONLY de la red nativa Task Depends On
+    (FS implícito) + calendario laboral. Solo señala divergencias; NO sustituye ninguna fecha ni reprograma.
+    Degrada seguro: sin calendario resoluble se omiten los chequeos dependientes de calendario. -#}
+{%- set it = sv.integrity or {} -%}
+{%- set dg = it.diagnostics or {} -%}
+{%- set en = it.ends or {} -%}
+<div class="sec">6. Integridad del programa <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">— diagnóstico de la red (solo lectura, no reprograma)</span></div>
+{% if it %}
+  {% if it.summary and it.summary.sin_calendario %}
+  <div class="empty" style="border-left:3px solid #d97706">Sin calendario laboral resoluble (Project.holiday_list / Company.default_holiday_list): los chequeos de día no laborable y divergencia hábil vs natural se omiten; la duración cae a días naturales.</div>
+  {% endif %}
+  {%- set has_findings = (dg.incomplete_dates or dg.incoherent or dg.multi_predecessor or dg.cycles or dg.deadline_exceeded or dg.non_working_day or dg.natural_vs_working) -%}
+  {% if has_findings %}
+  <div class="xwrap">
+  <table class="x">
+    <thead><tr><th>Hallazgo</th><th>Tarea / Hito</th><th>Detalle</th></tr></thead>
+    <tbody>
+    {% for r in dg.cycles %}
+      <tr><td><span class="typ"><span class="dot over"></span>Ciclo de dependencias</span></td>
+          <td colspan="2">{{ r.tasks | join(' → ') }}</td></tr>
+    {% endfor %}
+    {% for r in dg.incoherent %}
+      <tr><td><span class="typ"><span class="dot over"></span>Dependencia incoherente (FS)</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>Inicia {{ d(r.task_start) }} antes de que termine su predecesora <span class="tlink" data-task="{{ r.predecessor }}">{{ r.predecessor }}</span> ({{ d(r.pred_end) }}).</td></tr>
+    {% endfor %}
+    {% for r in dg.multi_predecessor %}
+      <tr><td><span class="typ"><span class="dot shift"></span>Multi-predecesora inconsistente</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>Inicia {{ d(r.task_start) }} antes del fin de alguna de sus {{ r.predecessors | length }} predecesoras.</td></tr>
+    {% endfor %}
+    {% for r in dg.deadline_exceeded %}
+      <tr><td><span class="typ"><span class="dot over"></span>Deadline incumplido</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>Fin plan vigente {{ d(r.exp_end) }} &gt; deadline {{ d(r.deadline) }} <span class="bad">(+{{ r.slip_days }} d)</span>.</td></tr>
+    {% endfor %}
+    {% for r in dg.incomplete_dates %}
+      <tr><td><span class="typ"><span class="dot rm"></span>Fechas incompletas</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>Falta {{ r.missing | join(' y ') }}.</td></tr>
+    {% endfor %}
+    {% for r in dg.non_working_day %}
+      <tr><td><span class="typ"><span class="dot shift"></span>Límite en día no laborable</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>El {{ 'inicio' if r.which == 'start' else 'fin' }} cae en día no laborable ({{ d(r.date) }}).</td></tr>
+    {% endfor %}
+    {% for r in dg.natural_vs_working %}
+      <tr><td><span class="typ"><span class="dot shift"></span>Divergencia hábil vs natural</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>{{ r.calendar_days }} días naturales (cascada nativa) vs {{ r.working_days }} días hábiles.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="empty">Sin incidencias de integridad en la red al corte.</div>
+  {% endif %}
+  {% if en.diverges %}
+  <div class="empty" style="border-left:3px solid #d97706">Fines divergentes (diagnóstico, no se corrige): red hábil (max EF) {{ d(en.max_ef) or '—' }} · max fin plan vigente {{ d(en.max_exp_end) or '—' }} · fin de proyecto {{ d(en.project_expected_end) or '—' }}.</div>
+  {% endif %}
+{% else %}
+<div class="empty">Diagnóstico de integridad no disponible.</div>
+{% endif %}
 </div>

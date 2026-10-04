@@ -247,6 +247,23 @@
     {%- endif -%}
   </div>
   {% endif %}
+
+  {#- Integridad del programa (ADR-0017, I.1) — contador compacto; el detalle vive en Estado/Cronograma -#}
+  {% if pc.schedule_integrity %}
+  {%- set si = pc.schedule_integrity -%}
+  <div class="cp">
+    <div class="cphd"><span class="t">Integridad del programa</span><a class="drill pmo-sum-goto" data-view="status">Ver detalle</a></div>
+    <div class="lead"><span class="big {% if si.total %}bad{% else %}ok{% endif %}">{{ si.total }}</span><span class="cap">Incidencias en la red</span></div>
+    <div class="subs">
+      <div class="sub"><span class="k">Dependencias incoherentes</span><span class="val {% if si.incoherencias %}bad{% endif %}">{{ si.incoherencias }}</span></div>
+      <div class="sub"><span class="k">Deadlines incumplidos</span><span class="val {% if si.deadline_excedido %}bad{% endif %}">{{ si.deadline_excedido }}</span></div>
+      <div class="sub"><span class="k">Fechas incompletas</span><span class="val {% if si.fechas_incompletas %}bad{% endif %}">{{ si.fechas_incompletas }}</span></div>
+      {%- if si.ciclos %}<div class="sub"><span class="k">Ciclos de dependencia</span><span class="val bad">{{ si.ciclos }}</span></div>{% endif -%}
+      {%- if si.fines_divergen %}<div class="sub"><span class="k" style="color:var(--text-muted)">Fines divergentes (ver detalle)</span></div>{% endif -%}
+      {%- if si.sin_calendario %}<div class="sub"><span class="k" style="color:var(--text-muted)">Sin calendario laboral</span></div>{% endif -%}
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 {#- D. GOBERNANZA — franja compacta secundaria -#}
