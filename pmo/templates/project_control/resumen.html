@@ -264,6 +264,21 @@
     </div>
   </div>
   {% endif %}
+
+  {#- Holgura de la red (ADR-0017, I.2) — contador compacto; el detalle (ES/EF/LS/LF) vive en Estado/Cronograma -#}
+  {% if pc.schedule_slack and pc.schedule_slack.evaluable %}
+  {%- set sk = pc.schedule_slack -%}
+  <div class="cp">
+    <div class="cphd"><span class="t">Holgura de la red</span><a class="drill pmo-sum-goto" data-view="status">Ver detalle</a></div>
+    <div class="lead"><span class="big {% if sk.critical_count %}warn{% else %}ok{% endif %}">{{ sk.critical_count }}</span><span class="cap">Tareas en ruta crítica</span></div>
+    <div class="subs">
+      <div class="sub"><span class="k">Holgura total mínima</span><span class="val {% if sk.min_total_slack is not none and sk.min_total_slack <= 0 %}bad{% endif %}">{% if sk.min_total_slack is none %}—{% else %}{{ sk.min_total_slack }} d{% endif %}</span></div>
+      {%- if sk.committed_margin_days is not none %}<div class="sub"><span class="k">Margen vs compromiso</span><span class="val {% if sk.committed_margin_days < 0 %}bad{% endif %}">{% if sk.committed_margin_days > 0 %}+{% endif %}{{ sk.committed_margin_days }} d</span></div>{% endif -%}
+      {%- if sk.deadline_breach_count %}<div class="sub"><span class="k">Deadlines incumplidos (forecast)</span><span class="val bad">{{ sk.deadline_breach_count }}</span></div>{% endif -%}
+      {%- if sk.sin_calendario %}<div class="sub"><span class="k" style="color:var(--text-muted)">Sin calendario laboral</span></div>{% endif -%}
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 {#- D. GOBERNANZA — franja compacta secundaria -#}

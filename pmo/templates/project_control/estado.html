@@ -296,4 +296,47 @@
 {% else %}
 <div class="empty">Diagnóstico de integridad no disponible.</div>
 {% endif %}
+
+{#- 7. Holgura de la red (ADR-0017, I.2). CPM base READ-ONLY: forward + backward sobre la red FS actual,
+    ancla = max EF de las sumidero. Holgura total y libre en días hábiles; ruta crítica = holgura ≤ 0.
+    Margen vs compromiso y riesgo vs deadline son señales SEPARADAS (no son el ancla). No reprograma. -#}
+{%- set sl = sv.slack or {} -%}
+<div class="sec">7. Holgura de la red <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">— slack / float (solo lectura, no reprograma)</span></div>
+{% if sl and sl.evaluable %}
+  {% if sl.summary and sl.summary.sin_calendario %}
+  <div class="empty" style="border-left:3px solid #d97706">Sin calendario laboral resoluble: la holgura se calcula en días naturales.</div>
+  {% endif %}
+  <div class="legend" style="margin-bottom:8px">
+    Fin de red (max EF): <b>{{ d(sl.project_finish) }}</b> ·
+    Ruta crítica: <b>{{ sl.summary.critical_count }}</b> tareas
+    {%- if sl.margin_vs_committed and sl.margin_vs_committed.margin_days is not none %} · Margen vs compromiso ({{ d(sl.margin_vs_committed.committed_end) }}): <b class="{% if sl.margin_vs_committed.margin_days < 0 %}bad{% endif %}">{% if sl.margin_vs_committed.margin_days > 0 %}+{% endif %}{{ sl.margin_vs_committed.margin_days }} d háb.</b>{% endif -%}
+    {%- if sl.incomplete_excluded %} · <span style="color:var(--text-muted)">{{ sl.incomplete_excluded }} tarea(s) excluida(s) por fechas incompletas</span>{% endif -%}
+  </div>
+  <div class="xwrap">
+  <table class="x">
+    <thead><tr><th>Tarea / Hito</th><th>Inicio temprano</th><th>Fin temprano</th><th>Inicio tardío</th><th>Fin tardío</th><th class="num">Holgura total</th><th class="num">Holgura libre</th><th class="num">Margen a deadline</th><th>Crítica</th></tr></thead>
+    <tbody>
+    {% for n in sl.nodes %}
+      <tr>
+        <td>{% if n.is_milestone %}&#9670; {% endif %}<span class="tlink" data-task="{{ n.task }}">{{ n.subject }}</span></td>
+        <td>{{ d(n.es) }}</td><td>{{ d(n.ef) }}</td><td>{{ d(n.ls) }}</td><td>{{ d(n.lf) }}</td>
+        <td class="num {% if n.total_slack <= 0 %}bad{% endif %}">{{ n.total_slack }} d</td>
+        <td class="num">{{ n.free_slack }} d</td>
+        <td class="num {% if n.deadline_margin is not none and n.deadline_margin <= 0 %}bad{% endif %}">{% if n.deadline_margin is none %}—{% else %}{% if n.deadline_margin > 0 %}+{% endif %}{{ n.deadline_margin }} d{% endif %}</td>
+        <td>{% if n.is_critical %}<span class="typ"><span class="dot over"></span>Crítica</span>{% else %}<span style="color:var(--text-muted)">—</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if sl.deadline_breach %}
+  <div class="empty" style="border-left:3px solid #c02b2b">Deadline incumplido (señal separada, no es el ancla): el forecast calculado (fin temprano) ya excede el <code>pmo_deadline</code> — {% for r in sl.deadline_breach %}<span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span> (fin temprano {{ d(r.ef) }} &gt; {{ d(r.deadline) }}, +{{ r.over_days }} d){% if not loop.last %} · {% endif %}{% endfor %}.</div>
+  {% endif %}
+{% elif sl and sl.reason == 'cycles' %}
+<div class="empty" style="border-left:3px solid #c02b2b">Red no evaluable para holgura: existen ciclos de dependencias (ver sección 6).</div>
+{% elif sl and sl.reason == 'no_dated_tasks' %}
+<div class="empty">Sin tareas con fechas completas para calcular holgura.</div>
+{% else %}
+<div class="empty">Análisis de holgura no disponible.</div>
+{% endif %}
 </div>

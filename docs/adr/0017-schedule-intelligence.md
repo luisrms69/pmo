@@ -74,20 +74,26 @@ Se exponen y comparan **sin sustituir ninguno**:
 Las divergencias son **señal de diagnóstico** (el plan no respeta la red, o la cascada natural-day difiere
 de la hábil), nunca una corrección automática.
 
-### CPM / holgura (diferido a I.2/I.3)
+### CPM / holgura (I.2 implementado; ruta crítica dedicada en I.3)
 
-- Para la **ruta crítica**, el ancla del backward pass será el **`max EF` de la red** (describe la red,
-  no el compromiso). "Margen vs `pmo_committed_end_date`" y "deadline-risk" (`LF ≤ pmo_deadline`) serán
-  **señales separadas**, no el ancla. **Criticidad = `slack ≤ 0`** (sin umbral arbitrario).
-- **I.1 construye el forward pass** (ES/EF en días hábiles) como infraestructura común reutilizable; el
-  **backward pass (LS/LF/slack) y la ruta crítica quedan diferidos** a I.2/I.3.
+- El ancla del backward pass es el **`max EF` de la red** (las Tasks sumidero describen la red, **no** el
+  compromiso). Son **señales separadas**, nunca el ancla: **margen vs `pmo_committed_end_date`**;
+  **deadline incumplido = `EF > pmo_deadline`** (el forecast calculado ya excede el compromiso, no `LF`);
+  y **margen al deadline = distancia hábil `pmo_deadline − EF`** (positiva = colchón). **Criticidad =
+  `slack ≤ 0`** (sin umbral arbitrario). Una eventual variante CPM *restringida por deadline* (anclar el
+  backward en `pmo_deadline`) sería un cálculo **aparte** y **no** forma parte de I.2.
+- **I.1 construye el forward pass** (ES/EF en días hábiles) como infraestructura común. **I.2 añade el
+  backward pass (LS/LF)**, **holgura total** (`span(EF, LF)`), **holgura libre** (contra el ES más temprano
+  de las sucesoras; terminal → holgura total) y la marca de criticidad. Ciclos → red **no evaluable** para
+  holgura; fechas incompletas → **excluidas** (se cuentan, no se inventan); sin calendario → días naturales
+  con bandera. La vista dedicada de **ruta crítica / visualización** queda a **I.3**.
 
 ## Alcance por etapas
 
 - **I.0** — este ADR + fundamento (duración/calendario/forward-pass). *(esta iteración)*
-- **I.1** — Diagnóstico de integridad del programa (read-only). *(esta iteración)*
-- **I.2** — Slack / Float. *(diferido)*
-- **I.3** — Critical Path. *(diferido; cierra issue #9)*
+- **I.1** — Diagnóstico de integridad del programa (read-only). *(implementado)*
+- **I.2** — Slack / Float (backward pass + holgura total/libre, read-only). *(implementado)*
+- **I.3** — Critical Path (vista/visualización dedicada). *(diferido; cierra issue #9)*
 - **Schedule Automation** — *(diferido y condicional; requiere ADR propio)*.
 
 ## Consecuencias

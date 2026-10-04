@@ -20,10 +20,13 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from pmo.scheduling import (
+	_backward_pass,
 	_detect_cycles,
 	_forward_pass,
+	_working_span,
 	add_working_days,
 	analyze_schedule_integrity,
+	analyze_schedule_slack,
 	resolve_holiday_list,
 	working_days,
 )
@@ -75,9 +78,10 @@ class TestSchedulingPure(unittest.TestCase):
 			},
 		}
 		ef = _forward_pass(active, [("A", "B")], None)
-		self.assertEqual(str(ef["A"]), "2026-01-02")
+		self.assertEqual(str(ef["A"]["ef"]), "2026-01-02")
 		# ES(B)=01-03 (siguiente a EF(A)); dur(B)=2 → EF(B)=01-04.
-		self.assertEqual(str(ef["B"]), "2026-01-04")
+		self.assertEqual(str(ef["B"]["es"]), "2026-01-03")
+		self.assertEqual(str(ef["B"]["ef"]), "2026-01-04")
 
 	def test_forward_pass_milestone_zero_duration(self):
 		active = {
@@ -91,7 +95,35 @@ class TestSchedulingPure(unittest.TestCase):
 			},
 		}
 		ef = _forward_pass(active, [], None)
-		self.assertEqual(str(ef["M"]), "2026-01-05")  # EF == ES para hito
+		self.assertEqual(str(ef["M"]["ef"]), "2026-01-05")  # EF == ES para hito
+
+	def test_add_working_days_negative_natural(self):
+		# Backward pass: desplazamiento negativo en días naturales.
+		self.assertEqual(str(add_working_days("2026-01-08", -3, None)), "2026-01-05")
+
+	def test_working_span_signed(self):
+		# Distancia dirigida en días (naturales, sin calendario): 0, positiva y negativa.
+		self.assertEqual(_working_span("2026-01-05", "2026-01-05", None), 0)
+		self.assertEqual(_working_span("2026-01-05", "2026-01-08", None), 3)
+		self.assertEqual(_working_span("2026-01-08", "2026-01-05", None), -3)
+
+	def test_backward_pass_linear_natural(self):
+		# A→B→C lineal (días naturales). Ancla = max EF = EF(C). Toda la cadena con holgura 0.
+		active = {
+			k: {"name": k, "subject": k, "is_milestone": 0, "start": s, "end": e, "deadline": None}
+			for k, s, e in (
+				("A", "2026-01-01", "2026-01-02"),
+				("B", "2026-01-03", "2026-01-04"),
+				("C", "2026-01-05", "2026-01-06"),
+			)
+		}
+		edges = [("A", "B"), ("B", "C")]
+		fp = _forward_pass(active, edges, None)
+		finish = max(v["ef"] for v in fp.values())
+		bp = _backward_pass(active, edges, None, fp, finish)
+		# Cadena crítica: LS==ES en cada nodo (holgura 0).
+		for k in active:
+			self.assertEqual(str(bp[k]["ls"]), str(fp[k]["es"]))
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -179,9 +211,7 @@ class TestScheduleIntegrity(IntegrationTestCase):
 	def test_calendar_fallback_to_company(self):
 		# Sin holiday_list del Project → Company.default_holiday_list (vía el `company` del Project).
 		with patch("pmo.scheduling.frappe.db.get_value", return_value=HL):
-			self.assertEqual(
-				resolve_holiday_list("X", meta={"holiday_list": None, "company": "ACME"}), HL
-			)
+			self.assertEqual(resolve_holiday_list("X", meta={"holiday_list": None, "company": "ACME"}), HL)
 
 	def test_no_calendar_degrades_safely(self):
 		# Sin holiday_list ni compañía: no lanza, marca sin_calendario y omite chequeos de calendario.
@@ -314,6 +344,122 @@ class TestScheduleIntegrity(IntegrationTestCase):
 		before = frappe.db.get_value("Task", t, ["exp_start_date", "exp_end_date"], as_dict=True)
 		with patch("frappe.db.set_value") as mock_set:
 			analyze_schedule_integrity(p)
+			mock_set.assert_not_called()
+		after = frappe.db.get_value("Task", t, ["exp_start_date", "exp_end_date"], as_dict=True)
+		self.assertEqual(before, after)
+
+
+class TestScheduleSlack(IntegrationTestCase):
+	"""I.2 — Slack/Float read-only sobre la red FS con calendario laboral real (HL)."""
+
+	def setUp(self):
+		_holiday_list()
+
+	def _by_task(self, res):
+		return {n["task"]: n for n in res["nodes"]}
+
+	def test_slack_linear_chain_all_critical(self):
+		# A→B→C lineal en días hábiles (B salta el festivo 01-06). Toda la cadena es crítica (holgura 0).
+		p = _project("Slack Linear")
+		a = _task(p, "A", "2026-01-01", "2026-01-02")
+		b = _task(p, "B", "2026-01-05", "2026-01-07", deps=[a])
+		_task(p, "C", "2026-01-08", "2026-01-09", deps=[b])
+		res = analyze_schedule_slack(p)
+		self.assertTrue(res["evaluable"])
+		self.assertEqual(res["project_finish"], "2026-01-09")
+		self.assertEqual(res["summary"]["critical_count"], 3)
+		self.assertEqual(res["summary"]["min_total_slack"], 0)
+		self.assertTrue(all(n["total_slack"] == 0 for n in res["nodes"]))
+
+	def test_slack_diamond_positive_zero_multi(self):
+		# Diamante A→{B,C}→D: B es la rama larga (crítica), C la corta (holgura +). D tiene 2 predecesoras;
+		# A tiene 2 sucesoras. Cubre holgura positiva, holgura cero y múltiples sucesoras/predecesoras.
+		p = _project("Slack Diamond")
+		a = _task(p, "A", "2026-01-01", "2026-01-01")
+		b = _task(p, "B", "2026-01-02", "2026-01-08", deps=[a])  # rama larga (4 d háb)
+		c = _task(p, "C", "2026-01-02", "2026-01-02", deps=[a])  # rama corta (1 d háb)
+		d = _task(p, "D", "2026-01-09", "2026-01-09", deps=[b, c])
+		res = analyze_schedule_slack(p)
+		self.assertTrue(res["evaluable"])
+		self.assertEqual(res["project_finish"], "2026-01-09")
+		nodes = self._by_task(res)
+		self.assertEqual(nodes[a]["total_slack"], 0)  # A crítica
+		self.assertEqual(nodes[b]["total_slack"], 0)  # B crítica (rama larga)
+		self.assertEqual(nodes[d]["total_slack"], 0)  # D crítica (sumidero)
+		self.assertEqual(nodes[c]["total_slack"], 3)  # C con holgura positiva
+		self.assertEqual(nodes[c]["free_slack"], 3)  # libre, no mueve el ES de D
+		self.assertFalse(nodes[c]["is_critical"])
+		self.assertEqual(res["summary"]["critical_count"], 3)
+
+	def test_slack_cycles_not_evaluable(self):
+		# Ciclo → la red no admite CPM; holgura no evaluable (razón explícita, sin error).
+		p = _project("Slack Cycle")
+		a = _task(p, "A", "2026-01-05", "2026-01-07")
+		b = _task(p, "B", "2026-01-08", "2026-01-09", deps=[a])
+		frappe.get_doc(
+			{
+				"doctype": "Task Depends On",
+				"parent": a,
+				"parenttype": "Task",
+				"parentfield": "depends_on",
+				"task": b,
+			}
+		).insert(ignore_permissions=True)
+		res = analyze_schedule_slack(p)
+		self.assertFalse(res["evaluable"])
+		self.assertEqual(res["reason"], "cycles")
+
+	def test_slack_incomplete_dates_excluded(self):
+		# Tarea sin fecha completa → excluida de la red (se cuenta), no inventa holgura.
+		p = _project("Slack Incomplete")
+		_task(p, "Full", "2026-01-05", "2026-01-07")
+		_task(p, "Partial", "2026-01-05", None)
+		res = analyze_schedule_slack(p)
+		self.assertTrue(res["evaluable"])
+		self.assertEqual(res["incomplete_excluded"], 1)
+		self.assertEqual(len(res["nodes"]), 1)
+
+	def test_slack_no_calendar_degrades(self):
+		# Sin calendario: evaluable en días naturales, con bandera; nunca error de pantalla.
+		p = _project("Slack NoCal", holiday_list=None)
+		_task(p, "T", "2026-01-05", "2026-01-09")
+		res = analyze_schedule_slack(p)
+		self.assertTrue(res["evaluable"])
+		self.assertTrue(res["summary"]["sin_calendario"])
+
+	def test_slack_margin_vs_committed_separate(self):
+		# Margen de red vs compromiso = señal SEPARADA (no ancla). Compromiso posterior → margen positivo.
+		p = _project("Slack Margin")
+		_task(p, "T", "2026-01-05", "2026-01-09")  # fin de red = 01-09
+		frappe.db.set_value("Project", p, "pmo_committed_end_date", "2026-01-15")
+		res = analyze_schedule_slack(p)
+		self.assertEqual(res["margin_vs_committed"]["network_finish"], "2026-01-09")
+		self.assertEqual(res["summary"]["committed_margin_days"], 4)  # 01-09→01-15 = 4 d háb
+
+	def test_slack_deadline_breach_vs_margin_separate(self):
+		# Señal SEPARADA basada en el FORECAST (EF), no en LF: incumplido ⇔ EF > deadline. Un deadline
+		# POSTERIOR al EF no es incumplimiento: deja margen hábil positivo (evita falsos positivos).
+		p = _project("Slack Deadline")
+		breach = _task(p, "Breach", "2026-01-05", "2026-01-09", deadline="2026-01-07")  # EF 01-09 > 01-07
+		margin = _task(p, "Margin", "2026-01-05", "2026-01-09", deadline="2026-01-15")  # EF 01-09 < 01-15
+		res = analyze_schedule_slack(p)
+		self.assertEqual(res["summary"]["deadline_breach_count"], 1)  # solo "Breach"
+		b = res["deadline_breach"][0]
+		self.assertEqual(b["task"], breach)
+		self.assertEqual(b["ef"], "2026-01-09")
+		self.assertEqual(b["over_days"], 2)  # 01-07→01-09 = 2 d háb
+		nodes = self._by_task(res)
+		self.assertEqual(nodes[breach]["deadline_margin"], -2)  # EF excede el deadline por 2 d háb
+		self.assertEqual(nodes[margin]["deadline_margin"], 4)  # 01-09→01-15 = +4 d háb de colchón
+
+	def test_slack_never_writes(self):
+		# Read-only estricto (ADR-0017): no muta fechas ni invoca set_value.
+		p = _project("Slack ReadOnly")
+		a = _task(p, "A", "2026-01-05", "2026-01-07")
+		t = _task(p, "B", "2026-01-08", "2026-01-09", deps=[a])
+		before = frappe.db.get_value("Task", t, ["exp_start_date", "exp_end_date"], as_dict=True)
+		with patch("frappe.db.set_value") as mock_set:
+			analyze_schedule_slack(p)
 			mock_set.assert_not_called()
 		after = frappe.db.get_value("Task", t, ["exp_start_date", "exp_end_date"], as_dict=True)
 		self.assertEqual(before, after)
