@@ -28,6 +28,49 @@ from frappe.utils import add_days, getdate
 # Estados fuera de la red activa (no se programan ni diagnostican como pendientes).
 _INACTIVE = ("Completed", "Cancelled", "Template")
 
+# ------------------------------------------------------------------------------------------------
+# Clasificación — FUENTE ÚNICA DE VERDAD (SSOT). Toda decisión "esto es crítico/incumplido/malo" vive
+# AQUÍ, no en los templates. Los HTML solo mapean el token de severidad a una clase CSS; nunca aplican
+# umbrales (`<= 0`, etc.). Tokens semánticos:
+SEV_OK = "ok"  # correcto / dentro de margen
+SEV_WARN = "warn"  # atención (informativo, no necesariamente problema)
+SEV_BAD = "bad"  # problema / fuera de margen
+
+
+def _sev_count(n: int) -> str:
+	"""Contador de problemas: 0 → ok; >0 → bad."""
+	return SEV_BAD if n else SEV_OK
+
+
+def _sev_margin(days) -> str | None:
+	"""Margen en días (compromiso o deadline): negativo (sin margen) → bad; 0 o + → ok. None → None."""
+	if days is None:
+		return None
+	return SEV_BAD if days < 0 else SEV_OK
+
+
+def _sev_min_slack(x) -> str:
+	"""Holgura mínima de la red: NEGATIVA → bad (sobre-restringida). 0 es NORMAL (hay ruta crítica) → ok."""
+	return SEV_BAD if (x is not None and x < 0) else SEV_OK
+
+
+def _sev_critical_count(n: int) -> str:
+	"""Nº de tareas en ruta crítica: informativo → warn si hay alguna (atención), ok si ninguna."""
+	return SEV_WARN if n else SEV_OK
+
+
+def _sev_flag(flag: bool) -> str:
+	"""Bandera booleana → warn si está activa (atención), ok si no."""
+	return SEV_WARN if flag else SEV_OK
+
+
+def _days_label(days) -> str | None:
+	"""Label de días con signo, LISTO para presentar: `+121 d`, `0 d`, `-5 d`. None → None. El template
+	no deriva el signo (eso es lógica); recibe el texto final."""
+	if days is None:
+		return None
+	return f"+{days} d" if days > 0 else f"{days} d"
+
 
 # --------------------------------------------------------------------------------------
 # Calendario laboral (read-only; degradación segura)
@@ -346,6 +389,9 @@ def analyze_schedule_integrity(project: str, status_date=None) -> dict:
 	}
 
 	incoherencias = len(diag["incoherent"]) + len(diag["multi_predecessor"])
+	total = (
+		incoherencias + len(diag["deadline_exceeded"]) + len(diag["cycles"]) + len(diag["incomplete_dates"])
+	)
 	summary = {
 		"incoherencias": incoherencias,
 		"deadline_excedido": len(diag["deadline_exceeded"]),
@@ -354,10 +400,17 @@ def analyze_schedule_integrity(project: str, status_date=None) -> dict:
 		"divergencia_calendario": len(diag["natural_vs_working"]),
 		"sin_calendario": not calendar_available,
 		"fines_divergen": ends["diverges"],
-		"total": incoherencias
-		+ len(diag["deadline_exceeded"])
-		+ len(diag["cycles"])
-		+ len(diag["incomplete_dates"]),
+		"total": total,
+		# Banderas de visibilidad (SSOT): el template NO evalúa `if count`; recibe el show ya resuelto.
+		"show_ciclos": len(diag["cycles"]) > 0,
+		# Severidad por métrica (SSOT): el template solo mapea token→clase, no evalúa umbrales.
+		"sev": {
+			"total": _sev_count(total),
+			"incoherencias": _sev_count(incoherencias),
+			"deadline_excedido": _sev_count(len(diag["deadline_exceeded"])),
+			"fechas_incompletas": _sev_count(len(diag["incomplete_dates"])),
+			"ciclos": _sev_count(len(diag["cycles"])),
+		},
 	}
 	return {
 		"calendar_available": calendar_available,
@@ -501,6 +554,9 @@ def analyze_schedule_slack(project: str, status_date=None) -> dict:
 				"is_critical": is_critical,
 				"deadline": str(node["deadline"]) if node["deadline"] else None,
 				"deadline_margin": deadline_margin,
+				# Severidad decidida en el dominio (SSOT): el template solo la mapea a color.
+				"slack_sev": SEV_BAD if is_critical else SEV_OK,
+				"deadline_sev": _sev_margin(deadline_margin),
 			}
 		)
 
@@ -518,6 +574,7 @@ def analyze_schedule_slack(project: str, status_date=None) -> dict:
 				"committed_end": str(committed) if committed else None,
 				"network_finish": str(project_finish),
 				"margin_days": margin_days,
+				"severity": _sev_margin(margin_days),
 			},
 		}
 	)
@@ -526,8 +583,20 @@ def analyze_schedule_slack(project: str, status_date=None) -> dict:
 		"sin_calendario": not calendar_available,
 		"critical_count": len(critical),
 		"min_total_slack": min_slack,
+		"min_total_slack_label": (f"{min_slack} d" if min_slack is not None else "—"),  # texto listo
 		"committed_margin_days": margin_days,
+		"committed_margin_label": _days_label(margin_days),  # texto listo: "+121 d" / "0 d" / "-5 d"
 		"deadline_breach_count": len(base["deadline_breach"]),
+		# Banderas de visibilidad (SSOT): el template NO evalúa `is not none` / `if count`.
+		"show_committed_margin": margin_days is not None,
+		"show_deadline_breach": len(base["deadline_breach"]) > 0,
+		# Severidad por métrica (SSOT): el template solo mapea token→clase, no evalúa umbrales.
+		"sev": {
+			"critical_count": _sev_critical_count(len(critical)),
+			"min_total_slack": _sev_min_slack(min_slack),
+			"committed_margin": _sev_margin(margin_days),
+			"deadline_breach": _sev_count(len(base["deadline_breach"])),
+		},
 	}
 	return base
 
@@ -589,6 +658,9 @@ def analyze_critical_path(project: str, status_date=None) -> dict:
 			"start": None,
 			"end": None,
 			"duration_working_days": None,
+			# Visibilidad + severidad resueltas en el dominio (SSOT): sin ruta → no se muestra el bloque.
+			"show": False,
+			"sev": {"multi_branch": SEV_OK},
 		},
 	}
 	if not slack["evaluable"]:
@@ -645,14 +717,18 @@ def analyze_critical_path(project: str, status_date=None) -> dict:
 			"branches_truncated": truncated,
 		}
 	)
+	multi_branch = len(branches) > 1
 	base["summary"] = {
 		"evaluable": True,
 		"sin_calendario": not cal,
 		"critical_count": len(critical),
 		"branch_count": len(branches),
-		"multi_branch": len(branches) > 1,
+		"multi_branch": multi_branch,
 		"start": start,
 		"end": end,
 		"duration_working_days": working_days(start, end, holiday_list),
+		# Visibilidad + severidad resueltas en el dominio (SSOT).
+		"show": True,  # hay ruta crítica → el Resumen muestra el bloque compacto
+		"sev": {"multi_branch": _sev_flag(multi_branch)},
 	}
 	return base

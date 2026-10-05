@@ -99,6 +99,24 @@ de la hábil), nunca una corrección automática.
   *(implementado; cierra issue #9)*
 - **Schedule Automation** — *(diferido y condicional; requiere ADR propio)*.
 
+### Clasificación: fuente única de verdad (SSOT)
+
+- **Toda decisión de clasificación/severidad vive en el dominio** (`pmo/scheduling.py`): `is_critical`,
+  `deadline_breach`, `slack_sev`/`deadline_sev` por tarea, `severity` de márgenes y `sev` por métrica en
+  los resúmenes. Los templates **no** evalúan umbrales (`<= 0`, `< 0`, `count > 0`): solo mapean el token
+  de severidad (`ok`/`warn`/`bad`) a una clase CSS mediante un macro `sevcls`. Así el criterio no se
+  duplica ni se desincroniza entre Python y HTML.
+- Al centralizar se corrigieron dos coloreados engañosos que vivían en el template: **holgura mínima = 0**
+  es el estado NORMAL (existe ruta crítica) → `ok`, no rojo; y **margen a deadline = 0** (EF == deadline,
+  se cumple justo) → `ok`, no incumplido. Incumplido es estrictamente `EF > deadline` (margen < 0).
+
+### Terminología de usuario (sin jerga)
+
+La UI evita "red/network": secciones **"Revisión del cronograma"** (I.1), **"Holgura de tareas"** (I.2) y
+**"Ruta crítica"** (I.3, término estándar que el cliente MS Project reconoce). "Fechas incompletas" →
+"tareas sin fecha de inicio o fin"; "ventana crítica" → "periodo de la ruta crítica". El código interno
+puede seguir usando network/grafo.
+
 ## Consecuencias
 
 - Mejora ejecutiva real sin cambiar la filosofía de fechas ni introducir ambigüedad.

@@ -20,10 +20,18 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from pmo.scheduling import (
+	SEV_BAD,
+	SEV_OK,
+	SEV_WARN,
 	_backward_pass,
 	_critical_branches,
+	_days_label,
 	_detect_cycles,
 	_forward_pass,
+	_sev_count,
+	_sev_flag,
+	_sev_margin,
+	_sev_min_slack,
 	_working_span,
 	add_working_days,
 	analyze_critical_path,
@@ -140,6 +148,25 @@ class TestSchedulingPure(unittest.TestCase):
 		# Nodo crítico aislado (sin aristas críticas) → rama de una sola tarea.
 		paths, _ = _critical_branches({"X"}, [], {"X": {"es": "d1"}})
 		self.assertEqual(paths, [["X"]])
+
+	def test_severity_classifiers_ssot(self):
+		# SSOT de clasificación: contadores 0→ok/>0→bad; margen negativo→bad; holgura mínima 0 es NORMAL→ok.
+		self.assertEqual(_sev_count(0), SEV_OK)
+		self.assertEqual(_sev_count(3), SEV_BAD)
+		self.assertEqual(_sev_margin(5), SEV_OK)
+		self.assertEqual(_sev_margin(-1), SEV_BAD)
+		self.assertIsNone(_sev_margin(None))
+		self.assertEqual(_sev_min_slack(0), SEV_OK)  # 0 = hay ruta crítica, es normal (no rojo)
+		self.assertEqual(_sev_min_slack(-2), SEV_BAD)
+		self.assertEqual(_sev_flag(True), SEV_WARN)
+		self.assertEqual(_sev_flag(False), SEV_OK)
+
+	def test_days_label_ssot(self):
+		# Label de días ya formateado por el dominio (el template no deriva el signo).
+		self.assertEqual(_days_label(121), "+121 d")
+		self.assertEqual(_days_label(0), "0 d")
+		self.assertEqual(_days_label(-5), "-5 d")
+		self.assertIsNone(_days_label(None))
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -260,6 +287,18 @@ class TestScheduleIntegrity(IntegrationTestCase):
 		res = analyze_schedule_integrity(p)
 		self.assertEqual(len(res["diagnostics"]["incoherent"]), 1)
 		self.assertGreaterEqual(res["summary"]["incoherencias"], 1)
+		# SSOT: la severidad la decide el dominio (no el template).
+		self.assertEqual(res["summary"]["sev"]["incoherencias"], SEV_BAD)
+		self.assertEqual(res["summary"]["sev"]["total"], SEV_BAD)
+
+	def test_integrity_severity_clean_is_ok(self):
+		# Proyecto sin problemas → todas las severidades "ok" (el template pinta neutro, no rojo).
+		p = _project("Sched Clean")
+		a = _task(p, "A", "2026-01-05", "2026-01-07")
+		_task(p, "B", "2026-01-08", "2026-01-09", deps=[a])
+		summ = analyze_schedule_integrity(p)["summary"]
+		self.assertEqual(set(summ["sev"].values()), {SEV_OK})
+		self.assertFalse(summ["show_ciclos"])  # SSOT: visibilidad de la fila decidida en el dominio
 
 	def test_multi_predecessor_inconsistent(self):
 		# C depende de A y B; inicia antes del fin de alguna predecesora.
@@ -288,6 +327,7 @@ class TestScheduleIntegrity(IntegrationTestCase):
 		res = analyze_schedule_integrity(p)
 		self.assertGreaterEqual(len(res["diagnostics"]["cycles"]), 1)
 		self.assertIsNone(res["ends"]["max_ef"])
+		self.assertTrue(res["summary"]["show_ciclos"])  # SSOT: la fila se muestra por decisión del dominio
 
 	def test_incomplete_dates(self):
 		# Tarea activa sin exp_end → gap de planeación.
@@ -451,6 +491,9 @@ class TestScheduleSlack(IntegrationTestCase):
 		res = analyze_schedule_slack(p)
 		self.assertEqual(res["margin_vs_committed"]["network_finish"], "2026-01-09")
 		self.assertEqual(res["summary"]["committed_margin_days"], 4)  # 01-09→01-15 = 4 d háb
+		# SSOT: label de signo y bandera de visibilidad resueltos en el dominio (el template no deriva).
+		self.assertEqual(res["summary"]["committed_margin_label"], "+4 d")
+		self.assertTrue(res["summary"]["show_committed_margin"])
 
 	def test_slack_deadline_breach_vs_margin_separate(self):
 		# Señal SEPARADA basada en el FORECAST (EF), no en LF: incumplido ⇔ EF > deadline. Un deadline
@@ -460,6 +503,7 @@ class TestScheduleSlack(IntegrationTestCase):
 		margin = _task(p, "Margin", "2026-01-05", "2026-01-09", deadline="2026-01-15")  # EF 01-09 < 01-15
 		res = analyze_schedule_slack(p)
 		self.assertEqual(res["summary"]["deadline_breach_count"], 1)  # solo "Breach"
+		self.assertTrue(res["summary"]["show_deadline_breach"])  # SSOT: visibilidad desde el dominio
 		b = res["deadline_breach"][0]
 		self.assertEqual(b["task"], breach)
 		self.assertEqual(b["ef"], "2026-01-09")
@@ -467,6 +511,30 @@ class TestScheduleSlack(IntegrationTestCase):
 		nodes = self._by_task(res)
 		self.assertEqual(nodes[breach]["deadline_margin"], -2)  # EF excede el deadline por 2 d háb
 		self.assertEqual(nodes[margin]["deadline_margin"], 4)  # 01-09→01-15 = +4 d háb de colchón
+		# SSOT: severidad por nodo decidida en el dominio (no re-evaluada en el template).
+		self.assertEqual(nodes[breach]["deadline_sev"], SEV_BAD)
+		self.assertEqual(nodes[margin]["deadline_sev"], SEV_OK)
+
+	def test_slack_severities_from_domain_ssot(self):
+		# El dominio entrega slack_sev por nodo, severidad de margen y resumen; el template solo mapea.
+		p = _project("Slack Sev")
+		a = _task(p, "A", "2026-01-01", "2026-01-01")
+		b = _task(p, "B", "2026-01-02", "2026-01-08", deps=[a])
+		c = _task(p, "C", "2026-01-02", "2026-01-02", deps=[a])
+		_task(p, "D", "2026-01-09", "2026-01-09", deps=[b, c])
+		frappe.db.set_value("Project", p, "pmo_committed_end_date", "2026-01-15")
+		res = analyze_schedule_slack(p)
+		nodes = self._by_task(res)
+		self.assertEqual(nodes[a]["slack_sev"], SEV_BAD)  # crítica → bad
+		self.assertEqual(nodes[c]["slack_sev"], SEV_OK)  # con holgura → ok
+		# Holgura mínima es 0 (hay ruta crítica): NORMAL → ok, NO rojo (corrección del <= 0).
+		self.assertEqual(res["summary"]["sev"]["min_total_slack"], SEV_OK)
+		self.assertEqual(res["summary"]["sev"]["critical_count"], SEV_WARN)
+		self.assertEqual(res["margin_vs_committed"]["severity"], SEV_OK)  # +margen
+		self.assertEqual(res["summary"]["sev"]["committed_margin"], SEV_OK)
+		# SSOT: labels de presentación ya resueltos por el dominio.
+		self.assertEqual(res["summary"]["min_total_slack_label"], "0 d")
+		self.assertEqual(res["summary"]["committed_margin_label"], "+4 d")
 
 	def test_slack_never_writes(self):
 		# Read-only estricto (ADR-0017): no muta fechas ni invoca set_value.
@@ -502,6 +570,9 @@ class TestCriticalPath(IntegrationTestCase):
 		self.assertEqual(res["summary"]["end"], "2026-01-09")
 		self.assertEqual(res["summary"]["duration_working_days"], 6)  # 01-01..01-09 sin 03/04/06
 		self.assertEqual([s["subject"] for s in res["branches"][0]["sequence"]], ["A", "B", "C"])
+		# SSOT: bloque visible y severidad de rama única resueltos en el dominio.
+		self.assertTrue(res["summary"]["show"])
+		self.assertEqual(res["summary"]["sev"]["multi_branch"], SEV_OK)
 
 	def test_critical_diamond_excludes_noncritical(self):
 		# Diamante con rama corta no crítica (C, holgura +): la ruta crítica es A→B→D; C queda fuera.
@@ -529,6 +600,9 @@ class TestCriticalPath(IntegrationTestCase):
 		self.assertEqual(res["summary"]["branch_count"], 2)
 		seqs = sorted([s["task"] for s in br["sequence"]] for br in res["branches"])
 		self.assertEqual(seqs, sorted([[a, b, d], [a, c, d]]))
+		# SSOT: "varias ramas" → warn decidido por el dominio (NO hardcodeado en el template).
+		self.assertEqual(res["summary"]["sev"]["multi_branch"], SEV_WARN)
+		self.assertTrue(res["summary"]["show"])
 
 	def test_critical_cycles_not_evaluable(self):
 		p = _project("CP Cycle")
@@ -553,6 +627,8 @@ class TestCriticalPath(IntegrationTestCase):
 		res = analyze_critical_path(p)
 		self.assertFalse(res["evaluable"])
 		self.assertEqual(res["reason"], "no_dated_tasks")
+		# SSOT: sin ruta → el Resumen no muestra el bloque (bandera del dominio, no `if` en el template).
+		self.assertFalse(res["summary"]["show"])
 
 	def test_critical_never_writes(self):
 		p = _project("CP ReadOnly")
