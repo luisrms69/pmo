@@ -38,6 +38,7 @@ from pmo.scheduling import (
 	analyze_schedule_integrity,
 	analyze_schedule_slack,
 	resolve_holiday_list,
+	schedule_readiness,
 	working_days,
 )
 
@@ -640,6 +641,101 @@ class TestCriticalPath(IntegrationTestCase):
 			mock_set.assert_not_called()
 		after = frappe.db.get_value("Task", t, ["exp_start_date", "exp_end_date"], as_dict=True)
 		self.assertEqual(before, after)
+
+
+HL_NARROW = "PMO-SCHED-HL-NARROW"
+
+
+def _holiday_list_narrow():
+	# Lista de feriados de rango CORTO (solo 2026-01-01..2026-01-05) para probar cobertura insuficiente.
+	if not frappe.db.exists("Holiday List", HL_NARROW):
+		frappe.get_doc(
+			{
+				"doctype": "Holiday List",
+				"holiday_list_name": HL_NARROW,
+				"from_date": "2026-01-01",
+				"to_date": "2026-01-05",
+				"holidays": [{"holiday_date": "2026-01-03", "description": "Sábado"}],
+			}
+		).insert(ignore_permissions=True)
+	return HL_NARROW
+
+
+class TestScheduleReadiness(IntegrationTestCase):
+	"""Calendario del cronograma (Schedule Readiness, ADR-0017). READ-ONLY; precedencia explícita."""
+
+	def setUp(self):
+		_holiday_list()
+
+	def test_readiness_missing(self):
+		# Sin holiday_list ni compañía → no configurado (cálculo en días naturales).
+		p = _project("Rdy Missing", holiday_list=None)
+		_task(p, "T", "2026-01-05", "2026-01-09")
+		r = schedule_readiness(p)
+		self.assertEqual(r["state"], "missing")
+		self.assertFalse(r["ready"])
+		self.assertIsNone(r["source"])
+		self.assertEqual(r["sev"], SEV_WARN)
+		self.assertIsNotNone(r["hint"])
+		# Copy aprobada (compuesta en el dominio).
+		self.assertEqual(r["label"], "Sin calendario laboral — los cálculos usan días naturales.")
+		self.assertEqual(r["short"], "Días naturales (sin calendario)")
+
+	def test_readiness_ready(self):
+		# holiday_list del proyecto que CUBRE el rango → listo (días hábiles), origen proyecto.
+		p = _project("Rdy Ready")  # HL cubre 2026-01-01..2026-02-28
+		_task(p, "T", "2026-01-05", "2026-01-09")
+		r = schedule_readiness(p)
+		self.assertEqual(r["state"], "ready")
+		self.assertTrue(r["ready"])
+		self.assertEqual(r["source"], "project")
+		self.assertTrue(r["covers_range"])
+		self.assertEqual(r["sev"], SEV_OK)
+		self.assertIsNone(r["hint"])
+		# Copy aprobada: la frase integra el NOMBRE del calendario (sin "origen" aparte) y el efecto.
+		self.assertIn(HL, r["label"])
+		self.assertIn("descuentan fines de semana y feriados", r["label"])
+		self.assertEqual(r["short"], HL)  # Resumen muestra el NOMBRE del calendario, no "días hábiles"
+
+	def test_readiness_insufficient_coverage_no_fallback(self):
+		# holiday_list del proyecto EXISTE pero NO cubre el rango → cobertura insuficiente; PREVALECE el
+		# calendario del proyecto (no hay fallback a Company aunque hubiera default).
+		_holiday_list_narrow()
+		p = _project("Rdy Narrow", holiday_list=HL_NARROW)  # lista 01-01..01-05
+		_task(p, "T", "2026-01-01", "2026-01-20")  # el rango excede la cobertura
+		r = schedule_readiness(p)
+		self.assertEqual(r["state"], "insufficient_coverage")
+		self.assertFalse(r["ready"])
+		self.assertEqual(r["source"], "project")
+		self.assertEqual(r["holiday_list"], HL_NARROW)  # NO cae a Company
+		self.assertFalse(r["covers_range"])
+		self.assertEqual(r["sev"], SEV_BAD)
+		self.assertIsNotNone(r["hint"])
+
+	def test_readiness_no_dated_tasks_is_ready_if_list(self):
+		# Con lista y sin fechas que cubrir → no hay cobertura que evaluar: listo.
+		p = _project("Rdy NoDates")
+		_task(p, "T", None, None)
+		r = schedule_readiness(p)
+		self.assertEqual(r["state"], "ready")
+		self.assertTrue(r["covers_range"])
+
+	def test_readiness_company_fallback(self):
+		# Sin holiday_list del Project → usa Company.default_holiday_list (precedencia explícita).
+		orig = frappe.db.get_value
+
+		def fake(doctype, name, fieldname=None, **kw):
+			if doctype == "Project":
+				return {"holiday_list": None, "company": "ACME"}
+			if doctype == "Company":
+				return HL
+			return orig(doctype, name, fieldname, **kw)
+
+		with patch("pmo.scheduling.frappe.db.get_value", side_effect=fake):
+			r = schedule_readiness("X")  # proyecto inexistente → sin tareas (span None)
+		self.assertEqual(r["source"], "company")
+		self.assertEqual(r["holiday_list"], HL)
+		self.assertEqual(r["state"], "ready")
 
 
 if __name__ == "__main__":

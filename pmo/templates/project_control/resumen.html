@@ -263,7 +263,9 @@
       <div class="sub"><span class="k">Tareas sin fecha de inicio o fin</span><span class="val {{ sevcls(si.sev.fechas_incompletas) }}">{{ si.fechas_incompletas }}</span></div>
       {%- if si.show_ciclos %}<div class="sub"><span class="k">Dependencias circulares</span><span class="val {{ sevcls(si.sev.ciclos) }}">{{ si.ciclos }}</span></div>{% endif -%}
       {%- if si.fines_divergen %}<div class="sub"><span class="k" style="color:var(--text-muted)">Fechas de fin que no coinciden (ver detalle)</span></div>{% endif -%}
-      {%- if si.sin_calendario %}<div class="sub"><span class="k" style="color:var(--text-muted)">Sin calendario laboral</span></div>{% endif -%}
+      {#- Calendario del cronograma (Schedule Readiness): estado/label/sev resueltos en el dominio. -#}
+      {%- set cal = pc.schedule_calendar -%}
+      {%- if cal and cal.short %}<div class="sub"><span class="k">Calendario del cronograma</span><span class="val {{ sevcls(cal.sev) }}">{{ cal.short }}</span></div>{% endif -%}
     </div>
   </div>
   {% endif %}
@@ -286,7 +288,6 @@
       <div class="sub"><span class="k">Periodo de la ruta crítica</span><span class="val">{{ cp.start }} → {{ cp.end }}</span></div>
       {%- if cp.multi_branch %}<div class="sub"><span class="k">Ramas críticas</span><span class="val {{ sevcls(cp.sev.multi_branch) }}">{{ cp.branch_count }}</span></div>{% endif -%}
       {%- endif -%}
-      {%- if sk.sin_calendario %}<div class="sub"><span class="k" style="color:var(--text-muted)">Sin calendario laboral</span></div>{% endif -%}
     </div>
   </div>
   {% endif %}

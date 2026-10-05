@@ -99,6 +99,18 @@ de la hábil), nunca una corrección automática.
   *(implementado; cierra issue #9)*
 - **Schedule Automation** — *(diferido y condicional; requiere ADR propio)*.
 
+### Calendario del cronograma (Schedule Readiness)
+
+Capa READ-ONLY (`schedule_readiness`) que indica si el cálculo en días hábiles es **confiable**. No es un
+onboarding: se limita al **calendario**. Precedencia **explícita**: `Project.holiday_list` **prevalece**;
+si existe pero **no cubre** el periodo del proyecto (min `exp_start` … max `exp_end` de tareas activas),
+**no hay fallback silencioso a Company** — se marca *cobertura insuficiente* y debe corregirse esa lista.
+Solo si el Project no tiene lista se usa `Company.default_holiday_list`. Estados (label y severidad resueltos
+en el dominio, SSOT): **ready** (listo, días hábiles), **missing** (no configurado → días naturales),
+**insufficient_coverage** (la lista no cubre todo el periodo). La UI lo muestra como **"Calendario del
+cronograma"** y **absorbe** los avisos repetidos de "sin calendario" de las secciones de Estado. No escribe
+nada: el usuario configura la Holiday List de forma nativa.
+
 ### Clasificación: fuente única de verdad (SSOT)
 
 - **Toda decisión de clasificación/severidad vive en el dominio** (`pmo/scheduling.py`): `is_critical`,

@@ -732,3 +732,88 @@ def analyze_critical_path(project: str, status_date=None) -> dict:
 		"sev": {"multi_branch": _sev_flag(multi_branch)},
 	}
 	return base
+
+
+# --------------------------------------------------------------------------------------
+# Calendario del cronograma (Schedule Readiness) — ¿es confiable el cálculo en días hábiles?
+# READ-ONLY. Precedencia EXPLÍCITA: Project.holiday_list PREVALECE; si existe pero NO cubre el periodo
+# del proyecto, NO hay fallback silencioso a Company (se señala cobertura insuficiente). ADR-0017.
+# --------------------------------------------------------------------------------------
+_CAL_READY = "ready"
+_CAL_MISSING = "missing"
+_CAL_INSUFFICIENT = "insufficient_coverage"
+
+# Variante corta para la tarjeta compacta del Resumen (SSOT; el template no la deriva).
+_CAL_SHORT = {
+	_CAL_READY: "Días hábiles",
+	_CAL_MISSING: "Días naturales (sin calendario)",
+	_CAL_INSUFFICIENT: "Cobertura insuficiente",
+}
+_CAL_SEV = {_CAL_READY: SEV_OK, _CAL_MISSING: SEV_WARN, _CAL_INSUFFICIENT: SEV_BAD}
+
+
+def schedule_readiness(project: str) -> dict:
+	"""¿El calendario laboral hace confiable el cálculo del cronograma? READ-ONLY, sin escribir. Precedencia
+	EXPLÍCITA Project→Company, pero si el Project tiene lista propia y NO cubre el periodo, prevalece (sin
+	fallback a Company) y se marca cobertura insuficiente. Estados: ready / missing / insufficient_coverage."""
+	meta = frappe.db.get_value("Project", project, ["holiday_list", "company"], as_dict=True) or {}
+	hl, source = meta.get("holiday_list"), None
+	if hl:
+		source = "project"
+	elif meta.get("company"):
+		hl = frappe.db.get_value("Company", meta["company"], "default_holiday_list") or None
+		source = "company" if hl else None
+
+	# Rango de fechas del proyecto = min(exp_start)..max(exp_end) de las tareas hoja ACTIVAS con fechas.
+	tasks = _read_tasks(project)
+	starts = [getdate(t.exp_start_date) for t in tasks if t.status not in _INACTIVE and t.exp_start_date]
+	ends = [getdate(t.exp_end_date) for t in tasks if t.status not in _INACTIVE and t.exp_end_date]
+	span_start = min(starts) if starts else None
+	span_end = max(ends) if ends else None
+
+	hl_from = hl_to = None
+	covers_range = True  # sin lista o sin rango que cubrir → no hay cobertura que evaluar
+	if hl and span_start and span_end:
+		rng = frappe.db.get_value("Holiday List", hl, ["from_date", "to_date"], as_dict=True) or {}
+		hl_from = getdate(rng.from_date) if rng.get("from_date") else None
+		hl_to = getdate(rng.to_date) if rng.get("to_date") else None
+		covers_range = bool(hl_from and hl_to and hl_from <= span_start and hl_to >= span_end)
+
+	if not hl:
+		state = _CAL_MISSING
+	elif not covers_range:
+		state = _CAL_INSUFFICIENT
+	else:
+		state = _CAL_READY
+
+	# Frase de usuario COMPUESTA en el dominio (SSOT): integra el nombre del calendario; sin "origen" aparte.
+	hint = None
+	if state == _CAL_READY:
+		origen = " (de la compañía)" if source == "company" else ""
+		label = f"Calendario «{hl}»{origen} — los cálculos descuentan fines de semana y feriados."
+	elif state == _CAL_MISSING:
+		label = "Sin calendario laboral — los cálculos usan días naturales."
+		hint = "Configura la Lista de feriados en el Proyecto, o la Lista de feriados por defecto en la Compañía."
+	else:  # insufficient_coverage
+		label = f"El calendario «{hl}» no cubre todo el periodo del proyecto."
+		hint = (
+			f"Amplía el rango de la lista de feriados «{hl}» "
+			f"({hl_from} a {hl_to}) para cubrir el periodo del proyecto ({span_start} a {span_end})."
+		)
+
+	return {
+		"state": state,
+		"ready": state == _CAL_READY,
+		"source": source,  # "project" | "company" | None
+		"holiday_list": hl,
+		"covers_range": covers_range,
+		"span_start": str(span_start) if span_start else None,
+		"span_end": str(span_end) if span_end else None,
+		"hl_from": str(hl_from) if hl_from else None,
+		"hl_to": str(hl_to) if hl_to else None,
+		"label": label,  # frase de usuario lista (SSOT; incluye el nombre del calendario)
+		# Resumen compacto: si hay calendario usable, muestra su NOMBRE; si no, el estado.
+		"short": hl if state == _CAL_READY else _CAL_SHORT[state],
+		"sev": _CAL_SEV[state],  # severidad decidida en el dominio
+		"hint": hint,  # dónde/ cómo configurarlo (None si ready)
+	}
