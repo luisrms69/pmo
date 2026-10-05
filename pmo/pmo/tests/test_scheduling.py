@@ -21,10 +21,12 @@ from frappe.tests import IntegrationTestCase
 
 from pmo.scheduling import (
 	_backward_pass,
+	_critical_branches,
 	_detect_cycles,
 	_forward_pass,
 	_working_span,
 	add_working_days,
+	analyze_critical_path,
 	analyze_schedule_integrity,
 	analyze_schedule_slack,
 	resolve_holiday_list,
@@ -124,6 +126,20 @@ class TestSchedulingPure(unittest.TestCase):
 		# Cadena crítica: LS==ES en cada nodo (holgura 0).
 		for k in active:
 			self.assertEqual(str(bp[k]["ls"]), str(fp[k]["es"]))
+
+	def test_critical_branches_enumeration(self):
+		# Subgrafo crítico diamante A→{B,C}→D → dos rutas (no se inventa una sola cadena); orden por ES.
+		nb = {k: {"es": es} for k, es in (("A", "d1"), ("B", "d2"), ("C", "d2"), ("D", "d3"))}
+		paths, trunc = _critical_branches(
+			{"A", "B", "C", "D"}, [("A", "B"), ("A", "C"), ("B", "D"), ("C", "D")], nb
+		)
+		self.assertFalse(trunc)
+		self.assertEqual(sorted(paths), [["A", "B", "D"], ["A", "C", "D"]])
+
+	def test_critical_branches_isolated_node(self):
+		# Nodo crítico aislado (sin aristas críticas) → rama de una sola tarea.
+		paths, _ = _critical_branches({"X"}, [], {"X": {"es": "d1"}})
+		self.assertEqual(paths, [["X"]])
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -460,6 +476,91 @@ class TestScheduleSlack(IntegrationTestCase):
 		before = frappe.db.get_value("Task", t, ["exp_start_date", "exp_end_date"], as_dict=True)
 		with patch("frappe.db.set_value") as mock_set:
 			analyze_schedule_slack(p)
+			mock_set.assert_not_called()
+		after = frappe.db.get_value("Task", t, ["exp_start_date", "exp_end_date"], as_dict=True)
+		self.assertEqual(before, after)
+
+
+class TestCriticalPath(IntegrationTestCase):
+	"""I.3 — Interpretación/visualización de la ruta crítica (sobre el CPM de I.2). READ-ONLY."""
+
+	def setUp(self):
+		_holiday_list()
+
+	def test_critical_linear_single_branch(self):
+		# Cadena lineal → una sola ruta crítica legible A→B→C; ventana y duración hábil de la ruta.
+		p = _project("CP Linear")
+		a = _task(p, "A", "2026-01-01", "2026-01-02")
+		b = _task(p, "B", "2026-01-05", "2026-01-07", deps=[a])
+		_task(p, "C", "2026-01-08", "2026-01-09", deps=[b])
+		res = analyze_critical_path(p)
+		self.assertTrue(res["evaluable"])
+		self.assertEqual(res["summary"]["critical_count"], 3)
+		self.assertEqual(res["summary"]["branch_count"], 1)
+		self.assertFalse(res["summary"]["multi_branch"])
+		self.assertEqual(res["summary"]["start"], "2026-01-01")
+		self.assertEqual(res["summary"]["end"], "2026-01-09")
+		self.assertEqual(res["summary"]["duration_working_days"], 6)  # 01-01..01-09 sin 03/04/06
+		self.assertEqual([s["subject"] for s in res["branches"][0]["sequence"]], ["A", "B", "C"])
+
+	def test_critical_diamond_excludes_noncritical(self):
+		# Diamante con rama corta no crítica (C, holgura +): la ruta crítica es A→B→D; C queda fuera.
+		p = _project("CP Diamond")
+		a = _task(p, "A", "2026-01-01", "2026-01-01")
+		b = _task(p, "B", "2026-01-02", "2026-01-08", deps=[a])
+		c = _task(p, "C", "2026-01-02", "2026-01-02", deps=[a])
+		d = _task(p, "D", "2026-01-09", "2026-01-09", deps=[b, c])
+		res = analyze_critical_path(p)
+		self.assertEqual(res["summary"]["branch_count"], 1)
+		self.assertEqual(set(res["task_names"]), {a, b, d})  # C excluido (no crítico)
+		self.assertNotIn(c, res["task_names"])
+		self.assertEqual([s["task"] for s in res["branches"][0]["sequence"]], [a, b, d])
+
+	def test_critical_multiple_branches(self):
+		# Dos ramas paralelas de igual duración con slack 0 → DOS rutas (no se inventa una sola cadena).
+		p = _project("CP MultiBranch")
+		a = _task(p, "A", "2026-01-01", "2026-01-01")
+		b = _task(p, "B", "2026-01-02", "2026-01-02", deps=[a])
+		c = _task(p, "C", "2026-01-02", "2026-01-02", deps=[a])
+		d = _task(p, "D", "2026-01-05", "2026-01-05", deps=[b, c])
+		res = analyze_critical_path(p)
+		self.assertEqual(res["summary"]["critical_count"], 4)
+		self.assertTrue(res["summary"]["multi_branch"])
+		self.assertEqual(res["summary"]["branch_count"], 2)
+		seqs = sorted([s["task"] for s in br["sequence"]] for br in res["branches"])
+		self.assertEqual(seqs, sorted([[a, b, d], [a, c, d]]))
+
+	def test_critical_cycles_not_evaluable(self):
+		p = _project("CP Cycle")
+		a = _task(p, "A", "2026-01-05", "2026-01-07")
+		b = _task(p, "B", "2026-01-08", "2026-01-09", deps=[a])
+		frappe.get_doc(
+			{
+				"doctype": "Task Depends On",
+				"parent": a,
+				"parenttype": "Task",
+				"parentfield": "depends_on",
+				"task": b,
+			}
+		).insert(ignore_permissions=True)
+		res = analyze_critical_path(p)
+		self.assertFalse(res["evaluable"])
+		self.assertEqual(res["reason"], "cycles")
+
+	def test_critical_no_dated_tasks(self):
+		p = _project("CP NoDates")
+		_task(p, "T", None, None)
+		res = analyze_critical_path(p)
+		self.assertFalse(res["evaluable"])
+		self.assertEqual(res["reason"], "no_dated_tasks")
+
+	def test_critical_never_writes(self):
+		p = _project("CP ReadOnly")
+		a = _task(p, "A", "2026-01-05", "2026-01-07")
+		t = _task(p, "B", "2026-01-08", "2026-01-09", deps=[a])
+		before = frappe.db.get_value("Task", t, ["exp_start_date", "exp_end_date"], as_dict=True)
+		with patch("frappe.db.set_value") as mock_set:
+			analyze_critical_path(p)
 			mock_set.assert_not_called()
 		after = frappe.db.get_value("Task", t, ["exp_start_date", "exp_end_date"], as_dict=True)
 		self.assertEqual(before, after)

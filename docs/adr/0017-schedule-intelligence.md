@@ -93,7 +93,10 @@ de la hábil), nunca una corrección automática.
 - **I.0** — este ADR + fundamento (duración/calendario/forward-pass). *(esta iteración)*
 - **I.1** — Diagnóstico de integridad del programa (read-only). *(implementado)*
 - **I.2** — Slack / Float (backward pass + holgura total/libre, read-only). *(implementado)*
-- **I.3** — Critical Path (vista/visualización dedicada). *(diferido; cierra issue #9)*
+- **I.3** — Critical Path: interpretación/visualización del CPM de I.2 — resaltado en el Gantt propio de
+  Estado, secuencia(s) legible(s) de la ruta, detalle ES/EF/LS/LF por tarea crítica, ventana y duración.
+  Multi-rama = múltiples rutas (no se inventa una cadena única). Sin motor ni semántica nueva.
+  *(implementado; cierra issue #9)*
 - **Schedule Automation** — *(diferido y condicional; requiere ADR propio)*.
 
 ## Consecuencias

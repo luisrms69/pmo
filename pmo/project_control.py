@@ -689,6 +689,8 @@ def get_summary_html(project: str, cutoff: str | None = None) -> str:
 	ctx["schedule_integrity"] = _schedule_integrity(project, cutoff).get("summary") or {}
 	# Holgura de red (ADR-0017, I.2): solo el resumen compacto; el detalle (tabla ES/EF/LS/LF) vive en Estado.
 	ctx["schedule_slack"] = _schedule_slack(project, cutoff).get("summary") or {}
+	# Ruta crítica (ADR-0017, I.3): resumen compacto (ventana + duración + nº ramas); detalle en Estado.
+	ctx["critical_path"] = _schedule_critical(project, cutoff).get("summary") or {}
 	# PHI (ADR-0013): bloque de salud integral. Compone (no recalcula); decorado con etiquetas de usuario.
 	from pmo.phi import get_phi_view
 
@@ -1065,6 +1067,8 @@ def _schedule_view(project: str, cutoff=None) -> dict:
 		"integrity": _schedule_integrity(project, sd),
 		# Sección 7 (ADR-0017, I.2): holgura / slack de la red (read-only, degrada seguro).
 		"slack": _schedule_slack(project, sd),
+		# Sección 8 (ADR-0017, I.3): ruta crítica (interpretación del CPM; read-only, degrada seguro).
+		"critical": _schedule_critical(project, sd),
 	}
 
 
@@ -1089,6 +1093,18 @@ def _schedule_slack(project: str, cutoff=None) -> dict:
 		return analyze_schedule_slack(project, status_date=cutoff)
 	except Exception:
 		frappe.logger("pmo").warning(f"schedule_slack failed for {project}", exc_info=True)
+		return {}
+
+
+def _schedule_critical(project: str, cutoff=None) -> dict:
+	"""Envoltura read-only de `pmo.scheduling.analyze_critical_path` (I.3). Misma política: nunca escribe,
+	nunca lanza; si falla, degrada a {} y lo registra (no rompe Estado)."""
+	from pmo.scheduling import analyze_critical_path
+
+	try:
+		return analyze_critical_path(project, status_date=cutoff)
+	except Exception:
+		frappe.logger("pmo").warning(f"critical_path failed for {project}", exc_info=True)
 		return {}
 
 

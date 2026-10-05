@@ -275,6 +275,13 @@
       <div class="sub"><span class="k">Holgura total mínima</span><span class="val {% if sk.min_total_slack is not none and sk.min_total_slack <= 0 %}bad{% endif %}">{% if sk.min_total_slack is none %}—{% else %}{{ sk.min_total_slack }} d{% endif %}</span></div>
       {%- if sk.committed_margin_days is not none %}<div class="sub"><span class="k">Margen vs compromiso</span><span class="val {% if sk.committed_margin_days < 0 %}bad{% endif %}">{% if sk.committed_margin_days > 0 %}+{% endif %}{{ sk.committed_margin_days }} d</span></div>{% endif -%}
       {%- if sk.deadline_breach_count %}<div class="sub"><span class="k">Deadlines incumplidos (forecast)</span><span class="val bad">{{ sk.deadline_breach_count }}</span></div>{% endif -%}
+      {#- Ruta crítica (ADR-0017, I.3): ventana y duración compactas; el detalle/secuencia vive en Estado. -#}
+      {%- set cp = pc.critical_path -%}
+      {%- if cp and cp.evaluable and cp.duration_working_days is not none %}
+      <div class="sub"><span class="k">Duración ruta crítica</span><span class="val">{{ cp.duration_working_days }} d</span></div>
+      <div class="sub"><span class="k">Ventana crítica</span><span class="val">{{ cp.start }} → {{ cp.end }}</span></div>
+      {%- if cp.multi_branch %}<div class="sub"><span class="k">Ramas críticas</span><span class="val warn">{{ cp.branch_count }}</span></div>{% endif -%}
+      {%- endif -%}
       {%- if sk.sin_calendario %}<div class="sub"><span class="k" style="color:var(--text-muted)">Sin calendario laboral</span></div>{% endif -%}
     </div>
   </div>

@@ -119,7 +119,9 @@
   <span><i class="rmv"></i>Retirada del plan</span>
 </div>
 {% if not h.has_baseline %}<div class="gnote">Sin línea base vigente al corte: se muestra solo el plan vigente (sin comparación).</div>{% endif %}
+{%- set crit_names = (sv.critical.task_names if sv.critical else none) or [] -%}
 {% if g.tasks %}
+{% if crit_names %}<div class="legend" style="margin-bottom:6px"><span><i style="background:#c02b2b;border-radius:50%;width:8px;height:8px"></i>Ruta crítica (holgura 0)</span></div>{% endif %}
 <div class="gwrap">
 <table class="g">
   <colgroup><col class="c-task"><col class="c-date"><col class="c-date"><col class="c-lane"></colgroup>
@@ -128,6 +130,7 @@
   {% for t in g.tasks %}
     <tr>
       <td class="tname {% if t.is_group %}grp{% endif %}" style="padding-left:{{ 8 + t.depth * 14 }}px">
+        {% if t.name in crit_names %}<span title="Ruta crítica" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#c02b2b;margin-right:5px;vertical-align:middle"></span>{% endif %}
         {% if t.is_milestone %}&#9670; {% endif %}
         {% if t.removed %}<span class="rm">{{ t.subject }}</span>{% else %}<a data-task="{{ t.name }}">{{ t.subject }}</a>{% endif %}
       </td>
@@ -338,5 +341,55 @@
 <div class="empty">Sin tareas con fechas completas para calcular holgura.</div>
 {% else %}
 <div class="empty">Análisis de holgura no disponible.</div>
+{% endif %}
+
+{#- 8. Ruta crítica (ADR-0017, I.3). INTERPRETACIÓN del CPM ya calculado (I.2): tareas con holgura 0 que
+    condicionan el fin del proyecto. No es motor nuevo ni semántica nueva. Si hay varias ramas con slack 0,
+    se muestran como múltiples rutas (no se inventa una cadena única). READ-ONLY. -#}
+{%- set cp = sv.critical or {} -%}
+<div class="sec">8. Ruta crítica <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">— tareas que condicionan la fecha final (holgura 0)</span></div>
+{% if cp and cp.evaluable and cp.critical_tasks %}
+  {% if cp.summary and cp.summary.sin_calendario %}
+  <div class="empty" style="border-left:3px solid #d97706">Sin calendario laboral resoluble: la duración de la ruta se expresa en días naturales.</div>
+  {% endif %}
+  <div class="legend" style="margin-bottom:8px">
+    Ventana crítica: <b>{{ d(cp.summary.start) }}</b> → <b>{{ d(cp.summary.end) }}</b> ·
+    Duración: <b>{{ cp.summary.duration_working_days }}</b> d {% if cp.summary.sin_calendario %}naturales{% else %}hábiles{% endif %} ·
+    Tareas críticas: <b>{{ cp.summary.critical_count }}</b>
+    {%- if cp.summary.multi_branch %} · <b>{{ cp.summary.branch_count }}</b> ramas críticas{% endif -%}
+  </div>
+
+  {#- Secuencia(s) legible(s): tarea → tarea → tarea. Varias ramas = varias secuencias. -#}
+  {% for br in cp.branches %}
+  <div class="gnote" style="margin-bottom:6px">
+    {% if cp.branches|length > 1 %}<b>Rama {{ loop.index }}</b> ({{ d(br.start) }} → {{ d(br.end) }}, {{ br.duration_working_days }} d): {% endif %}
+    {% for s in br.sequence %}<span class="tlink" data-task="{{ s.task }}">{{ s.subject }}</span>{% if not loop.last %} <span style="color:var(--text-muted)">→</span> {% endif %}{% endfor %}
+  </div>
+  {% endfor %}
+  {% if cp.branches_truncated %}<div class="empty" style="border-left:3px solid #d97706">Se muestran las primeras rutas críticas; existen más combinaciones (enumeración acotada).</div>{% endif %}
+
+  {#- Detalle por tarea crítica: ES/EF/LS/LF + holgura total (0) + enlace. -#}
+  <div class="xwrap">
+  <table class="x">
+    <thead><tr><th>Tarea crítica</th><th>Inicio temprano</th><th>Fin temprano</th><th>Inicio tardío</th><th>Fin tardío</th><th class="num">Holgura total</th></tr></thead>
+    <tbody>
+    {% for n in cp.critical_tasks %}
+      <tr>
+        <td><span class="typ"><span class="dot over"></span>{% if n.is_milestone %}&#9670; {% endif %}<span class="tlink" data-task="{{ n.task }}">{{ n.subject }}</span></span></td>
+        <td>{{ d(n.es) }}</td><td>{{ d(n.ef) }}</td><td>{{ d(n.ls) }}</td><td>{{ d(n.lf) }}</td>
+        <td class="num">{{ n.total_slack }} d</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+{% elif cp and cp.evaluable %}
+<div class="empty">La red no tiene una ruta crítica determinante al corte.</div>
+{% elif cp and cp.reason == 'cycles' %}
+<div class="empty" style="border-left:3px solid #c02b2b">Ruta crítica no evaluable: existen ciclos de dependencias (ver sección 6).</div>
+{% elif cp and cp.reason == 'no_dated_tasks' %}
+<div class="empty">Sin tareas con fechas completas para derivar la ruta crítica.</div>
+{% else %}
+<div class="empty">Análisis de ruta crítica no disponible.</div>
 {% endif %}
 </div>

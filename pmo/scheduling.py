@@ -18,7 +18,8 @@ Fundamento (I.0):
   fuera de la red activa.
 
 I.1 entrega el **diagnóstico de integridad** + el **forward pass** (ES/EF hábil) como infraestructura
-común. Backward pass / slack (I.2) y ruta crítica (I.3) quedan DIFERIDOS.
+común. I.2 añade el **backward pass** + **holgura** (total/libre). I.3 **interpreta** ese CPM como
+**ruta crítica** (secuencias legibles + detalle), sin motor ni semántica nueva.
 """
 
 import frappe
@@ -527,5 +528,131 @@ def analyze_schedule_slack(project: str, status_date=None) -> dict:
 		"min_total_slack": min_slack,
 		"committed_margin_days": margin_days,
 		"deadline_breach_count": len(base["deadline_breach"]),
+	}
+	return base
+
+
+# --------------------------------------------------------------------------------------
+# Ruta crítica (I.3) — INTERPRETACIÓN/visualización del CPM ya calculado en I.2. READ-ONLY.
+# No es un motor nuevo ni añade semántica: compone sobre `analyze_schedule_slack`.
+# --------------------------------------------------------------------------------------
+_CRITICAL_BRANCH_CAP = 50  # cota anti-explosión de enumeración (se señala si trunca; nunca silencioso)
+
+
+def _critical_branches(cset: set, cedges: list, nodes_by: dict):
+	"""Enumera las rutas críticas (fuente→sumidero) dentro del SUBGRAFO crítico (slack ≤ 0). Varias ramas con
+	slack 0 → varias rutas; NO se inventa una sola cadena. Nodo crítico aislado → rama de una tarea."""
+	adj = {t: [] for t in cset}
+	indeg = {t: 0 for t in cset}
+	for p, s in cedges:
+		adj[p].append(s)
+		indeg[s] += 1
+	outdeg = {t: len(adj[t]) for t in cset}
+	paths, truncated = [], False
+
+	def dfs(u, path):
+		nonlocal truncated
+		if len(paths) >= _CRITICAL_BRANCH_CAP:
+			truncated = True
+			return
+		if outdeg[u] == 0:  # sumidero del subgrafo crítico
+			paths.append(path)
+			return
+		for v in sorted(adj[u], key=lambda x: (nodes_by[x]["es"], x)):
+			dfs(v, [*path, v])
+
+	for src in sorted((t for t in cset if indeg[t] == 0), key=lambda x: (nodes_by[x]["es"], x)):
+		dfs(src, [src])
+	return paths, truncated
+
+
+def analyze_critical_path(project: str, status_date=None) -> dict:
+	"""Ruta crítica (ADR-0017, I.3). READ-ONLY: compone sobre `analyze_schedule_slack` (I.2) — NO recalcula
+	CPM ni añade semántica. Devuelve las tareas críticas (ES/EF/LS/LF, slack 0), las rutas/ramas críticas
+	legibles (sin inventar una cadena única) y los totales (ventana y duración hábil de la ruta)."""
+	slack = analyze_schedule_slack(project, status_date)
+	cal = slack["calendar_available"]
+	base = {
+		"evaluable": False,
+		"reason": slack.get("reason"),
+		"calendar_available": cal,
+		"critical_tasks": [],
+		"task_names": [],
+		"branches": [],
+		"branches_truncated": False,
+		"summary": {
+			"evaluable": False,
+			"sin_calendario": not cal,
+			"critical_count": 0,
+			"branch_count": 0,
+			"multi_branch": False,
+			"start": None,
+			"end": None,
+			"duration_working_days": None,
+		},
+	}
+	if not slack["evaluable"]:
+		return base
+
+	nodes_by = {n["task"]: n for n in slack["nodes"]}
+	critical = [t for t in nodes_by if nodes_by[t]["is_critical"]]
+	base["evaluable"] = True
+	base["summary"]["evaluable"] = True
+	if not critical:
+		return base  # evaluable pero sin tareas críticas (red sin ruta determinante)
+
+	_, holiday_list, _by, _active, edges = _load_network(project)
+	cset = set(critical)
+	cedges = [(p, s) for p, s in edges if p in cset and s in cset]
+	paths, truncated = _critical_branches(cset, cedges, nodes_by)
+
+	branches = []
+	for path in paths:
+		start = nodes_by[path[0]]["es"]
+		end = nodes_by[path[-1]]["ef"]
+		branches.append(
+			{
+				"sequence": [{"task": t, "subject": nodes_by[t]["subject"]} for t in path],
+				"start": start,
+				"end": end,
+				"duration_working_days": working_days(start, end, holiday_list),
+			}
+		)
+
+	crit_tasks = sorted(
+		(
+			{
+				"task": n["task"],
+				"subject": n["subject"],
+				"is_milestone": n["is_milestone"],
+				"es": n["es"],
+				"ef": n["ef"],
+				"ls": n["ls"],
+				"lf": n["lf"],
+				"total_slack": n["total_slack"],
+			}
+			for n in (nodes_by[t] for t in critical)
+		),
+		key=lambda n: (n["es"], n["ef"]),
+	)
+	start = min(n["es"] for n in crit_tasks)
+	end = max(n["ef"] for n in crit_tasks)
+	base.update(
+		{
+			"critical_tasks": crit_tasks,
+			"task_names": sorted(cset),
+			"branches": branches,
+			"branches_truncated": truncated,
+		}
+	)
+	base["summary"] = {
+		"evaluable": True,
+		"sin_calendario": not cal,
+		"critical_count": len(critical),
+		"branch_count": len(branches),
+		"multi_branch": len(branches) > 1,
+		"start": start,
+		"end": end,
+		"duration_working_days": working_days(start, end, holiday_list),
 	}
 	return base
