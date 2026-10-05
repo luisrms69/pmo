@@ -684,6 +684,15 @@ def get_summary_html(project: str, cutoff: str | None = None) -> str:
 	ctx["milestones_total"] = len(ms)
 	# Señales de gobierno (fuente única) para etiquetar Cierre/Revisión como Pendiente/No requerido.
 	ctx["governance_flags"] = governance_flags(project)
+	# Integridad del programa (ADR-0017, I.1): solo el resumen compacto para la tarjeta del Resumen; el
+	# detalle vive en Estado/Cronograma. Read-only y degrada seguro ({} si falla).
+	ctx["schedule_integrity"] = _schedule_integrity(project, cutoff).get("summary") or {}
+	# Holgura de red (ADR-0017, I.2): solo el resumen compacto; el detalle (tabla ES/EF/LS/LF) vive en Estado.
+	ctx["schedule_slack"] = _schedule_slack(project, cutoff).get("summary") or {}
+	# Ruta crítica (ADR-0017, I.3): resumen compacto (ventana + duración + nº ramas); detalle en Estado.
+	ctx["critical_path"] = _schedule_critical(project, cutoff).get("summary") or {}
+	# Calendario del cronograma (Schedule Readiness): estado/label/sev ya resueltos en el dominio.
+	ctx["schedule_calendar"] = _schedule_readiness(project)
 	# PHI (ADR-0013): bloque de salud integral. Compone (no recalcula); decorado con etiquetas de usuario.
 	from pmo.phi import get_phi_view
 
@@ -1056,7 +1065,63 @@ def _schedule_view(project: str, cutoff=None) -> dict:
 		"deviations": _schedule_deviations(project, ind, baseline_snap, current_snap),
 		# Sección 5 (aditiva): consumo de esfuerzo por tarea hoja (real acumulado ≤ corte vs estimado total).
 		"effort": _effort_by_task(project, sd),
+		# Sección 6 (ADR-0017, I.1): diagnóstico de integridad del programa (read-only, degrada seguro).
+		"integrity": _schedule_integrity(project, sd),
+		# Sección 7 (ADR-0017, I.2): holgura / slack de la red (read-only, degrada seguro).
+		"slack": _schedule_slack(project, sd),
+		# Sección 8 (ADR-0017, I.3): ruta crítica (interpretación del CPM; read-only, degrada seguro).
+		"critical": _schedule_critical(project, sd),
+		# Calendario del cronograma (ADR-0017, Schedule Readiness): ¿cálculo confiable en días hábiles?
+		"calendar": _schedule_readiness(project),
 	}
+
+
+def _schedule_integrity(project: str, cutoff=None) -> dict:
+	"""Envoltura read-only de la capa de dominio `pmo.scheduling`. Nunca escribe; nunca lanza: si el
+	análisis falla por datos inesperados, degrada a un payload vacío y lo registra (no rompe Estado)."""
+	from pmo.scheduling import analyze_schedule_integrity
+
+	try:
+		return analyze_schedule_integrity(project, status_date=cutoff)
+	except Exception:
+		frappe.logger("pmo").warning(f"schedule_integrity failed for {project}", exc_info=True)
+		return {}
+
+
+def _schedule_slack(project: str, cutoff=None) -> dict:
+	"""Envoltura read-only de `pmo.scheduling.analyze_schedule_slack` (I.2). Misma política que I.1: nunca
+	escribe, nunca lanza; si falla, degrada a {} y lo registra (no rompe Estado)."""
+	from pmo.scheduling import analyze_schedule_slack
+
+	try:
+		return analyze_schedule_slack(project, status_date=cutoff)
+	except Exception:
+		frappe.logger("pmo").warning(f"schedule_slack failed for {project}", exc_info=True)
+		return {}
+
+
+def _schedule_critical(project: str, cutoff=None) -> dict:
+	"""Envoltura read-only de `pmo.scheduling.analyze_critical_path` (I.3). Misma política: nunca escribe,
+	nunca lanza; si falla, degrada a {} y lo registra (no rompe Estado)."""
+	from pmo.scheduling import analyze_critical_path
+
+	try:
+		return analyze_critical_path(project, status_date=cutoff)
+	except Exception:
+		frappe.logger("pmo").warning(f"critical_path failed for {project}", exc_info=True)
+		return {}
+
+
+def _schedule_readiness(project: str) -> dict:
+	"""Envoltura read-only de `pmo.scheduling.schedule_readiness` (Calendario del cronograma). Nunca escribe,
+	nunca lanza; si falla, degrada a {} y lo registra (no rompe Estado)."""
+	from pmo.scheduling import schedule_readiness
+
+	try:
+		return schedule_readiness(project)
+	except Exception:
+		frappe.logger("pmo").warning(f"schedule_readiness failed for {project}", exc_info=True)
+		return {}
 
 
 @frappe.whitelist()

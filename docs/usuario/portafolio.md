@@ -13,7 +13,11 @@ esfuerzo Planificado vs Real) y lo presenta en tres capas:
    excede compromiso, sin línea base) y una barra de distribución de salud.
 2. **Requiere atención** — excepciones: proyectos Desviados / En riesgo / con vencidas / con forecast sobre el
    compromiso, ordenados por severidad. Usa únicamente señales existentes (sin score nuevo).
-3. **Portafolio** — la tabla completa con todo el detalle (una fila por proyecto).
+3. **Cronograma** — tabla específica de Schedule Intelligence (ADR-0017), una fila por proyecto: fin
+   pronosticado, desvío vs línea base / compromiso, margen vs compromiso, tareas en ruta crítica, deadlines
+   incumplidos, problemas de planeación y estado del **Calendario del cronograma** (días hábiles vs
+   naturales). Es solo consumo: los valores, severidades y etiquetas ya vienen resueltos del dominio.
+4. **Portafolio** — la tabla completa con todo el detalle (una fila por proyecto).
 
 Desde cualquier proyecto (en "Requiere atención" o en la tabla) se abre **`PMO Project Control`** de ese
 proyecto (que a su vez ofrece "Abrir Project" al documento nativo); el detalle a fecha sigue en

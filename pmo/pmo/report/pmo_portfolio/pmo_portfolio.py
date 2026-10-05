@@ -135,6 +135,12 @@ def _project_row(project):
 		# columnas nuevas — expuestas en la fila para consumidores/resúmenes.
 		**governance_flags(project),
 	}
+	# Schedule Intelligence (ADR-0017): señales de cronograma ya calculadas/clasificadas en el dominio
+	# (scheduling.portfolio_schedule_signals compone slack+integrity+readiness). Se añaden a la FILA para
+	# la tabla "Cronograma" de la Page; NO se exponen como columnas del Script Report (_columns intacto).
+	from pmo.scheduling import portfolio_schedule_signals
+
+	row.update(portfolio_schedule_signals(project))
 	# PHI (ADR-0013): reutiliza el mismo `report` (build_status_report) ya calculado (modo ligero, D8).
 	row.update(phi_for_row(project, report))
 	# Financial Health (ADR-0013b): indicador financiero SEPARADO; solo con acceso económico por proyecto.

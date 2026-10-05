@@ -1,35 +1,38 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-09-30
-**Rama activa:** `feat/pmo-unassigned-and-cr-priority` (base `version-16` @ v0.18.0 → objetivo PR **v0.19.0**, MINOR)
-**Tarea actual:** `/ship` de cierre **v0.19.0**. Bloque pequeño y congelado sobre Project Control / Change
-Control (sin tocar PHI/Financial): (A) **Tasks exigibles sin responsable** — `_planning_section.unassigned`
-cuenta solo hojas activas, sin ToDo abierto, con `exp_start_date` ≤ Status Date (futuras/sin fecha no
-penalizan); visible en Resumen (bloque Planeación) y Reporte Ejecutivo. (B) **Change Request Priority**
-obligatorio (default Medium), visible en Reporte Ejecutivo y bandeja de Gobernanza, que ordena CR
-High→Medium→Low (solo visual). (C) acceso **"Ir a proyecto"** (botón). (D) fix de normalización
-`datetime.date → str` del cutoff en `build_project_control`/`get_summary_html` (417 al abrir Resumen/imprimir)
-con test de regresión. Squash & Merge → tag `v0.19.0` sobre el merge commit → GitHub Release.
-**Pendiente NO bloqueante:** UX/navegación de la tabla de Portfolio.
-**Siguiente paso separado (NO en este bloque):** actualización de staging/producción.
+**Fecha:** 2026-10-05
+**Rama activa:** `feat/pmo-schedule-intelligence` (base `version-16` @ v0.19.0 → objetivo PR **v0.20.0**, MINOR)
+**Tarea actual:** `/ship pr` de cierre **v0.20.0** — **Schedule Intelligence** (read-only) end-to-end.
+Alcance congelado: **ADR-0017** + **I.1** diagnóstico de integridad ("Revisión del cronograma") + **I.2**
+holgura/slack (backward pass, margen vs compromiso, deadline por `EF>deadline`) + **I.3** ruta crítica
+(secuencias, multi-rama, resaltado en Gantt) + **SSOT de clasificación + renombrado UX** (sin jerga "red")
++ **Schedule Readiness** ("Calendario del cronograma", precedencia Project→Company, cobertura de rango) +
+**integración en PMO Portfolio** vía segunda tabla **Cronograma** (read-only). Cubre el **issue #9** (CPM /
+ruta crítica) → `Closes #9`. Capa de dominio en `pmo/scheduling.py`; nada reprograma ni toca la cascada FS
+nativa. PR hacia `version-16`; **sin merge** (lo autoriza el usuario aparte, luego `/ship release` v0.20.0).
+**Diferido/condicional:** Schedule Automation (constraints SNET/FNLT/MSO/MFO) — solo diseño, sin código.
+**Datos QA del entorno (NO parte del PR):** Holiday List `PMO QA Calendario 2026` asignada a `PROJ-0007` en
+`pmo-v16.dev` (limpieza pendiente de autorización aparte).
 
 ---
 
 ## Recuperación rápida
 
 Estoy trabajando en:
-El **cierre `/ship` de la rama `feat/pmo-home-rescate`** (PR #22) hacia `version-16` (v0.18.0). Todo
-implementado y con QA visual aprobado (PHI + Financial Health incluidos); suites del bloque verdes.
+El **cierre `/ship pr` de la rama `feat/pmo-schedule-intelligence`** hacia `version-16` (objetivo v0.20.0,
+MINOR). Schedule Intelligence I.0–I.3 + Readiness + Portfolio/Cronograma implementado, con QA visual
+aprobado y suites verdes (scheduling 53, portfolio 8, project_control 44).
 
 Plan que estoy siguiendo:
-`/ship`: docs (CHANGELOG/CONTINUITY con PHI+Financial) → push → actualizar `/ship comentario-pr 22` →
-esperar **CI verde** → `/ship merge` (Squash) → `/ship release` (tag v0.18.0 + GitHub Release) → limpieza.
+`/ship pr`: bump 0.20.0 + CHANGELOG/CONTINUITY → push → crear PR hacia `version-16` con `Closes #9` →
+validaciones finales / CI. **DETENER antes de merge** (lo autoriza el usuario); luego `/ship merge` +
+`/ship release` (tag v0.20.0 + GitHub Release) + limpieza.
 
 Objetivo inmediato:
-CI verde en PR #22 (HEAD con PHI+Financial) para proceder a merge + release.
+PR OPEN contra `version-16` con el frente Schedule Intelligence, listo para merge (CI en verde).
 
 Criterio de avance:
-PR #22 OPEN contra `version-16`, working tree limpio, CI verde; luego merge + release + limpieza.
+PR OPEN, working tree limpio, versión 0.20.0 en la rama, `Closes #9`; luego merge + release + limpieza.
 
 ---
 

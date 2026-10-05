@@ -97,6 +97,10 @@ class PMOPortfolio {
 					<div data-region="attention"></div>
 				</div>
 				<div class="pmo-pf-section">
+					<div class="pmo-pf-h2">${__("Schedule")}</div>
+					<div data-region="cronograma"></div>
+				</div>
+				<div class="pmo-pf-section">
 					<div class="pmo-pf-h2">${__("Portfolio")}</div>
 					<div data-region="table"></div>
 				</div>
@@ -170,6 +174,7 @@ class PMOPortfolio {
 					)}</div>`
 				);
 			this.$root.find('[data-region="table"]').html("");
+			this.$root.find('[data-region="cronograma"]').html("");
 			this.$root.find('[data-region="phi"]').html("");
 			return;
 		}
@@ -178,6 +183,7 @@ class PMOPortfolio {
 		this._render_phi();
 		this._render_customers();
 		this._render_attention();
+		this._render_cronograma();
 		this._render_table();
 	}
 
@@ -361,6 +367,81 @@ class PMOPortfolio {
 		$r.html(`<div class="pmo-pf-attlist">${items}</div>`);
 	}
 
+	// --- Cronograma: tabla específica de Schedule Intelligence (ADR-0017). El JS SOLO presenta; todos los
+	// valores, severidades y labels vienen ya resueltos del dominio (scheduling.portfolio_schedule_signals /
+	// build_status_report). No hay umbrales, scoring ni reglas de negocio aquí. Orden del motor sin cambios.
+	_render_cronograma() {
+		const h = (v) => frappe.utils.escape_html(v == null ? "" : String(v));
+		const dash = '<span class="dash">—</span>';
+		// Mapa token→clase CSS (presentación pura; el token lo decide el dominio).
+		const sevCls = (t) =>
+			t === "bad" || t === "critical" || t === "breach"
+				? "bad"
+				: t === "warn"
+				? "warn"
+				: t === "ok"
+				? "ok"
+				: "";
+		// Número con severidad del dominio (sin comparar en JS). null → "—".
+		const numSev = (v, sev) =>
+			v == null ? dash : `<span class="${sevCls(sev)}">${h(v)}</span>`;
+		// Slip (SSOT status report, sin token de severidad): formato de signo cosmético, SIN color.
+		const slip = (v) => (v == null ? dash : `${v > 0 ? "+" : ""}${v} d`);
+		const dt = (v) => (v ? h(v) : dash);
+		// Margen vs compromiso: label y severidad ya resueltos en el dominio.
+		const margin = (row) =>
+			row.committed_margin_label == null
+				? dash
+				: `<span class="${sevCls(row.committed_margin_sev)}">${h(
+						row.committed_margin_label
+				  )}</span>`;
+		// Calendario: dot de severidad (dominio) + texto corto (nombre/estado), compacto con ellipsis.
+		const cal = (row) =>
+			row.calendar_short == null
+				? dash
+				: `<span class="cal-dot ${sevCls(
+						row.calendar_sev
+				  )}"></span><span class="cal-t" title="${h(row.calendar_short)}">${h(
+						row.calendar_short
+				  )}</span>`;
+
+		const body = this.rows
+			.map(
+				(row) => `
+			<tr>
+				<td class="cell-project"><a class="proj" data-project="${h(row.project)}">${h(
+					row.project_name || row.project
+				)}</a></td>
+				<td class="sec">${dt(row.forecast_end)}</td>
+				<td class="num sec">${slip(row.slip_baseline)}</td>
+				<td class="num sec">${slip(row.slip_committed)}</td>
+				<td class="num">${margin(row)}</td>
+				<td class="num">${numSev(row.critical_count, row.critical_sev)}</td>
+				<td class="num">${numSev(row.deadline_breach_count, row.deadline_breach_sev)}</td>
+				<td class="num">${numSev(row.planning_problems, row.planning_problems_sev)}</td>
+				<td class="cal-cell">${cal(row)}</td>
+			</tr>`
+			)
+			.join("");
+		this.$root.find('[data-region="cronograma"]').html(`
+			<div class="pmo-pf-tablewrap">
+			<table class="pmo-pf-table pmo-pf-cron">
+				<thead><tr>
+					<th>${__("Project")}</th>
+					<th>${__("Forecast end")}</th>
+					<th class="num">${__("Slip vs Baseline (d)")}</th>
+					<th class="num">${__("Slip vs commitment (d)")}</th>
+					<th class="num">${__("Margin vs commitment")}</th>
+					<th class="num">${__("Critical tasks")}</th>
+					<th class="num">${__("Deadlines missed")}</th>
+					<th class="num">${__("Planning issues")}</th>
+					<th>${__("Calendar")}</th>
+				</tr></thead>
+				<tbody>${body}</tbody>
+			</table>
+			</div>`);
+	}
+
 	// --- Capa 3: Portafolio completo (TODAS las columnas; orden del motor sin cambios) ---
 	_render_table() {
 		const h = (v) => frappe.utils.escape_html(v == null ? "" : String(v));
@@ -516,6 +597,12 @@ class PMOPortfolio {
 .pmo-pf-phi tr.phi-row.warn td:first-child{border-left-color:var(--orange-500)}
 .pmo-pf-phi tr.phi-row.ok td:first-child{border-left-color:var(--green-500)}
 .pmo-pf-phi .phi-cov{color:var(--text-muted);font-size:11px}.pmo-pf-phi .phi-cond{color:var(--red-600);font-weight:600}
+/* Cronograma (ADR-0017): severidad por token del dominio; sin lógica en JS. */
+.pmo-pf-cron td .ok{color:var(--green-600)}.pmo-pf-cron td .warn{color:var(--orange-600);font-weight:600}.pmo-pf-cron td .bad{color:var(--red-600);font-weight:700}
+.pmo-pf-cron .cal-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;background:var(--gray-400)}
+.pmo-pf-cron .cal-dot.ok{background:var(--green-500)}.pmo-pf-cron .cal-dot.warn{background:var(--orange-500)}.pmo-pf-cron .cal-dot.bad{background:var(--red-500)}
+.pmo-pf-cron .cal-cell{max-width:220px}
+.pmo-pf-cron .cal-t{display:inline-block;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;font-size:11px;color:var(--text-muted)}
 `;
 		const style = document.createElement("style");
 		style.id = "pmo-pf-styles";

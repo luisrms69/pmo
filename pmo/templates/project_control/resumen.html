@@ -11,6 +11,9 @@
 {%- set r = pc.risk -%}
 {%- macro d(x) -%}{% if x %}{{ x }}{% else %}—{% endif %}{%- endmacro -%}
 {%- macro slip(x) -%}{% if x is none %}—{% else %}{{ x }} d{% endif %}{%- endmacro -%}
+{#- sevcls: mapea el token de severidad que decide el dominio (scheduling.py) a una clase CSS. El template
+    NO decide severidad (no evalúa umbrales); solo presenta. -#}
+{%- macro sevcls(s) -%}{% if s in ('bad','critical','breach') %}bad{% elif s == 'warn' %}warn{% elif s == 'ok' %}ok{% endif %}{%- endmacro -%}
 {%- macro hrs(x) -%}{% if x is none %}—{% else %}{{ x|int if x == x|int else x }} h{% endif %}{%- endmacro -%}
 {%- set worst = [kp.slip_committed_days or 0, kp.slip_baseline_days or 0] | max -%}
 <div class="pmo-sum">
@@ -245,6 +248,47 @@
       {%- if ua.count > 5 %}<div class="sub"><span class="k" style="color:var(--text-muted)">y {{ ua.count - 5 }} más</span></div>{% endif -%}
     </div>
     {%- endif -%}
+  </div>
+  {% endif %}
+
+  {#- Integridad del programa (ADR-0017, I.1) — contador compacto; el detalle vive en Estado/Cronograma -#}
+  {% if pc.schedule_integrity %}
+  {%- set si = pc.schedule_integrity -%}
+  <div class="cp">
+    <div class="cphd"><span class="t">Revisión del cronograma</span><a class="drill pmo-sum-goto" data-view="status">Ver detalle</a></div>
+    <div class="lead"><span class="big {{ sevcls(si.sev.total) }}">{{ si.total }}</span><span class="cap">Problemas de planeación</span></div>
+    <div class="subs">
+      <div class="sub"><span class="k">Dependencias incoherentes</span><span class="val {{ sevcls(si.sev.incoherencias) }}">{{ si.incoherencias }}</span></div>
+      <div class="sub"><span class="k">Deadlines incumplidos (plan)</span><span class="val {{ sevcls(si.sev.deadline_excedido) }}">{{ si.deadline_excedido }}</span></div>
+      <div class="sub"><span class="k">Tareas sin fecha de inicio o fin</span><span class="val {{ sevcls(si.sev.fechas_incompletas) }}">{{ si.fechas_incompletas }}</span></div>
+      {%- if si.show_ciclos %}<div class="sub"><span class="k">Dependencias circulares</span><span class="val {{ sevcls(si.sev.ciclos) }}">{{ si.ciclos }}</span></div>{% endif -%}
+      {%- if si.fines_divergen %}<div class="sub"><span class="k" style="color:var(--text-muted)">Fechas de fin que no coinciden (ver detalle)</span></div>{% endif -%}
+      {#- Calendario del cronograma (Schedule Readiness): estado/label/sev resueltos en el dominio. -#}
+      {%- set cal = pc.schedule_calendar -%}
+      {%- if cal and cal.short %}<div class="sub"><span class="k">Calendario del cronograma</span><span class="val {{ sevcls(cal.sev) }}">{{ cal.short }}</span></div>{% endif -%}
+    </div>
+  </div>
+  {% endif %}
+
+  {#- Holgura de tareas (ADR-0017, I.2) — contador compacto; el detalle (ES/EF/LS/LF) vive en Estado/Cronograma.
+     Toda severidad la decide el dominio (sk.sev.*); el template solo mapea con sevcls. -#}
+  {% if pc.schedule_slack and pc.schedule_slack.evaluable %}
+  {%- set sk = pc.schedule_slack -%}
+  <div class="cp">
+    <div class="cphd"><span class="t">Holgura de tareas</span><a class="drill pmo-sum-goto" data-view="status">Ver detalle</a></div>
+    <div class="lead"><span class="big {{ sevcls(sk.sev.critical_count) }}">{{ sk.critical_count }}</span><span class="cap">Tareas en ruta crítica</span></div>
+    <div class="subs">
+      <div class="sub"><span class="k">Holgura total mínima</span><span class="val {{ sevcls(sk.sev.min_total_slack) }}">{{ sk.min_total_slack_label }}</span></div>
+      {%- if sk.show_committed_margin %}<div class="sub"><span class="k">Margen vs fecha comprometida</span><span class="val {{ sevcls(sk.sev.committed_margin) }}">{{ sk.committed_margin_label }}</span></div>{% endif -%}
+      {%- if sk.show_deadline_breach %}<div class="sub"><span class="k">Deadlines incumplidos (cálculo)</span><span class="val {{ sevcls(sk.sev.deadline_breach) }}">{{ sk.deadline_breach_count }}</span></div>{% endif -%}
+      {#- Ruta crítica (ADR-0017, I.3): periodo y duración compactos; el detalle/secuencia vive en Estado. -#}
+      {%- set cp = pc.critical_path -%}
+      {%- if cp.show %}
+      <div class="sub"><span class="k">Duración ruta crítica</span><span class="val">{{ cp.duration_working_days }} d</span></div>
+      <div class="sub"><span class="k">Periodo de la ruta crítica</span><span class="val">{{ cp.start }} → {{ cp.end }}</span></div>
+      {%- if cp.multi_branch %}<div class="sub"><span class="k">Ramas críticas</span><span class="val {{ sevcls(cp.sev.multi_branch) }}">{{ cp.branch_count }}</span></div>{% endif -%}
+      {%- endif -%}
+    </div>
   </div>
   {% endif %}
 </div>

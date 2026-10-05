@@ -1,5 +1,36 @@
 # Changelog — pmo
 
+## [0.20.0] — 2026-10-05
+
+**Schedule Intelligence** — capa de análisis de cronograma **estrictamente read-only** sobre la red nativa
+`Task Depends On` (FS implícito) + calendario laboral. No crea un segundo modelo de forecast, no reprograma
+y no toca la cascada FS nativa de ERPNext. Cubre el alcance del issue #9 (CPM / ruta crítica). ADR-0017.
+
+### Added
+- **ADR-0017** — fundamento (duración en días hábiles, calendario `Project.holiday_list` →
+  `Company.default_holiday_list`, degradación segura), decisiones de read-only y SSOT de clasificación.
+- **I.1 — Revisión del cronograma (diagnóstico de integridad)**: dependencias incoherentes (FS),
+  multi-predecesora inconsistente, ciclos, tareas sin fecha de inicio/fin, día no laborable, divergencia
+  hábil vs natural, deadline incumplido (plan) y reconciliación de fines. Forward pass (ES/EF) reutilizable.
+- **I.2 — Holgura de tareas (Slack/Float)**: backward pass anclado en el `max EF` de la red; holgura total
+  y libre; criticidad = holgura ≤ 0. Señales **separadas** del ancla: margen vs `pmo_committed_end_date` y
+  deadline incumplido = `EF > pmo_deadline` (con margen al deadline).
+- **I.3 — Ruta crítica**: interpretación del CPM de I.2 — secuencia(s) legible(s), múltiples ramas críticas
+  (sin inventar una cadena única), periodo y duración, resaltado en el Gantt propio de Estado.
+- **Calendario del cronograma (Schedule Readiness)**: indica si el cálculo es confiable en días hábiles;
+  precedencia explícita Project→Company; cobertura de rango sin fallback silencioso; estados ready /
+  missing / insufficient_coverage.
+- **PMO Portfolio — tabla "Cronograma"**: segunda tabla read-only en la Page que consume las señales de
+  Schedule Intelligence (fin pronosticado, slips, margen vs compromiso, tareas críticas, deadlines
+  incumplidos, problemas de planeación, calendario) sin inflar la tabla ejecutiva existente.
+
+### Changed
+- **SSOT de clasificación**: toda severidad/estado/label/visibilidad se decide en el dominio
+  (`pmo/scheduling.py`); los templates y el JS solo presentan (mapean token→clase). Sin umbrales en
+  plantillas/JS.
+- **Renombrado de UI a lenguaje claro** (sin jerga "red"): "Revisión del cronograma", "Holgura de tareas",
+  "Tareas sin fecha de inicio o fin", "Periodo de la ruta crítica"; "Ruta crítica" se mantiene.
+
 ## [0.19.0] — 2026-09-30
 
 Ajustes pequeños sobre Project Control y Change Control (sin tocar PHI/Financial): desviación accionable de

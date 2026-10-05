@@ -9,6 +9,9 @@
 {%- set ex = sv.execution -%}
 {%- macro d(x) -%}{% if x %}{{ x }}{% else %}—{% endif %}{%- endmacro -%}
 {%- macro slip(x) -%}{% if x is none %}—{% elif x > 0 %}+{{ x }} d{% else %}{{ x }} d{% endif %}{%- endmacro -%}
+{#- sevcls: mapea el token de severidad decidido en el dominio (scheduling.py) a una clase CSS. El template
+    NO decide severidad (no evalúa umbrales): solo presenta lo que el dominio ya clasificó. -#}
+{%- macro sevcls(s) -%}{% if s in ('bad','critical','breach') %}bad{% elif s == 'warn' %}warn{% elif s == 'ok' %}ok{% endif %}{%- endmacro -%}
 <div class="pmo-sch">
 <style>
 .pmo-sch{--acc:#2b3a67;--bl:#9aa3bd;--cur:#2490ef;color:var(--text-color);font-size:13px}
@@ -84,6 +87,16 @@
 .pmo-sch .ebar{display:inline-block;width:96px;height:9px;border-radius:5px;background:var(--subtle-fg,var(--gray-100));border:1px solid var(--border-color);vertical-align:middle;overflow:hidden;margin-right:8px}
 .pmo-sch .ebar>span{display:block;height:100%;background:#1f9d55;border-radius:5px}
 .pmo-sch .ebar>span.ov{background:#c02b2b}
+/* Calendario del cronograma (Schedule Readiness): discreto cuando Listo; caja visible cuando falta/insuf. */
+.pmo-sch .calbox{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 14px;font-size:12px}
+.pmo-sch .calbox .caldot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.pmo-sch .calbox.ok .caldot{background:#1f9d55}.pmo-sch .calbox.warn .caldot{background:#d97706}.pmo-sch .calbox.bad .caldot{background:#c02b2b}
+.pmo-sch .calbox .calhint{flex-basis:100%;color:var(--text-muted);margin-top:2px}
+.pmo-sch .calbox.ok,.pmo-sch .calbox.warn,.pmo-sch .calbox.bad{border-radius:8px;border:1px solid var(--border-color)}
+.pmo-sch .calbox.ok{padding:8px 12px;background:rgba(31,157,85,.06);border-left:4px solid #1f9d55}
+.pmo-sch .calbox.warn,.pmo-sch .calbox.bad{padding:10px 14px}
+.pmo-sch .calbox.warn{background:rgba(217,119,6,.08);border-left:4px solid #d97706}
+.pmo-sch .calbox.bad{background:rgba(192,43,43,.09);border-left:4px solid #c02b2b}
 </style>
 
 {#- Cabecera + badge de estado del cronograma (derivado de slip vs línea base) -#}
@@ -96,6 +109,18 @@
   {%- elif (h.slip_baseline or 0) > 0 -%}<span class="sbadge bad">Atrasado +{{ h.slip_baseline }} d</span>
   {%- else -%}<span class="sbadge ok">En plan</span>{%- endif -%}
 </div>
+
+{#- Calendario del cronograma (ADR-0017, Schedule Readiness). Aviso compacto al INICIO: discreto cuando el
+    cálculo es confiable (días hábiles) y más visible cuando falta calendario o la cobertura es insuficiente.
+    Estado/label/severidad/hint vienen ya resueltos del dominio (sv.calendar); el template solo presenta. -#}
+{%- set cal = sv.calendar or {} -%}
+{% if cal and cal.label %}
+<div class="calbox {{ sevcls(cal.sev) }}">
+  <span class="caldot"></span>
+  <span class="calmsg">{{ cal.label }}</span>
+  {%- if cal.hint %}<div class="calhint">{{ cal.hint }}</div>{% endif -%}
+</div>
+{% endif %}
 
 {#- 1. Estado del cronograma -#}
 <div class="sec">1. Estado del cronograma</div>
@@ -119,7 +144,9 @@
   <span><i class="rmv"></i>Retirada del plan</span>
 </div>
 {% if not h.has_baseline %}<div class="gnote">Sin línea base vigente al corte: se muestra solo el plan vigente (sin comparación).</div>{% endif %}
+{%- set crit_names = (sv.critical.task_names if sv.critical else none) or [] -%}
 {% if g.tasks %}
+{% if crit_names %}<div class="legend" style="margin-bottom:6px"><span><i style="background:#c02b2b;border-radius:50%;width:8px;height:8px"></i>Ruta crítica (holgura 0)</span></div>{% endif %}
 <div class="gwrap">
 <table class="g">
   <colgroup><col class="c-task"><col class="c-date"><col class="c-date"><col class="c-lane"></colgroup>
@@ -128,6 +155,7 @@
   {% for t in g.tasks %}
     <tr>
       <td class="tname {% if t.is_group %}grp{% endif %}" style="padding-left:{{ 8 + t.depth * 14 }}px">
+        {% if t.name in crit_names %}<span title="Ruta crítica" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#c02b2b;margin-right:5px;vertical-align:middle"></span>{% endif %}
         {% if t.is_milestone %}&#9670; {% endif %}
         {% if t.removed %}<span class="rm">{{ t.subject }}</span>{% else %}<a data-task="{{ t.name }}">{{ t.subject }}</a>{% endif %}
       </td>
@@ -231,5 +259,153 @@
 </div>
 {% else %}
 <div class="empty">Sin tareas hoja con esfuerzo.</div>
+{% endif %}
+
+{#- 6. Revisión del cronograma (ADR-0017, I.1). Diagnóstico READ-ONLY de la red nativa Task Depends On
+    (FS implícito) + calendario laboral. Solo señala divergencias; NO sustituye ninguna fecha ni reprograma.
+    Degrada seguro: sin calendario resoluble se omiten los chequeos dependientes de calendario. -#}
+{%- set it = sv.integrity or {} -%}
+{%- set dg = it.diagnostics or {} -%}
+{%- set en = it.ends or {} -%}
+<div class="sec">6. Revisión del cronograma <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">— problemas de planeación en tareas, fechas y dependencias (solo lectura, no reprograma)</span></div>
+{% if it %}
+  {%- set has_findings = (dg.incomplete_dates or dg.incoherent or dg.multi_predecessor or dg.cycles or dg.deadline_exceeded or dg.non_working_day or dg.natural_vs_working) -%}
+  {% if has_findings %}
+  <div class="xwrap">
+  <table class="x">
+    <thead><tr><th>Hallazgo</th><th>Tarea / Hito</th><th>Detalle</th></tr></thead>
+    <tbody>
+    {% for r in dg.cycles %}
+      <tr><td><span class="typ"><span class="dot over"></span>Ciclo de dependencias</span></td>
+          <td colspan="2">{{ r.tasks | join(' → ') }}</td></tr>
+    {% endfor %}
+    {% for r in dg.incoherent %}
+      <tr><td><span class="typ"><span class="dot over"></span>Dependencia incoherente</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>Inicia {{ d(r.task_start) }} antes de que termine su predecesora <span class="tlink" data-task="{{ r.predecessor }}">{{ r.predecessor }}</span> ({{ d(r.pred_end) }}).</td></tr>
+    {% endfor %}
+    {% for r in dg.multi_predecessor %}
+      <tr><td><span class="typ"><span class="dot shift"></span>Multi-predecesora inconsistente</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>Inicia {{ d(r.task_start) }} antes del fin de alguna de sus {{ r.predecessors | length }} predecesoras.</td></tr>
+    {% endfor %}
+    {% for r in dg.deadline_exceeded %}
+      <tr><td><span class="typ"><span class="dot over"></span>Deadline incumplido</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>Fin plan vigente {{ d(r.exp_end) }} &gt; deadline {{ d(r.deadline) }} <span class="bad">(+{{ r.slip_days }} d)</span>.</td></tr>
+    {% endfor %}
+    {% for r in dg.incomplete_dates %}
+      <tr><td><span class="typ"><span class="dot rm"></span>Tarea sin fecha de inicio o fin</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>Falta {{ r.missing | join(' y ') | replace('start','fecha de inicio') | replace('end','fecha de fin') }}.</td></tr>
+    {% endfor %}
+    {% for r in dg.non_working_day %}
+      <tr><td><span class="typ"><span class="dot shift"></span>Límite en día no laborable</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>El {{ 'inicio' if r.which == 'start' else 'fin' }} cae en día no laborable ({{ d(r.date) }}).</td></tr>
+    {% endfor %}
+    {% for r in dg.natural_vs_working %}
+      <tr><td><span class="typ"><span class="dot shift"></span>Divergencia hábil vs natural</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>{{ r.calendar_days }} días naturales (cascada nativa) vs {{ r.working_days }} días hábiles.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="empty">Sin problemas de planeación detectados al corte.</div>
+  {% endif %}
+  {% if en.diverges %}
+  <div class="empty" style="border-left:3px solid #d97706">Fechas de fin que no coinciden (diagnóstico, no se corrige): fin calculado {{ d(en.max_ef) or '—' }} · fin del plan vigente más tardío {{ d(en.max_exp_end) or '—' }} · fin del proyecto {{ d(en.project_expected_end) or '—' }}.</div>
+  {% endif %}
+{% else %}
+<div class="empty">Revisión del cronograma no disponible.</div>
+{% endif %}
+
+{#- 7. Holgura de tareas (ADR-0017, I.2). CPM base READ-ONLY: forward + backward sobre la red FS actual,
+    ancla = max EF de las sumidero. Holgura total y libre en días hábiles; ruta crítica = holgura ≤ 0.
+    Toda severidad la decide el dominio (slack_sev / deadline_sev / margin severity); el template solo mapea. -#}
+{%- set sl = sv.slack or {} -%}
+<div class="sec">7. Holgura de tareas <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">— cuántos días puede retrasarse cada tarea sin mover la fecha final (solo lectura, no reprograma)</span></div>
+{% if sl and sl.evaluable %}
+  <div class="legend" style="margin-bottom:8px">
+    Fin calculado del proyecto: <b>{{ d(sl.project_finish) }}</b> ·
+    Tareas críticas (holgura 0): <b>{{ sl.summary.critical_count }}</b>
+    {%- if sl.margin_vs_committed and sl.margin_vs_committed.margin_days is not none %} · Margen vs fecha comprometida ({{ d(sl.margin_vs_committed.committed_end) }}): <b class="{{ sevcls(sl.margin_vs_committed.severity) }}">{% if sl.margin_vs_committed.margin_days > 0 %}+{% endif %}{{ sl.margin_vs_committed.margin_days }} d háb.</b>{% endif -%}
+    {%- if sl.incomplete_excluded %} · <span style="color:var(--text-muted)">{{ sl.incomplete_excluded }} tarea(s) excluida(s) por no tener fecha de inicio o fin</span>{% endif -%}
+  </div>
+  <div class="xwrap">
+  <table class="x">
+    <thead><tr><th>Tarea / Hito</th><th>Inicio temprano</th><th>Fin temprano</th><th>Inicio tardío</th><th>Fin tardío</th><th class="num">Holgura total</th><th class="num">Holgura libre</th><th class="num">Margen a deadline</th><th>Crítica</th></tr></thead>
+    <tbody>
+    {% for n in sl.nodes %}
+      <tr>
+        <td>{% if n.is_milestone %}&#9670; {% endif %}<span class="tlink" data-task="{{ n.task }}">{{ n.subject }}</span></td>
+        <td>{{ d(n.es) }}</td><td>{{ d(n.ef) }}</td><td>{{ d(n.ls) }}</td><td>{{ d(n.lf) }}</td>
+        <td class="num {{ sevcls(n.slack_sev) }}">{{ n.total_slack }} d</td>
+        <td class="num">{{ n.free_slack }} d</td>
+        <td class="num {{ sevcls(n.deadline_sev) }}">{% if n.deadline_margin is none %}—{% else %}{% if n.deadline_margin > 0 %}+{% endif %}{{ n.deadline_margin }} d{% endif %}</td>
+        <td>{% if n.is_critical %}<span class="typ"><span class="dot over"></span>Crítica</span>{% else %}<span style="color:var(--text-muted)">—</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if sl.deadline_breach %}
+  <div class="empty" style="border-left:3px solid #c02b2b">Deadline incumplido (señal separada): la fecha de fin calculada (fin temprano) ya supera el deadline de la tarea — {% for r in sl.deadline_breach %}<span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span> (fin {{ d(r.ef) }} &gt; {{ d(r.deadline) }}, +{{ r.over_days }} d){% if not loop.last %} · {% endif %}{% endfor %}.</div>
+  {% endif %}
+{% elif sl and sl.reason == 'cycles' %}
+<div class="empty" style="border-left:3px solid #c02b2b">No se puede calcular la holgura: hay dependencias circulares entre tareas (ver sección 6).</div>
+{% elif sl and sl.reason == 'no_dated_tasks' %}
+<div class="empty">Sin tareas con fecha de inicio y fin para calcular la holgura.</div>
+{% else %}
+<div class="empty">Análisis de holgura no disponible.</div>
+{% endif %}
+
+{#- 8. Ruta crítica (ADR-0017, I.3). INTERPRETACIÓN del CPM ya calculado (I.2): tareas con holgura 0 que
+    condicionan el fin del proyecto. No es motor nuevo ni semántica nueva. Si hay varias ramas con slack 0,
+    se muestran como múltiples rutas (no se inventa una cadena única). READ-ONLY. -#}
+{%- set cp = sv.critical or {} -%}
+<div class="sec">8. Ruta crítica <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">— tareas que condicionan la fecha final (holgura 0)</span></div>
+{% if cp and cp.evaluable and cp.critical_tasks %}
+  <div class="legend" style="margin-bottom:8px">
+    Periodo de la ruta crítica: <b>{{ d(cp.summary.start) }}</b> → <b>{{ d(cp.summary.end) }}</b> ·
+    Duración: <b>{{ cp.summary.duration_working_days }}</b> d {% if cp.summary.sin_calendario %}naturales{% else %}hábiles{% endif %} ·
+    Tareas críticas: <b>{{ cp.summary.critical_count }}</b>
+    {%- if cp.summary.multi_branch %} · <b>{{ cp.summary.branch_count }}</b> ramas críticas{% endif -%}
+  </div>
+
+  {#- Secuencia(s) legible(s): tarea → tarea → tarea. Varias ramas = varias secuencias. -#}
+  {% for br in cp.branches %}
+  <div class="gnote" style="margin-bottom:6px">
+    {% if cp.branches|length > 1 %}<b>Rama {{ loop.index }}</b> ({{ d(br.start) }} → {{ d(br.end) }}, {{ br.duration_working_days }} d): {% endif %}
+    {% for s in br.sequence %}<span class="tlink" data-task="{{ s.task }}">{{ s.subject }}</span>{% if not loop.last %} <span style="color:var(--text-muted)">→</span> {% endif %}{% endfor %}
+  </div>
+  {% endfor %}
+  {% if cp.branches_truncated %}<div class="empty" style="border-left:3px solid #d97706">Se muestran las primeras rutas críticas; existen más combinaciones (enumeración acotada).</div>{% endif %}
+
+  {#- Detalle por tarea crítica: ES/EF/LS/LF + holgura total (0) + enlace. -#}
+  <div class="xwrap">
+  <table class="x">
+    <thead><tr><th>Tarea crítica</th><th>Inicio temprano</th><th>Fin temprano</th><th>Inicio tardío</th><th>Fin tardío</th><th class="num">Holgura total</th></tr></thead>
+    <tbody>
+    {% for n in cp.critical_tasks %}
+      <tr>
+        <td><span class="typ"><span class="dot over"></span>{% if n.is_milestone %}&#9670; {% endif %}<span class="tlink" data-task="{{ n.task }}">{{ n.subject }}</span></span></td>
+        <td>{{ d(n.es) }}</td><td>{{ d(n.ef) }}</td><td>{{ d(n.ls) }}</td><td>{{ d(n.lf) }}</td>
+        <td class="num">{{ n.total_slack }} d</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+{% elif cp and cp.evaluable %}
+<div class="empty">No hay una ruta crítica determinante al corte.</div>
+{% elif cp and cp.reason == 'cycles' %}
+<div class="empty" style="border-left:3px solid #c02b2b">No se puede calcular la ruta crítica: hay dependencias circulares entre tareas (ver sección 6).</div>
+{% elif cp and cp.reason == 'no_dated_tasks' %}
+<div class="empty">Sin tareas con fecha de inicio y fin para derivar la ruta crítica.</div>
+{% else %}
+<div class="empty">Análisis de ruta crítica no disponible.</div>
 {% endif %}
 </div>
