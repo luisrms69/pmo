@@ -37,6 +37,7 @@ from pmo.scheduling import (
 	analyze_critical_path,
 	analyze_schedule_integrity,
 	analyze_schedule_slack,
+	portfolio_schedule_signals,
 	resolve_holiday_list,
 	schedule_readiness,
 	working_days,
@@ -736,6 +737,70 @@ class TestScheduleReadiness(IntegrationTestCase):
 		self.assertEqual(r["source"], "company")
 		self.assertEqual(r["holiday_list"], HL)
 		self.assertEqual(r["state"], "ready")
+
+
+class TestPortfolioSignals(IntegrationTestCase):
+	"""Agregador de Portfolio (ADR-0017): COMPONE los summaries de SI; no recalcula. READ-ONLY."""
+
+	def setUp(self):
+		_holiday_list()
+
+	def test_signals_compose_not_recalculate(self):
+		# Cada valor/severidad del agregador == el del SSOT subyacente (no hay segunda definición).
+		p = _project("PF Signals")
+		a = _task(p, "A", "2026-01-01", "2026-01-01")
+		b = _task(p, "B", "2026-01-02", "2026-01-08", deps=[a])
+		c = _task(p, "C", "2026-01-02", "2026-01-02", deps=[a])
+		_task(p, "D", "2026-01-09", "2026-01-09", deps=[b, c])
+		frappe.db.set_value("Project", p, "pmo_committed_end_date", "2026-01-15")
+		sig = portfolio_schedule_signals(p)
+		sl = analyze_schedule_slack(p)["summary"]
+		ig = analyze_schedule_integrity(p)["summary"]
+		cal = schedule_readiness(p)
+		self.assertTrue(sig["sched_evaluable"])
+		self.assertEqual(sig["critical_count"], sl["critical_count"])
+		self.assertEqual(sig["critical_sev"], sl["sev"]["critical_count"])
+		self.assertEqual(sig["deadline_breach_count"], sl["deadline_breach_count"])
+		self.assertEqual(sig["deadline_breach_sev"], sl["sev"]["deadline_breach"])
+		self.assertEqual(sig["committed_margin_days"], sl["committed_margin_days"])
+		self.assertEqual(sig["committed_margin_label"], sl["committed_margin_label"])  # "+4 d"
+		self.assertEqual(sig["committed_margin_sev"], sl["sev"]["committed_margin"])
+		self.assertEqual(sig["planning_problems"], ig["total"])
+		self.assertEqual(sig["planning_problems_sev"], ig["sev"]["total"])
+		self.assertEqual(sig["calendar_state"], cal["state"])
+		self.assertEqual(sig["calendar_short"], cal["short"])
+		self.assertEqual(sig["calendar_sev"], cal["sev"])
+
+	def test_signals_margin_negative(self):
+		# Margen negativo cuando el compromiso es ANTERIOR al fin de red (SSOT: slack).
+		p = _project("PF MarginNeg")
+		_task(p, "T", "2026-01-05", "2026-01-09")  # fin de red 01-09
+		frappe.db.set_value("Project", p, "pmo_committed_end_date", "2026-01-06")
+		sig = portfolio_schedule_signals(p)
+		self.assertIsNotNone(sig["committed_margin_days"])
+		self.assertLess(sig["committed_margin_days"], 0)
+		self.assertEqual(sig["committed_margin_sev"], SEV_BAD)
+
+	def test_signals_not_evaluable(self):
+		# Red no evaluable (sin fechas): métricas de holgura None; integridad y calendario siguen presentes.
+		p = _project("PF NoEval")
+		_task(p, "T", None, None)
+		sig = portfolio_schedule_signals(p)
+		self.assertFalse(sig["sched_evaluable"])
+		self.assertIsNone(sig["critical_count"])
+		self.assertIsNone(sig["deadline_breach_count"])
+		self.assertIsNone(sig["committed_margin_days"])
+		self.assertIsNotNone(sig["planning_problems"])  # integridad independiente de la evaluabilidad
+		self.assertIsNotNone(sig["calendar_state"])
+
+	def test_signals_calendar_states(self):
+		# Calendario: sin calendario → warn; con lista que cubre → ok.
+		p1 = _project("PF NoCal", holiday_list=None)
+		_task(p1, "T", "2026-01-05", "2026-01-09")
+		self.assertEqual(portfolio_schedule_signals(p1)["calendar_sev"], SEV_WARN)
+		p2 = _project("PF Cal")  # HL por defecto cubre el rango
+		_task(p2, "T", "2026-01-05", "2026-01-09")
+		self.assertEqual(portfolio_schedule_signals(p2)["calendar_sev"], SEV_OK)
 
 
 if __name__ == "__main__":

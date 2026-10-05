@@ -817,3 +817,41 @@ def schedule_readiness(project: str) -> dict:
 		"sev": _CAL_SEV[state],  # severidad decidida en el dominio
 		"hint": hint,  # dónde/ cómo configurarlo (None si ready)
 	}
+
+
+# --------------------------------------------------------------------------------------
+# Agregador para PMO Portfolio — COMPONE (no recalcula) los summaries de Schedule Intelligence en
+# un dict plano para la tabla "Cronograma" de la Page. READ-ONLY. Valores + tokens de severidad +
+# labels YA resueltos en el dominio (SSOT): el Report/JS solo presentan, no evalúan umbrales.
+# No usa analyze_critical_path (critical_count sale del summary de slack).
+# --------------------------------------------------------------------------------------
+def portfolio_schedule_signals(project: str) -> dict:
+	"""Señales de cronograma por proyecto para el Portfolio (read-only). Compone analyze_schedule_slack +
+	analyze_schedule_integrity + schedule_readiness. `sched_evaluable=False` cuando la red no es evaluable
+	(ciclos / sin fechas): las métricas de holgura quedan en None y la UI muestra "—"."""
+	slack = analyze_schedule_slack(project)
+	integ = analyze_schedule_integrity(project)
+	cal = schedule_readiness(project)
+	s = slack.get("summary") or {}
+	ssev = s.get("sev") or {}
+	ig = integ.get("summary") or {}
+	igsev = ig.get("sev") or {}
+	evaluable = bool(slack.get("evaluable"))
+	return {
+		"sched_evaluable": evaluable,
+		# Holgura/CPM: solo si la red es evaluable (si no → None; la UI presenta "—").
+		"critical_count": s.get("critical_count") if evaluable else None,
+		"critical_sev": ssev.get("critical_count") if evaluable else None,
+		"deadline_breach_count": s.get("deadline_breach_count") if evaluable else None,
+		"deadline_breach_sev": ssev.get("deadline_breach") if evaluable else None,
+		"committed_margin_days": s.get("committed_margin_days") if evaluable else None,
+		"committed_margin_label": s.get("committed_margin_label") if evaluable else None,
+		"committed_margin_sev": ssev.get("committed_margin") if evaluable else None,
+		# Problemas de planeación: el diagnóstico de integridad no depende de "evaluable".
+		"planning_problems": ig.get("total"),
+		"planning_problems_sev": igsev.get("total"),
+		# Calendario (readiness): estado/label/severidad ya resueltos.
+		"calendar_state": cal.get("state"),
+		"calendar_short": cal.get("short"),
+		"calendar_sev": cal.get("sev"),
+	}
