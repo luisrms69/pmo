@@ -260,6 +260,8 @@
     <div class="subs">
       <div class="sub"><span class="k">Dependencias incoherentes</span><span class="val {{ sevcls(si.sev.incoherencias) }}">{{ si.incoherencias }}</span></div>
       <div class="sub"><span class="k">Deadlines incumplidos (plan)</span><span class="val {{ sevcls(si.sev.deadline_excedido) }}">{{ si.deadline_excedido }}</span></div>
+      {%- if si.fnlt_violada %}<div class="sub"><span class="k">Restricciones FNLT incumplidas</span><span class="val {{ sevcls(si.sev.fnlt_violada) }}">{{ si.fnlt_violada }}</span></div>{% endif -%}
+      {%- if si.snet_violada %}<div class="sub"><span class="k">Restricciones SNET incumplidas</span><span class="val {{ sevcls(si.sev.snet_violada) }}">{{ si.snet_violada }}</span></div>{% endif -%}
       <div class="sub"><span class="k">Tareas sin fecha de inicio o fin</span><span class="val {{ sevcls(si.sev.fechas_incompletas) }}">{{ si.fechas_incompletas }}</span></div>
       {%- if si.show_ciclos %}<div class="sub"><span class="k">Dependencias circulares</span><span class="val {{ sevcls(si.sev.ciclos) }}">{{ si.ciclos }}</span></div>{% endif -%}
       {%- if si.fines_divergen %}<div class="sub"><span class="k" style="color:var(--text-muted)">Fechas de fin que no coinciden (ver detalle)</span></div>{% endif -%}

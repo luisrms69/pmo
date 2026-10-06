@@ -234,7 +234,7 @@
 {#- 5. Consumo de esfuerzo por tarea (rescatado de Planificado vs Real). Presupuesto de esfuerzo: real
     ACUMULADO al corte vs estimado TOTAL (expected_time). NO es plan-al-corte. Todas las hojas, con/sin
     baseline. Reutiliza el estilo de la sección 4 (table.x). -#}
-<div class="sec">5. Consumo de esfuerzo por tarea <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">— real acumulado vs estimado total</span></div>
+<div class="sec">5. Consumo de esfuerzo por tarea</div>
 {% if sv.effort %}
 <div class="xwrap">
 <table class="x">
@@ -267,9 +267,9 @@
 {%- set it = sv.integrity or {} -%}
 {%- set dg = it.diagnostics or {} -%}
 {%- set en = it.ends or {} -%}
-<div class="sec">6. Revisión del cronograma <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">— problemas de planeación en tareas, fechas y dependencias (solo lectura, no reprograma)</span></div>
+<div class="sec">6. Revisión del cronograma</div>
 {% if it %}
-  {%- set has_findings = (dg.incomplete_dates or dg.incoherent or dg.multi_predecessor or dg.cycles or dg.deadline_exceeded or dg.non_working_day or dg.natural_vs_working) -%}
+  {%- set has_findings = (dg.incomplete_dates or dg.incoherent or dg.multi_predecessor or dg.cycles or dg.deadline_exceeded or dg.fnlt_violation or dg.snet_violation or dg.non_working_day or dg.natural_vs_working) -%}
   {% if has_findings %}
   <div class="xwrap">
   <table class="x">
@@ -294,6 +294,16 @@
           <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
           <td>Fin plan vigente {{ d(r.exp_end) }} &gt; deadline {{ d(r.deadline) }} <span class="bad">(+{{ r.slip_days }} d)</span>.</td></tr>
     {% endfor %}
+    {% for r in dg.fnlt_violation %}
+      <tr><td><span class="typ"><span class="dot over"></span>Restricción FNLT incumplida</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>Fin pronosticado {{ d(r.exp_end) }} &gt; restricción {{ d(r.constraint_date) }} <span class="bad">· {{ r.over_days }} días</span></td></tr>
+    {% endfor %}
+    {% for r in dg.snet_violation %}
+      <tr><td><span class="typ"><span class="dot over"></span>Restricción SNET incumplida</span></td>
+          <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
+          <td>Inicio {{ d(r.exp_start) }} &lt; restricción {{ d(r.constraint_date) }} <span class="bad">· {{ r.over_days }} días</span></td></tr>
+    {% endfor %}
     {% for r in dg.incomplete_dates %}
       <tr><td><span class="typ"><span class="dot rm"></span>Tarea sin fecha de inicio o fin</span></td>
           <td><span class="tlink" data-task="{{ r.task }}">{{ r.subject }}</span></td>
@@ -316,7 +326,7 @@
   <div class="empty">Sin problemas de planeación detectados al corte.</div>
   {% endif %}
   {% if en.diverges %}
-  <div class="empty" style="border-left:3px solid #d97706">Fechas de fin que no coinciden (diagnóstico, no se corrige): fin calculado {{ d(en.max_ef) or '—' }} · fin del plan vigente más tardío {{ d(en.max_exp_end) or '—' }} · fin del proyecto {{ d(en.project_expected_end) or '—' }}.</div>
+  <div class="empty" style="border-left:3px solid #d97706">Fechas de fin que no coinciden: fin calculado {{ d(en.max_ef) or '—' }} · fin del plan vigente más tardío {{ d(en.max_exp_end) or '—' }} · fin del proyecto {{ d(en.project_expected_end) or '—' }}.</div>
   {% endif %}
 {% else %}
 <div class="empty">Revisión del cronograma no disponible.</div>
@@ -326,7 +336,7 @@
     ancla = max EF de las sumidero. Holgura total y libre en días hábiles; ruta crítica = holgura ≤ 0.
     Toda severidad la decide el dominio (slack_sev / deadline_sev / margin severity); el template solo mapea. -#}
 {%- set sl = sv.slack or {} -%}
-<div class="sec">7. Holgura de tareas <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">— cuántos días puede retrasarse cada tarea sin mover la fecha final (solo lectura, no reprograma)</span></div>
+<div class="sec">7. Holgura de tareas</div>
 {% if sl and sl.evaluable %}
   <div class="legend" style="margin-bottom:8px">
     Fin calculado del proyecto: <b>{{ d(sl.project_finish) }}</b> ·
@@ -366,7 +376,7 @@
     condicionan el fin del proyecto. No es motor nuevo ni semántica nueva. Si hay varias ramas con slack 0,
     se muestran como múltiples rutas (no se inventa una cadena única). READ-ONLY. -#}
 {%- set cp = sv.critical or {} -%}
-<div class="sec">8. Ruta crítica <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">— tareas que condicionan la fecha final (holgura 0)</span></div>
+<div class="sec">8. Ruta crítica</div>
 {% if cp and cp.evaluable and cp.critical_tasks %}
   <div class="legend" style="margin-bottom:8px">
     Periodo de la ruta crítica: <b>{{ d(cp.summary.start) }}</b> → <b>{{ d(cp.summary.end) }}</b> ·

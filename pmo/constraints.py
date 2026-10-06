@@ -27,9 +27,118 @@ from frappe import _
 from frappe.utils import add_days, date_diff, get_datetime, getdate
 
 SNET = "Start No Earlier Than (SNET)"
-FNLT = "Finish No Later Than (FNLT)"  # modelo previsto (ADR-0018); diagnóstico en II.2, no actúa en II.1
+FNLT = "Finish No Later Than (FNLT)"
 
 _INELIGIBLE_STATUS = ("Completed", "Cancelled")
+# Estados fuera de la red activa para constraints (coherente con scheduling._INACTIVE).
+_EXCLUDED_STATUS = ("Completed", "Cancelled", "Template")
+
+# Estados del clasificador (ADR-0018, II.2) — SSOT único de la semántica de constraints.
+C_NONE = "none"  # sin tipo de constraint
+C_INCOMPLETE = "incomplete"  # tipo sin fecha
+C_NOT_EVALUABLE = "not_evaluable"  # falta la fecha de forecast relevante
+C_EXCLUDED = "excluded"  # Completed/Cancelled/Template/group/milestone
+C_SNET_OK = "snet_ok"
+C_SNET_VIOLATED = "snet_violated"
+C_FNLT_OK = "fnlt_ok"
+C_FNLT_VIOLATED = "fnlt_violated"
+
+
+def classify_constraint(
+	constraint_type,
+	constraint_date,
+	exp_start_date,
+	exp_end_date,
+	act_start_date=None,
+	status=None,
+	is_group=0,
+	is_milestone=0,
+):
+	"""Clasificador PURO y READ-ONLY (ADR-0018, II.2). ÚNICO dueño de la semántica de constraints; lo
+	  consumen scheduling.py, el endpoint de Task y (vía tokens) el JS/plantillas. No persiste nada, no muta.
+
+	  Devuelve `{"state", "type", "date", "delta_days"}`:
+	  - `state`: uno de C_* (ver arriba).
+	  - `type`: "SNET" | "FNLT" | None (normalizado, independiente del idioma de la opción almacenada).
+	  - `date`: `constraint_date` (str) o None.
+	  - `delta_days`: solo en estados *violated* — días de exceso (FNLT: fin menos límite; SNET: límite
+	menos inicio); None en el resto.
+
+	  FNLT violado ⇔ `getdate(exp_end_date) > getdate(constraint_date)` (no depende de hoy ni Status Date).
+	  SNET violado ⇔ `getdate(exp_start_date) < getdate(constraint_date)` (descriptivo; el write-path de II.1
+	  ya normaliza las elegibles, así que una Task guardada normal queda `snet_ok`; `snet_violated` describe
+	  el caso iniciado/no desplazado). `act_start_date` se acepta por contexto; no altera la definición FNLT."""
+	kind = "SNET" if constraint_type == SNET else ("FNLT" if constraint_type == FNLT else None)
+	base = {"state": C_NONE, "type": kind, "date": constraint_date or None, "delta_days": None}
+
+	if status in _EXCLUDED_STATUS or is_group or is_milestone:
+		base["state"] = C_EXCLUDED
+		return base
+	if not kind:
+		base["state"] = C_NONE
+		return base
+	if not constraint_date:
+		base["state"] = C_INCOMPLETE
+		return base
+
+	cdate = getdate(constraint_date)
+	if kind == "SNET":
+		if not exp_start_date:
+			base["state"] = C_NOT_EVALUABLE
+			return base
+		start = getdate(exp_start_date)
+		if start < cdate:
+			base["state"] = C_SNET_VIOLATED
+			base["delta_days"] = (cdate - start).days
+		else:
+			base["state"] = C_SNET_OK
+		return base
+
+	# FNLT
+	if not exp_end_date:
+		base["state"] = C_NOT_EVALUABLE
+		return base
+	end = getdate(exp_end_date)
+	if end > cdate:
+		base["state"] = C_FNLT_VIOLATED
+		base["delta_days"] = (end - cdate).days
+	else:
+		base["state"] = C_FNLT_OK
+	return base
+
+
+@frappe.whitelist()
+def get_constraint_status(task: str) -> dict:
+	"""Endpoint READ-ONLY para el indicador del form de Task. Respeta permiso READ; compone sobre el
+	clasificador SSOT. No escribe. Devuelve el dict del clasificador tal cual (tokens; el JS presenta)."""
+	frappe.has_permission("Task", ptype="read", doc=task, throw=True)
+	t = frappe.db.get_value(
+		"Task",
+		task,
+		[
+			"pmo_constraint_type",
+			"pmo_constraint_date",
+			"exp_start_date",
+			"exp_end_date",
+			"act_start_date",
+			"status",
+			"is_group",
+			"is_milestone",
+		],
+		as_dict=True,
+	)
+	if not t:
+		return {"state": C_NONE, "type": None, "date": None, "delta_days": None}
+	return classify_constraint(
+		t.pmo_constraint_type,
+		t.pmo_constraint_date,
+		t.exp_start_date,
+		t.exp_end_date,
+		t.act_start_date,
+		t.status,
+		t.is_group,
+		t.is_milestone,
+	)
 
 
 def compute_snet_start_end(exp_start, exp_end, snet):

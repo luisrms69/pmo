@@ -4643,3 +4643,27 @@ msgstr "Restricción local de cronograma sobre esta tarea (ADR-0018). SNET (No i
 #: pmo/fixtures/custom_field.json
 msgid "Date for the schedule constraint. For SNET: the earliest allowed start date. Empty constraint type or date = no effect (safe no-op)."
 msgstr "Fecha de la restricción de cronograma. Para SNET: la fecha de inicio más temprana permitida. Tipo o fecha de restricción vacíos = sin efecto (no-op seguro)."
+
+#: pmo/templates/project_control/estado.html
+msgid "No earlier than (SNET)"
+msgstr "No iniciar antes de (SNET)"
+
+#: pmo/public/js/task_pmo.js
+msgid "No later than (FNLT)"
+msgstr "No terminar después de (FNLT)"
+
+#: pmo/public/js/task_pmo.js
+msgid "FNLT violated"
+msgstr "FNLT violado"
+
+#: pmo/public/js/task_pmo.js
+msgid "SNET violated"
+msgstr "SNET violado"
+
+#: pmo/public/js/task_pmo.js
+msgid "Schedule constraint without date"
+msgstr "Restricción de cronograma sin fecha"
+
+#: pmo/public/js/task_pmo.js
+msgid "days"
+msgstr "días"

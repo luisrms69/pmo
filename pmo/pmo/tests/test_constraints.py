@@ -18,12 +18,15 @@ from frappe.tests import IntegrationTestCase
 from frappe.utils import get_datetime, getdate
 
 from pmo.constraints import (
+	FNLT,
 	SNET,
 	_is_eligible,
 	apply_start_constraint,
+	classify_constraint,
 	compute_snet_start_end,
 	notify_start_constraint,
 )
+from pmo.scheduling import SEV_BAD
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -139,6 +142,80 @@ class TestSnetPure(unittest.TestCase):
 		self.assertEqual(getdate(doc2.exp_start_date), getdate("2026-01-05"))  # sin cambio
 
 
+class TestClassifierPure(unittest.TestCase):
+	"""Clasificador SSOT (ADR-0018, II.2) — puro, sin BD. Dueño único de la semántica de constraints."""
+
+	def _c(self, **kw):
+		base = dict(
+			constraint_type=None,
+			constraint_date=None,
+			exp_start_date="2026-01-05",
+			exp_end_date="2026-01-10",
+			act_start_date=None,
+			status="Open",
+			is_group=0,
+			is_milestone=0,
+		)
+		base.update(kw)
+		return classify_constraint(**base)
+
+	def test_none(self):
+		self.assertEqual(self._c(constraint_type=None)["state"], "none")
+
+	def test_incomplete(self):
+		self.assertEqual(self._c(constraint_type=FNLT, constraint_date=None)["state"], "incomplete")
+		self.assertEqual(self._c(constraint_type=SNET, constraint_date=None)["state"], "incomplete")
+
+	def test_excluded_status_group_milestone(self):
+		self.assertEqual(
+			self._c(constraint_type=FNLT, constraint_date="2026-01-01", status="Completed")["state"],
+			"excluded",
+		)
+		self.assertEqual(
+			self._c(constraint_type=FNLT, constraint_date="2026-01-01", status="Cancelled")["state"],
+			"excluded",
+		)
+		self.assertEqual(
+			self._c(constraint_type=FNLT, constraint_date="2026-01-01", is_group=1)["state"], "excluded"
+		)
+		self.assertEqual(
+			self._c(constraint_type=FNLT, constraint_date="2026-01-01", is_milestone=1)["state"], "excluded"
+		)
+
+	def test_not_evaluable(self):
+		self.assertEqual(
+			self._c(constraint_type=FNLT, constraint_date="2026-01-01", exp_end_date=None)["state"],
+			"not_evaluable",
+		)
+		self.assertEqual(
+			self._c(constraint_type=SNET, constraint_date="2026-01-01", exp_start_date=None)["state"],
+			"not_evaluable",
+		)
+
+	def test_fnlt_ok_and_violated(self):
+		ok = self._c(constraint_type=FNLT, constraint_date="2026-01-15", exp_end_date="2026-01-10")
+		self.assertEqual(ok["state"], "fnlt_ok")
+		self.assertIsNone(ok["delta_days"])
+		bad = self._c(constraint_type=FNLT, constraint_date="2026-01-07", exp_end_date="2026-01-10")
+		self.assertEqual(bad["state"], "fnlt_violated")
+		self.assertEqual(bad["delta_days"], 3)  # 01-10 - 01-07
+		self.assertEqual(bad["type"], "FNLT")
+
+	def test_snet_ok_and_violated(self):
+		ok = self._c(constraint_type=SNET, constraint_date="2026-01-01", exp_start_date="2026-01-05")
+		self.assertEqual(ok["state"], "snet_ok")
+		bad = self._c(constraint_type=SNET, constraint_date="2026-01-20", exp_start_date="2026-01-05")
+		self.assertEqual(bad["state"], "snet_violated")
+		self.assertEqual(bad["delta_days"], 15)  # 01-20 - 01-05
+
+	def test_fnlt_equal_date_is_ok(self):
+		# exp_end == constraint_date NO es violación (solo estrictamente mayor).
+		self.assertEqual(
+			self._c(constraint_type=FNLT, constraint_date="2026-01-10", exp_end_date="2026-01-10")["state"],
+			"fnlt_ok",
+		)
+
+
 # ----------------------------------------------------------------------------------------------------
 # Nivel INTEGRACIÓN — requiere los Custom Fields (post-migrate). Se salta si aún no existen.
 # ----------------------------------------------------------------------------------------------------
@@ -250,6 +327,112 @@ class TestSnetIntegration(IntegrationTestCase):
 		)
 		self.assertIsNone(t.act_start_date)
 		self.assertIsNone(t.act_end_date)
+
+	# --- II.2 FNLT diagnóstico (read-only) ---------------------------------------------------------
+
+	def test_fnlt_violation_is_a_finding(self):
+		p = _project("FNLT Finding")
+		_task(
+			"FNLT viol",
+			"2026-01-05",
+			"2026-03-03",
+			project=p,
+			pmo_constraint_type=FNLT,
+			pmo_constraint_date="2026-02-28",
+		)
+		from pmo.scheduling import analyze_schedule_integrity
+
+		res = analyze_schedule_integrity(p)
+		fv = res["diagnostics"]["fnlt_violation"]
+		self.assertEqual(len(fv), 1)
+		self.assertEqual(fv[0]["over_days"], 3)  # 03-03 - 02-28
+		self.assertEqual(res["summary"]["fnlt_violada"], 1)
+		self.assertEqual(res["summary"]["sev"]["fnlt_violada"], SEV_BAD)
+
+	def test_fnlt_satisfied_not_a_finding(self):
+		from pmo.scheduling import analyze_schedule_integrity
+
+		p = _project("FNLT OK")
+		_task(
+			"FNLT ok",
+			"2026-01-05",
+			"2026-02-10",
+			project=p,
+			pmo_constraint_type=FNLT,
+			pmo_constraint_date="2026-02-28",
+		)
+		res = analyze_schedule_integrity(p)
+		self.assertEqual(res["diagnostics"]["fnlt_violation"], [])
+
+	def test_fnlt_and_deadline_coexist(self):
+		# Una misma Task puede violar FNLT y exceder deadline: dos findings distintos.
+		p = _project("FNLT+deadline")
+		_task(
+			"both",
+			"2026-01-05",
+			"2026-03-03",
+			project=p,
+			pmo_constraint_type=FNLT,
+			pmo_constraint_date="2026-02-28",
+			pmo_deadline="2026-02-20",
+		)
+		from pmo.scheduling import analyze_schedule_integrity
+
+		res = analyze_schedule_integrity(p)
+		self.assertEqual(len(res["diagnostics"]["fnlt_violation"]), 1)
+		self.assertEqual(len(res["diagnostics"]["deadline_exceeded"]), 1)
+
+	def test_fnlt_does_not_move_forecast(self):
+		p = _project("FNLT no move")
+		t = _task(
+			"fnlt",
+			"2026-01-05",
+			"2026-03-03",
+			project=p,
+			pmo_constraint_type=FNLT,
+			pmo_constraint_date="2026-02-28",
+		)
+		# El forecast queda EXACTO como se guardó (FNLT nunca mueve exp_*).
+		self.assertEqual(getdate(t.exp_start_date), getdate("2026-01-05"))
+		self.assertEqual(getdate(t.exp_end_date), getdate("2026-03-03"))
+
+	def test_snet_violation_detected_regardless_of_origin(self):
+		# Estado PERSISTIDO que viola SNET (p. ej. escrito por un write-path que salta before_validate, como
+		# el Gantt nativo con frappe.db.set_value). Se simula con una Task INICIADA (act_start_date): el
+		# write-path SNET no la mueve (no elegible), así que persiste exp_start < SNET → debe DETECTARSE.
+		from pmo.scheduling import analyze_schedule_integrity
+
+		p = _project("SNET Violation Detect")
+		_task(
+			"snet viol persisted",
+			"2026-01-05",
+			"2026-01-09",
+			project=p,
+			status="Working",
+			act_start_date="2026-01-06",
+			pmo_constraint_type=SNET,
+			pmo_constraint_date="2026-01-20",
+		)
+		res = analyze_schedule_integrity(p)
+		sv = res["diagnostics"]["snet_violation"]
+		self.assertEqual(len(sv), 1)
+		self.assertEqual(sv[0]["over_days"], 15)  # 01-20 - 01-05
+		self.assertEqual(res["summary"]["snet_violada"], 1)
+		self.assertEqual(res["summary"]["sev"]["snet_violada"], SEV_BAD)
+		# Detección pura: NO re-corrige la Task (sin mutación desde el diagnóstico).
+		t = frappe.db.get_value("Task", {"subject": "snet viol persisted", "project": p}, "exp_start_date")
+		self.assertEqual(getdate(t), getdate("2026-01-05"))
+
+	def test_endpoint_returns_classification(self):
+		from pmo.constraints import get_constraint_status
+
+		t = _task(
+			"endpoint", "2026-01-05", "2026-03-03", pmo_constraint_type=FNLT, pmo_constraint_date="2026-02-28"
+		)
+		r = get_constraint_status(t.name)
+		self.assertEqual(r["state"], "fnlt_violated")
+		self.assertEqual(r["type"], "FNLT")
+		self.assertEqual(r["delta_days"], 3)
 
 
 if __name__ == "__main__":

@@ -135,6 +135,30 @@ esquema (fixtures + `bench migrate`) es de **II.1** y requiere autorización exp
   por el hook `before_validate` deja que ERPNext **continúe propagando** desde la nueva fecha, sin recursión
   adicional ni segunda cascada PMO. Si falla, **no** se salta a construir un scheduler: se reevalúa el alcance.
 
+## Límite del enforcement SNET — escrituras fuera de `Task.save()` (II.2)
+
+El enforcement SNET de II.1 ocurre en **`before_validate`**, es decir, **durante `Task.save()`**. Esto cubre
+edición manual, Gantt de Frappe cuando guarda por el form, API que use el ORM, importación por documento y la
+**cascada nativa** (que hace `task.save()`). **No** es una garantía absoluta sobre **cualquier** escritura a
+BD:
+
+- `frappe.db.set_value(...)` hace un **UPDATE SQL directo** y, por diseño de Frappe, **no dispara Document
+  events** (su docstring: *"will not call Document events and should be avoided in normal cases"*). Por tanto
+  salta `before_validate` (SNET), `validate` nativo y `on_update → reschedule_dependent_tasks`.
+- El **Gantt nativo de Frappe** (`frappe.views.GanttView`, vista "Gantt" de la lista de Task) usa ese
+  write-path en `on_date_change` (drag/resize) → arrastrar una barra puede persistir `exp_start_date <`
+  SNET (y además **no** propaga dependientes por la cascada nativa).
+- **Decisión:** PMO **NO intercepta ni reemplaza** ese flujo (no monkey-patch de `GanttView`, no override,
+  no fork de `frappe-gantt`): no existe un punto de extensión público para `on_date_change` y hacerlo sería
+  acoplarse a internals privados con alto riesgo en upgrades — contrario a "ERPNext opera, PMO gobierna".
+- **Mitigación (read-only, II.2):** **Schedule Integrity detecta** el estado persistido que viola SNET
+  (`snet_violation`, vía el clasificador SSOT `classify_constraint`), **independientemente de cómo se llegó a
+  ese estado**. Se muestra como finding separado en Project Control → "Revisión del cronograma" y como
+  indicador rojo en el form de Task. **No** re-corrige la Task (sin mutación desde el diagnóstico).
+
+En síntesis: **SNET es enforcement durante `Task.save()`, no una garantía sobre escrituras directas a BD; lo
+que no se pudo prevenir, se detecta.**
+
 ## Consecuencias
 
 - PMO gana constraints operativos reales sin convertirse en un motor de scheduling ni duplicar la cascada FS.

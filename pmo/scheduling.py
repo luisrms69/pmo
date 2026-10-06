@@ -144,6 +144,8 @@ def _read_tasks(project: str) -> list[dict]:
 			"exp_start_date",
 			"exp_end_date",
 			"pmo_deadline",
+			"pmo_constraint_type",
+			"pmo_constraint_date",
 			"act_start_date",
 			"progress",
 		],
@@ -269,6 +271,9 @@ def _load_network(project: str):
 			"start": t.exp_start_date,
 			"end": t.exp_end_date,
 			"deadline": t.pmo_deadline,
+			"status": t.status,
+			"constraint_type": t.pmo_constraint_type,
+			"constraint_date": t.pmo_constraint_date,
 		}
 	edges = _read_edges(project, set(by_name))
 	return meta, holiday_list, by_name, active, edges
@@ -291,6 +296,8 @@ def analyze_schedule_integrity(project: str, status_date=None) -> dict:
 		"non_working_day": [],
 		"deadline_exceeded": [],
 		"natural_vs_working": [],
+		"fnlt_violation": [],
+		"snet_violation": [],
 	}
 
 	# 1) Fechas incompletas (gap de planeación) — tarea hoja activa sin exp_start o exp_end.
@@ -349,6 +356,47 @@ def analyze_schedule_integrity(project: str, status_date=None) -> dict:
 				}
 			)
 
+	# 4b) Restricciones de cronograma incumplidas (ADR-0018, II.2) — SEPARADAS de deadline_exceeded. Usa el
+	# clasificador SSOT de constraints (read-only); solo reporta, no mueve nada. `is_group` ya excluido por
+	# _read_tasks; milestones y estados inactivos los excluye el propio clasificador. Una sola llamada al
+	# clasificador por tarea cubre FNLT y SNET (branch por estado).
+	# `snet_violation` detecta el estado PERSISTIDO que viola SNET **venga de donde venga** (Gantt nativo,
+	# frappe.db.set_value, importación, API) — escrituras que saltan `before_validate` y por tanto la
+	# normalización SNET de II.1. Es detección read-only, no re-corrige la Task (ver ADR-0018, limitación).
+	from pmo.constraints import C_FNLT_VIOLATED, C_SNET_VIOLATED, classify_constraint
+
+	for t in active.values():
+		c = classify_constraint(
+			t.get("constraint_type"),
+			t.get("constraint_date"),
+			t["start"],
+			t["end"],
+			None,
+			t.get("status"),
+			0,
+			t["is_milestone"],
+		)
+		if c["state"] == C_FNLT_VIOLATED:
+			diag["fnlt_violation"].append(
+				{
+					"task": t["name"],
+					"subject": t["subject"],
+					"exp_end": str(getdate(t["end"])),  # fecha sola (sin hora) para presentación limpia
+					"constraint_date": str(getdate(t["constraint_date"])),
+					"over_days": c["delta_days"],
+				}
+			)
+		elif c["state"] == C_SNET_VIOLATED:
+			diag["snet_violation"].append(
+				{
+					"task": t["name"],
+					"subject": t["subject"],
+					"exp_start": str(getdate(t["start"])),
+					"constraint_date": str(getdate(t["constraint_date"])),
+					"over_days": c["delta_days"],
+				}
+			)
+
 	# 5) Chequeos dependientes del calendario (solo si hay calendario resoluble).
 	if calendar_available:
 		for t in active.values():
@@ -389,12 +437,21 @@ def analyze_schedule_integrity(project: str, status_date=None) -> dict:
 	}
 
 	incoherencias = len(diag["incoherent"]) + len(diag["multi_predecessor"])
+	fnlt = len(diag["fnlt_violation"])
+	snet = len(diag["snet_violation"])
 	total = (
-		incoherencias + len(diag["deadline_exceeded"]) + len(diag["cycles"]) + len(diag["incomplete_dates"])
+		incoherencias
+		+ len(diag["deadline_exceeded"])
+		+ len(diag["cycles"])
+		+ len(diag["incomplete_dates"])
+		+ fnlt
+		+ snet
 	)
 	summary = {
 		"incoherencias": incoherencias,
 		"deadline_excedido": len(diag["deadline_exceeded"]),
+		"fnlt_violada": fnlt,
+		"snet_violada": snet,
 		"ciclos": len(diag["cycles"]),
 		"fechas_incompletas": len(diag["incomplete_dates"]),
 		"divergencia_calendario": len(diag["natural_vs_working"]),
@@ -408,6 +465,8 @@ def analyze_schedule_integrity(project: str, status_date=None) -> dict:
 			"total": _sev_count(total),
 			"incoherencias": _sev_count(incoherencias),
 			"deadline_excedido": _sev_count(len(diag["deadline_exceeded"])),
+			"fnlt_violada": _sev_count(fnlt),
+			"snet_violada": _sev_count(snet),
 			"fechas_incompletas": _sev_count(len(diag["incomplete_dates"])),
 			"ciclos": _sev_count(len(diag["cycles"])),
 		},
