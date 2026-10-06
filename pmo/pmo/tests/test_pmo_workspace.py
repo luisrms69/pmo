@@ -90,14 +90,3 @@ class TestPMOWorkspace(IntegrationTestCase):
 
 		for fn in ("portfolio_kpi", "resource_kpi", "economic_kpi", "economics_block", "customers_block"):
 			self.assertTrue(callable(getattr(dashboard, fn, None)), f"endpoint faltante: {fn}")
-
-	def test_existing_workspaces_untouched(self):
-		cap = {s.link_to for s in frappe.get_doc("Workspace", "PMO Capacity").shortcuts if s.type == "Report"}
-		self.assertEqual(
-			cap, {"PMO Capacity Planning", "PMO Resource Usage by Project", "PMO Work by Resource"}
-		)
-		ctl = {s.link_to for s in frappe.get_doc("Workspace", "PMO Control").shortcuts if s.type == "Report"}
-		self.assertEqual(
-			ctl,
-			{"PMO Planned vs Actual", "PMO Status Report", "PMO Baseline Comparison", "PMO Change Register"},
-		)

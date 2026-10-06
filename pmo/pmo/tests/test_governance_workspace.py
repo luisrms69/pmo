@@ -44,16 +44,38 @@ class TestGovernanceWorkspace(IntegrationTestCase):
 		self.assertIn("pmo_project_control", page_links)
 
 	def test_sidebar_includes_governance(self):
-		# Gobernanza PMO debe estar en el sidebar local PMO (dejó de estar huérfana). Enlaza al Workspace.
-		sb = frappe.get_doc("Workspace Sidebar", "PMO")
-		labels = [i.label for i in sb.items]
+		# Modelo Frappe v16.5+: el sidebar de la app es una DEFINICIÓN estándar
+		# (`workspace_sidebar/pmo.json`) que el runtime ensambla en boot; no un registro materializado
+		# por install. Validamos esa metadata estándar (navegación de gobierno + accesos conservados) y
+		# que el Workspace de gobierno destino exista.
+		import os
+
+		path = os.path.join(frappe.get_app_path("pmo"), "workspace_sidebar", "pmo.json")
+		self.assertTrue(os.path.exists(path), "falta la definición estándar del Workspace Sidebar PMO")
+		with open(path) as f:
+			sb = json.load(f)
+
+		self.assertEqual(sb.get("title"), "PMO")
+		self.assertEqual(sb.get("module"), "PMO")
+		self.assertTrue(sb.get("standard"))
+
+		items = sb.get("items", [])
+		labels = [i.get("label") for i in items]
 		self.assertIn("Gobernanza PMO", labels)
-		gov = next(i for i in sb.items if i.label == "Gobernanza PMO")
-		self.assertEqual(gov.link_type, "Workspace")
-		self.assertEqual(gov.link_to, "PMO Governance")
-		# No se rompen los accesos existentes del sidebar.
+		gov = next(i for i in items if i.get("label") == "Gobernanza PMO")
+		self.assertEqual(gov.get("link_type"), "Workspace")
+		self.assertEqual(gov.get("link_to"), "PMO Governance")
+
+		# Accesos conservados (incluye las Pages de capacidad y control que permanecen).
 		for expected in ["PMO", "Portafolio", "Control de Proyecto", "Planificación de capacidad"]:
 			self.assertIn(expected, labels)
+
+		# No quedan referencias a los Workspaces legacy retirados en v16.5+.
+		link_targets = {i.get("link_to") for i in items}
+		self.assertNotIn("PMO Capacity", link_targets)
+		self.assertNotIn("PMO Control", link_targets)
+
+		# El Workspace de gobierno destino sí se materializa.
 		self.assertTrue(frappe.db.exists("Workspace", "PMO Governance"))
 
 	def test_legacy_sections_removed_from_content(self):
