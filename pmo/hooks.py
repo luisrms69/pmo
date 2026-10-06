@@ -58,6 +58,9 @@ doctype_calendar_js = {"Task": "public/js/task_calendar_pmo.js"}
 doctype_js = {
 	"PMO Change Request": "public/js/pmo_change_request.js",
 	"PMO Project Baseline": "public/js/pmo_project_baseline.js",
+	# ADR-0018 II.2: indicador DERIVADO de restricción de cronograma en el form de Task (read-only;
+	# consume pmo.constraints.get_constraint_status; sin persistencia; no toca core).
+	"Task": "public/js/task_pmo.js",
 	# El JS del Handoff vive en su carpeta de doctype (pmo/pmo/doctype/pmo_project_handoff/*.js), auto-cargado
 	# por Frappe: filtra el Contacto por el Customer del Project (captura en el Acta → sincroniza al Project).
 	# Solo navegación: botón "PMO Project Control" en el form nativo de Project (no toca core).
@@ -199,7 +202,13 @@ doc_events = {
 		],
 	},
 	"Task": {
+		# ADR-0018 II.1: normalización SNET local ANTES del validate nativo (coherencia sobre la fecha ya
+		# corregida). Muta solo la propia Task; ERPNext sigue siendo el único propagador FS.
+		"before_validate": "pmo.constraints.apply_start_constraint",
 		"validate": "pmo.schedule_commit.validate_task_deadline",  # ADR-0007 D4 (warning)
+		# ADR-0018 II.1: aviso final (no bloqueante) si SNET movió el inicio; solo en la Task editada, no en
+		# las sucesoras de la cascada (guard por flags.ignore_recursion_check).
+		"on_update": "pmo.constraints.notify_start_constraint",
 	},
 	# ADR-0016 / auditoría de integridad: `project` inmutable tras crear en TODOS los DocTypes pmo con Link
 	# estructural a Project (un documento pertenece al Project en que se creó). Helper único compartido.
@@ -239,6 +248,8 @@ fixtures = [
 					"Project-pmo_operational_owner",
 					"Project-pmo_customer_contact",
 					"Task-pmo_deadline",
+					"Task-pmo_constraint_type",
+					"Task-pmo_constraint_date",
 					"ToDo-pmo_planned_hours",
 				],
 			]

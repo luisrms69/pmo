@@ -9,9 +9,9 @@ ni de capturar horas.
 
 ## Dónde encontrarlo
 
-Desde el **Workspace `PMO Control`** (menú lateral), que reúne los reportes de control del proyecto:
-Planificado vs Real, Status Report, Comparación de línea base y Registro de cambios. También desde el menú
-**Reportes → PMO Planned vs Actual**.
+Desde el menú **Reportes → PMO Planned vs Actual**, junto con los demás reportes de control del proyecto
+(Status Report, Comparación de línea base y Registro de cambios). También desde la **Page Control de
+Proyecto** accesible en el menú lateral de PMO.
 
 ## El reporte "PMO Planned vs Actual"
 

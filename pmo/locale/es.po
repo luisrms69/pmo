@@ -4605,3 +4605,65 @@ msgstr "Ejecución"
 
 msgid "Partial"
 msgstr "Parcial"
+
+#. Label of the pmo_constraint_type (Select) field in DocType 'Task'
+#: pmo/fixtures/custom_field.json
+msgid "PMO — Schedule constraint"
+msgstr "PMO — Restricción de cronograma"
+
+#. Label of the pmo_constraint_date (Date) field in DocType 'Task'
+#: pmo/fixtures/custom_field.json
+msgid "PMO — Constraint date"
+msgstr "PMO — Fecha de la restricción"
+
+#. Option of the pmo_constraint_type (Select) field in DocType 'Task'
+#: pmo/fixtures/custom_field.json
+msgid "Start No Earlier Than (SNET)"
+msgstr "No iniciar antes de (SNET)"
+
+#. Option of the pmo_constraint_type (Select) field in DocType 'Task'
+#: pmo/fixtures/custom_field.json
+msgid "Finish No Later Than (FNLT)"
+msgstr "No terminar después de (FNLT)"
+
+#: pmo/constraints.py
+msgid "Schedule constraint applied"
+msgstr "Restricción de cronograma aplicada"
+
+#: pmo/constraints.py
+msgid "The start was moved to {0} to honor the Start No Earlier Than (SNET) constraint; duration preserved."
+msgstr "El inicio se movió a {0} para respetar la restricción No iniciar antes de (SNET); se conservó la duración."
+
+#. Description of the pmo_constraint_type (Select) field in DocType 'Task'
+#: pmo/fixtures/custom_field.json
+msgid "Local schedule constraint on this task (ADR-0018). SNET (Start No Earlier Than): the task will not be scheduled to start before the Constraint date; if the forecast start is earlier, PMO shifts this task's start to that date keeping its duration (ERPNext keeps propagating dependents). FNLT (Finish No Later Than) is stored for a future diagnostic and does not move dates yet. It never changes baseline, actuals or committed dates."
+msgstr "Restricción local de cronograma sobre esta tarea (ADR-0018). SNET (No iniciar antes de): la tarea no se programará para iniciar antes de la Fecha de la restricción; si el inicio previsto es anterior, PMO desplaza el inicio de esta tarea a esa fecha conservando su duración (ERPNext sigue propagando a las dependientes). FNLT (No terminar después de) se guarda para un diagnóstico futuro y todavía no mueve fechas. Nunca cambia la línea base, los reales ni las fechas comprometidas."
+
+#. Description of the pmo_constraint_date (Date) field in DocType 'Task'
+#: pmo/fixtures/custom_field.json
+msgid "Date for the schedule constraint. For SNET: the earliest allowed start date. Empty constraint type or date = no effect (safe no-op)."
+msgstr "Fecha de la restricción de cronograma. Para SNET: la fecha de inicio más temprana permitida. Tipo o fecha de restricción vacíos = sin efecto (no-op seguro)."
+
+#: pmo/templates/project_control/estado.html
+msgid "No earlier than (SNET)"
+msgstr "No iniciar antes de (SNET)"
+
+#: pmo/public/js/task_pmo.js
+msgid "No later than (FNLT)"
+msgstr "No terminar después de (FNLT)"
+
+#: pmo/public/js/task_pmo.js
+msgid "FNLT violated"
+msgstr "FNLT violado"
+
+#: pmo/public/js/task_pmo.js
+msgid "SNET violated"
+msgstr "SNET violado"
+
+#: pmo/public/js/task_pmo.js
+msgid "Schedule constraint without date"
+msgstr "Restricción de cronograma sin fecha"
+
+#: pmo/public/js/task_pmo.js
+msgid "days"
+msgstr "días"

@@ -173,7 +173,9 @@ Todo sobre el motor derivado (no recalcula); enmascarado P4 dentro de `execute()
 - **`PMO Work by Resource`**: tareas por recurso; **doble boundary Task≠Project** (`is_task_visible`
   canónico vía `frappe.has_permission("Task","read")`, incluye DocShare); `planned_hours` en el rango
   (`get_planned_load_by_task`); Task no visible → agregado confidencial; **sin Actual por Task**.
-- **Workspace `PMO Capacity`**: solo navegación (3 shortcuts a los reports). **Sin `charts`/`number_cards`**.
+- **Navegación a estos reports**: menú **Reportes** + la Page **Capacity Planning**. (El Workspace legacy
+  `PMO Capacity` fue **retirado** en el modelo de Workspaces de Frappe v16.5+; la navegación vive en el
+  `Workspace Sidebar` estándar `workspace_sidebar/pmo.json` y en las Pages.)
 
 **Regla P4 de presentación:** los KPIs/gráficas viven **dentro** del Script Report (per-usuario, sin
 caché). **Prohibido** Dashboard Chart / Number Card (`type=Report`) sobre estos reports: `@cache_source`
@@ -518,11 +520,10 @@ entrega armados por Project/Task. **Sin** motor nuevo, DocType, Custom Field ni 
   resto de reportes P4 de la app; si no, `frappe.PermissionError`.
 - **Cliente** (`.js`): al elegir Project prellena `status_date` desde `Project.pmo_status_date`; `status_date`
   admite solo `≤ today`.
-- **Workspace `PMO Control`** (public, module PMO, `is_standard`; roles Projects User / PMO Executive
-  Access / System Manager) — mismo patrón de shortcuts que `PMO Capacity` (header + bloques `shortcut` tipo
-  Report): enruta a `PMO Planned vs Actual`, `PMO Status Report`, `PMO Baseline Comparison` y
-  `PMO Change Register`. **Solo navega** (sin `charts`/`number_cards`; no duplica lógica ni caché). **No
-  toca `PMO Capacity`**. Sincroniza por `bench migrate`.
+- **Navegación de estos reports** (`PMO Planned vs Actual`, `PMO Status Report`, `PMO Baseline Comparison`,
+  `PMO Change Register`): menú **Reportes** + la Page **Project Control**. (El Workspace legacy `PMO Control`
+  fue **retirado** en el modelo de Workspaces de Frappe v16.5+; la navegación vive en el `Workspace Sidebar`
+  estándar y en las Pages. Los Script Reports no cambian.)
 - **Tests** — `test_planned_vs_actual.py`: puros (`_rows`/`_pct`/`_columns`, exclusión de `is_group`) +
   integración (corte `as-of` cuenta las horas del propio día de corte y excluye el día siguiente; `execute()`
   end-to-end; P4 bloquea a no-miembros). `test_control_workspace.py`: existencia, 4 shortcuts, roles, sin

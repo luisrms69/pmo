@@ -13,6 +13,32 @@
  },
  {
   "doctype": "Custom Field",
+  "name": "Task-pmo_constraint_type",
+  "dt": "Task",
+  "module": "PMO",
+  "fieldname": "pmo_constraint_type",
+  "label": "PMO — Schedule constraint",
+  "fieldtype": "Select",
+  "options": "\nStart No Earlier Than (SNET)\nFinish No Later Than (FNLT)",
+  "insert_after": "pmo_deadline",
+  "no_copy": 1,
+  "description": "Local schedule constraint on this task (ADR-0018). SNET (Start No Earlier Than): the task will not be scheduled to start before the Constraint date; if the forecast start is earlier, PMO shifts this task's start to that date keeping its duration (ERPNext keeps propagating dependents). FNLT (Finish No Later Than) is stored for a future diagnostic and does not move dates yet. It never changes baseline, actuals or committed dates."
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Task-pmo_constraint_date",
+  "dt": "Task",
+  "module": "PMO",
+  "fieldname": "pmo_constraint_date",
+  "label": "PMO — Constraint date",
+  "fieldtype": "Date",
+  "insert_after": "pmo_constraint_type",
+  "depends_on": "eval:doc.pmo_constraint_type",
+  "no_copy": 1,
+  "description": "Date for the schedule constraint. For SNET: the earliest allowed start date. Empty constraint type or date = no effect (safe no-op)."
+ },
+ {
+  "doctype": "Custom Field",
   "name": "Project-pmo_committed_end_date",
   "dt": "Project",
   "module": "PMO",

@@ -1,93 +1,96 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-10-05
-**Rama activa:** `feat/pmo-schedule-intelligence` (base `version-16` @ v0.19.0 → objetivo PR **v0.20.0**, MINOR)
-**Tarea actual:** `/ship pr` de cierre **v0.20.0** — **Schedule Intelligence** (read-only) end-to-end.
-Alcance congelado: **ADR-0017** + **I.1** diagnóstico de integridad ("Revisión del cronograma") + **I.2**
-holgura/slack (backward pass, margen vs compromiso, deadline por `EF>deadline`) + **I.3** ruta crítica
-(secuencias, multi-rama, resaltado en Gantt) + **SSOT de clasificación + renombrado UX** (sin jerga "red")
-+ **Schedule Readiness** ("Calendario del cronograma", precedencia Project→Company, cobertura de rango) +
-**integración en PMO Portfolio** vía segunda tabla **Cronograma** (read-only). Cubre el **issue #9** (CPM /
-ruta crítica) → `Closes #9`. Capa de dominio en `pmo/scheduling.py`; nada reprograma ni toca la cascada FS
-nativa. PR hacia `version-16`; **sin merge** (lo autoriza el usuario aparte, luego `/ship release` v0.20.0).
-**Diferido/condicional:** Schedule Automation (constraints SNET/FNLT/MSO/MFO) — solo diseño, sin código.
-**Datos QA del entorno (NO parte del PR):** Holiday List `PMO QA Calendario 2026` asignada a `PROJ-0007` en
-`pmo-v16.dev` (limpieza pendiente de autorización aparte).
+**Fecha:** 2026-10-06
+**Rama activa:** `feat/pmo-schedule-constraints` (base `version-16` @ v0.20.0 → objetivo PR **v0.21.0**, MINOR)
+**Tarea actual:** `/ship pr` de cierre **v0.21.0** — **Schedule Constraints** (SNET write-path acotado +
+FNLT diagnóstico) end-to-end.
+Alcance congelado (3 commits): **ADR-0018** (II.0, `dca52c2`) + **SNET** write-path acotado (II.1,
+`a774c16`: `before_validate` normaliza solo la Task que se guarda sobre `exp_*`, nunca propaga; ERPNext
+sigue siendo el único propagador FS) + **FNLT diagnóstico + clasificador SSOT + indicador de Task** (II.2,
+`ec1b8ac`: `constraints.py` con `classify_constraint` + endpoint read-only `get_constraint_status`;
+`analyze_schedule_integrity` detecta `fnlt_violation`/`snet_violation` —esta última sin importar el origen
+de la escritura, incluido `set_value` del Gantt nativo—; indicador derivado en el form nativo de Task vía
+`set_intro`; findings/contadores en Project Control; traducciones es.po). Principio: **ERPNext opera el
+cronograma; PMO lo gobierna y diagnostica**; nada construye un segundo scheduler.
 
 ---
 
 ## Recuperación rápida
 
 Estoy trabajando en:
-El **cierre `/ship pr` de la rama `feat/pmo-schedule-intelligence`** hacia `version-16` (objetivo v0.20.0,
-MINOR). Schedule Intelligence I.0–I.3 + Readiness + Portfolio/Cronograma implementado, con QA visual
-aprobado y suites verdes (scheduling 53, portfolio 8, project_control 44).
+El **cierre `/ship` completo de la rama `feat/pmo-schedule-constraints`** hacia `version-16` (objetivo
+v0.21.0, MINOR): PR → merge → tag/Release → limpieza de rama. Schedule Constraints funcionalmente terminado
+(II.0–II.2), los 3 commits pusheados; QA visual del indicador y Project Control aprobado; suites verdes
+(constraints 16, scheduling 13).
 
 Plan que estoy siguiendo:
-`/ship pr`: bump 0.20.0 + CHANGELOG/CONTINUITY → push → crear PR hacia `version-16` con `Closes #9` →
-validaciones finales / CI. **DETENER antes de merge** (lo autoriza el usuario); luego `/ship merge` +
-`/ship release` (tag v0.20.0 + GitHub Release) + limpieza.
+`/ship pr`: bump 0.21.0 + CONTINUITY → push → crear PR hacia `version-16` → `/ship comentario-pr` →
+validaciones/CI. **El merge lo ejecuta el usuario en GitHub** (el skill prohíbe que Claude lo ejecute);
+luego `/sync-check` + `/ship release` (tag v0.21.0 + GitHub Release) + borrado de rama.
 
 Objetivo inmediato:
-PR OPEN contra `version-16` con el frente Schedule Intelligence, listo para merge (CI en verde).
+PR OPEN contra `version-16` con el frente Schedule Constraints, listo para merge (CI en verde + comentario
+técnico publicado).
 
 Criterio de avance:
-PR OPEN, working tree limpio, versión 0.20.0 en la rama, `Closes #9`; luego merge + release + limpieza.
+PR OPEN, working tree limpio, versión 0.21.0 en la rama; luego merge + release + limpieza.
 
 ---
 
 ## Estado actual
 
 ### Ya cerrado
-- ADR-0011 (`ba1070f`); Reporte Ejecutivo v1 (`bf57b19`); Calidad de Planeación (`a10d387`); fix shadowing `_` (`8650276`).
-- **Bloque económico (ADR-0012)**: frontera `pmo/project_economics.py` (contrato lazy, 3 estados + ok,
-  gate económico), sección `costs` en `build_project_control` (comparable_cost vs gross_margin_cost_basis),
-  bloque compacto en `executive.html` (solo Page), pestaña **Financiera** (`financial.html` +
-  `get_financial_html`), `impact_amount`/`impact_days` marcados no vinculantes. Docs: ADR-0012 +
-  arquitectura.md + project-control.md. Tests: `test_project_economics.py` + ampliación de
-  `test_project_control.py`.
-- Validación real end-to-end en `pmo-v16.dev` (cadena PROJ-0009: root + addenda aplicada + addenda pendiente).
-- Tests: suite completa **267 + 41 OK**. Linters (ruff check/format, prettier@2.7.1) limpios.
+- **II.0 ADR-0018** (`dca52c2`): contrato Schedule Constraints + límite de enforcement (escrituras fuera de
+  `Task.save()` como el Gantt nativo con `set_value` no se interceptan; se detectan después).
+- **II.1 SNET** (`a774c16`): `pmo/constraints.py` write-path acotado — `apply_start_constraint`
+  (`before_validate`), `compute_snet_start_end`, elegibilidad (no iniciada/completada/cancelada/grupo/hito),
+  duración en días naturales, preserva hora; `notify_start_constraint` (on_update, suprimido en cascada).
+- **II.2 FNLT + SSOT + indicador** (`ec1b8ac`): clasificador `classify_constraint` (8 estados SNET/FNLT) +
+  `get_constraint_status` (read-only); detección `fnlt_violation`/`snet_violation` en
+  `analyze_schedule_integrity`; `task_pmo.js` (indicador `set_intro`); limpieza de copy en Project Control.
+- Tests verdes: `test_constraints` 16, `test_scheduling` 13. Linters (ruff check/format, prettier@2.7.1) OK.
 
 ### Pendiente inmediato
-1. CI del PR #20 en verde (corregir solo fallos atribuibles al cambio).
-2. **DETENERSE antes de merge/tag/release** (merge lo hace el usuario; luego `/ship release` → tag+Release `v0.16.0`).
+1. Crear PR hacia `version-16` + `/ship comentario-pr` (gate previo al merge).
+2. CI del PR en verde.
+3. Merge (lo ejecuta el usuario en GitHub) → `/sync-check` → `/ship release` tag+Release `v0.21.0` → borrar rama.
 
 ### No repetir / no ampliar
-- No ampliar más la UI económica ni sembrar más datos (MVP aceptado por el usuario).
-- No segunda fuente de verdad económica; todo autorizado entra por el contrato (ADR-0012 D1).
-- Economía **nunca** en Print Format/PDF (ADR-0012 D6, decisión estructural).
-- No degradar estado `inconsistent` a ausencia (ADR-0012 D3).
+- No construir un segundo scheduler: ERPNext es el único propagador FS; SNET solo normaliza la Task que se
+  guarda; FNLT es solo diagnóstico (no mueve fechas, no bloquea).
+- No interceptar escrituras fuera de `Task.save()` (Gantt nativo `set_value`): se detectan read-only.
+- El frente **Capacity** (default global en PMO Settings) NO entra en este release; vive aparte en
+  `feat/pmo-capacity-default-settings`.
 
 ---
 
 ## Decisiones vigentes
-- **SSOT económico = Quotation congelada** vía `get_project_authorized_economics`; pmo compone, no recalcula.
-- **Gate económico único server-side**: rol {PMO Manager, PMO Executive Access, System Manager} **AND**
-  Project READ, evaluado antes de componer `costs`; si no pasa, `pc.costs` no existe en el payload.
-- **`comparable_cost`** = costing+purchase (vs autorizado); **`gross_margin_cost_basis`** = +material
-  (base del `gross_margin` nativo). Material no contamina el comparable.
-- `frappe.logger("pmo").warning` (no `frappe.log_error`) en el estado `inconsistent` — evita ensuciar el suite.
-- Moneda v1: comparación solo con base única; el contrato es fail-closed ante moneda incompatible.
+- **SNET write-path acotado**: mutación in-memory en `before_validate` sobre `exp_start_date`/`exp_end_date`
+  de la propia Task; nunca `save()` en cadena; días naturales; preserva la hora original.
+- **FNLT = diagnóstico**: `exp_end > constraint_date` ⇒ finding `fnlt_violation`; no reprograma ni bloquea.
+- **SSOT de clasificación en dominio** (`constraints.py`): estados/severidad/labels se deciden en backend;
+  templates/JS solo presentan.
+- **Deadline y FNLT son findings separados** (pueden coexistir sobre la misma Task).
 
 ---
 
 ## Archivos relevantes ahora
 ### Leer primero
-- `pmo/project_control.py` — builder canónico + sección `costs` + `get_financial_html`.
-- `pmo/project_economics.py` — frontera/gate hacia `erpnext_proposals`.
-- `pmo/templates/project_control/{executive,financial}.html`.
-- `docs/adr/0012-project-economics-integration.md`.
+- `pmo/constraints.py` — write-path SNET + clasificador SSOT + endpoint read-only.
+- `pmo/scheduling.py` — `analyze_schedule_integrity` con `fnlt_violation`/`snet_violation`.
+- `pmo/public/js/task_pmo.js` — indicador derivado en el form de Task.
+- `docs/adr/0018-schedule-constraints.md`.
 ### Fuera de git (no commitear)
-- `one_offs/seed_finance.py` — seed económico dev-only (cadena real PROJ-0009, gitignored).
+- `one_offs/qa_fnlt_dataset.py` — dataset QA II.2 (gitignored).
+- `one_offs/capacity_paso1_backup/` — respaldo del frente Capacity (se restaura en su propia rama).
 
 ---
 
 ## Riesgos / cuidados
 - La suite corre en dos lotes (integración + unitarios); no leer solo el último "Ran N".
-- Tras i18n/build → `clear-cache` para que el servidor tome traducciones nuevas.
 - CI usa `ruff check` + `prettier@2.7.1` exactos; linters solo sobre `.py`/`.js`, nunca `.json`.
 - `pyproject.toml` deriva la versión vía flit (`dynamic`); tocar solo `pmo/__init__.py::__version__`.
+- El merge lo ejecuta el usuario en GitHub (Squash & Merge); Claude no llama a la API de merge.
 
 ## Información faltante
-- Ninguna para continuar; el PR se crea contra `version-16` y se detiene antes de merge/tag/release.
+- Ninguna para continuar; PR contra `version-16`, merge por el usuario, luego release v0.21.0 + limpieza.
