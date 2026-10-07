@@ -77,8 +77,9 @@ def _global_default_hours() -> float | None:
 def _latest_capacity_row(on_date, employee: str | None = None):
 	"""Fila `(capacity_hours_per_day, from_date)` más reciente vigente (`from_date <= on_date`) del scope.
 
-	`employee` informado → override de ese Employee; None → scope global (`employee` vacío/NULL). None si
-	no hay fila.
+	`employee` informado → override de ese Employee (uso vigente). None → fila global **legacy**
+	(`employee` vacío/NULL), consultada solo como fallback transitorio deprecado; el default global vive en
+	`PMO Settings.default_capacity_hours_per_day` (ver `_global_default_hours`). None si no hay fila.
 	"""
 	cap = frappe.qb.DocType("PMO Capacity")
 	query = (

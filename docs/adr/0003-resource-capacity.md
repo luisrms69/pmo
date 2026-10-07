@@ -60,12 +60,21 @@ Libre = Availability − PlannedLoad ; Utilización = PlannedLoad/Availability y
 
 ## Modelo de datos
 
-### `PMO Capacity` — capacidad efectivo-datada (un solo modelo: global + override) — SIN CAMBIOS
-- `employee` (Link Employee, **opcional**): vacío = **baseline global**; con valor = **override por persona**.
+### `PMO Capacity` — capacidad efectivo-datada
+
+> **Actualización (Capacity Paso 1–2):** el **default global** dejó de vivir en una fila `PMO Capacity`
+> con `employee` vacío y pasó a **`PMO Settings.default_capacity_hours_per_day`** (fuente única del default
+> global; inicializado por patch idempotente, ver Paso 1). La fila global de `PMO Capacity` (`employee`
+> vacío) queda solo como **fallback transitorio deprecado** (se retira en Paso 2/4). El **override por
+> Employee** no cambia. "Sin 8h implícitas **en código**" sigue vigente: el 8 es un default **configurable**
+> de PMO Settings, no una suposición en el resolver.
+
+- `employee` (Link Employee, **opcional**): con valor = **override por persona** (vigente); vacío = fila
+  global **legacy** (fallback transitorio, ver nota de actualización).
 - `from_date` (Date, req); `capacity_hours_per_day` (Float, req).
-- Resolución `capacity(employee, date)` = fila del employee con `from_date ≤ date` más reciente; si no,
-  fila global. **Sin default global mutable, sin 8h implícitas** (ausencia → None). Unicidad scope+from_date
-  (vacío/NULL = scope GLOBAL único).
+- Resolución `capacity(employee, date)` = override del Employee (`from_date ≤ date` más reciente) →
+  **`PMO Settings.default_capacity_hours_per_day`** → fila global legacy → **None** (sin 8h implícitas en
+  código). Unicidad scope+from_date (vacío/NULL = scope GLOBAL único).
 
 ### Custom Field `ToDo.pmo_planned_hours` (Float, **opcional**) — dato faltante, sobre el Assignment nativo
 - Horas planificadas de **ese asignado** en **esa Task**. Vive en el registro de asignación nativo (ToDo),
@@ -79,8 +88,12 @@ Application **solo si HRMS**.
 ## Decisiones
 
 ### D1 — Capacidad
-Un solo DocType `PMO Capacity` efectivo-datado (global + override); resolución más-específico-luego-global
-por `from_date`. Sin default mutable ni 8h implícitas.
+**Default global** en `PMO Settings.default_capacity_hours_per_day` (Single; inicializado por patch
+idempotente) + **override por Employee** en `PMO Capacity` (efectivo-datado). Resolución override →
+PMO Settings → fila global legacy de `PMO Capacity` (fallback transitorio deprecado) → None. Sin 8h
+implícitas en código (el default de PMO Settings es configurable).
+_(Versión original de D1: "un solo DocType `PMO Capacity` global + override, sin default mutable"; superada
+por Capacity Paso 1–2 — ver nota de actualización arriba.)_
 
 ### D2 — Carga planificada DERIVADA de Task + Assignment (no DocType paralelo)
 La fuente de "quién tiene qué trabajo" es **Task** (`expected_time`, fechas, project) + **Assignment**

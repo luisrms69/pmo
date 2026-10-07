@@ -30,6 +30,14 @@ configurada** y **no hay visibilidad de esa carencia**.
 ## Decisiones
 
 ### D1 — `None` (no derivable) ≠ `0` para recursos sin capacidad (A)
+
+> **Actualización (Capacity Paso 1–2):** la semántica `None` ≠ `0` y `has_cap` **no cambia**, pero la
+> **fuente del default global** pasó de "fila `PMO Capacity` con `employee` vacío" a
+> **`PMO Settings.default_capacity_hours_per_day`**. En la práctica, con ese default configurado (patch lo
+> inicializa a 8), `get_capacity` deja de ser `None` para cualquier Employee/fecha, de modo que
+> "capacidad faltante" solo ocurre si el default global está **sin configurar** (0/None) y no hay override
+> ni fila legacy vigente. El resolver (`capacity.py`) ya contempla PMO Settings.
+
 En `PMO Capacity Planning`, por cada fila Employee×periodo se marca `has_cap` = si **algún** día del periodo
 tiene capacidad resoluble (`get_capacity` ≠ None). Si `has_cap` es **falso**:
 - `capacity`, `availability`, `free`, `overallocation`, `util_planned`, `util_actual` = **`None`** (no `0`).

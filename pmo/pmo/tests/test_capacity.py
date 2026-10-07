@@ -50,15 +50,15 @@ class TestPMOCapacity(IntegrationTestCase):
 	# --- Resolución ---------------------------------------------------------
 
 	def test_global_baseline_applies_to_anyone(self):
-		_cap("2026-01-01", 8.0)  # global
+		_cap("2026-01-01", 8.0)  # fila global legacy (fallback transitorio; Settings=0 en setUp)
 		self.assertEqual(get_capacity(EMP1, "2026-06-15"), 8.0)
 		self.assertEqual(get_capacity("EMP-CUALQUIERA", "2026-06-15"), 8.0)
 
 	def test_override_beats_global(self):
-		_cap("2026-01-01", 8.0)  # global
+		_cap("2026-01-01", 8.0)  # fila global legacy (fallback transitorio)
 		_cap("2026-01-01", 6.0, employee=EMP1)  # override EMP1
 		self.assertEqual(get_capacity(EMP1, "2026-06-15"), 6.0)  # override
-		self.assertEqual(get_capacity(EMP2, "2026-06-15"), 8.0)  # sin override → global
+		self.assertEqual(get_capacity(EMP2, "2026-06-15"), 8.0)  # sin override → fila global legacy
 
 	def test_effective_dating_preserves_past(self):
 		_cap("2026-01-01", 8.0, employee=EMP1)

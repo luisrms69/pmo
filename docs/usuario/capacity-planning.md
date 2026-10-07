@@ -108,8 +108,10 @@ Responde: *¿qué capacidad efectiva tiene hoy cada recurso y quién no la tiene
 
 - Filtros: **A la fecha** (por defecto hoy), **Employee** y **Departamento** (opcionales).
 - Columnas: recurso, nombre, departamento, **Capacidad h/día**, **Origen** y **Vigente desde**.
-- **Origen:** `Override` (fila propia del Employee), `Global` (baseline sin Employee) o **`Faltante`** (no hay
-  capacidad vigente a la fecha → se debe configurar en `PMO Capacity`).
+- **Origen:** `Override` (fila propia del Employee), `Global` (default de `PMO Settings → Default Capacity
+  Hours Per Day`; o, de forma transitoria, una fila global legacy de `PMO Capacity` sin Employee) o
+  **`Faltante`** (no hay capacidad resoluble → configurar el default en `PMO Settings` o un override en
+  `PMO Capacity`).
 - Resumen: **Recursos**, **Sin capacidad configurada** (naranja si hay) y **Con override individual**.
 - Alcance: tú ves **tu** recurso; PMO Manager / acceso ejecutivo ven todos. No muestra Project/Task.
 

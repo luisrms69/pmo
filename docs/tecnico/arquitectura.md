@@ -114,10 +114,12 @@ Planificación de capacidad **derivada** de la fuente nativa (`Task` + Assignmen
 de asignaciones. Decisiones en `docs/adr/0003-resource-capacity.md`; uso en `docs/usuario/capacity-planning.md`.
 
 ### Cuatro conceptos (3 derivados, 1 persistido)
-- **Capacity** (persistido) — `PMO Capacity`: capacidad horas/día efectivo-datada. `employee` vacío =
-  baseline global; con valor = override. Resolución única `pmo.capacity.get_capacity(employee, date)`
-  (override → global → `None`; **sin 8h implícitas**). Validación valor>0 y unicidad scope+`from_date`
-  (vacío/NULL = scope GLOBAL único).
+- **Capacity** — **default global** en `PMO Settings.default_capacity_hours_per_day` (persistido en el
+  Single; inicializado a 8 por patch idempotente) + **override por Employee** en `PMO Capacity` (fila con
+  `employee`). Resolución única `pmo.capacity.get_capacity(employee, date)` = override del Employee →
+  default de PMO Settings → **fila global legacy de `PMO Capacity`** (`employee` vacío; fallback transitorio
+  deprecado, se retira en Paso 2/4) → `None` (**sin 8h implícitas en código**). `PMO Capacity`: validación
+  valor>0 y unicidad scope+`from_date`.
 - **Availability** (derivado) — `pmo.availability.get_availability(employee, date)`: Capacity − festivos
   (Holiday List nativa) − Leave aprobada (**HRMS opcional**, `Leave Application` en runtime; medio día →
   Capacity/2). `Capacity None → None`.
