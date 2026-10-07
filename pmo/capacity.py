@@ -8,15 +8,17 @@ reportes de capacidad (incrementos posteriores) deben reutilizarla, no reimpleme
 
 Regla de resolución:
     1. fila del `employee` con `from_date <= date`, la más reciente (override individual);
-    2. si no hay, fila global (`employee` vacío/NULL) con `from_date <= date`, la más reciente;
-    3. si tampoco hay, NO se asume 8h: devuelve None (config ausente). Con throw=True lanza error.
+    2. si no hay override, el default global sale de `PMO Settings.default_capacity_hours_per_day`;
+    3. fallback transitorio (deprecado, se retira en Paso 2/4): fila global `PMO Capacity` con
+       `employee` vacío/NULL. PMO Settings tiene precedencia sobre esta fila;
+    4. si nada aplica, NO se asume 8h en código: devuelve None (config ausente). Con throw=True lanza.
 """
 
 import frappe
 from frappe import _
 from frappe.query_builder import Order
 from frappe.query_builder.functions import Coalesce
-from frappe.utils import getdate
+from frappe.utils import flt, getdate
 
 
 def get_capacity(employee: str | None, date=None, throw: bool = False) -> float | None:
@@ -33,9 +35,9 @@ def get_capacity_detail(employee: str | None, date=None, throw: bool = False) ->
 	"""Resolución de capacidad con **origen** y **fecha vigente** (ADR-0003 D1; fuente única).
 
 	Devuelve `{hours, origin, from_date}` donde `origin` es `"override"` (fila del propio Employee) o
-	`"global"` (baseline sin Employee). `None` si no hay config (con `throw=True` lanza). No asume 8h.
-	La resolución más-específico-luego-global vive **solo aquí**; reportes/UX la reutilizan (no la
-	reimplementan)."""
+	`"global"` (default de PMO Settings; `from_date` None por no estar efectivo-datado). `None` si no hay
+	config (con `throw=True` lanza). No asume 8h en código. La resolución override→global vive **solo
+	aquí**; reportes/UX la reutilizan (no la reimplementan)."""
 	on_date = getdate(date)
 
 	if employee:
@@ -43,6 +45,12 @@ def get_capacity_detail(employee: str | None, date=None, throw: bool = False) ->
 		if row is not None:
 			return {"hours": row[0], "origin": "override", "from_date": row[1]}
 
+	default_hours = _global_default_hours()
+	if default_hours is not None:
+		return {"hours": default_hours, "origin": "global", "from_date": None}
+
+	# Fallback transitorio (deprecado, se retira en Paso 2/4): fila global `PMO Capacity` con employee
+	# vacío. PMO Settings ya tiene precedencia arriba; esta fila solo cubre sitios aún no migrados.
 	row = _latest_capacity_row(on_date, employee=None)
 	if row is not None:
 		return {"hours": row[0], "origin": "global", "from_date": row[1]}
@@ -54,6 +62,16 @@ def get_capacity_detail(employee: str | None, date=None, throw: bool = False) ->
 			)
 		)
 	return None
+
+
+def _global_default_hours() -> float | None:
+	"""Default global de horas/día desde `PMO Settings.default_capacity_hours_per_day` (fuente única).
+
+	Sustituye al patrón de la fila `PMO Capacity` con Employee vacío. Vacío/0/negativo → None (no se
+	asume ninguna jornada en código; la ausencia de config no se silencia como 0).
+	"""
+	hours = flt(frappe.db.get_single_value("PMO Settings", "default_capacity_hours_per_day"))
+	return hours if hours > 0 else None
 
 
 def _latest_capacity_row(on_date, employee: str | None = None):

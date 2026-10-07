@@ -59,6 +59,8 @@ def _global_capacity(hours, from_date="2026-01-01"):
 class TestAvailability(IntegrationTestCase):
 	def setUp(self):
 		frappe.db.delete("PMO Capacity")  # aislamiento
+		# Sin default global de Settings: estos tests validan la ruta "sin capacidad configurada".
+		frappe.db.set_single_value("PMO Settings", "default_capacity_hours_per_day", 0)
 		_holiday_list()
 		self.emp = _employee()
 

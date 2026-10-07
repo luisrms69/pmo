@@ -67,7 +67,7 @@ def _rows(employees, as_of):
 				"capacity_hours_per_day": detail["hours"] if detail else None,
 				"origin_key": origin_key,  # lógica/resumen (independiente del idioma)
 				"origin": _origin_label(detail),  # presentación traducida
-				"effective_from": str(detail["from_date"]) if detail else None,
+				"effective_from": str(detail["from_date"]) if detail and detail.get("from_date") else None,
 			}
 		)
 	return rows

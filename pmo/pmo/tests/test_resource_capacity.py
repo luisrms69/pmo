@@ -68,6 +68,8 @@ class TestResourceCapacityResolver(IntegrationTestCase):
 	def setUp(self):
 		# fechas 2027 aisladas para no chocar con capacidades globales de otros módulos de test
 		frappe.db.delete("PMO Capacity", {"from_date": (">=", "2027-01-01")})
+		# Sin default global de Settings: el caso "missing" valida la ruta sin-default.
+		frappe.db.set_single_value("PMO Settings", "default_capacity_hours_per_day", 0)
 
 	def test_override_beats_global(self):
 		emp = _employee("RC Emp Override")

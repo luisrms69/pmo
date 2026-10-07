@@ -7,3 +7,4 @@
 pmo.patches.v0_0_1.seed_risk_questions
 pmo.patches.v0_0_1.normalize_risk_question_es
 pmo.patches.v0_0_1.migrate_risk_levels
+pmo.patches.v0_0_1.init_default_capacity_hours

@@ -151,6 +151,9 @@ class TestCapacityReport(IntegrationTestCase):
 		frappe.db.delete("ToDo", {"reference_type": "Task"})
 		frappe.db.delete("Timesheet Detail")
 		frappe.db.delete("Timesheet")
+		# Sin default global de Settings: el caso "missing capacity" valida la ruta sin-default
+		# (la capacidad resoluble viene solo de la fila legacy efectivo-datada 2026).
+		frappe.db.set_single_value("PMO Settings", "default_capacity_hours_per_day", 0)
 
 	def _run(self, observer, **filters):
 		return self._run_full(observer, **filters)[0]
