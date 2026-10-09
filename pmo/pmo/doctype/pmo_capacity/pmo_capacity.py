@@ -3,8 +3,11 @@
 
 """PMO Capacity — capacidad laborable efectivo-datada (ADR-0003 D1, Incremento 1).
 
-`employee` vacío = capacidad global (baseline); informado = override individual. Una fila rige desde su
-`from_date` hasta que otra del mismo scope la supersede. La resolución vive en `pmo.capacity.get_capacity`.
+`employee` informado = **override individual** (uso vigente y soportado). `employee` vacío = fila global
+**legacy**: desde Capacity Paso 1 el default global vive en `PMO Settings.default_capacity_hours_per_day`;
+la fila global de este DocType queda solo como **fallback transitorio** (deprecado, se retira en Paso 2/4).
+Una fila rige desde su `from_date` hasta que otra del mismo scope la supersede. La resolución (override →
+PMO Settings → fila global legacy → None) vive en `pmo.capacity.get_capacity`.
 """
 
 import frappe

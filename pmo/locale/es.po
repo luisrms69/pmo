@@ -4667,3 +4667,40 @@ msgstr "Restricción de cronograma sin fecha"
 #: pmo/public/js/task_pmo.js
 msgid "days"
 msgstr "días"
+
+# Capacity Paso 4 — jornada neta desde HRMS Shift + cobertura
+msgid "PMO - Daily break time (minutes)"
+msgstr "PMO - Tiempo de descanso diario (minutos)"
+
+msgid "Net capacity h/day"
+msgstr "Capacidad neta h/día"
+
+msgid "Shift Type"
+msgstr "Tipo de turno"
+
+msgid "Status"
+msgstr "Estado"
+
+msgid "Shift"
+msgstr "Turno"
+
+msgid "Default"
+msgstr "Predeterminado"
+
+msgid "Missing"
+msgstr "Faltante"
+
+msgid "No shift assigned - using default"
+msgstr "Sin turno asignado - usando el predeterminado"
+
+msgid "No shift assigned / no capacity"
+msgstr "Sin turno asignado / sin capacidad"
+
+msgid "Without assigned shift"
+msgstr "Sin turno asignado"
+
+msgid "Without resolvable capacity"
+msgstr "Sin capacidad resoluble"
+
+msgid "Missing shift"
+msgstr "Sin turno"

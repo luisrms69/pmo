@@ -8,7 +8,7 @@ app_license = "mit"
 # Apps
 # ------------------
 
-required_apps = ["erpnext"]
+required_apps = ["erpnext", "hrms"]
 
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
@@ -251,6 +251,7 @@ fixtures = [
 					"Task-pmo_constraint_type",
 					"Task-pmo_constraint_date",
 					"ToDo-pmo_planned_hours",
+					"Shift Type-pmo_unpaid_break_minutes",
 				],
 			]
 		],

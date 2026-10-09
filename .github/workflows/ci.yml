@@ -98,6 +98,7 @@ jobs:
         working-directory: /home/runner/frappe-bench
         run: |
           bench get-app --branch version-16 erpnext
+          bench get-app --branch version-16 hrms
           bench get-app pmo $GITHUB_WORKSPACE
           bench setup requirements --dev
         env:
@@ -113,6 +114,7 @@ jobs:
             --mariadb-root-password root \
             --admin-password admin
           bench --site test_pmo install-app erpnext
+          bench --site test_pmo install-app hrms
           bench --site test_pmo install-app pmo
           bench --site test_pmo set-config allow_tests true
 

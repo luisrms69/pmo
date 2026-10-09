@@ -1,6 +1,19 @@
 [
  {
   "doctype": "Custom Field",
+  "name": "Shift Type-pmo_unpaid_break_minutes",
+  "dt": "Shift Type",
+  "module": "PMO",
+  "fieldname": "pmo_unpaid_break_minutes",
+  "label": "PMO - Daily break time (minutes)",
+  "fieldtype": "Int",
+  "insert_after": "end_time",
+  "default": "0",
+  "non_negative": 1,
+  "description": "Daily rest/break time in minutes (unpaid), subtracted from the gross shift span (end - start) to obtain the net daily capacity used by PMO. Empty/0 = no break (net = gross span)."
+ },
+ {
+  "doctype": "Custom Field",
   "name": "Task-pmo_deadline",
   "dt": "Task",
   "module": "PMO",

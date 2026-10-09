@@ -53,12 +53,30 @@ def _hl():
 	return HL
 
 
+def _assign_hl(emp):
+	"""HRMS 16.x: Holiday List por `Holiday List Assignment` (submitted), no por `Employee.holiday_list`.
+	`from_date` dentro del rango de la lista (validación nativa). Idempotente."""
+	hl = _hl()
+	if frappe.get_all("Holiday List Assignment", filters={"assigned_to": emp, "docstatus": 1}, limit=1):
+		return
+	frappe.get_doc(
+		{
+			"doctype": "Holiday List Assignment",
+			"applicable_for": "Employee",
+			"assigned_to": emp,
+			"holiday_list": hl,
+			"from_date": frappe.db.get_value("Holiday List", hl, "from_date"),
+		}
+	).insert(ignore_permissions=True).submit()
+
+
 def _employee(name, user_id):
 	emp = frappe.db.exists("Employee", {"employee_name": name}) or (
-		frappe.get_doc({"doctype": "Employee", "first_name": name, "status": "Active", "holiday_list": _hl()})
+		frappe.get_doc({"doctype": "Employee", "first_name": name, "status": "Active"})
 		.insert(ignore_permissions=True, ignore_mandatory=True)
 		.name
 	)
+	_assign_hl(emp)
 	frappe.db.set_value("Employee", emp, "user_id", user_id)
 	# El rol `Employee` lo gestiona ERPNext: solo persiste si el User tiene un Employee vinculado
 	# (User.validate lo retira si no). Se concede DESPUES de vincular para que quede efectivo (igual
@@ -68,15 +86,9 @@ def _employee(name, user_id):
 
 
 def _capacity(emp, hours=8.0):
-	if not frappe.get_all("PMO Capacity", filters={"employee": emp, "from_date": "2026-01-01"}, limit=1):
-		frappe.get_doc(
-			{
-				"doctype": "PMO Capacity",
-				"employee": emp,
-				"from_date": "2026-01-01",
-				"capacity_hours_per_day": hours,
-			}
-		).insert(ignore_permissions=True)
+	# Capacity Paso 4 (site sin HRMS): la capacidad resoluble viene del default global de PMO Settings.
+	# Esta Page valida alcance/identidad (no valores), así que basta con que exista capacidad > 0.
+	frappe.db.set_single_value("PMO Settings", "default_capacity_hours_per_day", hours)
 
 
 def _project(name, owner):

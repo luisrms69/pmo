@@ -30,16 +30,36 @@ def _holiday_list():
 	return HL
 
 
+def _assign_hl(emp):
+	"""HRMS 16.x: la Holiday List se asigna por `Holiday List Assignment` (submitted), no por el campo
+	`Employee.holiday_list`. `get_holiday_list_for_employee` (hook de HRMS) la resuelve desde ahí.
+	`from_date` debe caer dentro del rango de la Holiday List (validación nativa de HRMS). Idempotente."""
+	hl = _holiday_list()
+	if frappe.get_all("Holiday List Assignment", filters={"assigned_to": emp, "docstatus": 1}, limit=1):
+		return
+	doc = frappe.get_doc(
+		{
+			"doctype": "Holiday List Assignment",
+			"applicable_for": "Employee",
+			"assigned_to": emp,
+			"holiday_list": hl,
+			"from_date": frappe.db.get_value("Holiday List", hl, "from_date"),
+		}
+	)
+	doc.insert(ignore_permissions=True)
+	doc.submit()
+
+
 def _employee():
 	existing = frappe.db.exists("Employee", {"employee_name": "PMO Avail Emp"})
 	if existing:
+		_assign_hl(existing)
 		return existing
-	return (
+	emp = (
 		frappe.get_doc(
 			{
 				"doctype": "Employee",
 				"first_name": "PMO Avail Emp",
-				"holiday_list": _holiday_list(),
 				"status": "Active",
 				"date_of_birth": "1990-01-01",
 				"date_of_joining": "2020-01-01",
@@ -48,17 +68,20 @@ def _employee():
 		.insert(ignore_permissions=True, ignore_mandatory=True)
 		.name
 	)
+	_assign_hl(emp)
+	return emp
 
 
 def _global_capacity(hours, from_date="2026-01-01"):
-	frappe.get_doc(
-		{"doctype": "PMO Capacity", "from_date": from_date, "capacity_hours_per_day": hours}
-	).insert(ignore_permissions=True, ignore_links=True)
+	# Capacity Paso 4 (site sin HRMS): la capacidad base viene del default de PMO Settings, no de PMO Capacity.
+	frappe.db.set_single_value("PMO Settings", "default_capacity_hours_per_day", hours)
 
 
 class TestAvailability(IntegrationTestCase):
 	def setUp(self):
 		frappe.db.delete("PMO Capacity")  # aislamiento
+		# Sin default global de Settings: estos tests validan la ruta "sin capacidad configurada".
+		frappe.db.set_single_value("PMO Settings", "default_capacity_hours_per_day", 0)
 		_holiday_list()
 		self.emp = _employee()
 

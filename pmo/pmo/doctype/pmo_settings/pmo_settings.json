@@ -10,7 +10,9 @@
   "execution_weight",
   "schedule_weight",
   "column_break_phi",
-  "governance_weight"
+  "governance_weight",
+  "capacity_section",
+  "default_capacity_hours_per_day"
  ],
  "fields": [
   {
@@ -46,6 +48,19 @@
    "fieldtype": "Int",
    "label": "Governance Weight (auto)",
    "read_only": 1
+  },
+  {
+   "fieldname": "capacity_section",
+   "fieldtype": "Section Break",
+   "label": "Capacity"
+  },
+  {
+   "default": "8",
+   "description": "Horas/día por defecto para TODOS los empleados sin override individual en PMO Capacity. Es la ÚNICA fuente del default global de capacidad (sustituye al registro PMO Capacity con Employee vacío). Vacío o 0 = sin default global.",
+   "fieldname": "default_capacity_hours_per_day",
+   "fieldtype": "Float",
+   "label": "Default Capacity Hours Per Day",
+   "non_negative": 1
   }
  ],
  "index_web_pages_for_search": 1,

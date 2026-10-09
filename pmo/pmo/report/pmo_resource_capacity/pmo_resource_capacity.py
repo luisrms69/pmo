@@ -1,20 +1,23 @@
 # Copyright (c) 2026, Consultoria en Negocios y Aplicaciones and contributors
 # For license information, please see license.txt
 
-"""PMO Resource Capacity — vista de mantenimiento/cobertura de `PMO Capacity` (ADR-0003 D1). Script Report.
+"""PMO Resource Capacity - cobertura de jornada por recurso (Capacity Paso 4). Script Report.
 
-Responde "¿qué capacidad efectiva tiene hoy cada recurso y quién NO la tiene configurada?" para poder
-mantener `PMO Capacity`. Reutiliza la resolución única `pmo.capacity.get_capacity_detail` (no reimplementa
-la regla override/global) y el tiering de observador de la app: normal → solo su Employee; PMO Manager /
-Executive / Administrator → todos los Employees activos (con filtros opcionales). No expone Project/Task
-(solo identidad organizacional + capacidad), por lo que no introduce una segunda política P4.
+Responde "¿qué capacidad neta tiene hoy cada recurso, de qué **origen** (Shift de HRMS vs default de PMO
+Settings), y quién NO tiene turno asignado?". Reutiliza la resolución única
+`pmo.capacity.get_employee_daily_capacity` (no reimplementa la regla) y el tiering de observador: normal →
+solo su Employee; PMO Manager / Executive / Administrator → todos los Employees activos.
+
+El estado `missing_shift` (sin turno resoluble, aunque haya fallback a default) se muestra **en rojo** vía
+el formatter del `.js` - es informativo, no bloqueante: señala falta de jornada en HRMS, no que la
+capacidad sea 0.
 """
 
 import frappe
 from frappe import N_, _
 from frappe.utils import getdate, today
 
-from pmo.capacity import get_capacity_detail
+from pmo.capacity import get_employee_daily_capacity
 from pmo.permissions import _is_global_reader
 
 MANAGER_ROLE = "PMO Manager"
@@ -38,8 +41,7 @@ def _tier(observer):
 def _scope_employees(observer, filters):
 	"""Alcance de recursos por observador. Normal → su propio Employee; manager/executive → activos.
 
-	A diferencia de `PMO Capacity Planning`, aquí NO se filtra por actividad: el objetivo es la cobertura
-	de configuración (incluye recursos aún sin capacidad ni carga)."""
+	Objetivo = cobertura de jornada: incluye recursos SIN turno (para que salten en rojo)."""
 	if _tier(observer) == "normal":
 		own = frappe.db.get_value("Employee", {"user_id": observer, "status": "Active"}, "name")
 		return [own] if own else []
@@ -56,30 +58,40 @@ def _rows(employees, as_of):
 	rows = []
 	for emp in employees:
 		meta = frappe.db.get_value("Employee", emp, ["employee_name", "department"], as_dict=True) or {}
-		detail = get_capacity_detail(emp, as_of)
-		# origin_key: valor interno estable ("override"/"global"/"missing"); "missing" si no hay fila vigente.
-		origin_key = detail["origin"] if detail else "missing"
+		cap = get_employee_daily_capacity(emp, as_of)
 		rows.append(
 			{
 				"employee": emp,
 				"employee_name": meta.get("employee_name"),
 				"department": meta.get("department"),
-				"capacity_hours_per_day": detail["hours"] if detail else None,
-				"origin_key": origin_key,  # lógica/resumen (independiente del idioma)
-				"origin": _origin_label(detail),  # presentación traducida
-				"effective_from": str(detail["from_date"]) if detail else None,
+				"capacity_hours_per_day": cap["hours"],
+				# origin_key: estable e independiente del idioma (shift/default/missing)
+				"origin_key": cap["origin"],
+				"origin": _origin_label(cap["origin"]),  # presentación traducida
+				"shift_type": cap["shift_type"],
+				# consumido por el formatter del .js para pintar en rojo
+				"missing_shift": 1 if cap["missing_shift"] else 0,
+				"status": _status_label(cap),
 			}
 		)
 	return rows
 
 
 # ORIGIN internos estables → etiqueta de presentación (se traduce con `_()`).
-ORIGIN_LABELS = {"override": N_("Override"), "global": N_("Global"), "missing": N_("Missing")}
+ORIGIN_LABELS = {"shift": N_("Shift"), "default": N_("Default"), "missing": N_("Missing")}
 
 
-def _origin_label(detail):
-	origin_key = detail["origin"] if detail else "missing"
-	return _(ORIGIN_LABELS[origin_key])
+def _origin_label(origin_key):
+	return _(ORIGIN_LABELS.get(origin_key, ORIGIN_LABELS["missing"]))
+
+
+def _status_label(cap):
+	"""Texto de estado operativo (se pinta en rojo cuando `missing_shift`)."""
+	if cap["origin"] == "shift":
+		return _("Shift")
+	if cap["origin"] == "default":
+		return _("No shift assigned - using default")
+	return _("No shift assigned / no capacity")
 
 
 def _columns():
@@ -91,16 +103,31 @@ def _columns():
 			"options": "Employee",
 			"width": 160,
 		},
-		{"fieldname": "employee_name", "label": _("Name"), "fieldtype": "Data", "width": 200},
-		{"fieldname": "department", "label": _("Department"), "fieldtype": "Data", "width": 180},
+		{"fieldname": "employee_name", "label": _("Name"), "fieldtype": "Data", "width": 180},
+		{"fieldname": "department", "label": _("Department"), "fieldtype": "Data", "width": 150},
 		{
 			"fieldname": "capacity_hours_per_day",
-			"label": _("Capacity h/day"),
+			"label": _("Net capacity h/day"),
 			"fieldtype": "Float",
-			"width": 130,
+			"width": 140,
 		},
-		{"fieldname": "origin", "label": _("Origin"), "fieldtype": "Data", "width": 110},
-		{"fieldname": "effective_from", "label": _("Effective from"), "fieldtype": "Date", "width": 120},
+		{"fieldname": "origin", "label": _("Origin"), "fieldtype": "Data", "width": 90},
+		{
+			"fieldname": "shift_type",
+			"label": _("Shift Type"),
+			"fieldtype": "Link",
+			"options": "Shift Type",
+			"width": 150,
+		},
+		{"fieldname": "status", "label": _("Status"), "fieldtype": "Data", "width": 240},
+		# oculto: lo consume el formatter del .js para pintar la fila en rojo
+		{
+			"fieldname": "missing_shift",
+			"label": _("Missing shift"),
+			"fieldtype": "Check",
+			"width": 1,
+			"hidden": 1,
+		},
 	]
 
 
@@ -108,15 +135,20 @@ def _summary(data):
 	if not data:
 		return []
 	total = len(data)
-	missing = sum(1 for r in data if r["capacity_hours_per_day"] is None)
-	overrides = sum(1 for r in data if r.get("origin_key") == "override")
+	missing_shift = sum(1 for r in data if r.get("missing_shift"))
+	no_capacity = sum(1 for r in data if r["capacity_hours_per_day"] is None)
 	return [
 		{"label": _("Resources"), "value": total, "datatype": "Int"},
 		{
-			"label": _("Without configured capacity"),
-			"value": missing,
+			"label": _("Without assigned shift"),
+			"value": missing_shift,
 			"datatype": "Int",
-			"indicator": "Orange" if missing else "Green",
+			"indicator": "Red" if missing_shift else "Green",
 		},
-		{"label": _("With individual override"), "value": overrides, "datatype": "Int"},
+		{
+			"label": _("Without resolvable capacity"),
+			"value": no_capacity,
+			"datatype": "Int",
+			"indicator": "Red" if no_capacity else "Green",
+		},
 	]

@@ -3,18 +3,20 @@
 
 """Disponibilidad derivada por día (ADR-0003 Incremento 3).
 
-Availability = Capacity - no-laborables (Holiday List) - ausencias aprobadas (Leave, solo si HRMS).
+Availability = Capacity (jornada neta) - no-laborables (Holiday List) - ausencias aprobadas (Leave).
 Es DERIVADA: refleja el estado vigente de sus fuentes nativas; no se persiste ni se congela.
 
 Reglas (decisiones fijadas):
     1. base = get_capacity(employee, date). Si es None → Availability None (config ausente NO se
        convierte silenciosamente en 0, aunque el día sea festivo o tenga Leave).
     2. si el día es Holiday en la Holiday List del employee (helper nativo) → 0.
-    3. si HRMS está instalado y hay Leave aprobada cubriendo el día: día completo → 0; medio día → base/2.
+    3. si hay Leave aprobada cubriendo el día: día completo → 0; medio día → base/2.
     4. si no → base.
 
-No duplica la resolución de capacidad ni la de Holiday List: reutiliza get_capacity y los helpers
-nativos de ERPNext (Holiday List) / HRMS (Leave), con HRMS estrictamente opcional (runtime).
+No duplica la resolución de capacidad ni la de Holiday List: reutiliza `get_capacity` y los helpers
+nativos. **HRMS es dependencia requerida** de pmo (Capacity Paso 4): el calendario laboral se resuelve con
+`get_holiday_list_for_employee`, que bajo HRMS 16.x toma la lista desde **`Holiday List Assignment`**
+(submitted; Employee → Company), NO desde el campo `Employee.holiday_list`. Leave vía `Leave Application`.
 """
 
 from datetime import timedelta
@@ -60,7 +62,7 @@ def get_availability_range(employee: str, from_date, to_date) -> dict:
 	return result
 
 
-# --- helpers (reutilizan nativo; HRMS opcional) ---------------------------------
+# --- helpers (reutilizan nativo; HRMS requerido) --------------------------------
 
 
 def _holiday_list_for(employee: str):
@@ -77,7 +79,10 @@ def _is_holiday(holiday_list, on_date) -> bool:
 
 
 def _approved_leaves(employee: str, on_date) -> list[dict]:
-	"""Leave Applications aprobadas del employee que cubren `on_date`. [] si HRMS no está instalado."""
+	"""Leave Applications aprobadas del employee que cubren `on_date`.
+
+	HRMS es dependencia requerida, por lo que `Leave Application` existe siempre; se conserva un guard
+	defensivo (devuelve [] si faltara el doctype) para no romper en entornos atípicos."""
 	if not frappe.db.exists("DocType", "Leave Application"):
 		return []
 	return frappe.get_all(

@@ -113,14 +113,18 @@ no se ocultan por tener Project relacionado.
 Planificación de capacidad **derivada** de la fuente nativa (`Task` + Assignment), sin sistema paralelo
 de asignaciones. Decisiones en `docs/adr/0003-resource-capacity.md`; uso en `docs/usuario/capacity-planning.md`.
 
-### Cuatro conceptos (3 derivados, 1 persistido)
-- **Capacity** (persistido) — `PMO Capacity`: capacidad horas/día efectivo-datada. `employee` vacío =
-  baseline global; con valor = override. Resolución única `pmo.capacity.get_capacity(employee, date)`
-  (override → global → `None`; **sin 8h implícitas**). Validación valor>0 y unicidad scope+`from_date`
-  (vacío/NULL = scope GLOBAL único).
+### Cuatro conceptos (todos derivados)
+- **Capacity** (jornada neta potencial) — fuente = **HRMS Shift** (HRMS **requerido**): resolución única
+  `pmo.capacity.get_employee_daily_capacity(employee, date)` = **Shift** (`get_shifts_for_date` →
+  `Employee.default_shift`; neta = span − `Shift Type.pmo_unpaid_break_minutes`) → **default de
+  `PMO Settings.default_capacity_hours_per_day`** (patch lo inicializa en 8) → **`None`** (sin 8h implícitas
+  en código). `origin` ∈ shift/default/missing; `missing_shift` señala falta de turno (informativo).
+  **`PMO Capacity` queda deprecado y NO se consulta** (DocType presente; retiro en ciclo posterior).
 - **Availability** (derivado) — `pmo.availability.get_availability(employee, date)`: Capacity − festivos
-  (Holiday List nativa) − Leave aprobada (**HRMS opcional**, `Leave Application` en runtime; medio día →
-  Capacity/2). `Capacity None → None`.
+  − Leave aprobada (`Leave Application`; medio día → Capacity/2). `Capacity None → None`. **HRMS es
+  dependencia requerida**: el calendario laboral se resuelve vía `get_holiday_list_for_employee`, que bajo
+  HRMS 16.x toma la Holiday List desde **`Holiday List Assignment`** (submitted; Employee → Company), no
+  desde el campo `Employee.holiday_list`.
 - **PlannedLoad** (derivado) — `pmo.planned_load`: carga de `Task.expected_time` sobre asignados activos
   (`ToDo status="Open"`). Horas por asignado (`get_planned_hours_per_assignee`): 1→E, N→E/N, overrides
   parciales→remanente uniforme, `Σ>E` o todos-override `Σ≠E`→inconsistente. Override opcional

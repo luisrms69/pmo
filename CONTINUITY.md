@@ -1,96 +1,89 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-10-06
-**Rama activa:** `feat/pmo-schedule-constraints` (base `version-16` @ v0.20.0 → objetivo PR **v0.21.0**, MINOR)
-**Tarea actual:** `/ship pr` de cierre **v0.21.0** — **Schedule Constraints** (SNET write-path acotado +
-FNLT diagnóstico) end-to-end.
-Alcance congelado (3 commits): **ADR-0018** (II.0, `dca52c2`) + **SNET** write-path acotado (II.1,
-`a774c16`: `before_validate` normaliza solo la Task que se guarda sobre `exp_*`, nunca propaga; ERPNext
-sigue siendo el único propagador FS) + **FNLT diagnóstico + clasificador SSOT + indicador de Task** (II.2,
-`ec1b8ac`: `constraints.py` con `classify_constraint` + endpoint read-only `get_constraint_status`;
-`analyze_schedule_integrity` detecta `fnlt_violation`/`snet_violation` —esta última sin importar el origen
-de la escritura, incluido `set_value` del Gantt nativo—; indicador derivado en el form nativo de Task vía
-`set_intro`; findings/contadores en Project Control; traducciones es.po). Principio: **ERPNext opera el
-cronograma; PMO lo gobierna y diagnostica**; nada construye un segundo scheduler.
+**Fecha:** 2026-10-07
+**Rama activa:** `feat/pmo-capacity-default-settings` (base `version-16` @ v0.21.0 → objetivo PR **v0.22.0**, MINOR)
+**Tarea actual:** `/ship pr` de cierre **v0.22.0** — **Capacity / HRMS** (Pasos 1–4): la capacidad pasa a
+derivarse de **HRMS Shift** (dependencia requerida) con fallback a **PMO Settings**; el calendario laboral
+se resuelve por **Holiday List Assignment**. `PMO Capacity` queda **deprecado y sin consultar**.
 
 ---
 
 ## Recuperación rápida
 
 Estoy trabajando en:
-El **cierre `/ship` completo de la rama `feat/pmo-schedule-constraints`** hacia `version-16` (objetivo
-v0.21.0, MINOR): PR → merge → tag/Release → limpieza de rama. Schedule Constraints funcionalmente terminado
-(II.0–II.2), los 3 commits pusheados; QA visual del indicador y Project Control aprobado; suites verdes
-(constraints 16, scheduling 13).
+El **cierre `/ship pr` de la rama `feat/pmo-capacity-default-settings`** hacia `version-16` (objetivo
+v0.22.0, MINOR). Capacity Pasos 1–4 implementados y validados; suite **614 + 122 OK** (Redis estable);
+QA funcional en `pmo-v16.dev` ✅ (Shift neto, fallback sin turno + rojo, Holiday List Assignment).
 
 Plan que estoy siguiendo:
-`/ship pr`: bump 0.21.0 + CONTINUITY → push → crear PR hacia `version-16` → `/ship comentario-pr` →
-validaciones/CI. **El merge lo ejecuta el usuario en GitHub** (el skill prohíbe que Claude lo ejecute);
-luego `/sync-check` + `/ship release` (tag v0.21.0 + GitHub Release) + borrado de rama.
+`/ship pr`: bump 0.21.0→0.22.0 + CONTINUITY → gate `pr-ready` (DETENER para autorización) → push + PR hacia
+`version-16`. **Sin merge** (lo autoriza el usuario con `/ship merge`); luego `/ship release` v0.22.0.
 
 Objetivo inmediato:
-PR OPEN contra `version-16` con el frente Schedule Constraints, listo para merge (CI en verde + comentario
-técnico publicado).
+PR OPEN contra `version-16` con el frente Capacity/HRMS, listo para merge (CI en verde).
 
 Criterio de avance:
-PR OPEN, working tree limpio, versión 0.21.0 en la rama; luego merge + release + limpieza.
+PR OPEN, working tree limpio, versión 0.22.0 en la rama; luego merge + release.
 
 ---
 
 ## Estado actual
 
-### Ya cerrado
-- **II.0 ADR-0018** (`dca52c2`): contrato Schedule Constraints + límite de enforcement (escrituras fuera de
-  `Task.save()` como el Gantt nativo con `set_value` no se interceptan; se detectan después).
-- **II.1 SNET** (`a774c16`): `pmo/constraints.py` write-path acotado — `apply_start_constraint`
-  (`before_validate`), `compute_snet_start_end`, elegibilidad (no iniciada/completada/cancelada/grupo/hito),
-  duración en días naturales, preserva hora; `notify_start_constraint` (on_update, suprimido en cascada).
-- **II.2 FNLT + SSOT + indicador** (`ec1b8ac`): clasificador `classify_constraint` (8 estados SNET/FNLT) +
-  `get_constraint_status` (read-only); detección `fnlt_violation`/`snet_violation` en
-  `analyze_schedule_integrity`; `task_pmo.js` (indicador `set_intro`); limpieza de copy en Project Control.
-- Tests verdes: `test_constraints` 16, `test_scheduling` 13. Linters (ruff check/format, prettier@2.7.1) OK.
+### Modelo vigente (Capacity Paso 4)
+- **Capacidad = jornada neta desde HRMS Shift** (HRMS **requerido**): `get_shifts_for_date` (Shift
+  Assignment submitted/Active) → `Employee.default_shift`; neta = span `(end−start)` −
+  `Shift Type.pmo_unpaid_break_minutes` (Custom Field; cruce de medianoche +24 h).
+- **Fallback:** `PMO Settings.default_capacity_hours_per_day` (patch idempotente lo inicializa en 8) → None.
+- **Availability** = Capacity − festivos (Holiday List resuelta por **`Holiday List Assignment`**) − Leave.
+- **Reporte `PMO Resource Capacity`**: origen `Turno`/`Predeterminado`/`Faltante`; **rojo** cuando falta
+  turno (informativo). `PMO Capacity` **deprecado, no consultado** (DocType presente; retiro posterior).
+
+### Ya cerrado (en la rama)
+- **Paso 1** (`4e23359`): default global en PMO Settings + patch `init_default_capacity_hours`.
+- **Paso 2** (`b2e7fe3`): normalización conceptual del default global.
+- **Paso 3**: investigación HRMS (sin código).
+- **Paso 4** (working tree de este PR): resolver por Shift, `required_apps=["erpnext","hrms"]`, Custom
+  Field `Shift Type-pmo_unpaid_break_minutes`, reporte de cobertura + rojo, Holiday List Assignment en
+  tests, CI instala hrms, traducciones, y reconciliación de ADR-0003/0010/arquitectura/roadmap/usuario.
 
 ### Pendiente inmediato
-1. Crear PR hacia `version-16` + `/ship comentario-pr` (gate previo al merge).
-2. CI del PR en verde.
-3. Merge (lo ejecuta el usuario en GitHub) → `/sync-check` → `/ship release` tag+Release `v0.21.0` → borrar rama.
+1. Gate `pr-ready` → autorización → push + PR hacia `version-16`.
+2. CI del PR en verde (CI ahora instala hrms).
+3. Merge (`/ship merge`) → `/ship release` tag+Release `v0.22.0`.
 
 ### No repetir / no ampliar
-- No construir un segundo scheduler: ERPNext es el único propagador FS; SNET solo normaliza la Task que se
-  guarda; FNLT es solo diagnóstico (no mueve fechas, no bloquea).
-- No interceptar escrituras fuera de `Task.save()` (Gantt nativo `set_value`): se detectan read-only.
-- El frente **Capacity** (default global en PMO Settings) NO entra en este release; vive aparte en
-  `feat/pmo-capacity-default-settings`.
+- No retirar todavía el DocType `PMO Capacity` (decisión: ciclo posterior).
+- No reintroducir `PMO Capacity` en el resolver (fuente = Shift → Settings → None).
+- No tocar core/ERPNext/HRMS; sin Property Setters.
 
 ---
 
 ## Decisiones vigentes
-- **SNET write-path acotado**: mutación in-memory en `before_validate` sobre `exp_start_date`/`exp_end_date`
-  de la propia Task; nunca `save()` en cadena; días naturales; preserva la hora original.
-- **FNLT = diagnóstico**: `exp_end > constraint_date` ⇒ finding `fnlt_violation`; no reprograma ni bloquea.
-- **SSOT de clasificación en dominio** (`constraints.py`): estados/severidad/labels se deciden en backend;
-  templates/JS solo presentan.
-- **Deadline y FNLT son findings separados** (pueden coexistir sobre la misma Task).
+- **HRMS dependencia requerida** (`required_apps=["erpnext","hrms"]`); fuente de jornada = Shift; calendario
+  por `Holiday List Assignment`.
+- **Jornada neta** = span del Shift − descanso (`pmo_unpaid_break_minutes`); nunca negativa.
+- **Custom Field de Shift Type** por **fixture** (HRMS requerido → `Shift Type` siempre existe).
+- `missing_shift` (sin turno, aun con default) se muestra en **rojo**: informativo, no bloqueante.
 
 ---
 
 ## Archivos relevantes ahora
 ### Leer primero
-- `pmo/constraints.py` — write-path SNET + clasificador SSOT + endpoint read-only.
-- `pmo/scheduling.py` — `analyze_schedule_integrity` con `fnlt_violation`/`snet_violation`.
-- `pmo/public/js/task_pmo.js` — indicador derivado en el form de Task.
-- `docs/adr/0018-schedule-constraints.md`.
+- `pmo/capacity.py` — resolver SSOT `get_employee_daily_capacity` (Shift → Settings → None).
+- `pmo/availability.py` — Availability sobre Capacity, holidays por Holiday List Assignment.
+- `pmo/pmo/report/pmo_resource_capacity/` — cobertura + formatter rojo.
+- `docs/adr/0003-resource-capacity.md`, `docs/adr/0010-capacity-reliability.md`.
 ### Fuera de git (no commitear)
-- `one_offs/qa_fnlt_dataset.py` — dataset QA II.2 (gitignored).
-- `one_offs/capacity_paso1_backup/` — respaldo del frente Capacity (se restaura en su propia rama).
+- `one_offs/qa_capacity_shift.py`, `one_offs/qa_capacity_cleanup.py` — QA dev-only (gitignored).
 
 ---
 
 ## Riesgos / cuidados
 - La suite corre en dos lotes (integración + unitarios); no leer solo el último "Ran N".
-- CI usa `ruff check` + `prettier@2.7.1` exactos; linters solo sobre `.py`/`.js`, nunca `.json`.
-- `pyproject.toml` deriva la versión vía flit (`dynamic`); tocar solo `pmo/__init__.py::__version__`.
-- El merge lo ejecuta el usuario en GitHub (Squash & Merge); Claude no llama a la API de merge.
+- Redis del bench v16 (13001/11001) ha sido inestable; requiere `bench start` para correr tests.
+- CI usa `ruff` + `prettier@2.7.1`; linters solo `.py`/`.js`, nunca `.json`.
+- `pyproject.toml` deriva la versión vía flit; tocar solo `pmo/__init__.py::__version__`.
+- Instalación: `required_apps` ahora incluye **hrms**; todo sitio con PMO debe tener HRMS.
 
 ## Información faltante
-- Ninguna para continuar; PR contra `version-16`, merge por el usuario, luego release v0.21.0 + limpieza.
+- Ninguna para continuar; PR contra `version-16`, merge por el usuario, luego release v0.22.0.

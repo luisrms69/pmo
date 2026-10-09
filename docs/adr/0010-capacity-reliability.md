@@ -30,6 +30,16 @@ configurada** y **no hay visibilidad de esa carencia**.
 ## Decisiones
 
 ### D1 — `None` (no derivable) ≠ `0` para recursos sin capacidad (A)
+
+> **Actualización (Capacity Paso 1–4):** la semántica `None` ≠ `0` y `has_cap` **no cambia**, pero la
+> **fuente de capacidad** cambió: **Paso 1** movió el default global a
+> **`PMO Settings.default_capacity_hours_per_day`**; **Paso 4** hizo que la capacidad por Employee venga de
+> **HRMS Shift** (dependencia requerida) — `get_capacity` = Shift neto → default de PMO Settings → None.
+> El resolver **ya no consulta `PMO Capacity`** (deprecado). Así, con el default configurado (patch lo
+> inicializa a 8), "capacidad faltante" (`None`) solo ocurre si **no hay turno** resoluble **y** el default
+> está sin configurar. Nota de reporte: `PMO Resource Capacity` marca además `missing_shift` (sin turno,
+> aunque haya default) en rojo — informativo, distinto de "capacidad faltante".
+
 En `PMO Capacity Planning`, por cada fila Employee×periodo se marca `has_cap` = si **algún** día del periodo
 tiene capacidad resoluble (`get_capacity` ≠ None). Si `has_cap` es **falso**:
 - `capacity`, `availability`, `free`, `overallocation`, `util_planned`, `util_actual` = **`None`** (no `0`).

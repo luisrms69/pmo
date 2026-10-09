@@ -13,7 +13,7 @@
  ],
  "fields": [
   {
-   "description": "Empty = global capacity (baseline); set = individual override for that Employee.",
+   "description": "Set = individual override for that Employee (supported). Empty = legacy global row: the global default now lives in PMO Settings → Default Capacity Hours Per Day; this empty-employee row is a transitional fallback (deprecated).",
    "fieldname": "employee",
    "fieldtype": "Link",
    "in_list_view": 1,
