@@ -41,8 +41,8 @@ HRMS obligatorio, respetando la privacidad (ADR-0002/P4), y sin perder silencios
 ## Modelo conceptual (4 conceptos separados, no mezclar)
 
 ```
-Capacity     = cuánto podría trabajar el recurso (efectivo-datada: global u override)   [PERSISTIDO]
-Availability = Capacity − no-laborables (Holiday List) − ausencias aprobadas (Leave si HRMS)  [DERIVADO/día]
+Capacity     = jornada neta potencial (HRMS Shift − descanso; fallback PMO Settings)    [DERIVADO/día]
+Availability = Capacity − no-laborables (Holiday List) − ausencias aprobadas (Leave)    [DERIVADO/día]
 PlannedLoad  = esfuerzo planificado por persona, DERIVADO de Task.expected_time + Assignment  [DERIVADO/día]
 Actual       = tiempo real trabajado (Timesheet)                                        [DERIVADO, estado vigente]
 Libre = Availability − PlannedLoad ; Utilización = PlannedLoad/Availability y Actual/Availability (separadas)
@@ -60,21 +60,24 @@ Libre = Availability − PlannedLoad ; Utilización = PlannedLoad/Availability y
 
 ## Modelo de datos
 
-### `PMO Capacity` — capacidad efectivo-datada
+### Capacidad — HRMS Shift (primaria) + PMO Settings (fallback); `PMO Capacity` DEPRECADO
 
-> **Actualización (Capacity Paso 1–2):** el **default global** dejó de vivir en una fila `PMO Capacity`
-> con `employee` vacío y pasó a **`PMO Settings.default_capacity_hours_per_day`** (fuente única del default
-> global; inicializado por patch idempotente, ver Paso 1). La fila global de `PMO Capacity` (`employee`
-> vacío) queda solo como **fallback transitorio deprecado** (se retira en Paso 2/4). El **override por
-> Employee** no cambia. "Sin 8h implícitas **en código**" sigue vigente: el 8 es un default **configurable**
-> de PMO Settings, no una suposición en el resolver.
+> **Actualización (Capacity Paso 1–4) — modelo vigente:**
+> - **Paso 1:** el **default global** vive en **`PMO Settings.default_capacity_hours_per_day`** (patch
+>   idempotente lo inicializa en 8).
+> - **Paso 4:** la **capacidad por Employee** ya **no** sale de `PMO Capacity`, sino de **HRMS Shift**
+>   (HRMS es **dependencia requerida**): `get_shifts_for_date` (Shift Assignment submitted/Active que cubre
+>   la fecha) → `Employee.default_shift`. **Jornada NETA** = span `(end_time − start_time)` −
+>   `Shift Type.pmo_unpaid_break_minutes` (Custom Field; cruce de medianoche suma 24 h).
+> - El resolver `pmo.capacity.get_employee_daily_capacity` **ya no consulta `PMO Capacity`**; el DocType
+>   queda **deprecado** (su retiro definitivo es un paso posterior, fuera de este ciclo).
 
-- `employee` (Link Employee, **opcional**): con valor = **override por persona** (vigente); vacío = fila
-  global **legacy** (fallback transitorio, ver nota de actualización).
-- `from_date` (Date, req); `capacity_hours_per_day` (Float, req).
-- Resolución `capacity(employee, date)` = override del Employee (`from_date ≤ date` más reciente) →
-  **`PMO Settings.default_capacity_hours_per_day`** → fila global legacy → **None** (sin 8h implícitas en
-  código). Unicidad scope+from_date (vacío/NULL = scope GLOBAL único).
+- **Resolución** `get_capacity(employee, date)` = **Shift de HRMS** (jornada neta) →
+  **`PMO Settings.default_capacity_hours_per_day`** → **None** (sin 8h implícitas en código).
+  `origin` ∈ `shift` / `default` / `missing`; `missing_shift=True` cuando no hay turno resoluble (aunque
+  caiga al default) — señal informativa, no bloqueante.
+- `PMO Capacity` (DocType aún presente, **deprecado, no consultado**): `employee`, `from_date`,
+  `capacity_hours_per_day`. Se retira en un ciclo posterior.
 
 ### Custom Field `ToDo.pmo_planned_hours` (Float, **opcional**) — dato faltante, sobre el Assignment nativo
 - Horas planificadas de **ese asignado** en **esa Task**. Vive en el registro de asignación nativo (ToDo),
@@ -87,11 +90,11 @@ Application **solo si HRMS**.
 
 ## Decisiones
 
-### D1 — Capacidad
-**Default global** en `PMO Settings.default_capacity_hours_per_day` (Single; inicializado por patch
-idempotente) + **override por Employee** en `PMO Capacity` (efectivo-datado). Resolución override →
-PMO Settings → fila global legacy de `PMO Capacity` (fallback transitorio deprecado) → None. Sin 8h
-implícitas en código (el default de PMO Settings es configurable).
+### D1 — Capacidad (modelo vigente, Capacity Paso 4)
+Capacidad = **jornada neta desde HRMS Shift** (dependencia requerida): `get_shifts_for_date` →
+`Employee.default_shift`; neta = span − `Shift Type.pmo_unpaid_break_minutes`. Fallback: **`PMO
+Settings.default_capacity_hours_per_day`**. Si nada aplica → None (sin 8h implícitas). El resolver **no**
+consulta `PMO Capacity` (DocType deprecado, retiro posterior).
 _(Versión original de D1: "un solo DocType `PMO Capacity` global + override, sin default mutable"; superada
 por Capacity Paso 1–2 — ver nota de actualización arriba.)_
 
@@ -119,9 +122,12 @@ función pura `build_allocation_days` (reparto uniforme sobre días laborables s
 mes = agregación. **Sin ciclo Draft/Submit/Amend ni congelamiento**: el plan es siempre vigente (se
 recalcula). Task sin fechas → "carga sin fechas" (no se inventa el rango).
 
-### D5 — HRMS opcional
-Mínimo = ERPNext (Employee, Holiday List, Timesheet). `pmo` **no** declara `hrms` en `required_apps`; si
-está instalado, Availability descuenta Leave aprobada (detección en runtime).
+### D5 — HRMS requerido (actualizado en Capacity Paso 4)
+`pmo` declara **`hrms` en `required_apps`** (`["erpnext", "hrms"]`). HRMS es la fuente de **jornada**
+(Shift) y del **calendario laboral**: `get_holiday_list_for_employee` resuelve la Holiday List desde
+**`Holiday List Assignment`** (submitted; Employee → Company), no desde `Employee.holiday_list`. Leave
+aprobada (`Leave Application`) reduce Availability.
+_(D5 original: "HRMS opcional; pmo no declara hrms"; superada por Capacity Paso 4.)_
 
 ### D6 — Privacidad (P4) a nivel de reporte
 La visibilidad de Task se rige por **ADR-0002/P0**. Los **reportes** de Capacity Planning aplican el
@@ -162,6 +168,9 @@ definirá al implementarla (ver D9).
   a favor de un Custom Field en el ToDo (el objeto de asignación).
 - `default_capacity_hours_per_day` global mutable; HRMS como dependencia dura; `expected_time`/`_assign` como
   capacidad; persistir el plan y congelarlo en el MVP (snapshots → fase posterior).
+  _(Nota Capacity Paso 1–4: dos de estos puntos **se adoptaron después** — `default_capacity_hours_per_day`
+  en PMO Settings (Paso 1) y HRMS como dependencia requerida + Shift como fuente de jornada (Paso 4). El
+  resto sigue fuera de alcance.)_
 
 ## Impacto en nativo / hooks
 
@@ -247,7 +256,8 @@ vistas actuales.
 - Separación: PlannedLoad y Actual nunca sumados.
 - Privacidad P4 (reporte): sin acceso a un Project → "confidencial" agregado, sin identidad; miembro →
   desglose; Executive → todo; usuario normal → lo suyo.
-- Sin HRMS: no falla; con HRMS: Leave aprobada reduce Availability.
+- HRMS requerido: la jornada sale de Shift; Leave aprobada reduce Availability; Holiday List vía
+  `Holiday List Assignment`.
 
 ## Criterios de aceptación
 

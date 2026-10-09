@@ -8,6 +8,11 @@ fuente de cada decisión.
 
 - **Ronda funcional v0.7.0–v0.11.0 (liberada):** Status Date (ADR-0006), fechas comprometidas (ADR-0007),
   Planificado vs Real (ADR-0008), Forecast y desviaciones (ADR-0009), Confiabilidad de Capacity (ADR-0010).
+- **Capacity / HRMS — redefinición de la fuente de jornada (v0.22.0):** la capacidad pasa a derivarse de
+  **HRMS Shift** (dependencia requerida) menos el descanso diario (`Shift Type.pmo_unpaid_break_minutes`),
+  con fallback al default de **PMO Settings**; el calendario laboral se resuelve por **Holiday List
+  Assignment**. `PMO Capacity` queda **deprecado y sin consultar** (su retiro definitivo es un paso
+  posterior). Actualiza ADR-0003/0010. *(Pasos Capacity 1–4.)*
 
 ## En implementación — próxima v0.12.0 (ronda product-readiness, aún sin release)
 

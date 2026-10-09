@@ -52,21 +52,37 @@ def _user(email, roles=()):
 	return email
 
 
+def _assign_hl(emp):
+	"""HRMS 16.x: Holiday List por `Holiday List Assignment` (submitted), no por `Employee.holiday_list`.
+	`from_date` dentro del rango de la lista (validación nativa). Idempotente."""
+	hl = _hl()
+	if frappe.get_all("Holiday List Assignment", filters={"assigned_to": emp, "docstatus": 1}, limit=1):
+		return
+	frappe.get_doc(
+		{
+			"doctype": "Holiday List Assignment",
+			"applicable_for": "Employee",
+			"assigned_to": emp,
+			"holiday_list": hl,
+			"from_date": frappe.db.get_value("Holiday List", hl, "from_date"),
+		}
+	).insert(ignore_permissions=True).submit()
+
+
 def _employee(name, user_id):
 	emp = frappe.db.exists("Employee", {"employee_name": name}) or (
-		frappe.get_doc({"doctype": "Employee", "first_name": name, "status": "Active", "holiday_list": _hl()})
+		frappe.get_doc({"doctype": "Employee", "first_name": name, "status": "Active"})
 		.insert(ignore_permissions=True, ignore_mandatory=True)
 		.name
 	)
+	_assign_hl(emp)
 	frappe.db.set_value("Employee", emp, "user_id", user_id)
 	return emp
 
 
 def _capacity_global(hours=8.0):
-	if not frappe.get_all("PMO Capacity", filters={"employee": ("in", ("", None))}, limit=1):
-		frappe.get_doc(
-			{"doctype": "PMO Capacity", "from_date": "2026-01-01", "capacity_hours_per_day": hours}
-		).insert(ignore_permissions=True, ignore_links=True)
+	# Capacity Paso 4: la capacidad global ya no es una fila PMO Capacity, es el default de PMO Settings.
+	frappe.db.set_single_value("PMO Settings", "default_capacity_hours_per_day", hours)
 
 
 def _project(name, owner):

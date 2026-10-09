@@ -48,21 +48,37 @@ def _user(email, roles=()):
 	return email
 
 
+def _assign_hl(emp):
+	"""HRMS 16.x: Holiday List por `Holiday List Assignment` (submitted), no por `Employee.holiday_list`.
+	`from_date` dentro del rango de la lista (validación nativa). Idempotente."""
+	hl = _hl()
+	if frappe.get_all("Holiday List Assignment", filters={"assigned_to": emp, "docstatus": 1}, limit=1):
+		return
+	frappe.get_doc(
+		{
+			"doctype": "Holiday List Assignment",
+			"applicable_for": "Employee",
+			"assigned_to": emp,
+			"holiday_list": hl,
+			"from_date": frappe.db.get_value("Holiday List", hl, "from_date"),
+		}
+	).insert(ignore_permissions=True).submit()
+
+
 def _employee(name, user_id):
 	emp = frappe.db.exists("Employee", {"employee_name": name}) or (
-		frappe.get_doc({"doctype": "Employee", "first_name": name, "status": "Active", "holiday_list": _hl()})
+		frappe.get_doc({"doctype": "Employee", "first_name": name, "status": "Active"})
 		.insert(ignore_permissions=True, ignore_mandatory=True)
 		.name
 	)
+	_assign_hl(emp)
 	frappe.db.set_value("Employee", emp, "user_id", user_id)
 	return emp
 
 
 def _capacity_global(hours=8.0):
-	if not frappe.get_all("PMO Capacity", filters={"employee": ("in", ("", None))}, limit=1):
-		frappe.get_doc(
-			{"doctype": "PMO Capacity", "from_date": "2026-01-01", "capacity_hours_per_day": hours}
-		).insert(ignore_permissions=True, ignore_links=True)
+	# Capacity Paso 4: la capacidad global ya no es una fila PMO Capacity, es el default de PMO Settings.
+	frappe.db.set_single_value("PMO Settings", "default_capacity_hours_per_day", hours)
 
 
 def _project(name, owner):
@@ -151,9 +167,8 @@ class TestCapacityReport(IntegrationTestCase):
 		frappe.db.delete("ToDo", {"reference_type": "Task"})
 		frappe.db.delete("Timesheet Detail")
 		frappe.db.delete("Timesheet")
-		# Sin default global de Settings: el caso "missing capacity" valida la ruta sin-default
-		# (la capacidad resoluble viene solo de la fila legacy efectivo-datada 2026).
-		frappe.db.set_single_value("PMO Settings", "default_capacity_hours_per_day", 0)
+		# Capacity Paso 4 (site sin HRMS): capacidad = default de PMO Settings. Base: todos con 8h.
+		frappe.db.set_single_value("PMO Settings", "default_capacity_hours_per_day", 8)
 
 	def _run(self, observer, **filters):
 		return self._run_full(observer, **filters)[0]
@@ -245,7 +260,9 @@ class TestCapacityReport(IntegrationTestCase):
 	# --- ADR-0010: señal honesta de capacidad faltante ---------------------
 
 	def test_missing_capacity_reports_none_not_overallocation(self):
-		# Periodo 2025 (anterior a la capacidad global 2026-01-01) → sin capacidad resoluble.
+		# Capacity Paso 4: sin turno y sin default → capacidad no resoluble. En el site sin HRMS se
+		# simula poniendo el default global de PMO Settings en 0 (nadie tiene capacidad).
+		frappe.db.set_single_value("PMO Settings", "default_capacity_hours_per_day", 0)
 		u = _user("cr-nocap@example.com")
 		emp = _employee("CR NoCap", u)
 		_assign(_task("CR-T-NOCAP", _project("CR-P-NOCAP", owner=u), 4, "2025-06-02", "2025-06-02"), u)

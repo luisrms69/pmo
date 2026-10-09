@@ -103,16 +103,18 @@ que no te corresponde. Estas vistas muestran **solo lo planificado** (no el tiem
 
 ## Cobertura de capacidad — reporte **PMO Resource Capacity**
 
-Para **configurar y mantener** la capacidad de los recursos. Menú **Reportes → PMO Resource Capacity**.
-Responde: *¿qué capacidad efectiva tiene hoy cada recurso y quién no la tiene configurada?*
+Para revisar la **cobertura de jornada** de los recursos. Menú **Reportes → PMO Resource Capacity**.
+Responde: *¿qué capacidad neta tiene hoy cada recurso, de qué origen, y quién no tiene turno asignado?*
 
 - Filtros: **A la fecha** (por defecto hoy), **Employee** y **Departamento** (opcionales).
-- Columnas: recurso, nombre, departamento, **Capacidad h/día**, **Origen** y **Vigente desde**.
-- **Origen:** `Override` (fila propia del Employee), `Global` (default de `PMO Settings → Default Capacity
-  Hours Per Day`; o, de forma transitoria, una fila global legacy de `PMO Capacity` sin Employee) o
-  **`Faltante`** (no hay capacidad resoluble → configurar el default en `PMO Settings` o un override en
-  `PMO Capacity`).
-- Resumen: **Recursos**, **Sin capacidad configurada** (naranja si hay) y **Con override individual**.
+- Columnas: recurso, nombre, departamento, **Capacidad neta h/día**, **Origen**, **Tipo de turno** y
+  **Estado**.
+- **Origen:** `Turno` (jornada neta desde el **Shift de HRMS** del empleado — Shift Assignment o
+  `default_shift`, menos el descanso diario) · `Predeterminado` (sin turno → usa el default de
+  `PMO Settings → Default Capacity Hours Per Day`) · `Faltante` (sin turno y sin default).
+- **Estado en rojo** cuando el empleado **no tiene turno asignado** (aunque haya default): es informativo
+  (falta configurar jornada en HRMS), no significa que la capacidad sea 0.
+- Resumen: **Recursos**, **Sin turno asignado** (rojo) y **Sin capacidad resoluble** (rojo).
 - Alcance: tú ves **tu** recurso; PMO Manager / acceso ejecutivo ven todos. No muestra Project/Task.
 
 Complementa el KPI *"Recursos sin capacidad vigente"* del reporte de planificación: aquí lo ves a nivel de
@@ -127,7 +129,8 @@ Complementa el KPI *"Recursos sin capacidad vigente"* del reporte de planificaci
 - Solo cuentan como carga las Tasks **en curso** (Open, Working, Pending Review, Overdue). Las
   **Completadas** ya no son plan pendiente (su tiempo real se ve en *Actual*).
 - Una Task **sin fechas** no puede ubicarse en el calendario: sus horas se reportan como *sin fechas*.
-- Si una persona no tiene capacidad configurada, se marca **capacidad faltante**: sus métricas derivadas
-  quedan **N/D** (no 0) y **no** cuenta como sobreasignada. El resumen indica cuántos **recursos sin
-  capacidad vigente** hay para que se configure su capacidad.
-- **HRMS es opcional**: si está instalado, las ausencias aprobadas reducen la disponibilidad.
+- Si una persona no tiene capacidad resoluble (sin turno **y** sin default), se marca **capacidad
+  faltante**: sus métricas derivadas quedan **N/D** (no 0) y **no** cuenta como sobreasignada.
+- **HRMS es requerido**: la jornada proviene del **Shift** del empleado; las **ausencias aprobadas**
+  (`Leave Application`) reducen la disponibilidad; y el **calendario laboral** (festivos) se asigna por
+  **`Holiday List Assignment`** (Employee → Company), no por el campo `Employee.holiday_list`.

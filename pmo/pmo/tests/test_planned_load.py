@@ -46,20 +46,32 @@ def _user(email):
 	return email
 
 
+def _assign_hl(emp):
+	"""HRMS 16.x: Holiday List por `Holiday List Assignment` (submitted), no por `Employee.holiday_list`.
+	`from_date` dentro del rango de la lista (validación nativa). Idempotente."""
+	hl = _hl()
+	if frappe.get_all("Holiday List Assignment", filters={"assigned_to": emp, "docstatus": 1}, limit=1):
+		return
+	frappe.get_doc(
+		{
+			"doctype": "Holiday List Assignment",
+			"applicable_for": "Employee",
+			"assigned_to": emp,
+			"holiday_list": hl,
+			"from_date": frappe.db.get_value("Holiday List", hl, "from_date"),
+		}
+	).insert(ignore_permissions=True).submit()
+
+
 def _employee(name, user_id=None, with_hl=True):
 	existing = frappe.db.exists("Employee", {"employee_name": name})
 	emp = existing or (
-		frappe.get_doc(
-			{
-				"doctype": "Employee",
-				"first_name": name,
-				"status": "Active",
-				"holiday_list": _hl() if with_hl else None,
-			}
-		)
+		frappe.get_doc({"doctype": "Employee", "first_name": name, "status": "Active"})
 		.insert(ignore_permissions=True, ignore_mandatory=True)
 		.name
 	)
+	if with_hl:
+		_assign_hl(emp)
 	# user_id por set_value: crearlo en el insert dispara validación de user-permission que toca Company.
 	if user_id:
 		frappe.db.set_value("Employee", emp, "user_id", user_id)
