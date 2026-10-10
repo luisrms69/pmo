@@ -243,10 +243,24 @@ fixtures = [
 				"name",
 				"in",
 				[
-					"Project-pmo_status_date",
-					"Project-pmo_committed_end_date",
+					# Project — pestaña PMO (Tab/Section/Column Breaks + HTML + campos) y Status Date.
+					# Alineado 1:1 con fixtures/custom_field.json (20 Custom Fields vigentes). NO incluir
+					# pmo_committed_html ni pmo_sec_ctrl (residuos v0.18.0 retirados del diseño).
+					"Project-pmo_tab",
+					"Project-pmo_sec_gov",
+					"Project-pmo_governance_exempt",
+					"Project-pmo_exempt_reason",
+					"Project-pmo_exempt_by",
+					"Project-pmo_exempt_on",
+					"Project-pmo_sec_resp",
+					"Project-pmo_project_manager",
 					"Project-pmo_operational_owner",
+					"Project-pmo_col_resp",
 					"Project-pmo_customer_contact",
+					"Project-pmo_committed_end_date",
+					"Project-pmo_sec_access",
+					"Project-pmo_access_html",
+					"Project-pmo_status_date",
 					"Task-pmo_deadline",
 					"Task-pmo_constraint_type",
 					"Task-pmo_constraint_date",

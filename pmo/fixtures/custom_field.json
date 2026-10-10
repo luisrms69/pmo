@@ -225,23 +225,12 @@
  },
  {
   "doctype": "Custom Field",
-  "name": "Project-pmo_sec_ctrl",
-  "dt": "Project",
-  "module": "PMO",
-  "fieldname": "pmo_sec_ctrl",
-  "fieldtype": "Section Break",
-  "insert_after": "pmo_access_html",
-  "label": "Control del proyecto",
-  "hidden": 1
- },
- {
-  "doctype": "Custom Field",
   "name": "Project-pmo_sec_access",
   "dt": "Project",
   "module": "PMO",
   "fieldname": "pmo_sec_access",
   "fieldtype": "Section Break",
-  "insert_after": "pmo_committed_html",
+  "insert_after": "pmo_committed_end_date",
   "label": "Ciclo de Gobernanza"
  },
  {
@@ -253,15 +242,5 @@
   "fieldtype": "HTML",
   "insert_after": "pmo_sec_access",
   "depends_on": "eval:!doc.__islocal"
- },
- {
-  "doctype": "Custom Field",
-  "name": "Project-pmo_committed_html",
-  "dt": "Project",
-  "module": "PMO",
-  "fieldname": "pmo_committed_html",
-  "fieldtype": "HTML",
-  "insert_after": "pmo_committed_end_date",
-  "hidden": 1
  }
 ]
