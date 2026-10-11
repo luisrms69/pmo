@@ -27,8 +27,110 @@ frappe.ui.form.on("Project", {
 		pmo_governance_cycle(frm);
 		pmo_committed_change_button(frm);
 		pmo_client_report_button(frm);
+		pmo_header(frm);
 	},
 });
+
+// --- PENDIENTES DEL PROYECTO: encabezado ÚNICO del form (arriba del cuerpo), vía la API nativa
+// `set_headline` (mismo patrón contextual que Facturación México en Sales Invoice). Es el ÚNICO escritor
+// del slot de mensajes superior en Project (por eso pmo_governance_group ya NO hace set_intro). Muestra
+// hasta 3 EXCEPCIONES accionables desde pmo.orientation.get_orientation (read-only); si no hay pendientes,
+// el encabezado queda LIMPIO (no se muestra la confirmación de baseline: esa info vive en la rejilla de
+// Gobernanza y en Project Control). Reutiliza los handlers existentes (pmo_create_acta/
+// pmo_establish_baseline) y navegación nativa. Protegido contra múltiples refresh y respuestas obsoletas.
+const ORI = "pmo.orientation.get_orientation";
+
+function pmo_header(frm) {
+	if (frm.is_new()) return;
+	// Token monotónico por formulario: solo la última petición pinta (descarta respuestas obsoletas).
+	frm.__pmo_hdr_seq = (frm.__pmo_hdr_seq || 0) + 1;
+	const seq = frm.__pmo_hdr_seq;
+	const removePrior = () => {
+		if (frm.layout && frm.layout.message) {
+			frm.layout.message.find(".pmo-pendientes").closest(".form-message").remove();
+		}
+	};
+	frappe
+		.xcall(ORI, { project: frm.doc.name })
+		.then((d) => {
+			if (seq !== frm.__pmo_hdr_seq) return; // respuesta obsoleta → ignorar
+			removePrior(); // evita encabezados duplicados entre refrescos
+			if (!d || !d.has_recommendations) return; // sin pendientes → encabezado limpio
+			// permanent=true: bloque de estado (sin botón "x" de descarte); se re-pinta en cada refresh.
+			frm.dashboard.set_headline(pmo_pendientes_html(d.recommendations), "orange", true);
+			frm.layout.message
+				.off("click.pmohdr")
+				.on("click.pmohdr", "button[data-ori]", function () {
+					const i = parseInt($(this).attr("data-ori"), 10);
+					pmo_orientation_act(frm, d.recommendations[i]);
+				});
+		})
+		.catch(() => {
+			if (seq === frm.__pmo_hdr_seq) removePrior(); // error → no afecta el form
+		});
+}
+
+function pmo_pendientes_html(recs) {
+	const esc = frappe.utils.escape_html;
+	const rows = recs
+		.map((r, i) => {
+			const owner = r.owner === "PMO" ? "blue" : "gray";
+			const act = r.can_act
+				? `<button class="btn btn-xs btn-default" data-ori="${i}">${esc(
+						r.action.label
+				  )} →</button>`
+				: `<span class="text-muted small">${__("Requiere permiso")}</span>`;
+			return `<div style="display:flex;align-items:center;gap:10px;padding:4px 0">
+				<span class="indicator-pill ${owner}" style="flex:0 0 auto">${esc(r.owner)}</span>
+				<span style="flex:1 1 auto">${esc(r.message)}</span>
+				<span style="flex:0 0 auto">${act}</span>
+			</div>`;
+		})
+		.join("");
+	return `<div class="pmo-pendientes">
+		<div style="font-weight:600;margin-bottom:4px">${__("Pendientes del proyecto")} (${
+		recs.length
+	})</div>
+		${rows}
+	</div>`;
+}
+
+function pmo_orientation_act(frm, r) {
+	if (!r || !r.can_act) return;
+	const project = frm.doc.name;
+	const openExisting = (e) => e && frappe.set_route("Form", e.doctype, e.name);
+	switch (r.action.kind) {
+		case "scroll_field":
+			if (frm.scroll_to_field) frm.scroll_to_field("pmo_project_manager");
+			break;
+		case "task_list":
+			frappe.set_route("List", "Task", { project });
+			break;
+		case "project_control_status":
+			frappe.set_route("pmo_project_control", project, "status");
+			break;
+		case "create_handoff":
+			pmo_create_acta(frm);
+			break;
+		case "establish_baseline":
+			pmo_establish_baseline(frm);
+			break;
+		case "manage_risks":
+			frappe.set_route("List", "PMO Project Risk", { project });
+			break;
+		case "change_requests":
+			frappe.set_route("List", "PMO Change Request", { project });
+			break;
+		case "create_closure":
+			if (r.action.existing) openExisting(r.action.existing);
+			else frappe.new_doc("PMO Project Closure", { project });
+			break;
+		case "create_review":
+			if (r.action.existing) openExisting(r.action.existing);
+			else frappe.new_doc("PMO Post-Project Review", { project });
+			break;
+	}
+}
 
 // --- REPORTE PARA CLIENTE: abre la vista de impresión del Project actual con el Print Format estándar
 // `Project Executive Report`; desde ahí se usa el PDF nativo de Frappe. Solo navegación; no toca el Print
@@ -450,13 +552,11 @@ function pmo_governance_group(frm) {
 				G
 			);
 
-			// Señal de estado de línea base (banner del form; no un mini-dashboard).
-			if (!bl.has_baseline) frm.set_intro(__("No baseline"), "orange");
-			else
-				frm.set_intro(
-					__("Baseline: {0} · {1}", [bl.revision || "", bl.effective_date || "—"]),
-					"blue"
-				);
+			// NOTA: el estado de línea base YA NO se muestra como banner superior aquí. El encabezado
+			// superior lo gobierna EXCLUSIVAMENTE `pmo_header` (Pendientes del proyecto): baseline pendiente
+			// aparece como fila-excepción; la confirmación "Baseline: rev · fecha" vive en la rejilla de
+			// Gobernanza (botón "Historial" → lista PMO Project Baseline con revisión + fecha de vigencia) y
+			// en Project Control. Así hay un único escritor del slot y el encabezado queda limpio sin pendientes.
 		})
 		.catch(() => {
 			// Silencioso: sin acceso, el form no se ve afectado.
