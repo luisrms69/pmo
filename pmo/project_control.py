@@ -488,7 +488,14 @@ def _planning_section(project: str, sr: dict) -> dict:
 		"in_baseline_pct": None,
 	}
 	if not total:
-		return {"maturity_pct": None, "components": empty_components, "unassigned": {"count": 0, "tasks": []}}
+		return {
+			"maturity_pct": None,
+			"components": empty_components,
+			"unassigned": {"count": 0, "tasks": []},
+			# Aditivo (Orientación PMO): completitud absoluta de planeación. Sin hojas → 0.
+			"total": 0,
+			"schedule_incomplete": 0,
+		}
 
 	assigned = _assigned_task_names([t.name for t in leaves])
 
@@ -527,10 +534,18 @@ def _planning_section(project: str, sr: dict) -> dict:
 		and t.exp_start_date
 		and getdate(t.exp_start_date) <= cutoff
 	]
+	# Aditivo (Orientación PMO): nº de tareas hoja DISTINTAS con programación incompleta = sin inicio, sin
+	# fin o sin estimación positiva. Una tarea a la que le falten los tres cuenta UNA sola vez (no suma de
+	# faltantes). Deriva de las mismas `leaves` ya consultadas; NO toca componentes/pct/unassigned.
+	schedule_incomplete = sum(
+		1 for t in leaves if not (t.exp_start_date and t.exp_end_date and flt(t.expected_time) > 0)
+	)
 	return {
 		"maturity_pct": maturity,
 		"components": components,
 		"unassigned": {"count": len(unassigned), "tasks": unassigned},
+		"total": total,
+		"schedule_incomplete": schedule_incomplete,
 	}
 
 
