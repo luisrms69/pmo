@@ -1,78 +1,79 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-10-11
-**Rama activa:** `feat/pmo-orientation` (base `version-16` @ v0.22.1 `2f312bd` → objetivo PR **v0.23.0**, MINOR)
-**Tarea actual:** `/ship pr` de cierre **v0.23.0** — **«Pendientes del proyecto»**: encabezado único en el
-form nativo de Project que muestra hasta 3 **excepciones accionables** (responsable · situación · acción),
-reutilizando señales existentes. Sin motores nuevos, sin DocType/Custom Field/Property Setter.
+**Fecha:** 2026-10-25
+**Rama activa:** `fix/po-headers-tz-offsets-es` (base `version-16` @ v0.23.0 → objetivo PR **v0.23.1**, PATCH)
+**Tarea actual:** `/ship pr` de corrección puntual de los headers RFC 822 del catálogo
+`pmo/locale/es.po`: offsets de timezone inválidos (`-0837` y `-5837`) sustituidos por `-0600`
+(America/Mexico_City). Sin regenerar traducciones. Sin tocar otros archivos.
 
 ---
 
 ## Recuperación rápida
 
 Estoy trabajando en:
-El **cierre `/ship` de la rama `feat/pmo-orientation`** hacia `version-16` (objetivo v0.23.0, MINOR).
-Implementación completa y validada visualmente en `pmo-v16.dev`; 18 tests nuevos + regresión OK.
+El **cierre `/ship` de la rama `fix/po-headers-tz-offsets-es`** hacia `version-16`
+(objetivo v0.23.1, PATCH). Corrección mínima de dos líneas del `.po` para que los
+metadatos sean parseables por Babel y las herramientas gettext/pybabel estándar.
 
 Plan que estoy siguiendo:
-`/ship pr`: bump 0.22.1→0.23.0 + CONTINUITY → push + PR hacia `version-16` → CI verde →
-`/ship comentario-pr` → `/ship merge` (Squash & Merge manual del usuario) → `/ship release` v0.23.0.
+`/ship pr`: bump 0.23.0→0.23.1 + CONTINUITY → gate pr-ready → autorización humana →
+push + PR hacia `version-16` → CI verde → `/ship comentario-pr` → `/ship merge` (merge
+manual del usuario) → `/sync-check` → `/ship release` v0.23.1.
 
 Objetivo inmediato:
-PR OPEN contra `version-16` con «Pendientes del proyecto», listo para merge (CI en verde).
+PR OPEN contra `version-16` con el fix de headers, listo para revisión y CI.
 
 ---
 
 ## Estado actual
 
 ### Qué entrega este PR
-- **`pmo/orientation.py`** (nuevo): `get_orientation(project)` — compositor read-only (P4 vía
-  `project_governance_state`), ≤3 recomendaciones de 6 familias: `pm_unassigned`, `handoff`,
-  `unassigned_tasks`, `planning_incomplete`, `baseline`, `governance` (1 fila, selección por etapa).
-  Corte = `today()`. Exención (Opción A): operativas (incl. `pm_unassigned`) se muestran; gobernanza
-  (handoff/baseline/governance) se suprime. **No** ejecuta `build_status_report`/`build_project_control`.
-- **`pmo/project_control.py::_planning_section`** (aditivo): expone `total` y `schedule_incomplete`
-  (tareas hoja DISTINTAS sin inicio/fin/estimación; una a la que faltan los tres cuenta 1). No altera
-  pct/componentes/unassigned/consultas existentes.
-- **`pmo/public/js/project_pmo.js`**: `pmo_header(frm)` — **encabezado único** arriba del form vía
-  `frm.dashboard.set_headline` (patrón contextual tipo Facturación México). Título «Pendientes del
-  proyecto (N)», ≤3 filas. **Único escritor del slot**: se retiraron los dos `set_intro` de baseline
-  (naranja + azul) de `pmo_governance_group`. Limpio si no hay pendientes. Guards: `seq`
-  (anti-respuesta-obsoleta), `removePrior` (anti-duplicado), `.catch` que no rompe el form. Acciones
-  reutilizan handlers existentes.
-- **`pmo/pmo/tests/test_orientation.py`** (nuevo): 18 tests.
+- **`pmo/locale/es.po`** (headers, 2 líneas): sustitución literal de
+  `POT-Creation-Date: 2026-09-30 00:22-0837` → `-0600` y
+  `PO-Revision-Date: 2026-09-10 02:54-5837` → `-0600`. **Nada más**: ni se regeneraron
+  traducciones, ni se re-ejecutó `pybabel`/`msgmerge`, ni se tocó ningún `msgid`/`msgstr`.
+- **`pmo/__init__.py`**: bump `0.23.0 → 0.23.1` (PATCH), consumido por `pyproject.toml`
+  vía `dynamic = ["version"]`.
 
-### Decisiones de diseño (aprobadas)
-- Nombre «Pendientes del proyecto»; solo **excepciones**, ≤3, sin semáforos/puntajes/%.
-- Barra naranja "Sin línea base" → fila del panel; barra azul "Baseline: rev·fecha" → **retirada** (es
-  dato, vive en Project Control + lista PMO Project Baseline; **no** se re-muestra como barra).
-- Rejilla "Ciclo de Gobernanza", menú PMO, indicadores de riesgo y popups: **intactos**.
+### Decisiones aplicadas
+- Offsets `-0837` y `-5837` violaban RFC 822 (`-5837` es imposible: >24h). Se eligió
+  `-0600` por coherencia con la zona de trabajo real (America/Mexico_City) y porque es
+  el offset que Babel asigna cuando no hay DST activo en esa zona.
+- Clasificación SemVer **PATCH**: cambio compatible, sin API/comportamiento nuevo.
+
+### Validación local realizada
+- `babel.messages.pofile.read_po()` sobre el archivo editado: parsea sin excepciones.
+- `creation_date` y `revision_date` quedan como `datetime` tipados con `FixedOffset -06:00`.
+- 978 entradas de traducción parseadas sin regresión.
 
 ### Pendiente inmediato
-1. Push + PR hacia `version-16` (v0.23.0).
-2. CI verde (job Server = install fresco + migrate + suite).
-3. `/ship comentario-pr` → `/ship merge` (merge manual del usuario) → `/ship release` tag+Release `v0.23.0`.
+1. Autorización del gate `pr-ready` para push + creación del PR hacia `version-16`.
+2. CI verde del PR.
+3. `/ship comentario-pr` → `/ship merge` (merge manual del usuario) → `/sync-check` → `/ship release` v0.23.1.
 
 ### No repetir / no ampliar
-- No devolver ninguna barra de baseline (la rev/fecha es dato, no excepción).
-- No tocar rejilla/menú/indicadores/popups/motores en este frente.
-- Indicadores de riesgo y adelgazamiento del menú PMO = pasos opcionales posteriores (decisión aparte).
+- **No** regenerar `es.po` con `pybabel update`/`msgmerge`: eso cambiaría cientos de
+  líneas (`#:` references, orden) y mezclaría ruido con un fix de 2 líneas.
+- **No** tocar otros `.po` en este PR; si tienen el mismo patrón, van en PRs separados.
+- **No** inventar bump adicional (`0.23.2`) — un solo bump por PR.
 
 ---
 
 ## Archivos del PR
-- `pmo/orientation.py` · `pmo/project_control.py` · `pmo/public/js/project_pmo.js` ·
-  `pmo/pmo/tests/test_orientation.py` · `pmo/__init__.py` (bump) · `CONTINUITY.md`.
+- `pmo/locale/es.po` (fix 2 líneas) · `pmo/__init__.py` (bump) · `CONTINUITY.md` (este archivo).
 
 ---
 
 ## Riesgos / cuidados
-- El render del encabezado es JS (no cubierto por unit tests); validado visualmente + evidencia del
-  endpoint. Backend (familias/exención/conteos/P4) sí en los 18 tests.
-- `set_intro` y `set_headline` comparten el slot superior (`form.js`); PMO es ahora el **único** escritor.
-- Redis del bench v16 inestable; requiere `bench start` para correr tests.
-- CI usa `ruff` + `prettier@2.7.1`; linters solo `.py`/`.js`, nunca `.json`.
-- `pyproject.toml` deriva la versión vía flit; tocar solo `pmo/__init__.py::__version__`.
+- Metadatos del `.po` son headers RFC 822; no afectan runtime del app Talk/Frappe
+  (las traducciones se cargan por `msgstr`, no por los campos de fecha).
+- `pyproject.toml` deriva la versión vía flit (`dynamic = ["version"]`); tocar solo
+  `pmo/__init__.py::__version__`, nunca `pyproject.toml`.
+- CI del repo usa `ruff` + `prettier@2.7.1`; `.po` no es `.py` ni `.js` → linters no
+  aplican a este archivo.
+- No se ejecutó la suite de tests por impacto: el cambio no toca runtime; `/test-guard`
+  habría seleccionado tests irrelevantes al diff.
 
 ## Información faltante
-- Ninguna para continuar; PR contra `version-16`, merge manual del usuario, luego release v0.23.0.
+- Ninguna para continuar; PR contra `version-16`, merge manual del usuario, luego
+  release v0.23.1.
