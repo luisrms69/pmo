@@ -12,10 +12,16 @@ definir esos metodos.
 Nota tecnica: la validacion nativa `validate_parent_project_dates` hace `return if frappe.in_test`
 (task.py:122), asi que los tests fuerzan `frappe.in_test = False` (atributo de modulo, frappe/__init__.py:83)
 dentro de un context manager con restauracion, para ejercer la ruta de produccion.
+
+Nota de drift (upstream `version-16`, post 16.34.2): ERPNext restringio el loop de
+`validate_parent_project_dates` a solo `exp_start_date`/`exp_end_date`, excluyendo `act_*`. Es decir,
+upstream se alineo con la semantica PMO para el Actual: ya no bloquea `act_end_date > expected_end_date`.
+El mixin PMO sigue siendo necesario para la ruta forecast (`exp_*`), que upstream sigue bloqueando. Ver
+`test_native_no_longer_blocks_actual_beyond_project_end` abajo: documenta la nueva invariante y actuaria
+como guard de drift si upstream revirtiera el cambio.
 """
 
 import frappe
-from frappe.exceptions import InvalidDates
 from frappe.tests import IntegrationTestCase
 
 PROJECT = "SG-P"
@@ -99,18 +105,30 @@ class TestScheduleGovernance(IntegrationTestCase):
 		controller = get_controller("Task")
 		self.assertIn(PMOTaskScheduleMixin, controller.__mro__)
 
-	# --- comportamiento nativo (documenta el bug + regresion) ------------------
+	# --- comportamiento nativo (documenta la nueva invariante upstream) --------
 
-	def test_native_would_block_actual_beyond_project_end(self):
-		"""En produccion, la validacion NATIVA bloquea act_end_date > Project.expected_end_date."""
+	def test_native_no_longer_blocks_actual_beyond_project_end(self):
+		"""ERPNext upstream `version-16` (post 16.34.2) restringio el loop de
+		`validate_parent_project_dates` a solo `exp_start_date`/`exp_end_date`:
+		`act_*` quedo FUERA del alcance de esa validacion.
+
+		Documenta la nueva invariante: la ruta nativa (con `frappe.in_test=False`)
+		YA NO levanta `InvalidDates` cuando `act_end_date` excede
+		`Project.expected_end_date`.
+
+		Guard de drift: si upstream regresa a bloquear `act_*` en el futuro, este
+		test fallara (al lanzar `InvalidDates` inesperada), forzando a re-evaluar
+		el mixin PMO — que hoy devuelve sin validar; ver
+		`pmo/overrides.py:PMOTaskScheduleMixin.validate_parent_project_dates`.
+		"""
 		from erpnext.projects.doctype.task.task import Task as NativeTask
 
 		t = _task("SG-T-NATIVE", project=self.project, exp_start="2026-01-02", exp_end="2026-01-05")
 		doc = frappe.get_doc("Task", t)
 		doc.act_end_date = "2026-02-01"  # mas alla del fin del Project (2026-01-10)
 		with _prod_path():
-			with self.assertRaises(InvalidDates):
-				NativeTask.validate_parent_project_dates(doc)
+			# Antes del cambio upstream, esto lanzaba InvalidDates; ya no.
+			NativeTask.validate_parent_project_dates(doc)
 
 	# --- comportamiento del mixin PMO ------------------------------------------
 
