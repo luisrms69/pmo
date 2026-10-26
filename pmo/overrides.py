@@ -56,6 +56,12 @@ class PMOTaskScheduleMixin:
 	nuestra semantica -> independiente de version. La coherencia inicio<=fin (`validate_from_to_dates`) y el
 	resto de validaciones nativas permanecen intactas. Un guard de drift en `test_schedule_governance`
 	falla si `Task` deja de definir estos metodos (habria que re-evaluar).
+
+	Nota de alineacion upstream (post 16.34.2): ERPNext restringio el loop de
+	`validate_parent_project_dates` a solo `exp_start_date`/`exp_end_date`, excluyendo `act_*`. Es decir,
+	upstream se alineo con la semantica PMO para el Actual. El mixin sigue siendo necesario para la ruta
+	forecast (`exp_*`), que upstream SIGUE bloqueando, y para `validate_parent_expected_end_date` (parent).
+	Ver `test_native_no_longer_blocks_actual_beyond_project_end` en `tests/test_schedule_governance.py`.
 	"""
 
 	def validate_parent_expected_end_date(self):
