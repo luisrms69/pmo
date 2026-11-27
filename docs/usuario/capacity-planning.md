@@ -36,15 +36,16 @@ No hay que capturar el plan dos veces: la carga se **deriva** de lo que ya exist
 
 | Columna | Qué es |
 |---|---|
-| **Capacity** | Horas/día que la persona podría trabajar (según su configuración de capacidad). |
-| **Availability** | Capacity menos festivos y ausencias aprobadas. |
+| **Capacidad teórica** | Jornada neta por **todos los días del calendario** (antes de descontar fines de semana, festivos y ausencias). Es el techo del que se deriva la disponibilidad; para planear usa **Disponibilidad**. |
+| **Availability** (Disponibilidad) | Capacidad teórica menos fines de semana, festivos y ausencias aprobadas. |
 | **Planned visible** | Horas planificadas en proyectos que **tú** puedes ver. |
 | **Comprometido (confidencial)** | Horas planificadas en proyectos que no puedes ver — **agregado, sin identidad**. |
 | **Planned total** | Suma de planificado (visible + confidencial). |
+| **Sin programar** | Horas de trabajo **asignado sin fechas** (una vez por persona). **No** consumen capacidad libre hasta que se les ponga fecha; no entran en Planned total ni en las series temporales. |
 | **Actual visible / confidencial / total** | Tiempo real (Timesheet), con el mismo criterio de privacidad. |
-| **Libre** | Availability − Planned total (negativo = sobreasignado). **N/D** si no hay capacidad configurada. |
+| **Capacidad libre** | Availability − Planned total (negativo = sobreasignado). **N/D** si no hay capacidad configurada. |
 | **Sobreasignación** | Cuánto excede el plan a la disponibilidad. **N/D** si no hay capacidad configurada (no se reporta como sobreasignación). |
-| **Util. planificada / real** | Planned/Availability y Actual/Availability (nunca se suman entre sí). **N/D** si no hay capacidad. |
+| **Util. programada / real** | Programado/Availability y Actual/Availability (nunca se suman entre sí). **N/D** si no hay capacidad. |
 | **Estado** | Avisos de planificación (inconsistencias, tareas sin fechas, capacidad faltante, mapeo). |
 
 > **Capacidad faltante (importante):** si una persona **no tiene capacidad configurada** para el periodo,
@@ -87,16 +88,23 @@ experiencia tipo MS Project. Arriba eliges **Desde / Hasta** y la escala **Día 
 unidad siempre es **Horas**); a la izquierda, el panel **Empleados** (buscador, selección múltiple,
 Todos/Limpiar) mantiene tu selección al cambiar de vista. Cinco vistas:
 
-1. **Mapa de calor de capacidad** — colores por % de utilización planificada (verde <80, ámbar 80–100,
-   rojo >100); pasa el cursor por una celda para ver Capacity/Availability/Planned/Free/Utilización.
-2. **Uso de recursos** — el detalle por empleado y periodo (Capacity, Availability, Planned, Free,
-   Utilización planificada).
+1. **Mapa de calor de capacidad** — colores por % de utilización programada (verde <80, ámbar 80–100,
+   rojo >100); pasa el cursor por una celda para ver Capacidad teórica / Disponibilidad / Programado /
+   Capacidad libre / Utilización programada.
+2. **Uso de recursos** — el detalle por empleado y periodo (Capacidad teórica, Disponibilidad, Programado,
+   Capacidad libre, Utilización programada). En la **cabecera de cada persona** aparece, cuando aplica, un
+   aviso **"⚠ N h Sin programar"**: trabajo asignado pendiente de fechas que **no** consume capacidad libre.
+   El cursor sobre **Disponibilidad** muestra el desglose (Capacidad teórica − no disponible por fines de
+   semana/festivos/ausencias = Disponibilidad). Una **gráfica** acompaña la vista con tres series:
+   **Disponibilidad**, **Programado** y **Capacidad libre** (esta última **punteada** para distinguirla
+   cuando coincide con Disponibilidad); la capacidad teórica no se grafica.
 3. **Uso de recursos por proyecto** — para **un empleado**: en qué proyectos tiene horas planificadas en
    cada periodo (los proyectos que puedes abrir son enlaces).
 4. **Disponibilidad restante** — horas **libres** por empleado y periodo. `—` significa **sin
    disponibilidad** (festivo/ausencia): no es lo mismo que 0 horas libres.
-5. **Trabajo por recurso** — para **un empleado**: sus tareas agrupadas por proyecto, con fechas (o
-   *Sin fechas*), horas planificadas y estado.
+5. **Trabajo por recurso** — para **un empleado**: sus tareas en dos secciones con subtotal —
+   **Programado** (con fechas, distribuido en el periodo; consume capacidad libre) y **Sin programar** (sin
+   fechas; aún no consume capacidad libre) — agrupadas por proyecto, con esfuerzo, horas y estado.
 
 Toda la privacidad se mantiene igual que en los reportes: nunca verás el nombre de un proyecto o tarea
 que no te corresponde. Estas vistas muestran **solo lo planificado** (no el tiempo real).
@@ -128,7 +136,9 @@ Complementa el KPI *"Recursos sin capacidad vigente"* del reporte de planificaci
   detalle de esfuerzo **Planificado vs Real por tarea** está en el reporte `PMO Planned vs Actual`.
 - Solo cuentan como carga las Tasks **en curso** (Open, Working, Pending Review, Overdue). Las
   **Completadas** ya no son plan pendiente (su tiempo real se ve en *Actual*).
-- Una Task **sin fechas** no puede ubicarse en el calendario: sus horas se reportan como *sin fechas*.
+- Una Task **sin fechas** no puede ubicarse en el calendario: sus horas se reportan como **Sin programar**
+  (aviso por persona en *Uso de recursos* y sección propia en *Trabajo por recurso*) y **no** consumen
+  capacidad libre hasta que se les asignen fechas desde el flujo normal.
 - Si una persona no tiene capacidad resoluble (sin turno **y** sin default), se marca **capacidad
   faltante**: sus métricas derivadas quedan **N/D** (no 0) y **no** cuenta como sobreasignada.
 - **HRMS es requerido**: la jornada proviene del **Shift** del empleado; las **ausencias aprobadas**

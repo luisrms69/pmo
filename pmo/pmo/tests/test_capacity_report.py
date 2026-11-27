@@ -350,6 +350,54 @@ class TestCapacityReport(IntegrationTestCase):
 		self.assertIn(emp, chart["data"]["labels"])
 		self.assertEqual(len(chart["data"]["datasets"]), 2)  # Availability vs Planned total
 
+	# --- trabajo asignado SIN programar (unscheduled_hours) ------------------
+
+	def _unscheduled_scenario(self):
+		u = _user("cr-uns@example.com")
+		emp = _employee("CR Uns", u)
+		p = _project("CR-P-UNS", owner=u)
+		_assign(_task("CR-T-DATED", p, 4, "2026-01-05", "2026-01-05"), u)  # programado (con fechas)
+		_assign(_task("CR-T-UND1", p, 3, None, None), u)  # sin programar
+		_assign(_task("CR-T-UND2", p, 2, None, None), u)  # sin programar
+		return u, emp
+
+	def test_unscheduled_hours_once_per_employee(self):
+		# Day: 05..09 → varias filas por empleado. El trabajo sin fechas NO es ubicable en ningún periodo
+		# → debe aparecer UNA sola vez (no multiplicado por fila/granularidad).
+		_u, emp = self._unscheduled_scenario()
+		data = self._run(
+			self.exec_user, from_date="2026-01-05", to_date="2026-01-09", employee=emp, granularity="Day"
+		)
+		rows = [r for r in data if r["employee"] == emp]
+		nonzero = [r for r in rows if r["unscheduled_hours"]]
+		self.assertEqual(len(nonzero), 1, "unscheduled_hours debe estar en una sola fila por empleado")
+		self.assertEqual(nonzero[0]["unscheduled_hours"], 5.0)  # 3 + 2, una sola vez
+		self.assertEqual(sum(r["unscheduled_hours"] for r in rows), 5.0)  # sumar la columna no duplica
+		# No contamina programado ni libre: solo la Task con fechas (4h) cuenta como planificada.
+		self.assertEqual(sum(r["planned_total"] for r in rows), 4.0)
+
+	def test_unscheduled_total_granularity_once(self):
+		_u, emp = self._unscheduled_scenario()
+		data = self._run(
+			self.exec_user, from_date="2026-01-05", to_date="2026-01-09", employee=emp, granularity="Total"
+		)
+		row = self._row(data, emp)  # una fila
+		self.assertEqual(row["unscheduled_hours"], 5.0)
+		self.assertEqual(row["planned_total"], 4.0)  # sin programar NO entra en planned_total
+		self.assertEqual(row["free"], round(row["availability"] - 4.0, 2))  # ni en free
+
+	def test_unscheduled_includes_confidential_without_identity(self):
+		# Observador normal: una Task confidencial SIN fechas suma a unscheduled_hours (horas), pero su
+		# identidad de proyecto nunca viaja (P4).
+		subj = _user("cr-uns-subj@example.com")
+		emp = _employee("CR Uns Subj", subj)
+		p_conf = _project("CR-P-UNS-CONF", owner="Administrator")
+		_assign(_task("CR-T-UNS-CONF", p_conf, 7, None, None), subj)
+		data = self._run(subj, from_date="2026-01-05", to_date="2026-01-05", granularity="Total")
+		row = self._row(data, emp)
+		self.assertEqual(row["unscheduled_hours"], 7.0)
+		self.assertNotIn(p_conf, frappe.as_json(data))
+
 
 def _r(emp, availability, overallocation, planned_total=0.0):
 	return {

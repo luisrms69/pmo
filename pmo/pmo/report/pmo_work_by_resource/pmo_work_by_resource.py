@@ -27,6 +27,8 @@ from pmo.pmo.report.pmo_capacity_planning.pmo_capacity_planning import _scope_em
 CONFIDENTIAL_LABEL = frappe.N_("Committed (confidential)")
 PROJECT_CONFIDENTIAL_LABEL = frappe.N_("Confidential")
 NO_PROJECT_LABEL = frappe.N_("No project")
+SCHEDULED_LABEL = frappe.N_("Scheduled")
+UNSCHEDULED_LABEL = frappe.N_("Unscheduled")
 
 
 def execute(filters=None):
@@ -44,16 +46,20 @@ def execute(filters=None):
 
 def _employee_tasks(emp, observer, from_date, to_date):
 	load = get_planned_load_by_task(emp, from_date, to_date)
-	hours_by_task = load["hours_by_task"]  # {task: horas_en_rango} (con fechas)
-	unscheduled = {u["task"]: flt(u["hours"], 2) for u in load["unscheduled"]}  # sin fechas
+	hours_by_task = load["hours_by_task"]  # {task: horas_en_rango} (con fechas → PROGRAMADO)
+	unscheduled = {u["task"]: flt(u["hours"], 2) for u in load["unscheduled"]}  # sin fechas → SIN PROGRAMAR
 
+	# La distinción programado/sin-programar se resuelve AQUÍ (server), no en el cliente: una Task sin
+	# fechas y la fila confidencial consolidada ambas carecen de fechas, así que el JS no podría
+	# separarlas sin esta marca. `scheduled` es un booleano de categoría (no identidad) → P4-safe.
 	rows = []
-	confidential_hours = 0.0
-	for task in list(hours_by_task) + list(unscheduled):
+	confidential = {True: 0.0, False: 0.0}  # {scheduled: horas} — sin identidad, solo horas por categoría
+	tasks = [(t, True) for t in hours_by_task] + [(t, False) for t in unscheduled]
+	for task, scheduled in tasks:
 		hours = hours_by_task.get(task, unscheduled.get(task, 0.0))
 
 		if not is_task_visible(task, observer):
-			confidential_hours += hours  # sin identidad; solo horas
+			confidential[scheduled] += hours  # sin identidad; solo horas, separadas por categoría
 			continue
 
 		meta = frappe.db.get_value(
@@ -72,21 +78,28 @@ def _employee_tasks(emp, observer, from_date, to_date):
 			"exp_end_date": meta.exp_end_date,
 			"expected_time": flt(meta.expected_time, 2),
 			"planned_hours": flt(hours, 2),
+			"scheduled": scheduled,
+			"scheduling": frappe._(SCHEDULED_LABEL) if scheduled else frappe._(UNSCHEDULED_LABEL),
 			"status": meta.status,
 		}
 		if project_id:
 			row["project_id"] = project_id  # solo si el Project es visible
 		rows.append(row)
 
-	if confidential_hours:
-		rows.append(
-			{
-				"employee": emp,
-				"task": frappe._(CONFIDENTIAL_LABEL),
-				"project": None,
-				"planned_hours": flt(confidential_hours, 2),
-			}
-		)
+	# Hasta dos filas confidenciales consolidadas (programada / sin programar), cada una solo con horas:
+	# nunca task/subject/project/fechas/ID. Separar por categoría permite subtotales correctos sin P4-leak.
+	for scheduled, amount in confidential.items():
+		if amount:
+			rows.append(
+				{
+					"employee": emp,
+					"task": frappe._(CONFIDENTIAL_LABEL),
+					"project": None,
+					"planned_hours": flt(amount, 2),
+					"scheduled": scheduled,
+					"scheduling": frappe._(SCHEDULED_LABEL) if scheduled else frappe._(UNSCHEDULED_LABEL),
+				}
+			)
 	return rows
 
 
@@ -124,6 +137,12 @@ def _columns():
 			"label": frappe._("Planned (period)"),
 			"fieldtype": "Float",
 			"width": 130,
+		},
+		{
+			"fieldname": "scheduling",
+			"label": frappe._("Scheduling"),
+			"fieldtype": "Data",
+			"width": 120,
 		},
 		{"fieldname": "status", "label": frappe._("Status"), "fieldtype": "Data", "width": 110},
 	]

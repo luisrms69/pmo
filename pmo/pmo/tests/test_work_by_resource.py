@@ -264,9 +264,48 @@ class TestWorkByResource(IntegrationTestCase):
 		self.assertIsNone(row["exp_end_date"])
 		self.assertEqual(row["planned_hours"], 6.0)  # horas conocidas, no ubicables
 
+	# --- programado vs sin programar (separación server-side) ----------------
+
+	def test_scheduled_flag_distinguishes_dated_and_undated(self):
+		subj = _user("wbr-subj@example.com", ["Projects User"])
+		emp = _employee("WBR Subject", subj)
+		p_open = _project("WBR-P-OPEN", owner=subj)
+		_assign(_task("WBR-T-DATED", p_open, 4, start="2026-01-05", end="2026-01-05"), subj)
+		_assign(_task("WBR-T-UND", p_open, 6, start=None, end=None), subj)
+		data = self._run(subj, from_date="2026-01-05", to_date="2026-01-05", employee=emp)
+		dated = next(r for r in data if r.get("task") == "WBR-T-DATED")
+		und = next(r for r in data if r.get("task") == "WBR-T-UND")
+		self.assertTrue(dated["scheduled"])
+		self.assertFalse(und["scheduled"])
+		self.assertEqual(und["planned_hours"], 6.0)
+
+	def test_confidential_split_scheduled_vs_unscheduled(self):
+		# Manager no ve las Tasks confidenciales: deben consolidarse en DOS filas (programada / sin
+		# programar), cada una solo con horas, sin identidad (P4).
+		subj = _user("wbr-subj@example.com", ["Projects User"])
+		emp = _employee("WBR Subject", subj)
+		p_conf = _project("WBR-P-CONF", owner="Administrator")
+		_assign(_task("WBR-T-CONF-DATED", p_conf, 4, start="2026-01-05", end="2026-01-05"), subj)
+		_assign(_task("WBR-T-CONF-UND", p_conf, 5, start=None, end=None), subj)
+		data = self._run(self.mgr_user, from_date="2026-01-05", to_date="2026-01-05", employee=emp)
+		blob = frappe.as_json(data)
+		self.assertNotIn("WBR-T-CONF", blob)  # ninguna identidad de Task viaja
+		conf = [r for r in data if r["task"] == "Committed (confidential)"]
+		self.assertEqual(len(conf), 2)  # programada + sin programar, separadas
+		by_sched = {r["scheduled"]: r["planned_hours"] for r in conf}
+		self.assertEqual(by_sched[True], 4.0)
+		self.assertEqual(by_sched[False], 5.0)
+		for r in conf:
+			self.assertNotIn("task_id", r)
+			self.assertNotIn("project_id", r)
+
 	# --- estructura ---------------------------------------------------------
 
 	def test_no_actual_column(self):
 		fieldnames = [c["fieldname"] for c in self._columns()]
 		self.assertNotIn("actual", fieldnames)
 		self.assertNotIn("actual_hours", fieldnames)
+
+	def test_scheduling_column_present(self):
+		fieldnames = [c["fieldname"] for c in self._columns()]
+		self.assertIn("scheduling", fieldnames)
