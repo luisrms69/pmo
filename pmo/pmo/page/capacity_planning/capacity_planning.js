@@ -487,11 +487,13 @@ class CapacityPlanning {
 		this.$tooltip.html(`
 			<div class="pmo-cap-tip-title">${frappe.utils.escape_html(d.name)}</div>
 			<div class="pmo-cap-tip-sub text-muted">${frappe.utils.escape_html(d.period)}</div>
-			<div class="pmo-cap-tip-row"><span>${__("Capacity")}</span><b>${hh(d.capacity)}</b></div>
+			<div class="pmo-cap-tip-row"><span>${__("Theoretical capacity")}</span><b>${hh(
+			d.capacity
+		)}</b></div>
 			<div class="pmo-cap-tip-row"><span>${__("Availability")}</span><b>${hh(d.availability)}</b></div>
-			<div class="pmo-cap-tip-row"><span>${__("Planned")}</span><b>${hh(d.planned)}</b></div>
-			<div class="pmo-cap-tip-row"><span>${__("Free")}</span><b>${hh(d.free)}</b></div>
-			<div class="pmo-cap-tip-row"><span>${__("Planned Utilization")}</span><b>${util}</b></div>
+			<div class="pmo-cap-tip-row"><span>${__("Scheduled")}</span><b>${hh(d.planned)}</b></div>
+			<div class="pmo-cap-tip-row"><span>${__("Free capacity")}</span><b>${hh(d.free)}</b></div>
+			<div class="pmo-cap-tip-row"><span>${__("Scheduled utilization")}</span><b>${util}</b></div>
 		`);
 		this.$tooltip.removeAttr("hidden");
 		this._move_tip(e);
@@ -522,16 +524,21 @@ class CapacityPlanning {
 		}
 
 		const idx = this._index_rows();
+		// Trabajo sin programar: per-Employee (una sola fila lo trae); sumar no duplica. Ver cabecera.
+		const unsched = {};
+		this.state.rows.forEach((r) => {
+			unsched[r.employee] = flt(unsched[r.employee]) + flt(r.unscheduled_hours);
+		});
 		const hh = (v) =>
 			v === null || v === undefined ? "&mdash;" : `${format_number(v, null, 2)}`;
 		const pct = (v) =>
 			v === null || v === undefined ? "&mdash;" : `${format_number(v, null, 0)}%`;
 		const METRICS = [
-			{ key: "capacity", label: __("Capacity"), fmt: hh },
-			{ key: "availability", label: __("Availability"), fmt: hh },
-			{ key: "planned_total", label: __("Planned"), fmt: hh },
-			{ key: "free", label: __("Free"), fmt: hh },
-			{ key: "util_planned", label: __("Planned Utilization"), fmt: pct, util: true },
+			{ key: "capacity", label: __("Theoretical capacity"), fmt: hh },
+			{ key: "availability", label: __("Availability"), fmt: hh, tip: true },
+			{ key: "planned_total", label: __("Scheduled"), fmt: hh },
+			{ key: "free", label: __("Free capacity"), fmt: hh },
+			{ key: "util_planned", label: __("Scheduled utilization"), fmt: pct, util: true },
 		];
 
 		const head = periods
@@ -546,9 +553,17 @@ class CapacityPlanning {
 		const body = employees
 			.map((res) => {
 				const name = frappe.utils.escape_html(res.employee_name || res.employee);
+				// Horas asignadas pendientes de fechas: una sola vez por empleado (no por periodo).
+				const u = flt(unsched[res.employee]);
+				const u_tag =
+					u > 0
+						? `<span class="pmo-cap-u-unsched" title="${__(
+								"Assigned work pending scheduling. It does not consume free capacity."
+						  )}">&#9888; ${format_number(u, null, 2)} h ${__("Unscheduled")}</span>`
+						: "";
 				const emp_row = `
 					<tr class="pmo-cap-u-emprow">
-						<th class="pmo-cap-u-emp" colspan="${periods.length + 1}">${name}</th>
+						<th class="pmo-cap-u-emp" colspan="${periods.length + 1}">${name}${u_tag}</th>
 					</tr>`;
 				const metric_rows = METRICS.map((m) => {
 					const cells = periods
@@ -562,7 +577,21 @@ class CapacityPlanning {
 									b
 								)}</td>`;
 							}
-							return `<td class="pmo-cap-u-cell">${m.fmt(row[m.key])}</td>`;
+							// La celda de Disponibilidad lleva el desglose (capacidad − no disponible),
+							// que explica reducciones por fines de semana, festivos y ausencias.
+							let tip = "";
+							if (m.tip && row.availability !== null && row.capacity !== null) {
+								const data = encodeURIComponent(
+									JSON.stringify({
+										name: res.employee_name || res.employee,
+										period: p,
+										capacity: row.capacity,
+										availability: row.availability,
+									})
+								);
+								tip = ` data-availtip="${data}"`;
+							}
+							return `<td class="pmo-cap-u-cell"${tip}>${m.fmt(row[m.key])}</td>`;
 						})
 						.join("");
 					return `<tr><th class="pmo-cap-u-metric">${m.label}</th>${cells}</tr>`;
@@ -572,6 +601,9 @@ class CapacityPlanning {
 			.join("");
 
 		$view.html(`
+			<div class="pmo-cap-usage-note text-muted">${__(
+				"Theoretical capacity counts every calendar day; availability already excludes weekends, public holidays and leave."
+			)}</div>
 			<div class="pmo-cap-matrix-wrap">
 				<table class="pmo-cap-matrix pmo-cap-usage">
 					<thead>
@@ -581,6 +613,37 @@ class CapacityPlanning {
 				</table>
 			</div>
 		`);
+
+		const self = this;
+		$view.find(".pmo-cap-u-cell[data-availtip]").on("mouseenter", function (e) {
+			const d = JSON.parse(decodeURIComponent($(this).attr("data-availtip")));
+			self._show_tip_availability(d, e);
+		});
+		$view.find(".pmo-cap-u-cell[data-availtip]").on("mousemove", (e) => this._move_tip(e));
+		$view
+			.find(".pmo-cap-u-cell[data-availtip]")
+			.on("mouseleave", () => this.$tooltip.attr("hidden", true));
+	}
+
+	_show_tip_availability(d, e) {
+		const hh = (v) =>
+			v === null || v === undefined ? "&mdash;" : `${format_number(v, null, 2)} h`;
+		// No disponible = capacidad teórica − disponibilidad (reutiliza datos ya calculados por el motor;
+		// no reimplementa la lógica de calendario/festivos/ausencias).
+		const unavailable = flt(d.capacity) - flt(d.availability);
+		this.$tooltip.html(`
+			<div class="pmo-cap-tip-title">${frappe.utils.escape_html(d.name)}</div>
+			<div class="pmo-cap-tip-sub text-muted">${frappe.utils.escape_html(d.period)}</div>
+			<div class="pmo-cap-tip-row"><span>${__("Theoretical capacity")}</span><b>${hh(
+			d.capacity
+		)}</b></div>
+			<div class="pmo-cap-tip-row"><span>${__(
+				"Not available (weekends, holidays, leave)"
+			)}</span><b>&minus;${hh(unavailable)}</b></div>
+			<div class="pmo-cap-tip-row"><span>${__("Availability")}</span><b>${hh(d.availability)}</b></div>
+		`);
+		this.$tooltip.removeAttr("hidden");
+		this._move_tip(e);
 	}
 
 	// --- grafica temporal agregada (frappe.Chart, sin Actual) --------------------
@@ -612,6 +675,8 @@ class CapacityPlanning {
 		});
 
 		const round2 = (v) => flt(v, 2);
+		// Tres series autorizadas: Disponibilidad (base), Programado (carga) y Capacidad libre. Se RETIRA
+		// "Capacidad teórica" (contaba fines de semana → ruido); permanece en la matriz y en los tooltips.
 		this.chart = new frappe.Chart($el[0], {
 			type: "line",
 			height: 220,
@@ -621,14 +686,24 @@ class CapacityPlanning {
 			data: {
 				labels: periods,
 				datasets: [
-					{ name: __("Capacity"), values: periods.map((p) => round2(agg[p].cap)) },
 					{ name: __("Availability"), values: periods.map((p) => round2(agg[p].avail)) },
-					{ name: __("Planned"), values: periods.map((p) => round2(agg[p].planned)) },
-					{ name: __("Free"), values: periods.map((p) => round2(agg[p].free)) },
+					{ name: __("Scheduled"), values: periods.map((p) => round2(agg[p].planned)) },
+					{ name: __("Free capacity"), values: periods.map((p) => round2(agg[p].free)) },
 				],
 			},
-			colors: ["#7cd6fd", "#5e64ff", "#ffa00a", "#28a745"],
+			colors: ["#5e64ff", "#ffa00a", "#28a745"],
 		});
+		// Capacidad libre = Disponibilidad - Programado: cuando Programado=0 ambas coinciden y se pisan.
+		// Punteamos su trazo para distinguirla sin recalcular nada (solo estilo del path ya dibujado).
+		this._dash_line($el, 2);
+	}
+
+	// Aplica trazo punteado a la enésima serie de línea (frappe-charts) sin tocar el cálculo.
+	_dash_line($el, dataset_index) {
+		const paths = $el.find("path.line-graph-path");
+		if (paths.length > dataset_index) {
+			paths.eq(dataset_index).attr("stroke-dasharray", "5,3");
+		}
 	}
 
 	// --- vista: Uso de recursos por proyecto (un empleado; matriz temporal, solo Planned) ------
@@ -873,8 +948,8 @@ class CapacityPlanning {
 			<div class="pmo-cap-tip-title">${frappe.utils.escape_html(d.name)}</div>
 			<div class="pmo-cap-tip-sub text-muted">${frappe.utils.escape_html(d.period)}</div>
 			<div class="pmo-cap-tip-row"><span>${__("Availability")}</span><b>${hh(d.availability)}</b></div>
-			<div class="pmo-cap-tip-row"><span>${__("Planned")}</span><b>${hh(d.planned)}</b></div>
-			<div class="pmo-cap-tip-row"><span>${__("Free")}</span><b>${hh(d.free)}</b></div>
+			<div class="pmo-cap-tip-row"><span>${__("Scheduled")}</span><b>${hh(d.planned)}</b></div>
+			<div class="pmo-cap-tip-row"><span>${__("Free capacity")}</span><b>${hh(d.free)}</b></div>
 			<div class="pmo-cap-tip-row"><span>${__("Overallocation")}</span><b>${hh(
 			d.overallocation
 		)}</b></div>
@@ -918,12 +993,13 @@ class CapacityPlanning {
 				labels: periods,
 				datasets: [
 					{ name: __("Availability"), values: periods.map((p) => round2(agg[p].avail)) },
-					{ name: __("Planned"), values: periods.map((p) => round2(agg[p].planned)) },
-					{ name: __("Free"), values: periods.map((p) => round2(agg[p].free)) },
+					{ name: __("Scheduled"), values: periods.map((p) => round2(agg[p].planned)) },
+					{ name: __("Free capacity"), values: periods.map((p) => round2(agg[p].free)) },
 				],
 			},
 			colors: ["#5e64ff", "#ffa00a", "#28a745"],
 		});
+		this._dash_line($el, 2); // Capacidad libre punteada (ver _render_capacity_chart)
 	}
 
 	// --- vista: Trabajo por recurso (detalle operativo Empleado -> Proyecto -> Tarea) ----------
@@ -965,13 +1041,15 @@ class CapacityPlanning {
 		const hh = (v) =>
 			v === null || v === undefined ? "&mdash;" : `${format_number(v, null, 2)} h`;
 
-		// Fila consolidada de tareas OCULTAS: sin task_id y sin project (solo horas).
-		const hidden = rows.find(
+		// Filas consolidadas de tareas OCULTAS (confidenciales): sin task_id ni project, solo horas. El
+		// server ya las separó por categoría (`scheduled`), porque el cliente no puede distinguir una Task
+		// sin fechas de la fila confidencial consolidada (ambas sin fechas). Ver pmo_work_by_resource.py.
+		const confRows = rows.filter(
 			(r) => !r.task_id && r.project === null && r.planned_hours != null
 		);
 		const taskRows = rows.filter((r) => r.task_id);
 
-		if (!taskRows.length && !hidden) {
+		if (!taskRows.length && !confRows.length) {
 			$view.html(
 				`<div class="pmo-cap-empty text-muted">${__(
 					"No planned work for this employee in the range."
@@ -980,26 +1058,32 @@ class CapacityPlanning {
 			return;
 		}
 
-		// Agrupar tareas visibles por proyecto (clave = project_id si es visible, si no la etiqueta).
-		const groups = new Map();
-		taskRows.forEach((r) => {
-			const key = r.project_id ? `p:${r.project_id}` : `l:${r.project || ""}`;
-			let g = groups.get(key);
-			if (!g) {
-				g = { label: r.project, project_id: r.project_id || null, tasks: [], hours: 0 };
-				groups.set(key, g);
-			}
-			g.tasks.push(r);
-			g.hours += flt(r.planned_hours);
-		});
-
-		// Proyectos identificables primero (por nombre); buckets sin id despues.
-		const ordered = [...groups.values()].sort((a, b) => {
-			const ap = a.project_id ? 0 : 1;
-			const bp = b.project_id ? 0 : 1;
-			if (ap !== bp) return ap - bp;
-			return String(a.label || "").localeCompare(String(b.label || ""));
-		});
+		// Agrupa una lista de tareas por proyecto (clave = project_id si es visible, si no la etiqueta).
+		const build_groups = (list) => {
+			const groups = new Map();
+			list.forEach((r) => {
+				const key = r.project_id ? `p:${r.project_id}` : `l:${r.project || ""}`;
+				let g = groups.get(key);
+				if (!g) {
+					g = {
+						label: r.project,
+						project_id: r.project_id || null,
+						tasks: [],
+						hours: 0,
+					};
+					groups.set(key, g);
+				}
+				g.tasks.push(r);
+				g.hours += flt(r.planned_hours);
+			});
+			// Proyectos identificables primero (por nombre); buckets sin id despues.
+			return [...groups.values()].sort((a, b) => {
+				const ap = a.project_id ? 0 : 1;
+				const bp = b.project_id ? 0 : 1;
+				if (ap !== bp) return ap - bp;
+				return String(a.label || "").localeCompare(String(b.label || ""));
+			});
+		};
 
 		const fmt_dates = (r) => {
 			const s = r.exp_start_date
@@ -1065,22 +1149,55 @@ class CapacityPlanning {
 				</div>`;
 		};
 
+		// Grupo confidencial consolidado (solo horas, sin identidad) dentro de una sección.
+		const conf_html = (c) => `
+			<div class="pmo-cap-wgroup is-confidential">
+				<div class="pmo-cap-wgroup-head pmo-cap-wgroup-head--static">
+					<span class="pmo-cap-wgroup-title">${frappe.utils.escape_html(c.task)}</span>
+					<span class="pmo-cap-wgroup-hours">${hh(c.planned_hours)}</span>
+				</div>
+			</div>`;
+
+		// Una sección (Programado / Sin programar) con su subtotal y nota. Se omite si está vacía.
+		const section_html = (title, note, list, conf) => {
+			if (!list.length && !conf.length) return "";
+			const subtotal =
+				list.reduce((s, r) => s + flt(r.planned_hours), 0) +
+				conf.reduce((s, r) => s + flt(r.planned_hours), 0);
+			const inner =
+				build_groups(list).map(group_html).join("") + conf.map(conf_html).join("");
+			return `
+				<div class="pmo-cap-wsection">
+					<div class="pmo-cap-wsection-head">
+						<span class="pmo-cap-wsection-title">${title}</span>
+						<span class="pmo-cap-wsection-hours">${hh(subtotal)}</span>
+					</div>
+					<div class="pmo-cap-wsection-note text-muted">${note}</div>
+					${inner}
+				</div>`;
+		};
+
+		const schedTasks = taskRows.filter((r) => r.scheduled);
+		const unschedTasks = taskRows.filter((r) => !r.scheduled);
+		const schedConf = confRows.filter((r) => r.scheduled);
+		const unschedConf = confRows.filter((r) => !r.scheduled);
+
 		let html = `<div class="pmo-cap-work">`;
 		html += `<div class="pmo-cap-work-emp">${frappe.utils.escape_html(
 			emp.employee_name || emp.employee
 		)}</div>`;
-		html += ordered.map(group_html).join("");
-
-		// Consolidado confidencial: solo horas, sin tareas ni identidad.
-		if (hidden) {
-			html += `
-				<div class="pmo-cap-wgroup is-confidential">
-					<div class="pmo-cap-wgroup-head pmo-cap-wgroup-head--static">
-						<span class="pmo-cap-wgroup-title">${frappe.utils.escape_html(hidden.task)}</span>
-						<span class="pmo-cap-wgroup-hours">${hh(hidden.planned_hours)}</span>
-					</div>
-				</div>`;
-		}
+		html += section_html(
+			__("Scheduled"),
+			__("Dated work distributed within the period. It consumes free capacity."),
+			schedTasks,
+			schedConf
+		);
+		html += section_html(
+			__("Unscheduled"),
+			__("Assigned work pending scheduling. It does not consume free capacity."),
+			unschedTasks,
+			unschedConf
+		);
 		html += `</div>`;
 		$view.html(html);
 
@@ -1173,6 +1290,8 @@ class CapacityPlanning {
 .pmo-cap-matrix tbody tr:hover td { outline:1px solid var(--blue-300,#9db8ff); outline-offset:-1px; }
 
 .pmo-cap-usage .pmo-cap-u-emprow th { position:sticky; left:0; z-index:1; background:var(--subtle-fg,var(--bg-color)); text-align:left; font-weight:600; padding:8px 12px; color:var(--text-color); }
+.pmo-cap-usage-note { font-size:var(--text-xs); padding:0 2px 8px; }
+.pmo-cap-u-unsched { margin-left:10px; font-weight:400; font-size:var(--text-xs); color:var(--yellow-600,#a16207); cursor:help; }
 .pmo-cap-u-metric { position:sticky; left:0; z-index:1; background:var(--card-bg); text-align:left; font-weight:400; color:var(--text-muted); padding:6px 12px 6px 22px; white-space:nowrap; }
 .pmo-cap-u-cell { text-align:center; padding:6px 10px; min-width:58px; }
 .pmo-cap-u-cell.ok { background:rgba(40,167,69,.14); }
@@ -1188,6 +1307,11 @@ class CapacityPlanning {
 /* vista Trabajo por recurso */
 .pmo-cap-work { padding:12px 14px; }
 .pmo-cap-work-emp { font-weight:600; font-size:var(--text-md); margin-bottom:10px; }
+.pmo-cap-wsection { margin-bottom:16px; }
+.pmo-cap-wsection-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:4px 2px; border-bottom:2px solid var(--border-color); margin-bottom:8px; }
+.pmo-cap-wsection-title { font-weight:600; font-size:var(--text-md); }
+.pmo-cap-wsection-hours { font-weight:600; font-size:var(--text-sm); white-space:nowrap; }
+.pmo-cap-wsection-note { font-size:var(--text-xs); margin:-4px 2px 8px; }
 .pmo-cap-wgroup { border:1px solid var(--border-color); border-radius:var(--border-radius-md,6px); margin-bottom:8px; overflow:hidden; }
 .pmo-cap-wgroup-head { display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--subtle-fg,var(--bg-color)); cursor:pointer; }
 .pmo-cap-wgroup-head--static { cursor:default; }

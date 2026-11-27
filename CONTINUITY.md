@@ -1,101 +1,86 @@
 # CONTINUITY.md — pmo
 
-**Fecha:** 2026-10-25
-**Rama activa:** `fix/pot-headers-tz-offsets` (base `version-16` @ v0.23.1 → objetivo PR **v0.23.2**, PATCH)
-**Tarea actual:** `/ship pr` de corrección puntual del header RFC 822 del `.pot`
-(plantilla gettext): offset `-0723` sustituido por `-0600` (America/Mexico_City).
-Follow-up del PR #29 (v0.23.1) que ya corrigió el mismo patrón en `es.po`.
+**Fecha:** 2026-11-27
+**Rama activa:** `feat/capacity-ui-semantics` (base `version-16` @ v0.23.2 → objetivo PR **v0.23.3**, PATCH)
+**Tarea actual:** `/ship pr` → merge → release v0.23.3 de la mejora de **semántica y presentación** de
+planificación de capacidad (sin cambios en el motor).
 
 ---
 
 ## Recuperación rápida
 
 Estoy trabajando en:
-El **cierre `/ship` de la rama `fix/pot-headers-tz-offsets`** hacia `version-16`
-(objetivo v0.23.2, PATCH). Corrección mínima de dos líneas del header del `.pot`
-para que la plantilla sea parseable por Babel y las herramientas gettext/pybabel
-estándar al generar nuevos `.po` por idioma.
+El **cierre `/ship`** de la rama `feat/capacity-ui-semantics` hacia `version-16` (objetivo v0.23.3,
+PATCH). El cambio hace visible el trabajo asignado **sin fechas** ("Sin programar") y unifica la
+terminología de capacidad de cara al usuario. **El motor de cálculo NO se tocó.**
 
 Plan que estoy siguiendo:
-`/ship pr`: bump 0.23.1→0.23.2 + CONTINUITY → gate pr-ready → autorización humana →
-push + PR hacia `version-16` → CI verde → `/ship comentario-pr` → `/ship merge`
-(merge manual del usuario) → `/sync-check` → `/ship release` v0.23.2 → limpieza.
+`/ship pr` (commit 10d2f97 ya hecho) → gate pr-ready → push + PR hacia `version-16` → CI verde →
+`/ship comentario-pr` → `/ship merge` (merge manual del usuario en GitHub) → `/sync-check` →
+`/ship release` v0.23.3 → limpieza de rama.
 
 Objetivo inmediato:
-PR OPEN contra `version-16` con el fix del `.pot`, listo para revisión y CI.
+PR OPEN contra `version-16` con la mejora, listo para revisión y CI.
+
+Criterio de avance:
+PR creado y CI verde; tras merge, las 4 fuentes de verdad alineadas (versión 0.23.3 · mergeCommit ·
+tag v0.23.3 · GitHub Release v0.23.3).
 
 ---
 
 ## Estado actual
 
-### Qué entrega este PR
-- **`pmo/locale/main.pot`** (headers, 2 líneas): sustitución literal de
-  `POT-Creation-Date: 2026-09-30 00:22-0723` → `-0600` y
-  `PO-Revision-Date: 2026-09-30 00:22-0723` → `-0600`. **Nada más**: ni se
-  regeneran mensajes del template, ni se re-ejecuta `pybabel`/`msgmerge`, ni
-  se tocan `msgid`s.
-- **`pmo/__init__.py`**: bump `0.23.1 → 0.23.2` (PATCH), consumido por
-  `pyproject.toml` vía `dynamic = ["version"]`.
+### Ya cerrado
+- Diagnóstico Tony/PROJ-0080 (comportamiento correcto; 12h sin programar no consumen capacidad libre).
+- Implementación local aprobada por el usuario; QA visual OK; 144/144 tests + suite completa en verde.
+- Commit `10d2f97` creado (9 archivos: reportes, page JS, tests, es.po, docs, bump 0.23.3).
 
-### Decisiones aplicadas
-- Mismo offset `-0600` que ya tiene `es.po` tras el PR #29, consistente con
-  la zona del equipo (America/Mexico_City). No se intenta derivar offset
-  "histórico" para la fecha 2026-09-30 — el valor del timestamp no cambia,
-  sólo el offset sintácticamente malformado.
-- Fix independiente del PR #29 porque es un archivo distinto (`.pot` vs `.po`)
-  y el diagnóstico/arreglo salió después del cierre de ese ciclo.
-- Clasificación SemVer **PATCH**: cambio compatible, sin API/comportamiento
-  nuevo. Sólo metadata del catálogo.
-
-### Validación local realizada
-- `babel.messages.pofile.read_po()` sobre `main.pot` editado: parsea sin
-  excepciones.
-- `creation_date` y `revision_date` quedan como `datetime` tipados con
-  `FixedOffset -06:00`.
-- 949 entradas del template parseadas sin regresión.
-
-### Follow-up documental (fuera de alcance de este PR)
-Scan exhaustivo del bench detectó 7 archivos `.po` adicionales con offsets
-no-estándar IANA (`+0053`/`+0553`) en:
-- `apps/frappe/frappe/locale/{fi,af}.po`
-- `apps/erpnext/erpnext/locale/{fi,af}.po`
-- `apps/hrms/hrms/locale/{fi,af,zh_TW}.po`
-
-Son clones locales de los repos upstream (`frappe/frappe`, `frappe/erpnext`,
-`frappe/hrms`) y **no se pueden corregir desde `/ship` de PMO**. Si causan
-problemas reales habría que abrir issue/PR en el upstream respectivo.
-Impacto operativo nulo en los sites staging activos.
+### En progreso
+- `/ship pr`: CONTINUITY (este archivo) → gate pr-ready → push + PR.
 
 ### Pendiente inmediato
-1. Autorización del gate `pr-ready` para push + creación del PR hacia `version-16`.
+1. Gate pr-ready (push + creación del PR hacia `version-16`).
 2. CI verde del PR.
-3. `/ship comentario-pr` → `/ship merge` → `/sync-check` → `/ship release` v0.23.2.
+3. `/ship comentario-pr` → `/ship merge` (merge manual) → `/sync-check` → `/ship release` v0.23.3.
 
 ### No repetir / no ampliar
-- **No** regenerar `.pot` con `pybabel extract`: cambiaría cientos de `#:`
-  references y mezclaría ruido con un fix de 2 líneas.
-- **No** tocar los otros `.po` upstream en este PR — alcance limitado al `.pot`
-  del propio app PMO.
-- **No** inventar bump adicional — un solo bump por PR.
+- **No** tocar el motor de capacidad (`capacity.py`, `availability.py`, `planned_load.py`): matemática intacta.
+- **No** incorporar `unscheduled_hours` a `planned_total`/`free` ni a las series temporales.
+- **No** modificar `erpnext_proposals` ni los datos de PROJ-0080 (pruebas aprobadas).
+- **No** nombrar el festivo en el tooltip de disponibilidad (limitación aceptada; sería ampliar alcance).
+- **No** introducir CHANGELOG nuevo fuera de `docs/CHANGELOG.md` (ya actualizado).
 
 ---
 
-## Archivos del PR
-- `pmo/locale/main.pot` (fix 2 líneas) · `pmo/__init__.py` (bump) · `CONTINUITY.md` (este archivo).
+## Decisiones vigentes
+- `unscheduled_hours` se expone **una sola vez por empleado** (1ª fila del reporte) → sumar la columna no
+  duplica al cambiar granularidad/agregar/exportar.
+- La separación programado/sin-programar se resuelve **en servidor** (flag `scheduled` + split del bucket
+  confidencial), porque el cliente no puede distinguir una tarea sin fechas de la fila confidencial. P4 intacto.
+- Gráfica: 3 series (Disponibilidad, Programado, Capacidad libre punteada); se retira capacidad teórica.
+- SemVer **PATCH** (0.23.2 → 0.23.3): semántica/presentación, sin motor ni API nueva.
+
+---
+
+## Archivos relevantes ahora
+
+### Leer primero
+- `docs/usuario/capacity-planning.md` (terminología/vistas actualizadas) · `docs/CHANGELOG.md` (0.23.3).
+
+### Del PR (ya commiteados en 10d2f97)
+- `pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py` · `pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.py`
+- `pmo/pmo/page/capacity_planning/capacity_planning.js` · `pmo/locale/es.po` · tests · `pmo/__init__.py`.
+
+### No tocar
+- Motor: `pmo/capacity.py`, `pmo/availability.py`, `pmo/planned_load.py`.
 
 ---
 
 ## Riesgos / cuidados
-- Metadata del `.pot` son headers RFC 822; no afectan runtime del app Frappe
-  (las traducciones se cargan por `msgstr` de los `.po`, no por los campos
-  de fecha del `.pot`).
-- `pyproject.toml` deriva la versión vía flit (`dynamic = ["version"]`); tocar
-  solo `pmo/__init__.py::__version__`, nunca `pyproject.toml`.
-- CI del repo usa `ruff` + `prettier@2.7.1`; `.pot` no es `.py` ni `.js` → los
-  linters no aplican a este archivo.
-- No se ejecutó la suite de tests localmente: el cambio no toca runtime; el
-  CI remoto correrá la suite completa como siempre.
+- `es.po` requiere `bench compile-po-to-mo` para surtir efecto (ya compilado local; CI recompila).
+- Línea punteada depende de la clase interna `line-graph-path` de frappe-charts (confirmada esta versión;
+  si cambia, degrada sin romper).
+- `pyproject.toml` deriva versión vía flit; tocar solo `pmo/__init__.py::__version__`.
 
 ## Información faltante
-- Ninguna para continuar; PR contra `version-16`, merge manual del usuario,
-  luego release v0.23.2.
+- Ninguna para continuar; tras el PR, el merge es manual del usuario en GitHub.

@@ -4704,3 +4704,55 @@ msgstr "Sin capacidad resoluble"
 
 msgid "Missing shift"
 msgstr "Sin turno"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js
+msgid "Theoretical capacity"
+msgstr "Capacidad teórica"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js
+#: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.py
+msgid "Scheduled"
+msgstr "Programado"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py
+msgid "Free capacity"
+msgstr "Capacidad libre"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js
+msgid "Scheduled utilization"
+msgstr "Utilización programada"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js
+#: pmo/pmo/report/pmo_capacity_planning/pmo_capacity_planning.py
+#: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.py
+msgid "Unscheduled"
+msgstr "Sin programar"
+
+#: pmo/pmo/report/pmo_work_by_resource/pmo_work_by_resource.py
+msgid "Scheduling"
+msgstr "Programación"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js
+msgid "Hours"
+msgstr "Horas"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js
+msgid "Not available (weekends, holidays, leave)"
+msgstr "No disponible (fines de semana, festivos, ausencias)"
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js
+msgid "Assigned work pending scheduling. It does not consume free capacity."
+msgstr "Trabajo asignado pendiente de programar. No consume capacidad libre."
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js
+msgid "Dated work distributed within the period. It consumes free capacity."
+msgstr "Trabajo con fechas distribuido en el periodo. Consume capacidad libre."
+
+#: pmo/pmo/page/capacity_planning/capacity_planning.js
+msgid ""
+"Theoretical capacity counts every calendar day; availability already excludes "
+"weekends, public holidays and leave."
+msgstr ""
+"La capacidad teórica cuenta todos los días del calendario; la disponibilidad ya "
+"descuenta fines de semana, festivos y ausencias."

@@ -145,6 +145,11 @@ def _employee_rows(emp, observer, from_date, to_date, granularity):
 		day = add_days(day, 1)
 
 	status = _status(emp, to_date, planned)
+	# Trabajo asignado SIN fechas (ADR-0003 D2): el motor ya lo separa en `unscheduled`. Es per-Employee
+	# (no ubicable en ningún periodo) → se expone UNA sola vez por empleado para NO duplicarlo al cambiar
+	# granularidad, agregar o exportar. NUNCA entra en planned_total/free/series temporales. P4-safe: solo
+	# la SUMA de horas (sin identidad de Task/Project, igual que el bucket confidencial de planned_total).
+	unscheduled_hours = flt(sum(u["hours"] for u in planned["unscheduled"]), 2)
 	# Identidad organizacional del Employee (no es identidad de Project → fuera de P4); el tier de
 	# observador ya limita QUÉ Employees aparecen.
 	designation, department = frappe.db.get_value("Employee", emp, ["designation", "department"]) or (
@@ -178,9 +183,14 @@ def _employee_rows(emp, observer, from_date, to_date, granularity):
 				"overallocation": flt(max(0.0, planned_total - avail), 2) if has_cap else None,
 				"util_planned": flt(planned_total / avail * 100, 1) if (has_cap and avail > 0) else None,
 				"util_actual": flt(actual_total / avail * 100, 1) if (has_cap and avail > 0) else None,
+				"unscheduled_hours": 0.0,  # se rellena solo en la 1ª fila del empleado (ver abajo)
 				"status": status,
 			}
 		)
+	# `unscheduled_hours` vive una sola vez por empleado (1ª fila): sumar la columna sobre todas las filas
+	# da el total del empleado SIN multiplicarlo por el nº de periodos (Day/Week/Month/Total) ni por fila.
+	if rows:
+		rows[0]["unscheduled_hours"] = unscheduled_hours
 	return rows
 
 
@@ -221,7 +231,8 @@ def _columns():
 		col("actual_visible", frappe.N_("Actual visible")),
 		col("actual_confidential", frappe.N_("Actual confidential"), "Float", 150),
 		col("actual_total", frappe.N_("Actual total")),
-		col("free", frappe.N_("Free")),
+		col("free", frappe.N_("Free capacity")),
+		col("unscheduled_hours", frappe.N_("Unscheduled"), "Float", 130),
 		col("overallocation", frappe.N_("Overallocation"), "Float", 130),
 		col("util_planned", frappe.N_("Planned util. %"), "Float", 140),
 		col("util_actual", frappe.N_("Actual util. %"), "Float", 120),

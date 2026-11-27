@@ -1,5 +1,28 @@
 # Changelog — pmo
 
+## [0.23.3] — 2026-11-27
+
+Mejora de **semántica y presentación** de la planificación de capacidad (sin cambios en el motor de
+cálculo). Hace visible el trabajo asignado que aún no tiene fechas y aclara la terminología de cara al
+usuario.
+
+### Added
+- **Trabajo sin programar visible**: el reporte `PMO Capacity Planning` expone `unscheduled_hours` (horas
+  asignadas sin fechas) **una sola vez por empleado**, y la página lo muestra en la cabecera del recurso con
+  la aclaración "no consume capacidad libre". No entra en `planned_total`, `free` ni en las series
+  temporales, y no se duplica al cambiar granularidad, agregar o exportar.
+- **Separación Programado / Sin programar** en `PMO Work by Resource`: cada tarea trae el flag `scheduled`
+  (resuelto en servidor) y una columna **Scheduling**; el bucket confidencial se divide en programado y sin
+  programar, preservando P4 (solo horas, sin identidad). La página agrupa ambas secciones con subtotales.
+
+### Changed
+- **Terminología de capacidad** (vistas de capacidad): *Capacidad* → **Capacidad teórica**, *Planificado* →
+  **Programado**, *Libre* → **Capacidad libre**, *Utilización planificada* → **Utilización programada**.
+- **Gráfica agregada** de la página: tres series — Disponibilidad, Programado y **Capacidad libre**
+  (punteada para distinguirla cuando coincide con Disponibilidad); se retira la serie de capacidad teórica.
+- **Desglose de disponibilidad**: tooltip que explica la reducción por fines de semana, festivos y
+  ausencias (capacidad teórica − no disponible = disponibilidad), reutilizando datos ya calculados.
+
 ## [0.20.0] — 2026-10-05
 
 **Schedule Intelligence** — capa de análisis de cronograma **estrictamente read-only** sobre la red nativa
